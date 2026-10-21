@@ -10,7 +10,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 | 0.2 | Arkitekturförslag + verktygsregister (ARCHITECTURE.md) | Claude | ✅ |
 | 0.3 | Beslutsförslag D-001…D-007 + öppna frågor | Claude | ✅ |
 | 0.4 | Miljökontrollskript `scripts/check_env.py` + tester | Claude | ✅ (testat i Claudes Linux-miljö) |
-| 0.5 | Köra `check_env.py` på **Yorgos** dator, spara resultat i `docs/environment.md` | Yorgo | ☐ |
+| 0.5 | Köra `check_env.py` på **Yorgos** dator, spara resultat i `docs/environment.md` | Yorgo | ✅ (2026-10-21, Windows 11) |
 | 0.6 | Köra `check_env.py` på **Robins** dator, spara resultat i `docs/environment.md` | Robin | ☐ |
 | 0.7 | Skapa privat GitHub-repo, lägga till varandra, pusha dessa filer | En grundare | ☐ |
 | 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ☐ |
@@ -25,9 +25,9 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 - [ ] Båda grundarnas miljöer är inventerade (0.5, 0.6).
 - [ ] Besluten är godkända av grundarna (0.8).
 
-## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08)
-1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`.
-1.2 Konfigurationsläsning + validering (`config/system.toml`).
+## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08) ← **pågår**
+1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`. ✅ (2026-10-21, gren `fas1-grund`)
+1.2 Konfigurationsläsning + validering (`config/system.toml`, `config/risk_limits.toml`). ✅ (2026-10-21, 31 tester gröna, väntar på granskning)
 1.3 Strukturerad loggning (JSON-rader till `logs/`).
 1.4 SQLite-lager med migrationer och metadatatabell (miljö, schemaversion).
 1.5 Hashkedjad audit-logg (append-only).

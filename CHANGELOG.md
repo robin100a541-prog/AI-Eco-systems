@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.1.0] — 2026-10-21 — Fas 1.1–1.2: paket och konfiguration
+### Tillagt
+- `pyproject.toml` (paket `aie`, Python >= 3.11, inga beroenden).
+- `src/aie/` med `__version__ = "0.1.0"` och CLI:t `python -m aie check-config` (kod 0 = giltig, kod 1 = ogiltig).
+- `src/aie/config/`: laddare som returnerar frysta dataklasser och samlar alla valideringsfel i ett meddelande (FR-02, ER-01, ER-02, ER-05, ER-15, SR-10).
+- `config/system.toml` och `config/risk_limits.toml` med simulerade värden för alla tio §25-parametrar samt `API_REINVEST_SHARE` och `API_MONTHLY_CAP`.
+- D-013: format och valideringsregler för konfigurationen (föreslaget).
+- `tests/unit/test_config.py` med 31 tester. Totalt 49 tester, alla gröna på Yorgos dator (Windows 11, Python 3.12.0).
+- `docs/environment.md`: Yorgos miljörapport (REDO för Fas 1).
+### Ändrat
+- `tests/unit/__init__.py` lägger till `src/` i `sys.path` så att testerna körs utan installation.
+- `docs/setup.md`: hur paketet körs utan installation, och `py -3` för skript på Windows (shebang-problemet).
+
 ## [0.0.4] — 2026-10-21 — Kanalregister och självständig utredning
 ### Tillagt
 - D-011: agenterna utreder själva nya kanaler och lösningar; grundare godkänner.

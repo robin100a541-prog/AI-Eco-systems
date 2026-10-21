@@ -1,0 +1,26 @@
+# Budget- och kapitalgränser: konstitutionens §25 plus D-009. Format enligt D-013.
+#
+# Belopp: heltal i minsta enhet (öre/cent) i valutan nedan (D-006). 1_000_000 = 10 000,00.
+# Procent: tal 0–100.
+# En gräns som saknas blir aldrig "obegränsad" (ER-02). I sim ger den en varning och
+# handlingar som behöver gränsen blockeras. I prod vägrar systemet starta.
+#
+# SIMULERADE VÄRDEN. De riktiga värdena sätts av grundarna efter Fas 6 (Q-04).
+
+currency = "SIM"
+
+# --- §25 -----------------------------------------------------------------------------
+START_CAPITAL = 1_000_000                # belopp: kapital som ställs till förfogande
+MINIMUM_RESERVE = 300_000                # belopp: skyddad reserv, får aldrig disponeras (§5)
+MAX_TOTAL_DRAWDOWN = 20                  # procent av START_CAPITAL som högst får förloras
+MAX_SINGLE_EXPERIMENT_LOSS = 50_000      # belopp: största tillåtna förlust per experiment
+MAX_DEPARTMENT_BUDGET = 200_000          # belopp: största budget för ett departement
+MAX_SINGLE_TRANSACTION = 20_000          # belopp: största enskilda transaktion
+MAX_COMMITTED_CAPITAL = 400_000          # belopp: högsta summa samtidiga åtaganden
+MAX_ALLOWED_UNVERIFIED_SPEND = 10_000    # belopp: utgifter som ännu saknar underlag
+HUMAN_APPROVAL_THRESHOLD = 10_000        # belopp: över detta krävs grundarnas godkännande
+REINVESTMENT_POLICY = 50                 # procent av realiserad nettovinst som får återinvesteras
+
+# --- D-009: betalda API:er -----------------------------------------------------------------
+API_REINVEST_SHARE = 20                  # procent av realiserad nettovinst (förslag i D-009)
+API_MONTHLY_CAP = 0                      # belopp per månad; 0 tills realiserad vinst finns (ER-22)

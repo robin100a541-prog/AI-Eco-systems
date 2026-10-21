@@ -6,6 +6,23 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ---
 
+## Fas 1 — föreslagna beslut
+
+### D-013 Format och valideringsregler för konfigurationen
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-21 · **Bygger på:** D-003, D-006, D-009
+- **Beslut:**
+  1. `config/risk_limits.toml` är en platt fil. Nyckeln `currency` gäller alla belopp i filen och måste vara samma som `base_currency` i `system.toml`.
+  2. Belopp är heltal i minsta enhet (öre/cent), `>= 0`. Flyttal och `true`/`false` avvisas.
+  3. `MAX_TOTAL_DRAWDOWN`, `REINVESTMENT_POLICY` och `API_REINVEST_SHARE` är **procentsatser** (0–100). Övriga gränser är belopp. Konstitutionen §25 anger inte enheten, så det här är ett förslag.
+  4. `REINVESTMENT_POLICY` är tills vidare en enda procentsats av realiserad nettovinst. En rikare policy kräver ett nytt beslut.
+  5. En saknad gräns är en varning i `sim` och ett fel i `prod`. Okänd miljö behandlas som `prod`. En saknad gräns blir `None` och betyder alltid "blockera" (ER-02).
+  6. Nycklar som slutar på `_KEY`, `_TOKEN`, `_SECRET` eller `_PASSWORD`, eller heter `password`, `key`, `token` eller `secret`, avvisas i alla `config/*.toml`. Det gäller även filer som `.env` och `*.secret` i `config/` (SR-10).
+  7. `config_version = 1` är den enda version som stöds.
+- **Motivering:** Det ska vara omöjligt att av misstag stänga av en gräns, till exempel genom ett stavfel eller ett glömt värde, eller att blanda simulerade och verkliga pengar.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+---
+
 ## Fas 0 — föreslagna beslut
 
 ### D-001 Konstitutionen är styrande dokument

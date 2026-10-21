@@ -1,0 +1,14 @@
+# Systemkonfiguration (FR-02). Kontrollera med:  python -m aie check-config
+# Inga hemligheter här (SR-10). API-nycklar läses från miljövariabler.
+
+config_version = 1
+
+# "sim" = simulering i valutan SIM. "prod" = verkligt kapital (först i Fas 7).
+environment = "sim"
+
+# Sökvägar relativt repots rot. Innehållet är driftdata och gitignorerat.
+data_dir = "data"
+log_dir = "logs"
+
+# I sim måste valutan vara SIM (ER-15). I prod en verklig valuta, t.ex. SEK (Q-03).
+base_currency = "SIM"

@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-10-21 av Claude (session med Yorgo)
-**Aktuell fas:** Fas 0 — Krav och tekniska förutsättningar
-**Fasstatus:** Claudes del klar · väntar på grundarna (uppgift 0.5–0.8 i ROADMAP.md)
+**Senast uppdaterad:** 2026-10-21 av Claude (Claude Code-session med Yorgo)
+**Aktuell fas:** Fas 1 — Grundsystem
+**Fasstatus:** 1.1 och 1.2 klara på grenen `fas1-grund`, väntar på granskning · Fas 0-punkterna 0.6–0.8 och 0.10 är fortfarande öppna
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -14,34 +14,32 @@
 |---|---|
 | Kravlista FR/SR/ER/DR, 80 krav | REQUIREMENTS.md |
 | Arkitekturförslag + verktygsregister med licenser, gratis modeller och skattemodul | ARCHITECTURE.md |
-| Beslut D-001…D-012 (föreslagna, D-005 ersatt av D-008), 8 öppna frågor; kanalregister och forskningskö | DECISIONS.md, docs/channels.md, research/QUESTIONS.md |
-| `scripts/check_env.py` + `scripts/llm_smoke_test.py`, 18 enhetstester | `python3 -m unittest discover -s tests -v` → 18 OK (körd 2026-10-21 i Claudes Linux-sandlåda, Python 3.13) |
+| Beslut D-001…D-013 (föreslagna, D-005 ersatt av D-008), 8 öppna frågor; kanalregister och forskningskö | DECISIONS.md, docs/channels.md, research/QUESTIONS.md |
+| `scripts/check_env.py` körd på Yorgos dator: **REDO för Fas 1** | docs/environment.md (Windows 11, Python 3.12.0, 2026-10-21) |
+| Paketet `aie` (1.1): `pyproject.toml`, `src/aie/`, `python -m aie check-config` | Kod 0 med standardkonfigurationen; kod 1 med en medvetet trasig konfiguration, där alla 7 fel listades (körd 2026-10-21 på Yorgos dator) |
+| Konfiguration (1.2): `config/system.toml`, `config/risk_limits.toml`, laddare med frysta dataklasser | `py -m unittest discover -s tests -v` → **49 OK** (18 gamla + 31 nya), körd 2026-10-21 på Yorgos dator, Windows 11, Python 3.12.0 |
+| Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer |
 
-## Ändrat 2026-10-21 på Yorgos begäran
-- Agenterna ska använda **gratis språkmodeller** från start (D-008). Betalda API:er får köpas först när systemet har realiserad vinst (D-009).
-- Skatt ska hanteras **utan att öppna aktiebolag**; systemet räknar och reserverar skatt per skattespår (D-010).
-- Gumroad och Etsy tillagda som försäljningskanaler; de sköter moms mot köpare men inkomstskatten är kvar hos er (D-010, tillägg).
-- Fiverr tillagt som kanal för tjänster. Öppna frågor utreds av systemet självt (D-011, `research/QUESTIONS.md`).
-- Alla sessioner arkiveras i `docs/conversations/` (D-012).
-- **GitHub är inte kopplat än** — repot finns lokalt med en första commit och väntar på att pushas.
-- Fiverr tillagd; kanalregister i `docs/channels.md`. Agenterna ska själva kunna utreda nya kanaler och lösningar, med godkännande av grundarna (D-011).
+## Ändrat 2026-10-21 (Fas 1-session med Yorgo)
+- 1.1 och 1.2 byggda på grenen `fas1-grund`. Konfigurationen vägrar starta vid fel och samlar alla fel i ett meddelande.
+- D-013 föreslaget: konfigurationens format och valideringsregler. Bland annat är `MAX_TOTAL_DRAWDOWN`, `REINVESTMENT_POLICY` och `API_REINVEST_SHARE` procentsatser.
+- `docs/setup.md`: hur paketet körs utan installation (`PYTHONPATH=src`), och att Windows behöver `py -3 scripts\...` på grund av skriptens shebang.
 
 ## Vad som INTE är gjort / inte verifierat
-- Skripten är **inte** körda på Yorgos eller Robins datorer. Windows/macOS-grenarna för RAM-avläsning är oprövade.
-- Inget gratis-API har anropats på riktigt — Claudes miljö blockerar dem. `llm_smoke_test.py` är testat mot en falsk server.
-- Skattespåren i D-010 är inte bekräftade av Skatteverket.
-- Inget GitHub-repo finns ännu.
-- Inga beslut är godkända. Ingen beslutsfördelning mellan grundarna är fastställd.
-- Ingen applikationskod (Fas 1) finns.
+- **GitHub är inte kopplat.** Repot har ingen remote, så grenen `fas1-grund` är bara committad lokalt. Ingen pull request finns.
+- Ingen har granskat `fas1-grund`.
+- Testerna är bara körda på Windows (Yorgo). macOS/Linux och Robins dator är inte provade.
+- Robins `check_env.py` (0.6) och Groq-testet (0.10) är inte gjorda. Inga beslut är godkända (0.8).
+- Värdena i `config/risk_limits.toml` är simulerade (Q-04).
+- `python -m aie` fungerar bara när `PYTHONPATH=src` är satt (se `docs/setup.md`).
 
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Kör `check_env.py`, klistra in resultatet i `docs/environment.md` | Yorgo och Robin (var för sig) |
-| 1b | Skapa gratis Groq-nyckel, kör `llm_smoke_test.py --provider groq`, klistra in resultatet | Minst en av er |
-| 2 | Skapa privat GitHub-repo, bjud in den andra, pusha | En av er |
-| 3 | Kryssa i godkännanden i DECISIONS.md, besvara Q-01 | Båda |
-| 4 | Starta Fas 1, uppgift 1.1–1.2 | Claude + den som har tid |
+| 1 | Koppla repot till GitHub (0.7), pusha `main` och `fas1-grund`, öppna PR för `fas1-grund` | En grundare |
+| 2 | Granska PR:en för `fas1-grund`, särskilt D-013 | Robin (eller Yorgo) |
+| 3 | Kör `check_env.py` på Robins dator (0.6) | Robin |
+| 4 | Fas 1.3: strukturerad loggning (JSON-rader till `logs/`) | Claude + den som har tid, efter att 1.1–1.2 är granskade |
 
 ## Blockerare
-Inga tekniska. Fas 1 kan börja när punkt 1–3 är klara.
+Inga tekniska. Delning mellan grundarna är blockerad tills repot finns på GitHub (punkt 1).
