@@ -17,6 +17,7 @@ Ett lokalt, hierarkiskt multiagentsystem som organiserar AI-agenter som ett för
 | `docs/setup.md` | Kom igång på din dator |
 | `docs/conversations/` | Arkiv över alla Claude-sessioner |
 | `research/QUESTIONS.md` | Öppna frågor som systemet ska utreda |
+| `docs/prompts/` | Färdiga instruktioner att klistra in i Claude Code |
 
 ## Snabbstart
 ```bash
