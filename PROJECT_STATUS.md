@@ -12,9 +12,9 @@
 ## Vad som finns (verifierat)
 | Sak | Bevis |
 |---|---|
-| Kravlista FR/SR/ER/DR, 79 krav | REQUIREMENTS.md |
+| Kravlista FR/SR/ER/DR, 80 krav | REQUIREMENTS.md |
 | Arkitekturförslag + verktygsregister med licenser, gratis modeller och skattemodul | ARCHITECTURE.md |
-| Beslut D-001…D-010 (föreslagna, D-005 ersatt av D-008), 8 öppna frågor | DECISIONS.md |
+| Beslut D-001…D-012 (föreslagna, D-005 ersatt av D-008), 8 öppna frågor; kanalregister och forskningskö | DECISIONS.md, docs/channels.md, research/QUESTIONS.md |
 | `scripts/check_env.py` + `scripts/llm_smoke_test.py`, 18 enhetstester | `python3 -m unittest discover -s tests -v` → 18 OK (körd 2026-10-21 i Claudes Linux-sandlåda, Python 3.13) |
 
 ## Ändrat 2026-10-21 på Yorgos begäran

@@ -37,8 +37,7 @@ ID-prefix: `FR` funktionella krav · `SR` säkerhetskrav · `ER` ekonomiska krav
 | FR-21 | Daglig rapport (11 punkter i §57); saknade data anges uttryckligen. | 57 | 6 | M |
 | FR-22 | Periodisk företagsrapport jämförbar mellan perioder och initiativ. | 58 | 6 | B |
 | FR-23 | Affärsförslag har de 11 obligatoriska fälten (kundproblem … avbrottskriterier). | 12 | 6 | M |
-| FR-25 | Uppgiftstypen "Utred möjlighet": Research fyller i en strukturerad registerpost (kanal, verktyg, skatte-/regelfråga) med källor och datum; posten går Research → Compliance → CFO → grundare (D-011). | 12, 17 | 3 | M |
-| FR-25 | Forskningskö: öppna frågor (kanaler, skatt, villkor, API:er) blir uppgifter för Research/Compliance; svar lagras med källor och verifieringsstatus; lag-/skatte-/villkorsfrågor kräver Compliance + grundargodkännande innan de blir regel (D-011). | 12, 17, 29 | 5 | M |
+| FR-25 | Uppgiftstypen "Utred möjlighet": Research fyller i en strukturerad registerpost (kanal, verktyg, skatte-/regelfråga) med källor, datum och verifieringsstatus; öppna frågor köas i `research/QUESTIONS.md`; posten går Research → Compliance → CFO → grundare (D-011). | 12, 17 | 3 | M |
 | FR-26 | Varje Claude-session sparas i `docs/conversations/` (D-012). | 30, 46 | 0 | M |
 | FR-24 | Övervakning upptäcker loopar, upprepat arbete och kostnad utan värde. | 16 | 6 | B |
 

@@ -34,13 +34,14 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☐ · Robin ☐
 
 ### D-011 Agenterna undersöker själva nya kanaler och lösningar — människor godkänner
-- **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (idé), formulerat av Claude, 2026-10-21
 - **Bakgrund:** Frågor som "vilka plattformar kan vi sälja på" och "hur hanteras skatten där" ska systemet kunna utreda självt.
 - **Beslut:** Research-avdelningen får en återkommande uppgiftstyp **"Utred möjlighet"** (ny kanal, intäktsväg, verktyg, gratis-API, skatte- eller regelfråga). Resultatet blir alltid en ifylld post i ett register (för kanaler: `docs/channels.md`, i systemet en databastabell) med källor och datum. Flödet:
   1. Research undersöker (endast läsande webbåtkomst, gratis modeller).
   2. Compliance granskar villkor, AI-regler, automationsregler och skatt. Osäkerhet räknas som risk, inte som "OK" (§17).
   3. CFO räknar avgifter, skattespår och förväntat netto.
   4. Grundarna godkänner innan första användning av en ny kanal eller ny skatteväg.
+- **Verifiering (§29):** ett svar från en agent registreras som *obekräftad hypotes* med källor. Öppna frågor som ännu inte utretts ligger i `research/QUESTIONS.md`. Svar som rör lag, skatt eller plattformsvillkor blir operativ regel först när Compliance kontrollerat källan **och** en grundare godkänt det.
 - **Gränser:** agenterna får föreslå, men inte själva skapa konton, godkänna villkor, välja skattespår eller tolka lagen slutgiltigt. Skattefrågor som påverkar deklarationen bekräftas av Skatteverket eller en rådgivare.
 - **Godkänd av:** Yorgo ☐ · Robin ☐
 
@@ -48,11 +49,6 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Status:** Föreslagen · **Föreslagen av:** Yorgo, 2026-10-21
 - **Beslut:** Varje Claude-session som påverkar projektet sparas som en fil i `docs/conversations/` (datum, grundare, ämne). Filen är ett arkiv, inte en regel — det som gäller står fortfarande i DECISIONS.md, ARCHITECTURE.md och REQUIREMENTS.md (§2, §46). Båda grundarna följer samma rutin.
 - **Godkänd av:** Yorgo ☑ (begärt i chatten 2026-10-21) · Robin ☐
-
-### D-011 Systemet utreder själv öppna frågor — men lärdomar verifieras innan de blir regler
-- **Status:** Föreslagen · **Föreslagen av:** Yorgo, 2026-10-21
-- **Beslut:** Frågor som säljkanaler, skatt, avgifter, plattformsvillkor och vilka API:er som lönar sig blir uppgifter för Research-departementet (marknadsanalys) och Compliance. De ligger i `research/QUESTIONS.md`. Ett svar från en agent registreras som *obekräftad hypotes* (§29) med källor. Svar som rör **lag, skatt eller plattformsvillkor** blir operativ regel först när Compliance har kontrollerat källan **och** en grundare har godkänt det, eftersom ett felaktigt svar där kan stänga konton eller ge skattetillägg.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
 
 ### D-010 Skatt hanteras utan att registrera aktiebolag; systemet räknar och reserverar skatt
 - **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21

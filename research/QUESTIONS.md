@@ -18,10 +18,5 @@ Frågor om lag, skatt eller plattformsvillkor får aldrig bli regel utan grundar
 | R-09 | Vilka API:er (betalda) skulle ge mest värde per krona när vinst finns (D-009)? | Rätt första investering | Ekonomi | Öppen | — |
 | R-10 | Vilka produkter/tjänster har verifierbar efterfrågan på Gumroad, Etsy och Fiverr med låg startkostnad? | Val av pilot (Q-08) | Marknad | Öppen | — |
 
-## Säljkanaler hittills (från sessionen 2026-10-21)
-
-| Kanal | Säljer | Avgift | Moms mot köpare | AI-regler (kända) |
-|---|---|---|---|---|
-| Gumroad | Digitala produkter | 10 % + 0,50 USD (direkt), 30 % via Discover | Gumroad är merchant of record | Ej utrett (R-04) |
-| Etsy | Digitala/fysiska produkter | 0,20 USD/annons + 6,5 % + betalningsavgift | Etsy tar in där det gäller (R-02) | AI-användning måste anges; promptpaket förbjudna |
-| Fiverr | Tjänster | 20 % per order | Ej utrett | AI som verktyg ok; full ansvarighet; inget vilseledande om AI |
+## Säljkanaler
+Utvärderade kanaler (Gumroad, Etsy, Fiverr) finns i [`docs/channels.md`](../docs/channels.md).

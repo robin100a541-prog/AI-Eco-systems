@@ -44,9 +44,10 @@ Status: `IDÉ` → `UNDERSÖKT` → `GRANSKAD` (Compliance + CFO) → `GODKÄND`
 
 ## Fiverr — `UNDERSÖKT` (2026-10-21)
 - **Säljs:** uppdrag/tjänster (text, kod, design, analys).
-- **Avgifter:** ofta angivet 20 % av säljarens intäkt — **ej bekräftat i primärkälla**.
+- **Avgifter:** Fiverr behåller 20 % av varje order (bekräftat i Fiverrs egen blogg).
 - **Skattespår:** B (egenanställning) eller C. **DAC7:** tjänsteleverantörer rapporteras från första euron.
 - **AI-regler:** AI-genererat innehåll tillåtet; säljaren måste ha rättigheterna, följa AI-verktygens villkor och leverera **anpassat arbete för varje beställning**. Förbjudet: samma AI-innehåll till flera kunder ("bulk"), vilseledande innehåll, deepfakes och falska konton. Uttryckligt krav på att ange AI saknas, men kunder som inte vill ha AI förväntas säga det.
 - **Automation och identitet:** ej verifierat — Fiverrs regler om integritet och autenticitet kunde inte läsas. **Måste kontrolleras innan start**, särskilt om agenter får skriva kundmeddelanden.
 - **Konstitutionen (§6):** inga falska identiteter. Förslag: kontot ägs av en grundare; agenter skriver utkast och gör arbetet; grundaren skickar meddelanden tills Compliance har bekräftat vad Fiverr tillåter.
-- **Källor:** https://help.fiverr.com/hc/en-us/articles/32243564776593 (2026-10-21)
+- **AI som verktyg:** frilansaren är fullt ansvarig för leveransen; generiskt, oredigerat AI-material godkänns inte; vilseledande om AI-användning kan ge återbetalning och permanent avstängning. Fiverrs AI-riktlinjer nämner inte automatiserad kundkommunikation (se R-03).
+- **Källor:** https://help.fiverr.com/hc/en-us/articles/32243564776593, https://help.fiverr.com/hc/en-us/articles/34998793899665-Using-AI-on-Fiverr-Guidelines-for-freelancers-and-clients, https://blog.fiverr.com/post/so-how-does-fiverr-commission-work-anyway (2026-10-21)
