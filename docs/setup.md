@@ -1,0 +1,64 @@
+# Setup — kom igång (Fas 0)
+
+## 1. Installera grunderna (gratis)
+- **Python 3.11 eller nyare:** https://www.python.org/downloads/ (Windows: kryssa i "Add python.exe to PATH").
+- **Git:** https://git-scm.com/downloads
+- **GitHub-konto** (gratis): https://github.com
+
+## 2. Kör miljökontrollen
+Packa upp projektet, öppna en terminal i mappen `ai-enterprise` och kör:
+
+```bash
+# macOS / Linux
+python3 scripts/check_env.py --founder Yorgo
+python3 -m unittest discover -s tests -v
+
+# Windows (PowerShell)
+py scripts\check_env.py --founder Robin
+py -m unittest discover -s tests -v
+```
+
+**Förväntat:** rapporten slutar med `Resultat: REDO för Fas 1`, och testerna slutar med `OK`.
+Kopiera hela rapporten (från `## Miljö:` till `Resultat:`) in i `docs/environment.md` under ditt namn.
+
+Skriptet läser bara information. Det installerar eller skickar ingenting.
+
+## 2b. Testa en gratis språkmodell
+1. Skapa ett gratis konto på https://console.groq.com och skapa en API-nyckel. Lägg **inte** in något betalkort.
+2. Kör:
+```bash
+# macOS / Linux
+export GROQ_API_KEY="din-nyckel"
+python3 scripts/llm_smoke_test.py --provider groq
+
+# Windows (PowerShell)
+$env:GROQ_API_KEY="din-nyckel"
+py scripts\llm_smoke_test.py --provider groq
+```
+**Förväntat:** JSON med `"answer"` (t.ex. "Blå") och `quota_headers` som visar era gränser, sedan `OK — modellen svarade.` Klistra in resultatet i `docs/environment.md`, men **aldrig** nyckeln.
+
+Valfritt: OpenRouter (`--provider openrouter --model <id>:free`) och Ollama (installera från ollama.com, hämta en modell, `--provider ollama --model <namn>`).
+
+Nycklar sparas aldrig i projektmappen eller i git. Senare läses de från en `.env`-fil som är gitignorerad.
+
+## 3. Skapa det gemensamma repot (en av er)
+```bash
+cd ai-enterprise
+git init -b main
+git add .
+git commit -m "Fas 0: krav, arkitektur, beslut, miljökontroll"
+```
+Skapa sedan ett **privat** repo `ai-enterprise` på github.com (utan README), och följ GitHubs instruktion "push an existing repository". Gå till *Settings → Collaborators* och bjud in den andra grundaren.
+
+## 4. Arbetsflöde (förslag D-004)
+```bash
+git pull                                  # alltid först
+git switch -c fas1-config                 # ny gren per uppgift
+# ... arbeta, kör testerna ...
+git commit -am "Beskrivning"
+git push -u origin fas1-config            # öppna sedan en Pull Request på GitHub
+```
+Den andra grundaren granskar och mergar. Uppdatera PROJECT_STATUS.md och CHANGELOG.md i samma PR.
+
+## Viktigt om Claude-kostnader
+Sätt **inte** miljövariabeln `ANTHROPIC_API_KEY`. Om den är satt använder Claude Code betald API-fakturering i stället för ert Pro-abonnemang. `check_env.py` varnar för detta.
