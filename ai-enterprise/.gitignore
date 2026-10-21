@@ -1,0 +1,20 @@
+# Driftdata och hemligheter hamnar aldrig i git (SR-10, ARCHITECTURE §3.4)
+data/*.db
+data/*.db-*
+logs/
+.env
+*.secret
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# OS / editorer
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
