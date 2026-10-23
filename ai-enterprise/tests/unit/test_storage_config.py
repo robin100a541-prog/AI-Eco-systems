@@ -14,7 +14,7 @@ from aie.memory import MIGRATIONS, Database, Migration, StorageError, open_datab
 from aie.monitoring import LOG_FILE_NAME, setup_logging, shutdown_logging
 
 NOTES = Migration(
-    2,
+    len(MIGRATIONS) + 1,  # alltid efter de riktiga migrationerna
     "notes",
     ("CREATE TABLE notes (id INTEGER PRIMARY KEY, text TEXT NOT NULL) STRICT",),
 )

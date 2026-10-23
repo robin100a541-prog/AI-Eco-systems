@@ -5,7 +5,8 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Now
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
-- [ ] ai-enterprise Fas 1.4b–1.7: lagring från config, audit-logg, start/stop, acceptanstester — @robin (robin/fas1-*)
+- [ ] ai-enterprise Fas 1.5: hashkedjad audit-logg (append-only) — @yorgo-jarjous (yorgo/fas1-5-audit)
+- [ ] ai-enterprise Fas 1.6–1.7: start/stop/status, acceptanstester — @robin (robin/fas1-*)
 
 ## Next
 
