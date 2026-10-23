@@ -1,0 +1,51 @@
+# Rollernas mandat (SR-02, D-017). Default deny: en roll får bara verktygen i sin lista.
+# Inga hemligheter här (SR-10).
+#
+# Förberedelse inför Fas 2. Rollerna är MVP:ns sex agenter (ARCHITECTURE.md §4).
+# Inga verktyg flyttar pengar eller kontaktar omvärlden. Sådana läggs till i Fas 4 och 7,
+# och då bara med budget- och riskkontroll.
+
+config_version = 1
+
+# Katalog över alla verktyg. Ett verktyg som inte står här kan ingen roll få.
+[tools]
+"report.read"     = "läsa rapporter från andra agenter"
+"report.write"    = "skriva en rapport (FR-08)"
+"task.create"     = "skapa en uppgift"
+"task.assign"     = "tilldela en uppgift till en agent"
+"research.search" = "läsande webbsökning (D-011); ingen inloggning, inga formulär"
+"ledger.read"     = "läsa ledgern"
+"budget.check"    = "fråga budgetmotorn om en åtgärd ryms"
+"risk.assess"     = "riskklassa ett förslag (§24)"
+"action.block"    = "stoppa en åtgärd inom eget kontrollområde (§8 nivå 2)"
+"audit.verify"    = "verifiera audit-loggens hashkedja"
+
+[roles.ceo]
+department = "executive"
+description = "samordnar, prioriterar, tilldelar uppgifter (§8 nivå 1)"
+tools = ["report.read", "report.write", "task.create", "task.assign"]
+
+[roles.cfo]
+department = "finance"
+description = "ekonomisk styrning (§11)"
+tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block"]
+
+[roles.cro]
+department = "risk"
+description = "riskgränser (§17)"
+tools = ["report.read", "report.write", "risk.assess", "action.block"]
+
+[roles.auditor]
+department = "audit"
+description = "oberoende granskning (§18)"
+tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.block"]
+
+[roles.research_lead]
+department = "research"
+description = "leder Research (§12)"
+tools = ["report.read", "report.write", "task.create", "task.assign", "research.search"]
+
+[roles.researcher]
+department = "research"
+description = "utreder möjligheter (D-011)"
+tools = ["report.write", "research.search"]
