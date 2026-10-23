@@ -50,6 +50,8 @@ Nyckeltest: en agent försöker använda ett verktyg utanför mandatet → nekas
 
 Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av båda 2026-10-23): livscykel, agentregister i minnet, `config/permissions.toml` och Authorization Engine med default deny och audit-loggning. Nyckeltestet är grönt (`test_tool_outside_mandate_denied_and_logged`). Registret sparas i databasen sedan migration 4 (PR #14). Uppgifter (FR-07) finns sedan migration 5 (PR #16). Rapportformatet (FR-08) finns i `src/aie/reporting/` (PR #17). ProviderRouter med kvoter (DR-12) och dataklassning (DR-13) finns i `src/aie/llm/` och migration 6 (gren `yorgo/fas2-provider-router`, D-018). Kvar: Fas 2-acceptans, dvs. agenter som faktiskt resonerar via routern och nyckeltestet från början till slut.
 
+Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`llm.complete`), och prompter med hemligheter avvisas (2026-10-23, gren `robin/fas2-llm-behorighet`, 208 tester gröna).
+
 ## Fas 3 — Hierarki och samarbete (FR-09…14, SR-04…06, SR-16)
 CEO-flöde, departementschefer, beslutspost i 11 steg, samråd, oenighet, eskalering, godkännandekö. `manual`-provider införs.
 Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense → eskaleras med dokumenterad tvist.

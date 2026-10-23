@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 2: ProviderRouter bara via Authorization Engine
+### Tillagt
+- `src/aie/llm/gateway.py`: `LLMGateway` är det enda sättet för en agent att nå `ProviderRouter` (SR-01, SR-02, §35–36). Varje anrop kräver verktyget `llm.complete` i Authorization Engine. Ett nej revideras som `tool.denied`, och inget skickas.
+- En prompt som innehåller en hemlighet (`api_key=...` eller värdet av en hemlig miljövariabel) avvisas med `SecretInPrompt`, oavsett dataklass. Avvisningen revideras som `llm.blocked_secret` utan prompten (SR-10).
+- `config/permissions.toml`: verktyget `llm.complete` i katalogen och i mandatet för MVP:ns sex roller (D-008: agenterna resonerar med gratismodeller).
+- `tests/unit/test_llm_gateway.py`: 10 tester. Läcktesterna lägger en unik markör i prompten och kontrollerar det som skickas externt, loggfilen och audit-loggen. Totalt 208.
+
 ## [Unreleased] — 2026-10-23 — Fas 2: ProviderRouter, kvoter och dataklassning
 ### Tillagt
 - `src/aie/llm/`: `RuleProvider` och `OpenAICompatibleProvider` (groq, openrouter `:free`, ollama) med utbytbar transport, så att testerna aldrig går ut på nätet. Nyckeln läses från miljön och syns aldrig i fel, `repr` eller loggar (SR-10).

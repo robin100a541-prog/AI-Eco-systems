@@ -19,33 +19,34 @@ config_version = 1
 "risk.assess"     = "riskklassa ett förslag (§24)"
 "action.block"    = "stoppa en åtgärd inom eget kontrollområde (§8 nivå 2)"
 "audit.verify"    = "verifiera audit-loggens hashkedja"
+"llm.complete"    = "fråga en språkmodell via LLMGateway; bara public lämnar datorn (DR-12, DR-13)"
 
 [roles.ceo]
 department = "executive"
 description = "samordnar, prioriterar, tilldelar uppgifter (§8 nivå 1)"
-tools = ["report.read", "report.write", "task.create", "task.assign"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete"]
 
 [roles.cfo]
 department = "finance"
 description = "ekonomisk styrning (§11)"
-tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block"]
+tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block", "llm.complete"]
 
 [roles.cro]
 department = "risk"
 description = "riskgränser (§17)"
-tools = ["report.read", "report.write", "risk.assess", "action.block"]
+tools = ["report.read", "report.write", "risk.assess", "action.block", "llm.complete"]
 
 [roles.auditor]
 department = "audit"
 description = "oberoende granskning (§18)"
-tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.block"]
+tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.block", "llm.complete"]
 
 [roles.research_lead]
 department = "research"
 description = "leder Research (§12)"
-tools = ["report.read", "report.write", "task.create", "task.assign", "research.search"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete"]
 
 [roles.researcher]
 department = "research"
 description = "utreder möjligheter (D-011)"
-tools = ["report.write", "research.search"]
+tools = ["report.write", "research.search", "llm.complete"]
