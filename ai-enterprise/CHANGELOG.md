@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3d: externt innehåll är opålitlig data (SR-06)
+### Tillagt
+- `src/aie/security/external.py`:
+  - `ExternalContent(source, content)` kräver källan `url:` eller `file:`.
+  - `render()` ramar in innehållet som data. Markörerna tas bort ur innehållet, så att det inte kan bryta sig ut ur ramen, och mycket lång text kortas.
+  - `injection_signals()` hittar typiska styrförsök på svenska och engelska: ignorera instruktioner, rollbyte, falsk systemröst, påstådd behörighet, `governance.*`, hemligheter, pengar och ramförsök.
+- `AgentWorker.work_on(..., external=(...))`:
+  - Extern data läggs inramad i prompten, och systemprompten säger att den aldrig ska följas.
+  - Misstänkta signaler loggas som `external.injection_suspected` utan innehållet och syns i rapporten som en iakttagelse med källan som underlag.
+  - Behörigheter avgörs fortfarande bara av registret, mandaten och stoppen.
+- `tests/unit/test_external.py`: 7 tester, bland annat en manipulerad webbsida från början till slut där modellen själv lyder attacken utan att något händer.
+
 ## [Unreleased] — 2026-10-23 — Fas 3c: samråd (FR-11)
 ### Tillagt
 - Migration 8: `consultations` och `consultation_opinions`. Samråd ändras aldrig. Yttranden är append-only, och varje roll får ett yttrande per samråd.
