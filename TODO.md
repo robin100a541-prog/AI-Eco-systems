@@ -3,6 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [ ] ai-enterprise Fas 2: efter PR #18 — agenter når ProviderRouter bara via Authorization Engine (`llm.complete`), läcktester för logg/audit/prompt (DR-12, DR-13) — @robin (robin/fas2-llm-behorighet)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 - [ ] ai-enterprise Fas 2: rapportformat FR-08 (`src/aie/reporting/`) — @yorgo-jarjous (yorgo/fas2-report-format)
