@@ -8,6 +8,10 @@
 - `to_dict` och `from_dict` ger JSON, så att rapporter kan läggas i audit-loggen.
 - `tests/unit/test_reporting.py`: 13 tester.
 
+## [Unreleased] — 2026-10-23 — D-017 och D-014 godkända
+### Ändrat
+- DECISIONS.md: D-017 (behörighetsmodellen) godkänd av båda grundarna. I D-014 är raden *Väntar på* uppdaterad till godkänd av båda. Ingen annan beslutstext ändrad.
+
 ## [Unreleased] — 2026-10-23 — Fas 2: uppgifter (FR-07)
 ### Tillagt
 - Migration 5: `tasks` och `task_events`. Databasen vägrar radera uppgifter, ändra avslutade uppgifter och ta bort ägaren från en tilldelad uppgift. Historiken är append-only.
