@@ -1,0 +1,38 @@
+# Språkmodellsleverantörer i prioritetsordning (D-008, DR-12). Bara gratisalternativ.
+# Betalda API:er är spärrade tills realiserad vinst finns (D-009).
+# Nycklar står ALDRIG här (SR-10). De läses från miljövariablerna GROQ_API_KEY och OPENROUTER_API_KEY.
+# En leverantör vars nyckel saknas hoppas över.
+#
+# Gränserna är per UTC-dygn och satta något under leverantörernas gratisgränser
+# (ARCHITECTURE.md §3.3). En saknad gräns är ett fel: blockera, aldrig obegränsat (ER-02).
+# Externa leverantörer får bara data som är klassad "public" (DR-13). Det styrs av koden.
+
+config_version = 1
+
+[[providers]]
+name = "groq"
+kind = "groq"
+model = "openai/gpt-oss-20b"
+daily_calls = 900
+daily_tokens = 180000
+
+[[providers]]
+name = "openrouter"
+kind = "openrouter"
+model = "openai/gpt-oss-20b:free"
+daily_calls = 45
+daily_tokens = 100000
+
+[[providers]]
+name = "ollama"
+kind = "ollama"
+model = "llama3.2"
+daily_calls = 10000
+daily_tokens = 10000000
+
+# Deterministisk reserv i ren Python. Används i tester och när allt annat är slut i sim.
+[[providers]]
+name = "rule"
+kind = "rule"
+daily_calls = 100000
+daily_tokens = 100000000

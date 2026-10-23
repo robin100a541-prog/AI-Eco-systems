@@ -224,6 +224,23 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=6,
+        name="provider_usage",
+        statements=(
+            # Fas 2 (DR-12): förbrukning per leverantör och UTC-dygn. Räknas *innan* anropet
+            # skickas, så att gränsen aldrig kan överskridas, inte ens av samtidiga anrop.
+            """
+            CREATE TABLE provider_usage (
+                day      TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                calls    INTEGER NOT NULL DEFAULT 0 CHECK (calls >= 0),
+                tokens   INTEGER NOT NULL DEFAULT 0 CHECK (tokens >= 0),
+                PRIMARY KEY (day, provider)
+            ) STRICT
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
