@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3h: juridisk konflikt ⇒ stopp och Compliance (SR-16)
+### Tillagt
+- Migration 11 `legal_holds`. Högst en aktiv hållning per uppgift. En hållning raderas aldrig, kan inte ändras och släpps bara en gång.
+- `src/aie/orchestration/legal.py`: `LegalDesk.raise_conflict`.
+  - Alla som får agera, även arbetsagenter, och grundarna kan flagga med spårbart underlag.
+  - Flaggningen öppnar ett samråd med CRO och Compliance (`ConsultationBoard.open_for_legal_review`), sparar hållningen och blockerar uppgiften.
+- `LegalDesk.release` kan bara göras av Compliance eller en grundare.
+  - `cleared` kräver att samrådet är klart och att Compliance inte har invänt. Inte ens en grundare kan släppa förbi en invändning (§6).
+  - `cancelled` avbryter uppgiften.
+- `TaskBoard` läser hållningen direkt ur databasen och vägrar `start`, `assign`, `block` och `complete` medan den är aktiv, oavsett anropare.
+- `tests/unit/test_legal.py`: 9 tester.
+
 ## [Unreleased] — 2026-10-23 — Fas 3g: externt innehåll är opålitlig data (SR-06)
 ### Tillagt
 - `src/aie/security/external.py`:

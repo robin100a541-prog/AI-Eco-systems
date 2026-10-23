@@ -10,3 +10,5 @@ Deltagare: Yorgo, Claude (Opus 5.5) i Claude Code.
 
 - **Nummerfördelning i `TODO.md`** (PR #28): Robin får migration 9–11 och D-021–D-024, och Yorgo får 12–13 och D-025. Det gjordes efter krocken mellan PR #25 och migration 7.
 - **3g, SR-06:** `security/external.py` och kopplingen i `AgentWorker`. Behörighet kan aldrig komma från extern text. Den avgörs bara av registret, mandaten och stoppen. `Ran 261 tests ... OK (skipped=2)`.
+- **Migrationsordning:** migrationer måste vara 1..N utan luckor, och eskaleringen var inte påbörjad. Därför tog Yorgo 11–12 och Robins eskalering får 13 (TODO.md, PR #30).
+- **3h, SR-16:** `orchestration/legal.py` (`LegalDesk`) och migration 11. `TaskBoard` läser hållningen ur databasen, och Compliance kan inte köras över, inte ens av grundarna (§6). `Ran 298 tests ... OK (skipped=2)`.
