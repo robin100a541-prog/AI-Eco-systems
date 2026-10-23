@@ -5,13 +5,15 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Now
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
-- [ ] ai-enterprise Fas 2: ProviderRouter + kvoter (DR-12) och dataklassning (DR-13), migration 6 `provider_usage` — @yorgo-jarjous (yorgo/fas2-provider-router)
 
 ## Next
-- ai-enterprise Fas 2-acceptans: agenter som resonerar via ProviderRouter (rule i tester), uppgift → rapport → audit från början till slut, ROADMAP:s nyckeltest som acceptanstest. Godkännande av D-018 (båda).
+- Godkännande av D-018 (båda).
+- ai-enterprise Fas 3: hierarki och samarbete (ROADMAP). Ta en deluppgift här innan du börjar.
 
 ## Done
+- [x] ai-enterprise Fas 2-acceptans: AgentWorker via LLMGateway, acceptanstester §50, version 0.4.0 — Fas 2 klar — @yorgo-jarjous (PR #20)
 - [x] ai-enterprise Fas 2: agenter når ProviderRouter bara via Authorization Engine (`llm.complete`), läcktester (DR-12, DR-13) — @robin (PR #19)
+- [x] ai-enterprise Fas 2: ProviderRouter, kvoter, dataklassning — @yorgo-jarjous (PR #18)
 - [x] ai-enterprise Fas 2: rapportformat FR-08 — @yorgo-jarjous (PR #17)
 - [x] ai-enterprise Fas 2: uppgifter FR-07 (migration 5) — @yorgo-jarjous (PR #16)
 - [x] ai-enterprise Fas 2: agentregistret i databasen (migration 4) — @yorgo-jarjous (PR #14)

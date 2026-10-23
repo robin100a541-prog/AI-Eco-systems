@@ -44,11 +44,18 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 - [x] Tester kan köras reproducerbart: `TestReproducible` (bara standardbiblioteket) samt CI på Python 3.11 och 3.12 vid varje PR och push. Hela sviten skriver bara i temporära mappar.
 - [x] ROADMAP 1.7: en manipulerad audit-rad upptäcks: `TestTamperedAuditDetected` (`status` ger kod 1 och `start` vägrar).
 
-## Fas 2 — Agentramverk (FR-05…08, SR-01…03, SR-13, SR-14)
+## Fas 2 — Agentramverk (FR-05…08, SR-01…03, SR-13, SR-14) ✅ klar 2026-10-23 (version 0.4.0)
 Agentregister, mandat i `config/permissions.toml`, livscykel som tillståndsmaskin, uppgifter, rapportformat, Authorization Engine (default deny), ProviderRouter med Groq/OpenRouter/Ollama/`rule`, kvotspårning och dataklassning (DR-12, DR-13).
 Nyckeltest: en agent försöker använda ett verktyg utanför mandatet → nekas och loggas.
 
-Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av båda 2026-10-23): livscykel, agentregister i minnet, `config/permissions.toml` och Authorization Engine med default deny och audit-loggning. Nyckeltestet är grönt (`test_tool_outside_mandate_denied_and_logged`). Registret sparas i databasen sedan migration 4 (PR #14). Uppgifter (FR-07) finns sedan migration 5 (PR #16). Rapportformatet (FR-08) finns i `src/aie/reporting/` (PR #17). ProviderRouter med kvoter (DR-12) och dataklassning (DR-13) finns i `src/aie/llm/` och migration 6 (gren `yorgo/fas2-provider-router`, D-018). Kvar: Fas 2-acceptans, dvs. agenter som faktiskt resonerar via routern och nyckeltestet från början till slut.
+Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av båda 2026-10-23): livscykel, agentregister i minnet, `config/permissions.toml` och Authorization Engine med default deny och audit-loggning. Nyckeltestet är grönt (`test_tool_outside_mandate_denied_and_logged`). Registret sparas i databasen sedan migration 4 (PR #14). Uppgifter (FR-07) finns sedan migration 5 (PR #16). Rapportformatet (FR-08) finns i `src/aie/reporting/` (PR #17). ProviderRouter med kvoter (DR-12) och dataklassning (DR-13) finns i `src/aie/llm/` och migration 6 (PR #18, D-018). `AgentWorker` kör hela kedjan uppgift → router → rapport → audit, och `tests/acceptance/test_fas2.py` har minst ett test per kriterium i §50.
+
+**Acceptanskriterier Fas 2 (§50):**
+- [x] Agenter har identifierbara roller (`TestRoles`).
+- [x] Uppgifter kan tilldelas och följas upp (`TestTasksEndToEnd`).
+- [x] Agenter kan inte använda obehöriga funktioner (`TestUnauthorized`, med nyckeltestet).
+- [x] Agentstatus sparas beständigt (`TestPersistence`).
+- [ ] D-018 godkänt av båda.
 
 Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`llm.complete`), och prompter med hemligheter avvisas (2026-10-23, gren `robin/fas2-llm-behorighet`, 208 tester gröna).
 
