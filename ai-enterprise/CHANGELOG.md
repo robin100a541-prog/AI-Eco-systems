@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 1.4: SQLite-lager
+### Tillagt
+- `src/aie/memory/`: `Database.open(data_dir, environment)` öppnar `<data_dir>/<miljö>.db` och kör migrationer, var och en i en egen transaktion (FR-03).
+- Migration 1: tabellerna `metadata` (miljö, skapad, programversion) och `schema_migrations` (version, namn, kontrollsumma, tid). Båda är STRICT-tabeller.
+- Uppstart stoppas med `StorageError` när databasen tillhör en annan miljö (SR-11), när den kommer från en nyare kodversion eller när en körd migration har ändrats.
+- WAL, `synchronous=FULL` och främmande nycklar slås på vid öppning. Kräver SQLite >= 3.37.
+- `tests/unit/test_storage.py`: 14 tester. Totalt 63 gröna på Yorgos dator (Windows 11, Python 3.12.0, SQLite 3.42.0), räknat utan Fas 1.3.
+- Versionsnumret höjs inte här, eftersom Fas 1.3 (PR #4) redan ändrar det.
+
 ## [0.1.0] — 2026-10-21 — Fas 1.1–1.2: paket och konfiguration
 ### Tillagt
 - `pyproject.toml` (paket `aie`, Python >= 3.11, inga beroenden).
