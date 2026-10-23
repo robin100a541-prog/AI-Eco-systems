@@ -15,25 +15,45 @@ from aie.authorization import AuthorizationEngine, PermissionDenied, load_permis
 from aie.config import ConfigError
 from aie.memory import Database
 
+from .org_helpers import manager_for
+
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
+AUTO = object()  # välj en giltig chef automatiskt
 
 VALID = """
 config_version = 1
 [tools]
 "report.write" = "skriva"
 "ledger.read" = "läsa ledgern"
+[roles.ceo]
+department = "executive"
+level = 1
+tools = ["report.write"]
 [roles.cfo]
 department = "finance"
+level = 2
 tools = ["report.write", "ledger.read"]
+[roles.lead]
+department = "research"
+level = 3
+tools = ["report.write"]
 [roles.researcher]
 department = "research"
+level = 4
 tools = ["report.write"]
 """
 
 
-def make_active(registry, agent_id, role, manager=None):
-    registry.register(agent_id, role, manager, "yorgo", "test")
+def register(registry, agent_id, role, manager=AUTO, by="yorgo", reason="test"):
+    """Registrerar med en giltig rapportväg om ingen chef anges uttryckligen."""
+    if manager is AUTO:
+        manager = manager_for(registry, registry._permissions, role, by)
+    return registry.register(agent_id, role, manager, by, reason)
+
+
+def make_active(registry, agent_id, role, manager=AUTO):
+    register(registry, agent_id, role, manager)
     for state in (S.CREATED, S.TESTING, S.ACTIVE):
         registry.transition(agent_id, state, "yorgo", "test")
 
@@ -59,10 +79,10 @@ class PermissionsCase(unittest.TestCase):
 
 class TestPermissionsFile(PermissionsCase):
     def test_default_permissions_in_repo_load(self):
-        """Verifies SR-02: config/permissions.toml är giltig och har MVP:ns sex roller."""
+        """Verifies SR-02: config/permissions.toml är giltig och har MVP:ns roller plus Compliance (D-020)."""
         permissions = load_permissions(ROOT / "config")
         self.assertEqual(
-            set(permissions.roles), {"ceo", "cfo", "cro", "auditor", "research_lead", "researcher"}
+            set(permissions.roles), {"ceo", "cfo", "cro", "compliance", "auditor", "research_lead", "researcher"}
         )
         for mandate in permissions.roles.values():
             self.assertTrue(mandate.tools <= set(permissions.tools))
@@ -146,16 +166,15 @@ class RegistryCase(PermissionsCase):
 class TestRegistry(RegistryCase):
     def test_register_records_role_department_manager_state(self):
         """Verifies FR-05: agenten får ID, roll, departement från rollen, chef och status PROPOSED."""
-        make_active(self.registry, "cfo-1", "cfo")
-        agent = self.registry.register("res-1", "researcher", "cfo-1", "yorgo", "behövs")
+        agent = register(self.registry, "res-1", "researcher", reason="behövs")
         self.assertEqual(
             (agent.role, agent.department, agent.manager_id, agent.state),
-            ("researcher", "research", "cfo-1", S.PROPOSED),
+            ("researcher", "research", "research-head-auto", S.PROPOSED),
         )
 
     def test_illegal_transition_rejected(self):
         """Verifies FR-06: PROPOSED kan inte bli ACTIVE direkt."""
-        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "res-1", "researcher")
         with self.assertRaises(IllegalTransition):
             self.registry.transition("res-1", S.ACTIVE, "yorgo", "genväg")
         self.assertEqual(self.registry.get("res-1").state, S.PROPOSED)
@@ -178,7 +197,7 @@ class TestRegistry(RegistryCase):
 
     def test_invalid_registrations(self):
         """Verifies FR-05: okänd roll, dubblett, okänd chef och egen chef avvisas."""
-        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "res-1", "researcher")
         for args in (
             ("res-2", "wizard", None),
             ("res-1", "researcher", None),
@@ -188,18 +207,18 @@ class TestRegistry(RegistryCase):
         ):
             with self.subTest(args=args), self.assertRaises(RegistryError):
                 self.registry.register(*args, "yorgo", "test")
-        self.assertEqual([a.agent_id for a in self.registry.agents()], ["res-1"])
+        self.assertEqual([a.agent_id for a in self.registry.agents() if not a.agent_id.endswith("-auto")], ["res-1"])
 
 
 class TestRegistryPersistence(RegistryCase):
     def test_registry_survives_restart(self):
         """Verifies FR-03 och FR-05: agenter, status och historik finns kvar efter omstart."""
         make_active(self.registry, "cfo-1", "cfo")
-        self.registry.register("res-1", "researcher", "cfo-1", "yorgo", "behövs")
+        register(self.registry, "res-1", "researcher", reason="behövs")
         self.db.close()
         registry = AgentRegistry(self.permissions, self.open_db())
         self.assertEqual(registry.get("cfo-1").state, S.ACTIVE)
-        self.assertEqual(registry.get("res-1").manager_id, "cfo-1")
+        self.assertEqual(registry.get("res-1").manager_id, "research-head-auto")
         self.assertEqual(len(registry.history("cfo-1")), 4)
 
     def test_database_blocks_delete_and_identity_change(self):
@@ -218,7 +237,7 @@ class TestRegistryPersistence(RegistryCase):
 
     def test_failed_transition_changes_nothing(self):
         """Verifies FR-06: en otillåten övergång lämnar varken ny status eller historikrad."""
-        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "res-1", "researcher")
         with self.assertRaises(IllegalTransition):
             self.registry.transition("res-1", S.ACTIVE, "yorgo", "genväg")
         self.assertEqual(self.registry.get("res-1").state, S.PROPOSED)
@@ -226,7 +245,7 @@ class TestRegistryPersistence(RegistryCase):
 
     def test_state_column_rejects_unknown_state(self):
         """Verifies FR-06: databasen godtar bara de sju tillstånden."""
-        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "res-1", "researcher")
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.connection.execute("UPDATE agents SET state = 'GOD_MODE'")
 
@@ -257,7 +276,7 @@ class TestAuthorization(RegistryCase):
 
     def test_default_deny_cases(self):
         """Verifies SR-02: okänt verktyg, okänd agent och agenter som inte får agera nekas."""
-        self.registry.register("new-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "new-1", "researcher")
         make_active(self.registry, "sus-1", "researcher")
         self.registry.transition("sus-1", S.SUSPENDED, "yorgo", "test")
         for agent_id, tool, reason in (
@@ -278,7 +297,7 @@ class TestAuthorization(RegistryCase):
 
     def test_testing_agent_only_in_sim(self):
         """Verifies SR-13: en agent som testas får agera i sim men aldrig i prod."""
-        self.registry.register("t-1", "researcher", None, "yorgo", "test")
+        register(self.registry, "t-1", "researcher")
         self.registry.transition("t-1", S.CREATED, "yorgo", "test")
         self.registry.transition("t-1", S.TESTING, "yorgo", "test")
         prod = AuthorizationEngine(self.permissions, self.registry, "prod")

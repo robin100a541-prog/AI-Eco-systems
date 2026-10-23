@@ -63,8 +63,14 @@ Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`l
 CEO-flöde, departementschefer, beslutspost i 11 steg, samråd, oenighet, eskalering, godkännandekö. `manual`-provider införs.
 Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense → eskaleras med dokumenterad tvist.
 
-Uppdelning (överenskommen på plats 2026-10-23): Yorgo tar CEO-flöde, departementschefer och samråd; Robin tar beslutslogg, oenighet och eskalering.
-- 3.a Beslutslogg (FR-10, §20 steg 7): migration 7 `decisions`, `DecisionLog` med spårbarhet uppgift → beslut. ✅ (2026-10-23, gren `robin/fas3-beslutslogg`, 231 tester gröna)
+| Del | Vem | Status |
+|---|---|---|
+| 3a Hierarki nivå 0–5, rapportvägar, departementschefer, styrverktyg (SR-04), Compliance (D-020) | Yorgo | ✅ första nyckeltestet grönt (`test_ceo_cannot_raise_own_limit_or_change_own_mandate`), gren `yorgo/fas3-hierarki` |
+| 3b Kontrollfunktionernas stopp (SR-05) | Yorgo | ☐ |
+| 3c Samråd (FR-11) | Yorgo | ☐ |
+| 3d Beslutslogg (FR-10, §20 steg 7): migration 7 `decisions`, spårbarhet uppgift → beslut | Robin | ✅ gren `robin/fas3-beslutslogg` |
+| 3e Oenighet (FR-12, §21) | Robin | ☐ |
+| 3f Eskalering och godkännandekö (FR-13, D-019) | Robin | ☐ |
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).

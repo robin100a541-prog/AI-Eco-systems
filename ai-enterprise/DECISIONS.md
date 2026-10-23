@@ -8,6 +8,18 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-020 Hierarkin i koden: nivåer per roll, fasta rapportvägar, skyddade styrverktyg
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-017, D-019 · **Ändrar:** formatet för `permissions.toml` (D-017): ny obligatorisk nyckel `level`
+- **Beslut:**
+  1. Varje roll i `config/permissions.toml` har `level`: 1 är CEO, 2 kontrollfunktion, 3 departementschef och 4 arbetsagent (§8). Nivå 0 är grundarna och nivå 5 tillfälliga grupper. Ingen av dem är en roll.
+  2. Registret kräver dessa rapportvägar:
+     - CEO och kontrollfunktionerna (CFO, CRO, Compliance, Audit) rapporterar **direkt till grundarna**. Kontrollfunktionerna lyder inte under CEO, eftersom CEO annars kunde styra sin egen granskning (§8 nivå 2, §18).
+     - En departementschef rapporterar till CEO.
+     - En arbetsagent rapporterar till en chef på nivå 2 eller 3 i samma departement.
+  3. Verktyg vars namn börjar med `governance.` (ändra konstitution, gränser eller mandat) kan stå i katalogen men aldrig ges till en roll. Ett sådant mandat är ett konfigurationsfel. Authorization Engine nekar dem alltid och loggar försöket (SR-04). Ändringarna görs bara av grundarna via PR, och enligt D-019 punkt 3 krävs båda.
+  4. Ny roll `compliance` på nivå 2. Den behövs för SR-16 och flödet i D-011.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-019 Grundarnas beslutsrätt (besvarar Q-01)
 - **Status:** Godkänd · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016
 - **Beslut:**

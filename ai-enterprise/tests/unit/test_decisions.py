@@ -62,12 +62,13 @@ class DecisionCase(unittest.TestCase):
         self.log = DecisionLog(
             self.db, self.board, self.engine, self.limits, FOUNDERS, self.audit
         )
-        for agent_id, role in (
-            ("ceo-1", "ceo"),
-            ("lead-1", "research_lead"),
-            ("res-1", "researcher"),
+        # Hierarkin (D-020): departementschefen rapporterar till CEO, arbetsagenten till sin chef.
+        for agent_id, role, manager in (
+            ("ceo-1", "ceo", None),
+            ("lead-1", "research_lead", "ceo-1"),
+            ("res-1", "researcher", "lead-1"),
         ):
-            self.activate(agent_id, role)
+            self.activate(agent_id, role, manager)
         self.task = self.board.create("ceo-1", "Välj försäljningskanal", "D-010")
         self.board.assign("ceo-1", self.task.task_id, "lead-1")
 
@@ -76,8 +77,8 @@ class DecisionCase(unittest.TestCase):
         self.addCleanup(db.close)
         return db
 
-    def activate(self, agent_id, role):
-        self.registry.register(agent_id, role, None, "yorgo", "test")
+    def activate(self, agent_id, role, manager=None):
+        self.registry.register(agent_id, role, manager, "yorgo", "test")
         for state in (S.CREATED, S.TESTING, S.ACTIVE):
             self.registry.transition(agent_id, state, "yorgo", "test")
 

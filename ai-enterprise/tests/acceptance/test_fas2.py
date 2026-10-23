@@ -29,8 +29,8 @@ S = AgentState
 FOUNDERS = frozenset({"yorgo", "robin"})
 MVP = (  # ARCHITECTURE.md §4: MVP:ns sex agenter
     ("ceo-1", "ceo", None),
-    ("cfo-1", "cfo", "ceo-1"),
-    ("cro-1", "cro", "ceo-1"),
+    ("cfo-1", "cfo", None),  # kontrollfunktioner rapporterar till grundarna (§8 nivå 2, D-020)
+    ("cro-1", "cro", None),
     ("audit-1", "auditor", None),  # rapporterar direkt till grundarna (§18: oberoende)
     ("lead-1", "research_lead", "ceo-1"),
     ("res-1", "researcher", "lead-1"),

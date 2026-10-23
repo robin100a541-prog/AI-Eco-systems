@@ -20,6 +20,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
+from ..agents.hierarchy import LEVEL_CEO, LEVEL_CONTROL, LEVEL_HEAD, LEVEL_WORKER, ROLE_LEVELS  # noqa: F401
 from ..config import ConfigError
 from ..config.loader import is_secret_key
 
@@ -31,7 +32,12 @@ DEPARTMENTS = (
     "marketing", "operations", "risk", "compliance", "audit", "learning",
 )
 TOP_KEYS = ("config_version", "tools", "roles")
-ROLE_KEYS = ("department", "description", "tools")
+ROLE_KEYS = ("department", "description", "level", "tools")
+
+
+# Styrverktyg som bara grundarna får använda (SR-04, §8 nivå 0). De kan stå i katalogen, så att
+# försök kan loggas med rätt namn, men ingen roll kan få dem och motorn nekar dem alltid.
+PROTECTED_PREFIX = "governance."
 
 _TOOL_NAME = re.compile(r"[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+")  # t.ex. "report.write"
 _ROLE_NAME = re.compile(r"[a-z][a-z0-9_]*")
@@ -45,6 +51,7 @@ class Mandate:
     department: str
     tools: frozenset[str]
     description: str = ""
+    level: int = LEVEL_WORKER  # 1 CEO, 2 kontrollfunktion, 3 departementschef, 4 arbetsagent (§8)
 
     def allows(self, tool: str) -> bool:
         return tool in self.tools
@@ -133,6 +140,14 @@ def _parse_roles(raw: Any, tools: Mapping[str, str], error: Report) -> dict[str,
             if tool not in tools:
                 error(f"{where}: verktyget {tool!r} finns inte i [tools]")
                 ok = False
+            elif tool.startswith(PROTECTED_PREFIX):
+                error(f"{where}: {tool!r} är ett styrverktyg som bara grundarna får använda (SR-04)")
+                ok = False
+        level = spec.get("level")
+        if not isinstance(level, int) or isinstance(level, bool) or level not in ROLE_LEVELS:
+            error(f"{where}: level = {level!r} måste vara 1 (CEO), 2 (kontrollfunktion), "
+                  "3 (departementschef) eller 4 (arbetsagent) (§8, D-020)")
+            ok = False
         if len(set(listed)) != len(listed):
             error(f"{where}: samma verktyg står flera gånger")
             ok = False
@@ -141,7 +156,7 @@ def _parse_roles(raw: Any, tools: Mapping[str, str], error: Report) -> dict[str,
             error(f"{where}: description måste vara text")
             ok = False
         if ok:
-            roles[role] = Mandate(role, department, frozenset(listed), description)
+            roles[role] = Mandate(role, department, frozenset(listed), description, level)
     return roles
 
 

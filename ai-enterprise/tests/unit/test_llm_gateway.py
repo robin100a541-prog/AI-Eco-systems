@@ -35,6 +35,8 @@ from aie.llm import (
 from aie.memory import Database
 from aie.monitoring import LOG_FILE_NAME, setup_logging, shutdown_logging
 
+from .org_helpers import register_in_line
+
 from .test_llm_router import FakeTransport
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,7 +85,7 @@ class GatewayCase(unittest.TestCase):
         self.make("res-1", "researcher", AgentState.ACTIVE)
 
     def make(self, agent_id, role, state):
-        self.registry.register(agent_id, role, None, "robin", "test")
+        register_in_line(self.registry, self.permissions, agent_id, role, by="robin")
         path = {
             AgentState.PROPOSED: (),
             AgentState.TESTING: (AgentState.CREATED, AgentState.TESTING),

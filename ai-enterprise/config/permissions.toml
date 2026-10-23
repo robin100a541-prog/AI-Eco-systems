@@ -1,7 +1,10 @@
-# Rollernas mandat (SR-02, D-017). Default deny: en roll får bara verktygen i sin lista.
-# Inga hemligheter här (SR-10).
+# Rollernas mandat (SR-02, D-017) och plats i hierarkin (§8, D-020).
+# Default deny: en roll får bara verktygen i sin lista. Inga hemligheter här (SR-10).
 #
-# Förberedelse inför Fas 2. Rollerna är MVP:ns sex agenter (ARCHITECTURE.md §4).
+# level: 1 = CEO, 2 = kontrollfunktion (CFO, CRO, Compliance, Audit), 3 = departementschef,
+# 4 = arbetsagent. Nivå 0 är grundarna och nivå 5 tillfälliga grupper; ingen av dem är en roll.
+# Nivå 1 och 2 rapporterar direkt till grundarna. Kontrollfunktionerna lyder inte under CEO (§8).
+#
 # Inga verktyg flyttar pengar eller kontaktar omvärlden. Sådana läggs till i Fas 4 och 7,
 # och då bara med budget- och riskkontroll.
 
@@ -21,33 +24,50 @@ config_version = 1
 "audit.verify"    = "verifiera audit-loggens hashkedja"
 "llm.complete"    = "fråga en språkmodell via LLMGateway; bara public lämnar datorn (DR-12, DR-13)"
 "decision.record" = "fatta och logga ett beslut om en uppgift enligt §20 steg 7 (FR-10)"
+# Styrverktyg (SR-04). Står här bara för att försök ska kunna loggas med rätt namn.
+# Ingen roll kan få dem, och Authorization Engine nekar dem alltid.
+"governance.change_constitution" = "ändra konstitutionen; bara grundarna (D-001)"
+"governance.change_limits"       = "ändra risk_limits.toml; bara grundarna (§5, §25)"
+"governance.change_mandate"      = "ändra permissions.toml; bara grundarna (SR-03, SR-04)"
 
 [roles.ceo]
 department = "executive"
+level = 1
 description = "samordnar, prioriterar, tilldelar uppgifter (§8 nivå 1)"
 tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete", "decision.record"]
 
 [roles.cfo]
 department = "finance"
+level = 2
 description = "ekonomisk styrning (§11)"
 tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block", "llm.complete", "decision.record"]
 
 [roles.cro]
 department = "risk"
+level = 2
 description = "riskgränser (§17)"
 tools = ["report.read", "report.write", "risk.assess", "action.block", "llm.complete", "decision.record"]
 
+[roles.compliance]
+department = "compliance"
+level = 2
+description = "lagar, avtal och plattformsvillkor (§6, §17, SR-16)"
+tools = ["report.read", "report.write", "action.block", "llm.complete"]
+
 [roles.auditor]
 department = "audit"
+level = 2
 description = "oberoende granskning (§18)"
 tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.block", "llm.complete"]
 
 [roles.research_lead]
 department = "research"
+level = 3
 description = "leder Research (§12)"
 tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record"]
 
 [roles.researcher]
 department = "research"
+level = 4
 description = "utreder möjligheter (D-011)"
 tools = ["report.write", "research.search", "llm.complete"]
