@@ -1,7 +1,7 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 2 — Agentramverk är **klar** (version 0.4.0). Kvar för formellt godkännande: D-018. Nästa: Fas 3 — Hierarki och samarbete.
+**Aktuell fas:** Fas 2 — Agentramverk är **klar** (version 0.4.0). D-018 godkänt och Q-01 besvarat (D-019). Nästa: Fas 3 — Hierarki och samarbete.
 **Fasstatus:** Fas 1 och Fas 2 mergade till `main`. Alla acceptanskriterier i §49 och §50 har gröna acceptanstester (`tests/acceptance/`). Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
@@ -67,15 +67,15 @@
 - Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (219 OK, 2026-10-23). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
 - Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
-- Groq-testet (0.10) är inte gjort. D-005–D-012 och Q-01 är inte beslutade (0.8).
+- Groq-testet (0.10) är inte gjort. D-005–D-012 är inte beslutade (0.8); Q-01 är besvarad av D-019.
 - Värdena i `config/risk_limits.toml` är simulerade (Q-04).
 - `python -m aie` fungerar bara när `PYTHONPATH=src` är satt (se `docs/setup.md`).
 
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
-| 2 | Godkänna D-018 (ProviderRouter) | Båda |
+| 1 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 2 | Fas 3: beslutslogg, oenighet, eskalering (Robin); CEO-flöde, departementschefer, samråd (Yorgo) | Robin och Yorgo |
 | 3 | Fas 3: CEO-flöde, departementschefer, 11-stegs beslutspost, samråd, oenighet, eskalering, godkännandekö | Båda; ta uppgiften i `TODO.md` först |
 
 ## Blockerare

@@ -3,7 +3,6 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
-- [ ] ai-enterprise Fas 2-avslut: D-018 godkänt, D-019 beslutsrätt (Q-01) — @robin (robin/fas2-avslut)
 - [ ] ai-enterprise Fas 3: beslutslogg (§20 steg 7, spårbarhet uppgift → beslut) — @robin (robin/fas3-beslutslogg)
 - [ ] ai-enterprise Fas 3: oenighet (§21: påståenden, bevis, konflikttyp; inga omröstningar över hårda gränser) — @robin (robin/fas3-oenighet)
 - [ ] ai-enterprise Fas 3: eskalering till grundarna enligt D-019, godkännandekö i CLI — @robin (robin/fas3-eskalering)
@@ -11,10 +10,10 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
 ## Next
-- Godkännande av D-018 (båda).
 - ai-enterprise Fas 3: CEO-flöde, departementschefer, samråd mellan agenter — Yorgo (överenskommet på plats)
 
 ## Done
+- [x] ai-enterprise Fas 2-avslut: D-018 godkänt, D-019 beslutsrätt (Q-01 besvarad) — @robin
 - [x] ai-enterprise Fas 2-acceptans: AgentWorker via LLMGateway, acceptanstester §50, version 0.4.0 — Fas 2 klar — @yorgo-jarjous (PR #20)
 - [x] ai-enterprise Fas 2: agenter når ProviderRouter bara via Authorization Engine (`llm.complete`), läcktester (DR-12, DR-13) — @robin (PR #19)
 - [x] ai-enterprise Fas 2: ProviderRouter, kvoter, dataklassning — @yorgo-jarjous (PR #18)

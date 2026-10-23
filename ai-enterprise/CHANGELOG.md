@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 2 avslutad: D-018 och D-019
+### Ändrat
+- DECISIONS.md: D-018 (ProviderRouter) godkänd av båda grundarna. Bara fälten *Status* och *Godkänd av* ändrades.
+### Tillagt
+- D-019, grundarnas beslutsrätt: en grundare räcker upp till `HUMAN_APPROVAL_THRESHOLD`; över den krävs båda. Ändringar i konstitutionen, riskgränserna och behörigheterna kräver alltid båda. Q-01 är besvarad.
+
 ## [0.4.0] — 2026-10-23 — Fas 2 klar
 ### Tillagt
 - `src/aie/orchestration/worker.py`: `AgentWorker.work_on(task_id)` kör hela kedjan. Ägaren startar uppgiften, och `report.write` kontrolleras. Modellen nås via `LLMGateway` (PR #19, kräver `llm.complete`) och ProviderRouter, där en uppgift räknas som `internal` om inget annat anges och därför bara går till lokala leverantörer. Svaret blir en rapport, rapporten sparas i audit-loggen och uppgiften avslutas med `audit:<seq>` som underlag. Modellsvaret är alltid en obekräftad hypotes (§29).

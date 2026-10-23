@@ -13,7 +13,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 | 0.5 | Köra `check_env.py` på **Yorgos** dator, spara resultat i `docs/environment.md` | Yorgo | ✅ (2026-10-21, Windows 11) |
 | 0.6 | Köra `check_env.py` på **Robins** dator, spara resultat i `docs/environment.md` | Robin | ✅ (2026-10-23, Claude Code i molnet, PR #3) |
 | 0.7 | Skapa privat GitHub-repo, lägga till varandra, pusha dessa filer | En grundare | ☐ |
-| 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ◐ (D-001–D-004 godkända 2026-10-23; D-005–D-010 och Q-01 öppna) |
+| 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ◐ (D-001–D-004 godkända och Q-01 besvarad av D-019, 2026-10-23; D-005–D-010 öppna) |
 | 0.9 | Gratis modellgränssnitt: `scripts/llm_smoke_test.py` + 8 tester mot falsk server | Claude | ✅ (testat lokalt; riktiga API:er kunde inte nås från Claudes miljö) |
 | 0.10 | Skapa gratiskonto hos Groq (och ev. OpenRouter), kör `llm_smoke_test.py`, klistra in resultatet i `docs/environment.md` | Minst en grundare | ☐ |
 
@@ -55,7 +55,7 @@ Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av b
 - [x] Uppgifter kan tilldelas och följas upp (`TestTasksEndToEnd`).
 - [x] Agenter kan inte använda obehöriga funktioner (`TestUnauthorized`, med nyckeltestet).
 - [x] Agentstatus sparas beständigt (`TestPersistence`).
-- [ ] D-018 godkänt av båda.
+- [x] D-018 godkänt av båda (2026-10-23).
 
 Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`llm.complete`), och prompter med hemligheter avvisas (2026-10-23, gren `robin/fas2-llm-behorighet`, 208 tester gröna).
 
