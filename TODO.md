@@ -7,6 +7,8 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] Add friend as collaborator, fill in Team table — @robin
 - [ ] ai-enterprise Fas 2: uppgifter FR-07 (migration 5: `tasks`, `task_events`) — @yorgo-jarjous (yorgo/fas2-tasks)
 
+- [ ] ai-enterprise Fas 2: ProviderRouter + kvoter (DR-12) och dataklassning (DR-13), migration 6 `provider_usage` — @yorgo-jarjous (yorgo/fas2-provider-router)
+
 ## Next
 - ai-enterprise Fas 2: rapportformat (FR-08), ProviderRouter + kvoter (DR-12), dataklassning (DR-13) — Yorgo tar dem i den ordningen om ingen annan har tagit dem
 
