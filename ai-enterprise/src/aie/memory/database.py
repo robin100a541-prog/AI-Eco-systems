@@ -8,6 +8,10 @@
 4. Kör nya migrationer, var och en i en egen transaktion.
 5. Kontrollerar att databasen tillhör rätt miljö. En `prod`-databas kan aldrig öppnas
    som `sim` och tvärtom, även om filen bytt namn (SR-11).
+
+`open_database(config.system)` gör samma sak med `data_dir` och miljön från konfigurationen.
+Fel loggas med Fas 1.3-loggningen (loggern `aie.memory`) innan de kastas vidare, och en
+transaktion som rullas tillbaka loggas som en varning (FR-04).
 """
 from __future__ import annotations
 
@@ -18,7 +22,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .. import __version__
+from ..config import SystemConfig
+from ..monitoring import get_logger
 from .migrations import MIGRATIONS, Migration, validate_migrations
+
+log = get_logger("memory")
 
 ENVIRONMENTS = ("sim", "prod")
 BUSY_TIMEOUT_MS = 5_000
@@ -48,6 +56,19 @@ class Database:
         environment: str,
         migrations: tuple[Migration, ...] = MIGRATIONS,
     ) -> Database:
+        try:
+            db = cls._open(Path(data_dir), environment, migrations)
+        except StorageError as exc:
+            log.error("databasen kunde inte öppnas: %s", exc)
+            raise
+        log.info(
+            "databasen öppnad",
+            extra={"fields": {"path": str(db.path), "environment": environment, "schema_version": db.schema_version}},
+        )
+        return db
+
+    @classmethod
+    def _open(cls, data_dir: Path, environment: str, migrations: tuple[Migration, ...]) -> Database:
         if environment not in ENVIRONMENTS:
             raise StorageError(f"okänd miljö {environment!r} (måste vara 'sim' eller 'prod')")
         if sqlite3.sqlite_version_info < MIN_SQLITE:
@@ -57,17 +78,21 @@ class Database:
             )
         validate_migrations(migrations)
 
-        data_dir = Path(data_dir)
-        data_dir.mkdir(parents=True, exist_ok=True)
         path = data_dir / f"{environment}.db"
-
-        # isolation_level=None: inga dolda transaktioner, vi styr BEGIN/COMMIT själva.
-        connection = sqlite3.connect(path, isolation_level=None)
+        try:
+            data_dir.mkdir(parents=True, exist_ok=True)
+            # isolation_level=None: inga dolda transaktioner, vi styr BEGIN/COMMIT själva.
+            connection = sqlite3.connect(path, isolation_level=None)
+        except (OSError, sqlite3.Error) as exc:
+            raise StorageError(f"data_dir '{data_dir}' eller {path.name} kan inte öppnas: {exc}") from exc
         db = cls(connection, path, environment)
         try:
             db._configure()
             db._migrate(migrations)
             db._check_environment()
+        except sqlite3.Error as exc:
+            connection.close()
+            raise StorageError(f"{path.name} kan inte användas: {exc}") from exc
         except BaseException:
             connection.close()
             raise
@@ -89,8 +114,9 @@ class Database:
         self.connection.execute("BEGIN IMMEDIATE")
         try:
             yield self.connection
-        except BaseException:
+        except BaseException as exc:
             self.connection.execute("ROLLBACK")
+            log.warning("transaktionen rullades tillbaka: %s: %s", type(exc).__name__, exc)
             raise
         self.connection.execute("COMMIT")
 
@@ -174,3 +200,8 @@ class Database:
                 f"{self.path.name} tillhör miljön {stored!r}, men konfigurationen säger "
                 f"{self.environment!r}. Simulerade och verkliga data får aldrig blandas (SR-11)."
             )
+
+
+def open_database(system: SystemConfig, migrations: tuple[Migration, ...] = MIGRATIONS) -> Database:
+    """Öppnar databasen i `data_dir` för miljön i konfigurationen (FR-03, SR-11)."""
+    return Database.open(system.data_dir, system.environment, migrations)

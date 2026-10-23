@@ -2,7 +2,7 @@
 
 **Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Robin)
 **Aktuell fas:** Fas 1 — Grundsystem
-**Fasstatus:** 1.1 och 1.2 mergade till `main` (PR #1) · 1.3 klar på grenen `robin/fas1-3-loggning`, väntar på granskning · Fas 0-punkterna 0.8 och 0.10 är fortfarande öppna (0.6 klar: Robins miljörapport mergad i PR #3)
+**Fasstatus:** 1.1–1.4 mergade till `main` (PR #1, #4, #5) och CI (PR #7) · 1.4b (lagring från konfigurationen, fel loggas) på grenen `robin/fas1-4b-lagring-config` · 1.5–1.7 återstår · Fas 0-punkterna 0.8 och 0.10 är öppna
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -19,6 +19,8 @@
 | Paketet `aie` (1.1): `pyproject.toml`, `src/aie/`, `python -m aie check-config` | Kod 0 med standardkonfigurationen; kod 1 med en medvetet trasig konfiguration, där alla 7 fel listades (körd 2026-10-21 på Yorgos dator) |
 | Konfiguration (1.2): `config/system.toml`, `config/risk_limits.toml`, laddare med frysta dataklasser | `py -m unittest discover -s tests -v` → **49 OK** (18 gamla + 31 nya), körd 2026-10-21 på Yorgos dator, Windows 11, Python 3.12.0 |
 | Loggning (1.3): `src/aie/monitoring/`, JSON-rader i `<log_dir>/aie.log` och text i konsolen, maskerade hemligheter, rotation vid 5 MB med 3 gamla filer, `log_level` i `system.toml` | `python3 -m unittest discover -s tests -v` → **68 OK** (49 gamla + 19 nya), körd 2026-10-23 i Robins Claude Code-molnmiljö, Linux, Python 3.13.17 |
+| Lagring (1.4, Yorgo): `src/aie/memory/`, `<data_dir>/<miljö>.db`, ordnade migrationer i egna transaktioner, tabellerna `metadata` och `schema_migrations` | `tests/unit/test_storage.py`, 14 tester; 82 OK på Yorgos dator (Windows 11, Python 3.12.0) och i CI (3.11, 3.12) |
+| Lagring (1.4b): `open_database(config.system)` använder `data_dir` och miljön från konfigurationen; fel loggas som ERROR och återrullade transaktioner som WARNING (`aie.memory`) | `tests/unit/test_storage_config.py`, 7 tester; 89 OK på Python 3.11, 3.12 och 3.13 |
 | CI på GitHub Actions: testerna körs på Python 3.11 och 3.12 vid varje PR och push till `main` | `.github/workflows/ai-enterprise-tests.yml`; checkarna syns på varje PR |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 
@@ -34,11 +36,15 @@
 - D-001–D-004 och D-013–D-016 är godkända av båda grundarna. D-016: under byggfaserna mergar författaren sin PR när alla tester är gröna, utan granskning.
 - PR #3 (mergad): Robins miljörapport från Claude Code i molnet, Robins godkännanden av D-001–D-004 och D-013, och förslaget D-014 (repot är publikt).
 
+## Ändrat 2026-10-23 (Fas 1.4 och 1.4b)
+- D-016 i kraft: författaren mergar sin PR när testerna är gröna. CI (PR #7) kör testerna på Python 3.11 och 3.12.
+- 1.4 (Yorgo, PR #5): SQLite-lagret. Rättade även ett Windows-fel i loggningens felmeddelande.
+- 1.4b (Robin): databasen öppnas från konfigurationen och lagringsfel loggas. Loggern `aie` har en `NullHandler` när loggningen inte är igång, så inget skrivs till stderr av misstag.
+
 ## Vad som INTE är gjort / inte verifierat
-- Ingen har granskat 1.3. Testerna för 1.3 är bara körda i Robins molnmiljö (Linux), inte på Windows hos Yorgo.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - De gamla CLI-testerna körs med repots rot som arbetsmapp och skapar därför `ai-enterprise/logs/aie.log`. Mappen är gitignorerad.
-- Groq-testet (0.10) är inte gjort. Inget beslut är godkänt av båda grundarna (0.8).
+- Groq-testet (0.10) är inte gjort. D-005–D-012 och Q-01 är inte beslutade (0.8).
 - Värdena i `config/risk_limits.toml` är simulerade (Q-04).
 - `python -m aie` fungerar bara när `PYTHONPATH=src` är satt (se `docs/setup.md`).
 
@@ -46,8 +52,8 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
-| 2 | Granska PR:en för 1.3 (`robin/fas1-3-loggning`) och köra testerna på Windows | Yorgo |
-| 3 | Fas 1.4: SQLite-lager med migrationer och metadatatabell | Den som har tid, efter att 1.3 är granskad |
+| 2 | Fas 1.5: hashkedjad audit-logg | Robin (Claude) |
+| 3 | Fas 1.6–1.7: `init`/`start`/`stop`/`status` och acceptanstester för Fas 1 | Robin (Claude) |
 
 ## Blockerare
 Inga.
