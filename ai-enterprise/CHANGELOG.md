@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Arbetssätt och gemensamma godkännanden
+### Tillagt
+- D-016: under byggfaserna mergar författaren sin egen PR när alla tester är gröna; besluten fattas gemensamt på plats.
+### Ändrat
+- DECISIONS.md: D-001–D-004 och D-013–D-016 är godkända av båda grundarna (beslutat gemensamt på plats, registrerat av Robin). Bara fälten *Status* och *Godkänd av* ändrades.
+
 ## [Unreleased] — 2026-10-23 — Robins Fas 0-godkännanden
 ### Ändrat
 - DECISIONS.md: Robin har godkänt D-001, D-002, D-003, D-004 och D-013.
