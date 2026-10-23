@@ -28,7 +28,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 ## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08) ← **pågår**
 1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`. ✅ (2026-10-21, gren `fas1-grund`)
 1.2 Konfigurationsläsning + validering (`config/system.toml`, `config/risk_limits.toml`). ✅ (2026-10-21, 31 tester gröna, väntar på granskning)
-1.3 Strukturerad loggning (JSON-rader till `logs/`).
+1.3 Strukturerad loggning (JSON-rader till `logs/`). ✅ (2026-10-23, gren `robin/fas1-3-loggning`, 66 tester gröna, väntar på granskning)
 1.4 SQLite-lager med migrationer och metadatatabell (miljö, schemaversion).
 1.5 Hashkedjad audit-logg (append-only).
 1.6 CLI: `init`, `start`, `stop`, `status`.

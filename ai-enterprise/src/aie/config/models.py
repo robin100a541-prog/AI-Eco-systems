@@ -23,6 +23,7 @@ class SystemConfig:
     log_dir: Path
     base_currency: str
     config_version: int
+    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR eller CRITICAL (Fas 1.3)
 
     @property
     def is_simulation(self) -> bool:

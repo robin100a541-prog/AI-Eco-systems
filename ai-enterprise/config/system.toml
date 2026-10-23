@@ -10,5 +10,8 @@ environment = "sim"
 data_dir = "data"
 log_dir = "logs"
 
+# Lägsta nivå som loggas: DEBUG, INFO, WARNING, ERROR eller CRITICAL. Saknas = INFO.
+log_level = "INFO"
+
 # I sim måste valutan vara SIM (ER-15). I prod en verklig valuta, t.ex. SEK (Q-03).
 base_currency = "SIM"
