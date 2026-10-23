@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.3.0] — 2026-10-23 — Fas 1 klar
+### Tillagt
+- `tests/acceptance/test_fas1.py`: 12 acceptanstester, ett eller flera per kriterium i konstitutionen §49 och ROADMAP 1.7. De kör `python -m aie ...` i egna processer i en tom mapp. Totalt 151 tester.
+### Ändrat
+- CLI-testerna i `test_config.py` körs i testets temporära mapp, så att hela testsviten aldrig skriver i repot.
+- Version 0.2.0 → 0.3.0. Fas 1.4–1.7 (Unreleased-posterna nedan) ingår i den här versionen.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.6: start, stopp och status
 ### Tillagt
 - `python -m aie init | start | stop | status` (FR-01). Kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat.

@@ -25,7 +25,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 - [x] Båda grundarnas miljöer är inventerade (0.5, 0.6).
 - [ ] Besluten är godkända av grundarna (0.8).
 
-## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08) ← **pågår**
+## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08) ✅ **klar 2026-10-23**
 1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`. ✅ (2026-10-21, gren `fas1-grund`)
 1.2 Konfigurationsläsning + validering (`config/system.toml`, `config/risk_limits.toml`). ✅ (2026-10-21, 31 tester gröna, väntar på granskning)
 1.3 Strukturerad loggning (JSON-rader till `logs/`). ✅ (2026-10-23, gren `robin/fas1-3-loggning`, 68 tester gröna, sammanslagen i PR #4)
@@ -34,7 +34,15 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 1.4b Databasen öppnas från `data_dir` och miljön i konfigurationen; lagringsfel loggas. ✅ (2026-10-23, gren `robin/fas1-4b-lagring-config`, 89 tester gröna)
 1.5 Hashkedjad audit-logg (append-only). ✅ (2026-10-23, gren `yorgo/fas1-5-audit`, 15 tester gröna)
 1.6 CLI: `init`, `start`, `stop`, `status`. ✅ (2026-10-23, gren `robin/fas1-6-start-stop`, 118 tester gröna)
-1.7 Tester: konfigurationsfel stoppar start · data överlever omstart · manipulerad audit-rad upptäcks.
+1.7 Tester: konfigurationsfel stoppar start · data överlever omstart · manipulerad audit-rad upptäcks. ✅ (2026-10-23, `tests/acceptance/test_fas1.py`, 151 tester gröna)
+
+**Acceptanskriterier Fas 1 (konstitutionen §49).** Varje kriterium har ett eget acceptanstest i `tests/acceptance/test_fas1.py` som kör de riktiga kommandona i egna processer:
+- [x] Systemet startar och avslutas korrekt: `TestStartsAndStops` (`init`, `start`, `stop`, `status` ger kod 0, ren nedstängning, även med Ctrl+C).
+- [x] Konfigurationen kan läsas och valideras: `TestConfigReadAndValidated` (giltig konfiguration godkänns; en ogiltig listar alla fel och stoppar start).
+- [x] Fel loggas: `TestErrorsLogged` (konfigurationsfel och lagringsfel i loggfilen med tid, nivå och källa; hemligheter syns aldrig).
+- [x] Data överlever omstart: `TestDataSurvivesRestart` (två körningar; en dödad process utan nedstängning; ingen data försvinner, kedjan är intakt).
+- [x] Tester kan köras reproducerbart: `TestReproducible` (bara standardbiblioteket) samt CI på Python 3.11 och 3.12 vid varje PR och push. Hela sviten skriver bara i temporära mappar.
+- [x] ROADMAP 1.7: en manipulerad audit-rad upptäcks: `TestTamperedAuditDetected` (`status` ger kod 1 och `start` vägrar).
 
 ## Fas 2 — Agentramverk (FR-05…08, SR-01…03, SR-13, SR-14)
 Agentregister, mandat i `config/permissions.toml`, livscykel som tillståndsmaskin, uppgifter, rapportformat, Authorization Engine (default deny), ProviderRouter med Groq/OpenRouter/Ollama/`rule`, kvotspårning och dataklassning (DR-12, DR-13).

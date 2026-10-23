@@ -316,9 +316,11 @@ class TestFilesAndCollection(ConfigTestCase):
 class TestCli(ConfigTestCase):
     def run_cli(self, *args):
         env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "PYTHONIOENCODING": "utf-8"}
+        args = args or ("--config-dir", str(ROOT / "config"))
+        # Arbetsmappen är testets temporära mapp, så att loggarna aldrig hamnar i repot.
         return subprocess.run(
             [sys.executable, "-m", "aie", "check-config", *args],
-            cwd=ROOT,
+            cwd=self.dir,
             env=env,
             capture_output=True,
             encoding="utf-8",
