@@ -15,6 +15,16 @@
 ### Ändrat
 - Hjälpen för konfigurationsfel (`_log_config_errors`) flyttad från `__main__.py` till `runtime.py`.
 
+## [Unreleased] — 2026-10-23 — Fas 2 förberedd: livscykel och behörigheter
+### Tillagt
+- `src/aie/agents/`: livscykeln som tillståndsmaskin (FR-06) och ett agentregister i minnet med ID, roll, departement, chef och status (FR-05). En agent kan inte ändra sin egen status (SR-03). Varje ändring kräver motivering och sparas i historiken (SR-14).
+- `config/permissions.toml`: verktygskatalog och mandat för MVP:ns sex roller (ceo, cfo, cro, auditor, research_lead, researcher). Inga verktyg flyttar pengar eller kontaktar omvärlden.
+- `src/aie/authorization/`: `load_permissions` samlar alla fel och ger oföränderliga mandat. `AuthorizationEngine` nekar allt som inte är tillåtet (SR-01, SR-02), stoppar TESTING-agenter i prod (SR-13) och loggar varje beslut i audit-loggen. Går det inte att logga blir svaret nej.
+- D-017 (föreslaget): behörighetsmodellen.
+- `tests/unit/test_authorization.py`: 21 tester, bland annat ROADMAP:s nyckeltest för Fas 2. Totalt 125 gröna på Windows 11, Python 3.12.0.
+### Medvetet inte med
+- Ingen migration och ingen ändring i `__main__.py` eller `system.toml`, eftersom Robin bygger 1.6–1.7.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.5: hashkedjad audit-logg
 ### Tillagt
 - Migration 2: tabellen `audit_log` (seq, tid, actor, action, details, prev_hash, hash). Triggers gör att SQLite vägrar UPDATE och DELETE (SR-09).
