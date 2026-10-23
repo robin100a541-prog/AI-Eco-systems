@@ -241,6 +241,48 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=7,
+        name="control_stops",
+        statements=(
+            # Fas 3b (SR-05): stopp från kontrollfunktionerna. Se src/aie/authorization/stops.py.
+            # Ett stopp raderas aldrig. Det hävs genom att lifted_* fylls i, och det kan bara göras en gång.
+            """
+            CREATE TABLE control_stops (
+                stop_id     INTEGER PRIMARY KEY,
+                scope_kind  TEXT NOT NULL CHECK (scope_kind IN ('agent', 'department', 'tool')),
+                scope_value TEXT NOT NULL,
+                reason      TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                placed_by   TEXT NOT NULL,
+                placed_at   TEXT NOT NULL,
+                lifted_by   TEXT,
+                lifted_at   TEXT,
+                lift_reason TEXT,
+                CHECK ((lifted_by IS NULL) = (lifted_at IS NULL) AND (lifted_at IS NULL) = (lift_reason IS NULL))
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER control_stops_no_delete BEFORE DELETE ON control_stops
+            BEGIN
+                SELECT RAISE(ABORT, 'stopp raderas aldrig; de hävs');
+            END
+            """,
+            """
+            CREATE TRIGGER control_stops_fixed BEFORE UPDATE OF
+                stop_id, scope_kind, scope_value, reason, placed_by, placed_at ON control_stops
+            BEGIN
+                SELECT RAISE(ABORT, 'ett stopp kan inte ändras, bara hävas');
+            END
+            """,
+            """
+            CREATE TRIGGER control_stops_lift_once BEFORE UPDATE ON control_stops
+            WHEN OLD.lifted_at IS NOT NULL
+            BEGIN
+                SELECT RAISE(ABORT, 'stoppet är redan hävt');
+            END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

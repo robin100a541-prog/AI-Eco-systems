@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3b: kontrollfunktionernas stopp (SR-05)
+### Tillagt
+- Migration 7 `control_stops`. Ett stopp gäller en agent, ett departement eller ett verktyg. Det raderas aldrig, kan inte ändras och kan bara hävas en gång.
+- `src/aie/authorization/stops.py`: `ControlStops.place`, `lift`, `active` och `blocking`.
+  - Bara grundare eller aktiva kontrollfunktioner med `action.block` får sätta stopp.
+  - Kontrollfunktioner kan inte stoppa varandra, sina departement eller själva stoppverktyget (§18). Det kan bara grundarna.
+  - Bara den som satte stoppet, eller en grundare, kan häva det. Ingen operativ chef kan det, inte ens CEO (SR-05).
+  - Satta och hävda stopp loggas i audit-loggen.
+- `AuthorizationEngine(..., stops=...)` nekar alla verktyg som träffas av ett aktivt stopp och anger stoppets nummer och skäl.
+- `tests/unit/test_stops.py`: 13 tester.
+
 ## [Unreleased] — 2026-10-23 — Fas 3a: hierarki och styrverktyg
 ### Tillagt
 - `src/aie/agents/hierarchy.py`: nivåerna i §8, regler för rapportvägar (`reporting_line_error`) och `OrgChart`. `OrgChart` har befälskedja, underställda, departementschefer, kontrollfunktioner och `is_above`.
