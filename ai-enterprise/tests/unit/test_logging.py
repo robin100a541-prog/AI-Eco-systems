@@ -193,6 +193,35 @@ class TestSecretsMasked(LoggingTestCase):
         self.assertEqual(mask_secrets(text, environ={}), text)
 
 
+class TestRotation(LoggingTestCase):
+    def test_log_file_rotates_and_keeps_limited_backups(self):
+        """Verifies FR-04: loggfilen roteras vid storleksgränsen och bara backup_count gamla filer sparas."""
+        log_dir = self.dir / "logs"
+        setup_logging(log_dir, console=False, max_bytes=1000, backup_count=2)
+        log = get_logger("test")
+        for i in range(200):  # cirka 30 kB, långt över 3 × 1000 byte
+            log.info("rad %03d", i)
+        shutdown_logging()
+
+        names = sorted(p.name for p in log_dir.iterdir())
+        self.assertEqual(
+            names, [LOG_FILE_NAME, f"{LOG_FILE_NAME}.1", f"{LOG_FILE_NAME}.2"]
+        )
+        for path in log_dir.iterdir():
+            self.assertLessEqual(path.stat().st_size, 1000, path.name)
+        newest = (log_dir / LOG_FILE_NAME).read_text(encoding="utf-8").splitlines()
+        self.assertEqual(json.loads(newest[-1])["message"], "rad 199")
+
+    def test_default_limits_are_bounded(self):
+        """Verifies FR-04: standardinställningen begränsar loggarna (5 MB per fil, 3 gamla filer)."""
+        self.setup()
+        [handler] = [
+            h for h in logging.getLogger("aie").handlers if hasattr(h, "maxBytes")
+        ]
+        self.assertEqual(handler.maxBytes, 5 * 1024 * 1024)
+        self.assertEqual(handler.backupCount, 3)
+
+
 class TestBadLogDir(LoggingTestCase):
     def test_log_dir_that_is_a_file_gives_clear_error(self):
         """Verifies FR-02: om log_dir inte kan skapas blir det ett tydligt fel med sökvägen."""

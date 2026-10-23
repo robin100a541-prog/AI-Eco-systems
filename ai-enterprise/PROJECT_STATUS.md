@@ -18,7 +18,7 @@
 | `scripts/check_env.py` körd på Yorgos dator: **REDO för Fas 1** | docs/environment.md (Windows 11, Python 3.12.0, 2026-10-21) |
 | Paketet `aie` (1.1): `pyproject.toml`, `src/aie/`, `python -m aie check-config` | Kod 0 med standardkonfigurationen; kod 1 med en medvetet trasig konfiguration, där alla 7 fel listades (körd 2026-10-21 på Yorgos dator) |
 | Konfiguration (1.2): `config/system.toml`, `config/risk_limits.toml`, laddare med frysta dataklasser | `py -m unittest discover -s tests -v` → **49 OK** (18 gamla + 31 nya), körd 2026-10-21 på Yorgos dator, Windows 11, Python 3.12.0 |
-| Loggning (1.3): `src/aie/monitoring/`, JSON-rader i `<log_dir>/aie.log` och text i konsolen, maskerade hemligheter, `log_level` i `system.toml` | `python3 -m unittest discover -s tests -v` → **66 OK** (49 gamla + 17 nya), körd 2026-10-23 i Robins Claude Code-molnmiljö, Linux, Python 3.13.17 |
+| Loggning (1.3): `src/aie/monitoring/`, JSON-rader i `<log_dir>/aie.log` och text i konsolen, maskerade hemligheter, rotation vid 5 MB med 3 gamla filer, `log_level` i `system.toml` | `python3 -m unittest discover -s tests -v` → **68 OK** (49 gamla + 19 nya), körd 2026-10-23 i Robins Claude Code-molnmiljö, Linux, Python 3.13.17 |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 
 ## Ändrat 2026-10-21 (Fas 1-session med Yorgo)
@@ -29,13 +29,12 @@
 ## Ändrat 2026-10-23 (Fas 1.3-session med Robin)
 - Repot finns på GitHub (`robin100a541-prog/AI-Eco-systems`, publikt), med projektet i `ai-enterprise/`. PR #1 (Fas 0 + 1.1–1.2) är mergad.
 - 1.3 byggd på grenen `robin/fas1-3-loggning`: loggning till fil och konsol, maskering av hemligheter, automatiskt skapad `log_dir`, tydligt fel och kod 1 när den inte kan skapas. `check-config` loggar sitt resultat och sina fel.
-- Ny valfri nyckel `log_level` i `config/system.toml` (standard INFO).
+- Ny valfri nyckel `log_level` i `config/system.toml` (standard INFO), föreslagen som D-015. Loggfilen roteras vid 5 MB och tre gamla filer sparas.
 - PR #3 (öppen): Robins miljörapport från Claude Code i molnet, Robins godkännanden av D-001–D-004 och D-013, och förslaget D-014 (repot är publikt).
 
 ## Vad som INTE är gjort / inte verifierat
 - Ingen har granskat 1.3. Testerna för 1.3 är bara körda i Robins molnmiljö (Linux), inte på Windows hos Yorgo.
-- `log_level` är ett nytt fält i konfigurationsformatet som D-013 inte nämner. Inget beslut är föreslaget för det.
-- Loggfilen roteras inte och rensas aldrig. Det behöver lösas innan systemet körs länge (senast Fas 8).
+- D-015 (`log_level` och loggrotation) är föreslaget men inte godkänt av Yorgo.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - De gamla CLI-testerna körs med repots rot som arbetsmapp och skapar därför `ai-enterprise/logs/aie.log`. Mappen är gitignorerad.
 - Groq-testet (0.10) är inte gjort. Inget beslut är godkänt av båda grundarna (0.8).

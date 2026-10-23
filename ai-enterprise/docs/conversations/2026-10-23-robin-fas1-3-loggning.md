@@ -57,3 +57,19 @@ Tider anges i UTC.
 - `log_level` är ett nytt fält i formatet som D-013 inte nämner. Inget nytt beslut föreslogs, eftersom PR #3 också lägger till ett beslut överst i DECISIONS.md och de två skulle krocka.
 - Loggfilen roteras inte.
 - Testerna är inte körda på Windows.
+
+---
+
+## 2. Robin (~18:40)
+
+> PR #3 is merged. Update PR #4 from main and fix the CHANGELOG conflict by keeping both entries. Also on the same branch:
+> - Add decision D-015 to DECISIONS.md: "log_level is an optional setting in system.toml", proposed by Robin.
+> - Stop the log file from growing forever: use logging.handlers.RotatingFileHandler (standard library) with a size limit and a few backups, and add a test for it.
+> Rerun all tests, show the real output, push. Don't merge.
+
+## 2. Claude (sammanfattning av arbetet)
+
+- PR #3 var i själva verket inte mergad. GitHub visade den som öppen, och `main` hade inte ändrats, så det fanns ingen konflikt att lösa ännu. Det sades till Robin.
+- D-015 tillagt: `log_level` är valfri (standard INFO), okända värden är fel, och loggrotationens gränser står i beslutet.
+- `RotatingFileHandler`: rotation vid 5 MB, högst tre gamla filer. Två nya tester: rotation med en liten gräns (1000 byte, 2 gamla filer) och standardgränserna.
+- `python3 -m unittest discover -s tests -v` → `Ran 68 tests ... OK`.
