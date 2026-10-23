@@ -4,11 +4,19 @@
 ### Tillagt
 - Migration 4: tabellerna `agents` och `agent_state_changes`. Databasen vägrar radera agenter och ändra roll eller chef (bara status får ändras). Historiken är append-only och statuskolumnen godtar bara de sju tillstånden (FR-05, FR-06, SR-14).
 - `AgentRegistry(permissions, db)` sparar i databasen och överlever omstart. Statusändring och historikrad skrivs i samma transaktion. Ny metod `agents()`.
-- 5 nya tester. Totalt 144 gröna på Windows 11, Python 3.12.0. Ett test hoppas över på Windows (SIGINT, från 1.6).
+- 5 nya tester. Totalt 156 gröna på Windows 11, Python 3.12.0, inklusive Fas 1.7. Två SIGINT-tester hoppas över på Windows.
 ### Rättat
 - `AuthorizationEngine.check` kraschade om registret inte gick att läsa. Nu blir svaret nej, i linje med §59.
+- `tests/acceptance/test_fas1.py`: `with sqlite3.connect()` stänger inte anslutningen. På Windows låste den databasfilen, så två acceptanstester föll när den temporära mappen skulle städas. Ny hjälpfunktion `open_sqlite` stänger alltid.
 ### Ändrat
 - `AgentRegistry` kräver nu en `Database`. Registret i minnet från PR #11 är borttaget.
+
+## [0.3.0] — 2026-10-23 — Fas 1 klar
+### Tillagt
+- `tests/acceptance/test_fas1.py`: 12 acceptanstester, ett eller flera per kriterium i konstitutionen §49 och ROADMAP 1.7. De kör `python -m aie ...` i egna processer i en tom mapp. Totalt 151 tester.
+### Ändrat
+- CLI-testerna i `test_config.py` körs i testets temporära mapp, så att hela testsviten aldrig skriver i repot.
+- Version 0.2.0 → 0.3.0. Fas 1.4–1.7 (Unreleased-posterna nedan) ingår i den här versionen.
 
 ## [Unreleased] — 2026-10-23 — Fas 1.6: start, stopp och status
 ### Tillagt

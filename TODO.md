@@ -5,7 +5,6 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Now
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
-- [ ] ai-enterprise Fas 1.6–1.7: start/stop/status, acceptanstester — @robin (robin/fas1-*)
 - [ ] ai-enterprise Fas 2: agentregistret sparas i databasen (migration 4: `agents`, `agent_state_changes`) — @yorgo-jarjous (yorgo/fas2-registry-db)
 
 ## Next
@@ -13,6 +12,8 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Done
 - [x] ai-enterprise Fas 2 (förberedelse): livscykel, agentregister i minnet, `config/permissions.toml`, Authorization Engine, D-017 — @yorgo-jarjous (PR #11)
+- [x] ai-enterprise Fas 1.6–1.7: start/stop/status, acceptanstester — Fas 1 klar — @robin (PR #12 och PR #13)
+- [x] ai-enterprise Fas 1.4b: lagring från config, fel loggas — @robin (PR #8)
 - [x] ai-enterprise Fas 1.5: hashkedjad audit-logg (append-only) — @yorgo-jarjous (PR #9)
 - [x] ai-enterprise Fas 1.4: SQLite-lager med migrationer och metadatatabell — @yorgo-jarjous (PR #5)
 - [x] CI: testerna körs på Python 3.11 och 3.12 — @robin (PR #7)
