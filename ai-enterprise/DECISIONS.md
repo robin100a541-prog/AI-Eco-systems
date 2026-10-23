@@ -20,7 +20,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☐ · Robin ☐
 
 ### D-017 Behörighetsmodell: rollmandat i `permissions.toml`, default deny, styrd livscykel
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-007
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-007
 - **Beslut:**
   1. `config/permissions.toml` har en katalog `[tools]` över alla verktyg och ett mandat `[roles.<roll>]` per roll, med departement och en uttrycklig verktygslista. Ett verktyg som inte står i katalogen kan ingen roll få, så ett stavfel blir ett fel vid uppstart.
   2. Authorization Engine nekar allt som inte uttryckligen är tillåtet. Den kontrollerar i ordning: verktyget finns, agenten finns, agenten får agera, TESTING bara i sim (SR-13) och att verktyget ingår i mandatet.
@@ -29,7 +29,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   5. En agent kan inte ändra sin egen status (SR-03). Varje ändring kräver en motivering och sparas i historiken.
   6. Mandaten ändras bara via PR, aldrig medan systemet kör.
 - **Ännu inte med:** registret sparas i databasen och dataklassningen (DR-13) tillkommer när Fas 1 är klar. Detsamma gäller ProviderRouter.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt på plats, registrerat av Robin)
 
 ---
 
@@ -54,7 +54,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-23 · **Ändrar:** D-004 (ordet "privat")
 - **Bakgrund:** Repot `robin100a541-prog/AI-Eco-systems`, där `ai-enterprise/` ligger, är publikt på GitHub. D-004 utgår från ett privat repo.
 - **Beslut:** Repot får vara publikt. Därför läggs aldrig hemligheter, personuppgifter (e-post, telefon, adress, personnummer), privata belopp eller kontouppgifter i repot. Det gäller även `docs/conversations/` och `docs/environment.md`, som alla kan läsa.
-- **Väntar på:** Yorgos godkännande.
+- **Väntar på:** Inget; godkänd av båda grundarna (2026-10-23, beslutat gemensamt på plats).
 - **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt på plats, registrerat av Robin)
 
 ### D-013 Format och valideringsregler för konfigurationen
