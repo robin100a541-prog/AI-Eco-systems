@@ -5,6 +5,7 @@
 - DECISIONS.md: Robin har godkänt D-001, D-002, D-003, D-004 och D-013.
 ### Tillagt
 - D-014: GitHub-repot är publikt (föreslaget av Robin, väntar på Yorgo).
+- `docs/environment.md`: Robins miljörapport från Claude Code i molnet (REDO för Fas 1, 49 tester OK); `docs/setup.md` beskriver var respektive grundare utvecklar.
 
 ## [0.1.0] — 2026-10-21 — Fas 1.1–1.2: paket och konfiguration
 ### Tillagt
