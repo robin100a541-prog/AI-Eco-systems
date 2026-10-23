@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3c: samråd (FR-11)
+### Tillagt
+- Migration 8: `consultations` och `consultation_opinions`. Samråd ändras aldrig. Yttranden är append-only, och varje roll får ett yttrande per samråd.
+- `src/aie/collaboration/`: `required_for` avgör vilka som måste yttra sig.
+  - Ett belopp kräver CFO, riskklass medium eller högre kräver CRO och juridik eller villkor kräver Compliance.
+  - Grundarna krävs över `HUMAN_APPROVAL_THRESHOLD`, vid kritisk risk och när gränsen saknas (D-019, ER-02).
+- `ConsultationBoard`:
+  - Bara nivå 1–3 och grundare får öppna ett samråd.
+  - Bara krävda roller får yttra sig, och ett yttrande kräver motivering. En invändning kräver underlag.
+  - Samrådet är klart när alla krävda roller har yttrat sig. Enighet krävs inte, utan invändningarna lämnas vidare till oenighetshanteringen (§20, §21).
+  - Varje steg loggas i audit-loggen.
+- `tests/unit/test_consultation.py`: 13 tester.
+
 ## [Unreleased] — 2026-10-23 — Fas 3b: kontrollfunktionernas stopp (SR-05)
 ### Tillagt
 - Migration 7 `control_stops`. Ett stopp gäller en agent, ett departement eller ett verktyg. Det raderas aldrig, kan inte ändras och kan bara hävas en gång.
