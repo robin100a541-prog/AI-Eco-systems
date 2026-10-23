@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 1.5: hashkedjad revisionslogg
+### Tillagt
+- Migration 2 `audit_log`: `seq`, `ts`, `actor`, `action`, `details` (JSON), `prev_hash`, `hash`. SQLite-triggrar vägrar `UPDATE` och `DELETE` (SR-09).
+- `src/aie/audit/`: `AuditLog.append()` (egen transaktion), `AuditLog.record(tx, ...)` (inom en befintlig transaktion), `entries()` och `verify()`. Varje rads SHA-256 bygger på föregående rads hash; rad 1 på `GENESIS_HASH`.
+- `verify()` rapporterar ändrat innehåll, raderade rader, inskjutna rader och bruten kedja, och loggar varje problem som ERROR i `aie.audit`.
+- Detaljer maskeras med loggningens regler innan de sparas (SR-10). `mask_fields` i `aie.monitoring` är nu publik.
+- `tests/unit/test_audit.py`: 12 tester. Totalt 101, gröna på Python 3.11, 3.12 och 3.13.
+### Ändrat
+- `tests/unit/test_storage.py` och `test_storage_config.py`: testmigrationen numreras efter de riktiga migrationerna (`len(MIGRATIONS) + 1`) i stället för fast "2". Testerna kontrollerar samma sak som förut.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.4b: lagring från konfigurationen
 ### Tillagt
 - `open_database(config.system)` i `src/aie/memory/` öppnar `<data_dir>/<miljö>.db` med värdena från `config/system.toml` (FR-03).

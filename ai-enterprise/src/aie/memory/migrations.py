@@ -56,6 +56,35 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=2,
+        name="audit_log",
+        statements=(
+            # Fas 1.5 (SR-09): append-only revisionslogg. Varje rad innehåller hashen av
+            # föregående rad, så en ändrad, borttagen eller inskjuten rad syns vid kontroll.
+            """
+            CREATE TABLE audit_log (
+                seq       INTEGER PRIMARY KEY,
+                ts        TEXT NOT NULL,
+                actor     TEXT NOT NULL,
+                action    TEXT NOT NULL,
+                details   TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                hash      TEXT NOT NULL UNIQUE
+            ) STRICT
+            """,
+            # SQLite själv vägrar ändra eller radera rader. Hashkedjan avslöjar det som
+            # ändå ändras utanför programmet (till exempel med en annan SQLite-klient).
+            """
+            CREATE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log
+            BEGIN SELECT RAISE(ABORT, 'audit_log är append-only: rader får inte ändras'); END
+            """,
+            """
+            CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log
+            BEGIN SELECT RAISE(ABORT, 'audit_log är append-only: rader får inte raderas'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

@@ -59,15 +59,15 @@ def mask_secrets(text: str, environ: Mapping[str, str] | None = None) -> str:
     return _KEY_VALUE.sub(lambda m: f"{m['key']}{m['sep']}{MASK}", text)
 
 
-def _mask_fields(data: Any) -> Any:
+def mask_fields(data: Any) -> Any:
     """Maskerar strukturerade fält: hemliga nycklar helt, övriga strängar som text."""
     if isinstance(data, Mapping):
         return {
-            str(k): MASK if is_secret_key(str(k)) else _mask_fields(v)
+            str(k): MASK if is_secret_key(str(k)) else mask_fields(v)
             for k, v in data.items()
         }
     if isinstance(data, (list, tuple)):
-        return [_mask_fields(v) for v in data]
+        return [mask_fields(v) for v in data]
     if data is None or isinstance(data, (bool, int, float)):
         return data
     return mask_secrets(str(data))
@@ -88,7 +88,7 @@ class JsonLineFormatter(logging.Formatter):
         }
         fields = getattr(record, "fields", None)
         if fields:
-            entry["fields"] = _mask_fields(fields)
+            entry["fields"] = mask_fields(fields)
         if record.exc_info:
             entry["exception"] = mask_secrets(self.formatException(record.exc_info))
         return json.dumps(entry, ensure_ascii=False, default=str)
@@ -107,7 +107,7 @@ class ConsoleFormatter(logging.Formatter):
         fields = getattr(record, "fields", None)
         if fields:
             text += " " + json.dumps(
-                _mask_fields(fields), ensure_ascii=False, default=str
+                mask_fields(fields), ensure_ascii=False, default=str
             )
         return mask_secrets(text)
 

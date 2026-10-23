@@ -8,8 +8,10 @@ from pathlib import Path
 from aie import __version__
 from aie.memory import MIGRATIONS, Database, Migration, StorageError
 
+# Testmigrationen läggs alltid efter de riktiga, hur många de än är.
+NEXT = len(MIGRATIONS) + 1
 NOTES = Migration(
-    version=2,
+    version=NEXT,
     name="notes",
     statements=("CREATE TABLE notes (id INTEGER PRIMARY KEY, text TEXT NOT NULL) STRICT",),
 )
@@ -82,7 +84,7 @@ class TestRestart(StorageTestCase):
         with self.open() as db:
             created_at = db.metadata()["created_at"]
         with self.open(migrations=(*MIGRATIONS, NOTES)) as db:
-            self.assertEqual(db.schema_version, 2)
+            self.assertEqual(db.schema_version, NEXT)
             self.assertEqual(db.metadata()["created_at"], created_at)
 
     def test_rolled_back_transaction_saves_nothing(self):
@@ -109,31 +111,31 @@ class TestRefuseUnsafe(StorageTestCase):
         self.open(migrations=(*MIGRATIONS, NOTES)).close()
         with self.assertRaises(StorageError) as ctx:
             Database.open(self.data_dir, "sim", MIGRATIONS)
-        self.assertIn("har schemaversion 2", str(ctx.exception))
+        self.assertIn(f"har schemaversion {NEXT}", str(ctx.exception))
 
     def test_changed_migration_detected(self):
         """Verifies FR-03: en migration som ändrats efter att den körts stoppar uppstart."""
         self.open(migrations=(*MIGRATIONS, NOTES)).close()
-        tampered = Migration(2, "notes", ("CREATE TABLE notes (id INTEGER PRIMARY KEY) STRICT",))
+        tampered = Migration(NEXT, "notes", ("CREATE TABLE notes (id INTEGER PRIMARY KEY) STRICT",))
         with self.assertRaises(StorageError) as ctx:
             Database.open(self.data_dir, "sim", (*MIGRATIONS, tampered))
-        self.assertIn("migration 2 har ändrats", str(ctx.exception))
+        self.assertIn(f"migration {NEXT} har ändrats", str(ctx.exception))
 
     def test_failed_migration_rolls_back_completely(self):
         """Verifies FR-03: en migration som misslyckas halvvägs lämnar inget efter sig."""
         self.open().close()
-        broken = Migration(2, "broken", ("CREATE TABLE half (id INTEGER) STRICT", "NOT VALID SQL"))
+        broken = Migration(NEXT, "broken", ("CREATE TABLE half (id INTEGER) STRICT", "NOT VALID SQL"))
         with self.assertRaises(StorageError) as ctx:
             Database.open(self.data_dir, "sim", (*MIGRATIONS, broken))
         self.assertIn("rullades tillbaka", str(ctx.exception))
         with self.open() as db:
-            self.assertEqual(db.schema_version, 1)
+            self.assertEqual(db.schema_version, len(MIGRATIONS))
             tables = {r[0] for r in db.connection.execute("SELECT name FROM sqlite_master")}
             self.assertNotIn("half", tables)
 
     def test_migration_versions_must_be_contiguous(self):
         """Verifies FR-03: migrationer med luckor i versionerna avvisas."""
-        gap = Migration(3, "gap", ("SELECT 1",))
+        gap = Migration(NEXT + 1, "gap", ("SELECT 1",))
         with self.assertRaises(ValueError):
             Database.open(self.data_dir, "sim", (*MIGRATIONS, gap))
 
