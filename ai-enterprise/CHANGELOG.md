@@ -7,6 +7,19 @@
 - D-014: GitHub-repot är publikt (föreslaget av Robin, väntar på Yorgo).
 - `docs/environment.md`: Robins miljörapport från Claude Code i molnet (REDO för Fas 1, 49 tester OK); `docs/setup.md` beskriver var respektive grundare utvecklar.
 
+## [0.2.0] — 2026-10-23 — Fas 1.3: loggning
+### Tillagt
+- `src/aie/monitoring/`: loggning med Pythons `logging` (FR-04). Varje händelse skrivs som en JSON-rad i `<log_dir>/aie.log` (tidsstämpel i UTC, nivå, källa, plats i koden, meddelande, valfria fält) och som läsbar text i konsolen.
+- Maskering av hemligheter i fil och konsol (SR-10): `nyckel=värde` där nyckeln ser ut som `*_KEY`, `*_TOKEN`, `*_SECRET`, `*_PASSWORD` eller `password`; hemliga nycklar i strukturerade fält; värdet av hemliga miljövariabler var det än står, även i tracebacks.
+- En saknad `log_dir` skapas automatiskt. Kan den inte skapas blir det `LoggingSetupError`, och `check-config` skriver `FEL: log_dir ...` och avslutar med kod 1.
+- `log_level` i `config/system.toml` (DEBUG, INFO, WARNING, ERROR, CRITICAL). Valfri, standard INFO. Ett okänt värde är ett konfigurationsfel (FR-02). Beslut D-015 föreslaget.
+- Loggfilen roteras med `RotatingFileHandler`: vid 5 MB blir `aie.log` till `aie.log.1`, och högst tre gamla filer sparas.
+- `check-config` loggar resultatet. Konfigurationsfel skrivs ut som förut och loggas dessutom i `logs/` i arbetsmappen, eftersom `log_dir` är okänd när konfigurationen är ogiltig.
+- `tests/unit/test_logging.py` med 19 tester. Totalt 68 tester, alla gröna i Robins Claude Code-molnmiljö (Linux, Python 3.13.17).
+### Ändrat
+- `is_secret_key` i `src/aie/config/loader.py` är nu publik så att loggningen använder samma regel som konfigurationen.
+- Version 0.1.0 → 0.2.0 i `pyproject.toml` och `src/aie/__init__.py`.
+
 ## [0.1.0] — 2026-10-21 — Fas 1.1–1.2: paket och konfiguration
 ### Tillagt
 - `pyproject.toml` (paket `aie`, Python >= 3.11, inga beroenden).

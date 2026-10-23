@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 1 — föreslagna beslut
 
+### D-015 `log_level` är en valfri inställning i `system.toml`
+- **Status:** Föreslagen · **Föreslagen av:** Robin, 2026-10-23 · **Bygger på:** D-003, D-013
+- **Beslut:**
+  1. `config/system.toml` får nyckeln `log_level` med något av värdena `DEBUG`, `INFO`, `WARNING`, `ERROR` eller `CRITICAL` (versaler).
+  2. Nyckeln är valfri. Saknas den gäller `INFO`, så att äldre konfigurationer fortfarande är giltiga.
+  3. Ett annat värde är ett konfigurationsfel som stoppar uppstart (FR-02).
+  4. Loggfilen `<log_dir>/aie.log` roteras vid 5 MB och högst tre gamla filer sparas. Det är fasta värden i koden; att göra dem konfigurerbara kräver ett nytt beslut.
+- **Motivering:** Nivån behöver kunna sänkas till `DEBUG` vid felsökning utan kodändring. Rotationen hindrar att loggarna fyller disken när systemet körs länge.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
+
 ### D-014 GitHub-repot är publikt
 - **Status:** Föreslagen · **Föreslagen av:** Robin, 2026-10-23 · **Ändrar:** D-004 (ordet "privat")
 - **Bakgrund:** Repot `robin100a541-prog/AI-Eco-systems`, där `ai-enterprise/` ligger, är publikt på GitHub. D-004 utgår från ett privat repo.

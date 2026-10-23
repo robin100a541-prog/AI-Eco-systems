@@ -3,7 +3,7 @@
 # därför finns ingen [build-system]-sektion (den skulle hämta setuptools).
 [project]
 name = "aie"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI Enterprise System — AI-företag vars skyddsräcken upprätthålls av kod"
 readme = "README.md"
 requires-python = ">=3.11"
