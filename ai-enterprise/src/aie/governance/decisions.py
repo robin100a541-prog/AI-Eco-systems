@@ -132,15 +132,7 @@ class DecisionLog:
         """Fattar beslutet om `actor` har befogenhet. Annars `PermissionDenied`, `NeedsApproval` eller `DecisionError`."""
         if actor not in self._founders:
             self._engine.require(actor, TOOL)  # nej revideras av motorn
-        task = self._board.get(task_id)
-        if task is None:
-            raise DecisionError(
-                f"uppgift {task_id} finns inte; ett beslut måste höra till en uppgift (§51)"
-            )
-        if task.status is TaskStatus.CANCELLED:
-            raise DecisionError(
-                f"uppgift {task_id} är avbruten; inga nya beslut om den"
-            )
+        task = self.check_task(task_id)
         if actor not in self._founders and actor not in (
             task.owner_id,
             task.created_by,
@@ -151,6 +143,15 @@ class DecisionLog:
         self.validate(draft, task_id)
         self.check_authority(actor, task_id, draft.budget_minor)
         return self._insert(actor, task_id, draft)
+
+    def check_task(self, task_id: int) -> Task:
+        """Uppgiften måste finnas och inte vara avbruten; ett beslut hör alltid till en uppgift (§51)."""
+        task = self._board.get(task_id)
+        if task is None:
+            raise DecisionError(f"uppgift {task_id} finns inte; ett beslut måste höra till en uppgift (§51)")
+        if task.status is TaskStatus.CANCELLED:
+            raise DecisionError(f"uppgift {task_id} är avbruten; inga nya beslut om den")
+        return task
 
     def record_approved(
         self, approvers: Sequence[str], task_id: int, draft: DecisionDraft

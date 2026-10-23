@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3: eskalering till grundarna och godkännandekö
+### Tillagt
+- Migration 12: `approval_requests` och `approval_votes`. Förfrågningar raderas aldrig, en avgjord förfrågan ändras aldrig och rösterna är append-only.
+- `ApprovalQueue` (`src/aie/governance/escalation.py`): `submit_decision()` registrerar beslutet direkt när det är inom mandat och gräns, annars hamnar det i kön (över `HUMAN_APPROVAL_THRESHOLD` eller utanför agentens mandat). `submit_dispute()` tar en tvist som är eskalerad till grundarna, och `submit_governance()` en ändring i konstitution, gränser eller mandat. Kön räknar ut 1 eller 2 grundare enligt D-019.
+- `approve()` och `reject()`: bara grundare, en röst var, ett nej med motivering avslår. Ett godkänt beslut skrivs i beslutsloggen med grundarna som beslutsfattare. En tvist över en hård gräns kan aldrig godkännas, bara avslås.
+- `python -m aie approvals list|approve|reject [id] --as <grundare> --note "..."` visar och avgör kön. Allt revideras.
+- `config/system.toml`: `founders = ["robin", "yorgo"]` (D-021).
+- `tests/unit/test_escalation.py`: 16 tester, bland annat att allt fungerar när alla kvoter är slut och att styrningskoden aldrig importerar en modellklient.
 ## [Unreleased] — 2026-10-23 — Fas 3h: juridisk konflikt ⇒ stopp och Compliance (SR-16)
 ### Tillagt
 - Migration 11 `legal_holds`. Högst en aktiv hållning per uppgift. En hållning raderas aldrig, kan inte ändras och släpps bara en gång.

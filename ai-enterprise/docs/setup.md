@@ -93,6 +93,17 @@ python3 -m aie stop      # i ett annat fönster: ber systemet stanna och väntar
 
 Om förra körningen dog utan att stänga ned (strömavbrott, dödad process) märker `start` det, loggar det och startar ändå.
 
+## 2e. Grundarnas godkännandekö (Fas 3)
+Det som ligger utanför en agents mandat eller över `HUMAN_APPROVAL_THRESHOLD` väntar på grundarna. `--as` måste vara ett namn i `founders` i `config/system.toml`.
+
+```bash
+python3 -m aie approvals list                                      # det som väntar
+python3 -m aie approvals approve 3 --as robin --note "OK"          # en röst; över gränsen krävs båda
+python3 -m aie approvals reject 3 --as yorgo --note "För hög risk" # ett nej avslår; motivering krävs
+```
+
+Kod 0 betyder att det lyckades. Kod 1 betyder ett fel, till exempel att du inte är grundare, redan har röstat eller försöker godkänna något över en hård gräns. Allt hamnar i revisionsloggen.
+
 ## 3. Skapa det gemensamma repot (en av er)
 ```bash
 cd ai-enterprise

@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-021 Grundarna står i konfigurationen; godkännandekön följer D-019
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-23 · **Bygger på:** D-019, D-020
+- **Beslut:**
+  1. `config/system.toml` får den valfria nyckeln `founders`, en lista med grundarnas id (små bokstäver, siffror, `-` och `_`). Nu `["robin", "yorgo"]`. Godkännandekön startar inte med färre än två grundare.
+  2. Det som ligger utanför en agents mandat eller över `HUMAN_APPROVAL_THRESHOLD` hamnar i grundarnas godkännandekö (migration 12, `approval_requests` och `approval_votes`). Kön räknar ut hur många som krävs enligt D-019: en grundare upp till gränsen, båda över den, och båda för ändringar i konstitution, gränser eller mandat.
+  3. Varje grundare röstar högst en gång per förfrågan. Ett nej från en grundare avslår förfrågan och kräver en motivering.
+  4. En tvist vars förslag bryter mot en hård gräns (§21) kan inte godkännas, inte ens av båda grundarna. Den kan bara avslås, eller så ändras gränsen först (D-019 punkt 3).
+  5. Röster, godkännanden, avslag och nekade försök skrivs till revisionsloggen. Förfrågningar raderas aldrig, och en avgjord förfrågan ändras aldrig.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-020 Hierarkin i koden: nivåer per roll, fasta rapportvägar, skyddade styrverktyg
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-017, D-019 · **Ändrar:** formatet för `permissions.toml` (D-017): ny obligatorisk nyckel `level`
 - **Beslut:**

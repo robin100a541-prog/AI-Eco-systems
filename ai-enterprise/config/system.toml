@@ -13,5 +13,8 @@ log_dir = "logs"
 # Lägsta nivå som loggas: DEBUG, INFO, WARNING, ERROR eller CRITICAL. Saknas = INFO.
 log_level = "INFO"
 
+# Grundarnas ID:n (nivå 0). Används av godkännandekön: `python -m aie approvals ...` (D-019, D-021).
+founders = ["robin", "yorgo"]
+
 # I sim måste valutan vara SIM (ER-15). I prod en verklig valuta, t.ex. SEK (Q-03).
 base_currency = "SIM"
