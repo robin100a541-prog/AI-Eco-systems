@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 2: rapportformat (FR-08)
+### Tillagt
+- `src/aie/reporting/`: `Report` med påståenden (`Claim`) i exakt en av de tio kategorierna i §7, från hypotes till realiserad nettovinst. Rapporten valideras när den skapas och alla fel listas samtidigt.
+- Från och med `done` krävs underlag (`ledger:`, `task:`, `audit:`, `file:` eller `url:`). Bokförda och realiserade siffror måste peka på ledgern och ha ett belopp (ER-09, ER-11).
+- Belopp är heltal plus valuta och får bara anges för prognos, bokfört och realiserat. Bara nettoresultatet får vara negativt, och en rapport har bara en valuta (ER-15).
+- `to_dict` och `from_dict` ger JSON, så att rapporter kan läggas i audit-loggen.
+- `tests/unit/test_reporting.py`: 13 tester.
+
 ## [Unreleased] — 2026-10-23 — D-017 och D-014 godkända
 ### Ändrat
 - DECISIONS.md: D-017 (behörighetsmodellen) godkänd av båda grundarna. I D-014 är raden *Väntar på* uppdaterad till godkänd av båda. Ingen annan beslutstext ändrad.
