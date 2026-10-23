@@ -87,6 +87,27 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=3,
+        name="runtime_state",
+        statements=(
+            # Fas 1.6 (FR-01): systemets driftläge. Exakt en rad (id = 1).
+            # stop_requested sätts av `aie stop` och läses av den process som kör `aie start`,
+            # så stopp fungerar likadant på Windows, macOS och Linux utan signaler.
+            """
+            CREATE TABLE runtime_state (
+                id             INTEGER PRIMARY KEY CHECK (id = 1),
+                state          TEXT NOT NULL CHECK (state IN ('stopped', 'running')),
+                pid            INTEGER,
+                started_at     TEXT,
+                stopped_at     TEXT,
+                stop_requested INTEGER NOT NULL DEFAULT 0 CHECK (stop_requested IN (0, 1)),
+                last_exit      TEXT CHECK (last_exit IN ('clean', 'error', 'unclean'))
+            ) STRICT
+            """,
+            "INSERT INTO runtime_state (id, state) VALUES (1, 'stopped')",
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

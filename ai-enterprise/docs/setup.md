@@ -74,6 +74,25 @@ py -m aie check-config
 
 Varför inte `pip install -e .`? Det kräver ett byggverktyg (setuptools) som pip laddar ner. D-002 tillåter inga beroenden, så paketet körs direkt från källkoden.
 
+## 2d. Starta och stoppa systemet (Fas 1.6)
+Stå i `ai-enterprise/` med `PYTHONPATH=src` satt (se 2c). Databasen hamnar i `data_dir` och loggen i `log_dir` från `config/system.toml`, relativt mappen du står i.
+
+```bash
+python3 -m aie init      # skapar eller uppgraderar databasen
+python3 -m aie start     # kör tills det ombeds stanna; Ctrl+C stänger ned rent
+python3 -m aie status    # i ett annat fönster: driftläge och kontroll av revisionsloggen
+python3 -m aie stop      # i ett annat fönster: ber systemet stanna och väntar (högst 30 s)
+```
+
+**Kod 0** betyder att kommandot lyckades. **Kod 1** betyder ett fel som är utskrivet och loggat:
+- ogiltig konfiguration
+- en `log_dir` eller `data_dir` som inte kan skapas
+- en manipulerad revisionslogg (då vägrar `start`, och `status` ger kod 1)
+- systemet är redan igång
+- `stop` gav upp efter väntetiden
+
+Om förra körningen dog utan att stänga ned (strömavbrott, dödad process) märker `start` det, loggar det och startar ändå.
+
 ## 3. Skapa det gemensamma repot (en av er)
 ```bash
 cd ai-enterprise
