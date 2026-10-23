@@ -161,13 +161,21 @@ def setup_logging(
 
 
 def shutdown_logging() -> None:
-    """Stänger och tar bort loggerns handlers, så att loggfilen släpps (viktigt på Windows)."""
+    """Stänger och tar bort loggerns handlers, så att loggfilen släpps (viktigt på Windows).
+
+    Kvar blir bara en `NullHandler`: utan loggning igång ska ingenting skrivas, inte heller
+    via Pythons reserv-handler som annars skriver varningar till stderr.
+    """
     logger = logging.getLogger(LOGGER_NAME)
     for handler in list(logger.handlers):
         logger.removeHandler(handler)
         handler.close()
+    logger.addHandler(logging.NullHandler())
 
 
 def get_logger(name: str | None = None) -> logging.Logger:
     """Logger under `aie`: `get_logger("cli")` ger `aie.cli`."""
     return logging.getLogger(f"{LOGGER_NAME}.{name}" if name else LOGGER_NAME)
+
+
+shutdown_logging()  # loggern `aie` är tyst tills setup_logging anropas
