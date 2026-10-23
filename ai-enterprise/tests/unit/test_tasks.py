@@ -10,6 +10,8 @@ from aie.authorization import AuthorizationEngine, PermissionDenied, load_permis
 from aie.memory import Database
 from aie.orchestration import TaskBoard, TaskError, TaskStatus
 
+from .org_helpers import register_in_line
+
 ROOT = Path(__file__).resolve().parents[2]
 S, T = AgentState, TaskStatus
 
@@ -34,7 +36,7 @@ class TaskCase(unittest.TestCase):
         return db
 
     def activate(self, agent_id, role):
-        self.registry.register(agent_id, role, None, "yorgo", "test")
+        register_in_line(self.registry, self.permissions, agent_id, role)
         for state in (S.CREATED, S.TESTING, S.ACTIVE):
             self.registry.transition(agent_id, state, "yorgo", "test")
 

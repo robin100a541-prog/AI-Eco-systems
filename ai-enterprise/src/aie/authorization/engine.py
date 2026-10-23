@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from ..agents import ACTING_STATES, AgentRegistry, AgentState
 from ..audit import AuditLog
-from .permissions import Permissions
+from .permissions import PROTECTED_PREFIX, Permissions
 
 ENVIRONMENTS = ("sim", "prod")
 
@@ -78,6 +78,8 @@ class AuthorizationEngine:
         def deny(reason: str) -> Decision:
             return Decision(False, agent_id, tool, reason)
 
+        if tool.startswith(PROTECTED_PREFIX):
+            return deny("styrverktyg; bara grundarna får ändra konstitution, gränser och mandat (SR-04)")
         if tool not in self._permissions.tools:
             return deny("verktyget finns inte i katalogen")
         agent = self._registry.get(agent_id)

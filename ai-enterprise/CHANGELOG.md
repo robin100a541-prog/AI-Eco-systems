@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3a: hierarki och styrverktyg
+### Tillagt
+- `src/aie/agents/hierarchy.py`: nivåerna i §8, regler för rapportvägar (`reporting_line_error`) och `OrgChart`. `OrgChart` har befälskedja, underställda, departementschefer, kontrollfunktioner och `is_above`.
+- Registret vägrar rapportvägar som bryter mot §8. Kontrollfunktionerna kan inte lyda under CEO, en chef måste lyda under CEO och en arbetsagent måste ha en chef i samma departement (FR-09).
+- `permissions.toml`:
+  - obligatorisk `level` per roll
+  - ny roll `compliance` (nivå 2)
+  - styrverktygen `governance.change_constitution`, `governance.change_limits` och `governance.change_mandate`, som ingen roll kan få
+- Authorization Engine nekar alla `governance.*` och loggar försöket (SR-04). Det gör ROADMAP:s första nyckeltest för Fas 3 grönt.
+- D-020 (föreslaget).
+- `tests/unit/test_hierarchy.py`: 9 tester. `tests/unit/org_helpers.py` skapar giltiga chefer i tester som inte handlar om hierarkin.
+### Ändrat
+- Fas 2-acceptansens MVP: CFO och CRO rapporterar till grundarna, inte till CEO.
+- `test_llm_gateway.py`, `test_tasks.py` och `test_authorization.py` registrerar agenter med giltiga rapportvägar.
+
 ## [Unreleased] — 2026-10-23 — Fas 2 avslutad: D-018 och D-019
 ### Ändrat
 - DECISIONS.md: D-018 (ProviderRouter) godkänd av båda grundarna. Bara fälten *Status* och *Godkänd av* ändrades.
