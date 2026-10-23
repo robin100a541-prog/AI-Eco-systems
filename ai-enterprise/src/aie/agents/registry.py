@@ -5,6 +5,7 @@ Databasen själv skyddar det viktigaste. Agenter kan inte raderas, roll och chef
 ändras, och historiken är append-only. Koden här lägger till reglerna:
 - Ett ID registreras bara en gång, och rollen måste finnas i `permissions.toml`.
 - Chefen måste redan finnas och inte vara avvecklad. En agent kan inte vara sin egen chef.
+- Rapportvägen måste följa hierarkin i §8 (se `hierarchy.py`). Kontrollfunktionerna lyder till exempel inte under CEO.
 - En agent kan aldrig ändra sin egen status (SR-03); `changed_by` måste vara någon annan.
 - Varje statusändring kräver en motivering och sparas i historiken med vem och när (SR-14).
 - Statusändring och historikrad skrivs i samma transaktion: antingen båda eller ingen.
@@ -17,6 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from .hierarchy import reporting_line_error
 from .lifecycle import AgentState, check_transition
 
 if TYPE_CHECKING:  # bara för typning; authorization importerar agents, inte tvärtom
@@ -74,10 +76,16 @@ class AgentRegistry:
         with self._db.transaction() as tx:
             if self._fetch(tx, agent_id) is not None:
                 raise RegistryError(f"agenten {agent_id!r} finns redan")
+            manager_level = manager_department = None
             if manager_id is not None:
                 manager = self._fetch(tx, manager_id)
                 if manager is None or manager.state is AgentState.RETIRED:
                     raise RegistryError(f"chefen {manager_id!r} finns inte eller är avvecklad")
+                manager_level = self._permissions.roles[manager.role].level
+                manager_department = manager.department
+            problem = reporting_line_error(mandate.level, mandate.department, manager_level, manager_department)
+            if problem:
+                raise RegistryError(f"{agent_id} ({role}): {problem}")
             tx.execute(
                 "INSERT INTO agents (agent_id, role, department, manager_id, state, created_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
