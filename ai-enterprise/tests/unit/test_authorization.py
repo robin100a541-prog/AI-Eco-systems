@@ -4,6 +4,7 @@ Verifierar FR-05, FR-06, SR-01, SR-02, SR-03, SR-13 och SR-14. Nyckeltestet frå
 ("en agent försöker använda ett verktyg utanför mandatet → nekas och loggas") är
 `test_tool_outside_mandate_denied_and_logged`.
 """
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -133,7 +134,13 @@ class RegistryCase(PermissionsCase):
     def setUp(self):
         super().setUp()
         self.permissions = self.load(VALID)
-        self.registry = AgentRegistry(self.permissions, clock=lambda: "2026-10-23T12:00:00+00:00")
+        self.db = self.open_db()
+        self.registry = AgentRegistry(self.permissions, self.db, clock=lambda: "2026-10-23T12:00:00+00:00")
+
+    def open_db(self):
+        db = Database.open(self.dir / "data", "sim")
+        self.addCleanup(db.close)
+        return db
 
 
 class TestRegistry(RegistryCase):
@@ -181,13 +188,52 @@ class TestRegistry(RegistryCase):
         ):
             with self.subTest(args=args), self.assertRaises(RegistryError):
                 self.registry.register(*args, "yorgo", "test")
+        self.assertEqual([a.agent_id for a in self.registry.agents()], ["res-1"])
+
+
+class TestRegistryPersistence(RegistryCase):
+    def test_registry_survives_restart(self):
+        """Verifies FR-03 och FR-05: agenter, status och historik finns kvar efter omstart."""
+        make_active(self.registry, "cfo-1", "cfo")
+        self.registry.register("res-1", "researcher", "cfo-1", "yorgo", "behövs")
+        self.db.close()
+        registry = AgentRegistry(self.permissions, self.open_db())
+        self.assertEqual(registry.get("cfo-1").state, S.ACTIVE)
+        self.assertEqual(registry.get("res-1").manager_id, "cfo-1")
+        self.assertEqual(len(registry.history("cfo-1")), 4)
+
+    def test_database_blocks_delete_and_identity_change(self):
+        """Verifies SR-14: databasen vägrar radera agenter och ändra roll eller chef."""
+        make_active(self.registry, "res-1", "researcher")
+        execute = self.db.connection.execute
+        for sql in (
+            "DELETE FROM agents WHERE agent_id = 'res-1'",
+            "UPDATE agents SET role = 'cfo' WHERE agent_id = 'res-1'",
+            "UPDATE agent_state_changes SET reason = 'omskriven'",
+            "DELETE FROM agent_state_changes",
+        ):
+            with self.subTest(sql=sql), self.assertRaises(sqlite3.IntegrityError):
+                execute(sql)
+        self.assertEqual(self.registry.get("res-1").role, "researcher")
+
+    def test_failed_transition_changes_nothing(self):
+        """Verifies FR-06: en otillåten övergång lämnar varken ny status eller historikrad."""
+        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        with self.assertRaises(IllegalTransition):
+            self.registry.transition("res-1", S.ACTIVE, "yorgo", "genväg")
+        self.assertEqual(self.registry.get("res-1").state, S.PROPOSED)
+        self.assertEqual(len(self.registry.history("res-1")), 1)
+
+    def test_state_column_rejects_unknown_state(self):
+        """Verifies FR-06: databasen godtar bara de sju tillstånden."""
+        self.registry.register("res-1", "researcher", None, "yorgo", "test")
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.db.connection.execute("UPDATE agents SET state = 'GOD_MODE'")
 
 
 class TestAuthorization(RegistryCase):
     def setUp(self):
         super().setUp()
-        self.db = Database.open(self.dir / "data", "sim")
-        self.addCleanup(self.db.close)
         self.audit = AuditLog(self.db)
         self.engine = AuthorizationEngine(self.permissions, self.registry, "sim", self.audit)
         make_active(self.registry, "res-1", "researcher")
@@ -243,10 +289,20 @@ class TestAuthorization(RegistryCase):
 
     def test_audit_failure_means_deny(self):
         """Verifies SR-01 (§59): kan beslutet inte loggas blir svaret nej."""
-        self.db.close()  # loggen kan inte längre skrivas
-        decision = self.engine.check("res-1", "report.write")
+        audit_db = Database.open(self.dir / "audit", "sim")
+        engine = AuthorizationEngine(self.permissions, self.registry, "sim", AuditLog(audit_db))
+        audit_db.close()  # loggen kan inte längre skrivas, men registret fungerar
+        decision = engine.check("res-1", "report.write")
         self.assertFalse(decision.allowed)
         self.assertIn("audit-loggen kunde inte skrivas", decision.reason)
+
+    def test_unreadable_registry_means_deny(self):
+        """Verifies SR-01 (§59): kan kontrollen inte genomföras blir svaret nej, ingen krasch."""
+        engine = AuthorizationEngine(self.permissions, self.registry, "sim")
+        self.db.close()
+        decision = engine.check("res-1", "report.write")
+        self.assertFalse(decision.allowed)
+        self.assertIn("kunde inte avgöra", decision.reason)
 
 
 if __name__ == "__main__":

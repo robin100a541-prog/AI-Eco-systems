@@ -9,6 +9,7 @@ Default deny. Svaret är ja bara om **alla** villkor stämmer, i den här ordnin
 
 Varje beslut, ja eller nej, skrivs till audit-loggen när en sådan finns. Om loggningen
 misslyckas blir svaret nej. Systemet ska inte göra något det inte kan bevisa i efterhand (§59).
+Samma sak gäller om själva kontrollen misslyckas, till exempel om registret inte kan läsas.
 """
 from __future__ import annotations
 
@@ -51,7 +52,10 @@ class AuthorizationEngine:
         self._audit = audit
 
     def check(self, agent_id: str, tool: str) -> Decision:
-        decision = self._decide(agent_id, tool)
+        try:
+            decision = self._decide(agent_id, tool)
+        except Exception as exc:  # noqa: BLE001 — t.ex. registret går inte att läsa: kan inte avgöra ⇒ nej
+            decision = Decision(False, agent_id, tool, f"kunde inte avgöra ({type(exc).__name__}); nekas")
         if self._audit is None:
             return decision
         try:

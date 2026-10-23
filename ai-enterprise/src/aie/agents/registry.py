@@ -1,20 +1,19 @@
 """Agentregister (FR-05). Varje agent har ID, roll, departement, chef och livscykelstatus.
 
-Förberedelse inför Fas 2: registret ligger i minnet. Det sparas i databasen först när
-Fas 1 är klar, så att migrationsnumret inte krockar med 1.6–1.7.
-Gränssnittet (`register`, `get`, `transition`, `history`) ska vara detsamma då.
-
-Regler som upprätthålls här:
+Registret sparas i databasen (migration 4) och överlever därför omstart (FR-03).
+Databasen själv skyddar det viktigaste. Agenter kan inte raderas, roll och chef kan inte
+ändras, och historiken är append-only. Koden här lägger till reglerna:
 - Ett ID registreras bara en gång, och rollen måste finnas i `permissions.toml`.
 - Chefen måste redan finnas och inte vara avvecklad. En agent kan inte vara sin egen chef.
 - En agent kan aldrig ändra sin egen status (SR-03); `changed_by` måste vara någon annan.
-- Varje statusändring sparas i historiken med vem, varför och tid. Historiken raderas aldrig (SR-14).
+- Varje statusändring kräver en motivering och sparas i historiken med vem och när (SR-14).
+- Statusändring och historikrad skrivs i samma transaktion: antingen båda eller ingen.
 """
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
-from dataclasses import dataclass, replace
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -22,6 +21,7 @@ from .lifecycle import AgentState, check_transition
 
 if TYPE_CHECKING:  # bara för typning; authorization importerar agents, inte tvärtom
     from ..authorization.permissions import Permissions
+    from ..memory import Database
 
 _AGENT_ID = re.compile(r"[a-z][a-z0-9_-]{1,63}")
 
@@ -54,50 +54,87 @@ class StateChange:
 
 
 class AgentRegistry:
-    def __init__(self, permissions: Permissions, clock: Callable[[], str] = _utc_now) -> None:
+    def __init__(self, permissions: Permissions, db: Database, clock: Callable[[], str] = _utc_now) -> None:
         self._permissions = permissions
+        self._db = db
         self._clock = clock
-        self._agents: dict[str, Agent] = {}
-        self._history: list[StateChange] = []
 
     def register(self, agent_id: str, role: str, manager_id: str | None, registered_by: str, reason: str) -> Agent:
         if not _AGENT_ID.fullmatch(agent_id):
             raise RegistryError(f"ogiltigt agent-ID {agent_id!r} (gemener, siffror, - och _, 2–64 tecken)")
-        if agent_id in self._agents:
-            raise RegistryError(f"agenten {agent_id!r} finns redan")
         mandate = self._permissions.roles.get(role)
         if mandate is None:
             raise RegistryError(f"rollen {role!r} finns inte i permissions.toml")
-        if manager_id is not None:
-            if manager_id == agent_id:
-                raise RegistryError("en agent kan inte vara sin egen chef")
-            manager = self._agents.get(manager_id)
-            if manager is None or manager.state is AgentState.RETIRED:
-                raise RegistryError(f"chefen {manager_id!r} finns inte eller är avvecklad")
+        if manager_id == agent_id:
+            raise RegistryError("en agent kan inte vara sin egen chef")
         _require_reason(reason)
+
+        now = self._clock()
         agent = Agent(agent_id, role, mandate.department, manager_id)
-        self._agents[agent_id] = agent
-        self._history.append(StateChange(agent_id, None, agent.state, registered_by, reason, self._clock()))
+        with self._db.transaction() as tx:
+            if self._fetch(tx, agent_id) is not None:
+                raise RegistryError(f"agenten {agent_id!r} finns redan")
+            if manager_id is not None:
+                manager = self._fetch(tx, manager_id)
+                if manager is None or manager.state is AgentState.RETIRED:
+                    raise RegistryError(f"chefen {manager_id!r} finns inte eller är avvecklad")
+            tx.execute(
+                "INSERT INTO agents (agent_id, role, department, manager_id, state, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (agent_id, role, agent.department, manager_id, agent.state.value, now),
+            )
+            self._record(tx, StateChange(agent_id, None, agent.state, registered_by, reason, now))
         return agent
 
     def get(self, agent_id: str) -> Agent | None:
-        return self._agents.get(agent_id)
+        return self._fetch(self._db.connection, agent_id)
+
+    def agents(self) -> Iterator[Agent]:
+        rows = self._db.connection.execute(
+            "SELECT agent_id, role, department, manager_id, state FROM agents ORDER BY agent_id"
+        )
+        for agent_id, role, department, manager_id, state in rows:
+            yield Agent(agent_id, role, department, manager_id, AgentState(state))
 
     def transition(self, agent_id: str, target: AgentState, changed_by: str, reason: str) -> Agent:
-        agent = self._agents.get(agent_id)
-        if agent is None:
-            raise RegistryError(f"agenten {agent_id!r} finns inte")
         if changed_by == agent_id:
             raise RegistryError("en agent kan inte ändra sin egen status (SR-03)")
         _require_reason(reason)
-        check_transition(agent.state, target)
-        updated = replace(agent, state=target)
-        self._agents[agent_id] = updated
-        self._history.append(StateChange(agent_id, agent.state, target, changed_by, reason, self._clock()))
-        return updated
+        with self._db.transaction() as tx:  # BEGIN IMMEDIATE: läsning och skrivning hänger ihop
+            agent = self._fetch(tx, agent_id)
+            if agent is None:
+                raise RegistryError(f"agenten {agent_id!r} finns inte")
+            check_transition(agent.state, target)
+            tx.execute("UPDATE agents SET state = ? WHERE agent_id = ?", (target.value, agent_id))
+            self._record(tx, StateChange(agent_id, agent.state, target, changed_by, reason, self._clock()))
+        return Agent(agent.agent_id, agent.role, agent.department, agent.manager_id, target)
 
     def history(self, agent_id: str | None = None) -> tuple[StateChange, ...]:
-        return tuple(c for c in self._history if agent_id is None or c.agent_id == agent_id)
+        sql = "SELECT agent_id, old_state, new_state, changed_by, reason, at FROM agent_state_changes"
+        params: tuple[str, ...] = ()
+        if agent_id is not None:
+            sql, params = sql + " WHERE agent_id = ?", (agent_id,)
+        rows = self._db.connection.execute(sql + " ORDER BY id", params)
+        return tuple(
+            StateChange(a, AgentState(old) if old else None, AgentState(new), by, reason, at)
+            for a, old, new, by, reason, at in rows
+        )
+
+    @staticmethod
+    def _fetch(conn, agent_id: str) -> Agent | None:
+        row = conn.execute(
+            "SELECT agent_id, role, department, manager_id, state FROM agents WHERE agent_id = ?", (agent_id,)
+        ).fetchone()
+        return None if row is None else Agent(*row[:4], AgentState(row[4]))
+
+    @staticmethod
+    def _record(conn, change: StateChange) -> None:
+        conn.execute(
+            "INSERT INTO agent_state_changes (agent_id, old_state, new_state, changed_by, reason, at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (change.agent_id, change.old.value if change.old else None, change.new.value,
+             change.changed_by, change.reason, change.at),
+        )
 
 
 def _require_reason(reason: str) -> None:
