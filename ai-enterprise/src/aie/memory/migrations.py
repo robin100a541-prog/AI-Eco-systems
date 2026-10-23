@@ -500,6 +500,68 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=12,
+        name="opportunities",
+        statements=(
+            # Fas 3i (FR-25, D-011, D-025): "Utred möjlighet" (Yorgo). Ett ärende går
+            # Research → Compliance → CFO → grundare. Bara stage och status får ändras, och bara framåt.
+            """
+            CREATE TABLE opportunities (
+                opportunity_id INTEGER PRIMARY KEY,
+                ref            TEXT,
+                kind           TEXT NOT NULL CHECK (kind IN (
+                    'channel', 'tool', 'free_api', 'revenue', 'tax', 'terms', 'license', 'market')),
+                title          TEXT NOT NULL CHECK (length(trim(title)) > 0),
+                question       TEXT NOT NULL CHECK (length(trim(question)) > 0),
+                opened_by      TEXT NOT NULL,
+                stage          TEXT NOT NULL CHECK (stage IN ('research', 'compliance', 'cfo', 'founders', 'closed')),
+                status         TEXT NOT NULL CHECK (status IN (
+                    'open', 'unconfirmed_hypothesis', 'verified', 'approved', 'approved_rule', 'rejected')),
+                opened_at      TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE UNIQUE INDEX opportunities_ref ON opportunities (ref) WHERE ref IS NOT NULL",
+            """
+            CREATE TRIGGER opportunities_no_delete BEFORE DELETE ON opportunities
+            BEGIN SELECT RAISE(ABORT, 'ärenden raderas aldrig'); END
+            """,
+            """
+            CREATE TRIGGER opportunities_fixed BEFORE UPDATE OF
+                opportunity_id, ref, kind, title, question, opened_by, opened_at ON opportunities
+            BEGIN SELECT RAISE(ABORT, 'bara stage och status får ändras'); END
+            """,
+            """
+            CREATE TRIGGER opportunities_closed BEFORE UPDATE ON opportunities
+            WHEN OLD.stage = 'closed'
+            BEGIN SELECT RAISE(ABORT, 'ett avslutat ärende ändras aldrig'); END
+            """,
+            """
+            CREATE TABLE opportunity_steps (
+                id             INTEGER PRIMARY KEY,
+                opportunity_id INTEGER NOT NULL REFERENCES opportunities (opportunity_id),
+                stage          TEXT NOT NULL,
+                actor          TEXT NOT NULL,
+                verdict        TEXT NOT NULL CHECK (verdict IN (
+                    'findings', 'ok', 'not_ok', 'uncertain', 'estimate', 'approve', 'reject')),
+                summary        TEXT NOT NULL CHECK (length(trim(summary)) > 0),
+                sources        TEXT NOT NULL CHECK (json_valid(sources)),
+                net_minor      INTEGER,
+                currency       TEXT,
+                at             TEXT NOT NULL,
+                CHECK ((net_minor IS NULL) = (currency IS NULL))
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER opportunity_steps_no_update BEFORE UPDATE ON opportunity_steps
+            BEGIN SELECT RAISE(ABORT, 'opportunity_steps är append-only'); END
+            """,
+            """
+            CREATE TRIGGER opportunity_steps_no_delete BEFORE DELETE ON opportunity_steps
+            BEGIN SELECT RAISE(ABORT, 'opportunity_steps är append-only'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
