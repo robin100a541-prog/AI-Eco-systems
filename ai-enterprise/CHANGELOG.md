@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 2: ProviderRouter, kvoter och dataklassning
+### Tillagt
+- `src/aie/llm/`: `RuleProvider` och `OpenAICompatibleProvider` (groq, openrouter `:free`, ollama) med utbytbar transport, så att testerna aldrig går ut på nätet. Nyckeln läses från miljön och syns aldrig i fel, `repr` eller loggar (SR-10).
+- `ProviderRouter`: väljer första leverantör som får ta emot datan (DR-13) och har kvot kvar (DR-12). Varje leverantör provas en gång. När ingen är kvar kastas `NoProviderAvailable` och arbetet köas, aldrig betalning (DR-01). Varje anrop loggas utan prompt.
+- Migration 6 `provider_usage`: anrop och tokens per leverantör och UTC-dygn. Anropet räknas innan det skickas.
+- `config/providers.toml` och `load_providers`: betalda typer avvisas (D-009), saknade gränser är fel (ER-02) och nycklar i filen avvisas.
+- D-018 (föreslaget): routerns regler.
+- `tests/unit/test_llm_router.py`: 16 tester med falsk transport.
+
 ## [Unreleased] — 2026-10-23 — Fas 2: rapportformat (FR-08)
 ### Tillagt
 - `src/aie/reporting/`: `Report` med påståenden (`Claim`) i exakt en av de tio kategorierna i §7, från hypotes till realiserad nettovinst. Rapporten valideras när den skapas och alla fel listas samtidigt.
