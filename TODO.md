@@ -6,9 +6,10 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 - [ ] ai-enterprise Fas 2: agentregistret sparas i databasen (migration 4: `agents`, `agent_state_changes`) — @yorgo-jarjous (yorgo/fas2-registry-db)
+- [ ] ai-enterprise Fas 2: uppgifter FR-07 (migration 5: `tasks`, `task_events`) — @yorgo-jarjous (yorgo/fas2-tasks)
 
 ## Next
-- ai-enterprise Fas 2: uppgifter (FR-07), rapportformat (FR-08), ProviderRouter + kvoter (DR-12), dataklassning (DR-13) — Yorgo tar dem i den ordningen om ingen annan har tagit dem
+- ai-enterprise Fas 2: rapportformat (FR-08), ProviderRouter + kvoter (DR-12), dataklassning (DR-13) — Yorgo tar dem i den ordningen om ingen annan har tagit dem
 
 ## Done
 - [x] ai-enterprise Fas 2 (förberedelse): livscykel, agentregister i minnet, `config/permissions.toml`, Authorization Engine, D-017 — @yorgo-jarjous (PR #11)
