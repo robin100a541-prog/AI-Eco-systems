@@ -29,6 +29,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`. ✅ (2026-10-21, gren `fas1-grund`)
 1.2 Konfigurationsläsning + validering (`config/system.toml`, `config/risk_limits.toml`). ✅ (2026-10-21, 31 tester gröna, väntar på granskning)
 1.3 Strukturerad loggning (JSON-rader till `logs/`). ✅ (2026-10-23, gren `robin/fas1-3-loggning`, 68 tester gröna, sammanslagen i PR #4)
+1.3b CI: GitHub Actions kör testerna på Python 3.11 och 3.12 vid varje PR och push till `main`. ✅ (2026-10-23, PR #7)
 1.4 SQLite-lager med migrationer och metadatatabell (miljö, schemaversion). ✅ (2026-10-23, gren `yorgo/fas1-4-sqlite`, 14 tester gröna, PR #5)
 1.5 Hashkedjad audit-logg (append-only).
 1.6 CLI: `init`, `start`, `stop`, `status`.
