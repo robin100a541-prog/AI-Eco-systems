@@ -124,3 +124,29 @@ class TestErrorsLogged(StorageConfigTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestConcurrentFirstOpen(StorageConfigTestCase):
+    def test_many_openers_on_a_new_database(self):
+        """Verifies FR-03: flera som öppnar en ny databas samtidigt (t.ex. `start` och `status`) lyckas alla."""
+        import threading
+
+        for _ in range(5):
+            data_dir = Path(tempfile.mkdtemp(dir=self.dir))
+            barrier, errors = threading.Barrier(6), []
+
+            def open_once(data_dir=data_dir, barrier=barrier, errors=errors):
+                barrier.wait()
+                try:
+                    Database.open(data_dir, "sim").close()
+                except Exception as exc:  # noqa: BLE001 — samlas och visas i testet
+                    errors.append(f"{type(exc).__name__}: {exc}")
+
+            threads = [threading.Thread(target=open_once) for _ in range(6)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(30)
+            self.assertEqual(errors, [])
+            with Database.open(data_dir, "sim") as db:
+                self.assertEqual(db.schema_version, len(MIGRATIONS))

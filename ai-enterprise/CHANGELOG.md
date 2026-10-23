@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 1.6: start, stopp och status
+### Tillagt
+- `python -m aie init | start | stop | status` (FR-01). Kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat.
+- `src/aie/runtime.py`: start i ordningen konfiguration → loggning → databas → kontroll av revisionsloggen → driftläge. Ren nedstängning vid `aie stop`, Ctrl+C och SIGTERM; revisionsrader `system.start`, `system.stop_requested` och `system.stop`.
+- Migration 3 `runtime_state`: driftläge, pid, tider, stoppbegäran och hur förra körningen slutade (`clean`, `error`, `unclean`).
+- Start vägras om revisionsloggen är manipulerad (SR-09) eller om systemet redan kör. En körning som dog utan nedstängning upptäcks och revideras.
+- Ett oväntat fel loggas med traceback, ger kod 1 och stänger ändå ned systemet.
+- `docs/setup.md` 2d: hur systemet startas och stoppas.
+- `tests/unit/test_runtime.py`: 13 tester, bland annat med riktiga processer, och ett test i `test_storage_config.py` för samtidig öppning av en ny databas. Totalt 118.
+### Rättat
+- `memory/database.py`: två processer som öppnade en ny databas samtidigt kunde krocka. Migrationer kontrolleras nu igen under skrivlåset, och WAL slås på med nya försök i upp till 5 sekunder.
+- Signalerna fångas innan något annat görs vid start, så att Ctrl+C under uppstarten också ger en ren nedstängning.
+### Ändrat
+- Hjälpen för konfigurationsfel (`_log_config_errors`) flyttad från `__main__.py` till `runtime.py`.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.5: hashkedjad audit-logg
 ### Tillagt
 - Migration 2: tabellen `audit_log` (seq, tid, actor, action, details, prev_hash, hash). Triggers gör att SQLite vägrar UPDATE och DELETE (SR-09).

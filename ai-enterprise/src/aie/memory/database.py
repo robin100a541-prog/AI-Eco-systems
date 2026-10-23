@@ -16,6 +16,7 @@ transaktion som rullas tillbaka loggas som en varning (FR-04).
 from __future__ import annotations
 
 import sqlite3
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -135,8 +136,29 @@ class Database:
         execute = self.connection.execute
         execute(f"PRAGMA busy_timeout = {BUSY_TIMEOUT_MS}")
         execute("PRAGMA foreign_keys = ON")
-        execute("PRAGMA journal_mode = WAL")
+        self._enable_wal()
         execute("PRAGMA synchronous = FULL")
+
+    def _enable_wal(self) -> None:
+        """Slår på WAL. Försöker igen i upp till BUSY_TIMEOUT_MS om filen är låst.
+
+        `PRAGMA journal_mode = WAL` väntar inte på busy_timeout: öppnar två processer en ny
+        databas samtidigt svarar SQLite direkt "database is locked". Det är tillfälligt, så
+        vi försöker igen en kort stund i stället för att vägra starta.
+        """
+        deadline = time.monotonic() + BUSY_TIMEOUT_MS / 1000
+        while True:
+            try:
+                mode = self.connection.execute("PRAGMA journal_mode = WAL").fetchone()[0]
+            except sqlite3.OperationalError as exc:
+                if "locked" not in str(exc) or time.monotonic() >= deadline:
+                    raise
+            else:
+                if mode == "wal":
+                    return
+                if time.monotonic() >= deadline:
+                    raise sqlite3.OperationalError(f"kunde inte slå på WAL (läge: {mode})")
+            time.sleep(0.01)
 
     def _applied(self) -> dict[int, str]:
         """Version → kontrollsumma för körda migrationer. Tom för en ny databas."""
@@ -171,6 +193,11 @@ class Database:
     def _apply(self, migration: Migration, first: bool) -> None:
         try:
             with self.transaction() as tx:
+                # BEGIN IMMEDIATE ger skrivlåset först här. En annan process (till exempel
+                # `aie status` samtidigt som `aie start` på en ny databas) kan ha kört samma
+                # migration medan vi väntade, så kontrollera igen under låset.
+                if migration.version in self._applied():
+                    return
                 for statement in migration.statements:
                     tx.execute(statement)
                 if first:

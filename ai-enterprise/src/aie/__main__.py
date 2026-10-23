@@ -1,21 +1,25 @@
 """Kommandoradsgränssnitt: `python -m aie <kommando>` (ARCHITECTURE.md §3.6).
 
-Fas 1.1–1.2 har bara `check-config`. `init`, `start`, `stop` och `status` byggs i 1.6.
-Från Fas 1.3 loggas varje körning till `<log_dir>/aie.log` (FR-04).
+Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
+- `check-config`  läs och validera konfigurationen (Fas 1.2)
+- `init`          skapa eller uppgradera databasen (Fas 1.6)
+- `start`         starta systemet och kör tills `stop`, Ctrl+C eller SIGTERM (Fas 1.6)
+- `stop`          be det körande systemet stanna och vänta tills det har stängt ned (Fas 1.6)
+- `status`        visa driftläget och kontrollera revisionsloggen (Fas 1.6)
+
+Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
+gäller relativt mappen kommandot körs från.
 """
+
 from __future__ import annotations
 
 import argparse
 import sys
 from pathlib import Path
 
-from . import __version__
+from . import __version__, runtime
 from .config import ConfigError, load_config
 from .monitoring import LoggingSetupError, get_logger, setup_logging, shutdown_logging
-
-# När konfigurationen är ogiltig är log_dir okänd. Felen loggas då här, relativt
-# mappen kommandot körs från, samma som standardvärdet i config/system.toml.
-FALLBACK_LOG_DIR = Path("logs")
 
 
 def _check_config(config_dir: Path) -> int:
@@ -28,7 +32,7 @@ def _check_config(config_dir: Path) -> int:
         config = load_config(config_dir)
     except ConfigError as exc:
         print(exc, file=sys.stderr)
-        _log_config_errors(exc)
+        runtime._log_config_errors(exc)
         return 1
 
     system = config.system
@@ -48,22 +52,18 @@ def _check_config(config_dir: Path) -> int:
     )
     log.info(
         "check-config: konfigurationen är giltig",
-        extra={"fields": {"environment": system.environment, "config_dir": str(config_dir)}},
+        extra={
+            "fields": {"environment": system.environment, "config_dir": str(config_dir)}
+        },
     )
     return 0
 
 
-def _log_config_errors(exc: ConfigError) -> None:
-    """Loggar konfigurationsfelen i FALLBACK_LOG_DIR. Går det inte är felen redan utskrivna."""
-    try:
-        setup_logging(FALLBACK_LOG_DIR, console=False)
-    except LoggingSetupError:
-        return
-    log = get_logger("config")
-    for error in exc.errors:
-        log.error("konfigurationsfel: %s", error)
-    for warning in exc.warnings:
-        log.warning("konfigurationsvarning: %s", warning)
+def _positive(text: str) -> float:
+    value = float(text)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("måste vara större än 0")
+    return value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -71,24 +71,49 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"aie {__version__}")
     commands = parser.add_subparsers(dest="command", required=True, metavar="kommando")
 
-    check = commands.add_parser("check-config", help="läs och validera config/*.toml")
-    check.add_argument(
-        "--config-dir",
-        type=Path,
-        default=Path("config"),
-        help="mapp med system.toml och risk_limits.toml (standard: ./config)",
+    def add(name: str, help_text: str) -> argparse.ArgumentParser:
+        sub = commands.add_parser(name, help=help_text)
+        sub.add_argument(
+            "--config-dir",
+            type=Path,
+            default=Path("config"),
+            help="mapp med system.toml och risk_limits.toml (standard: ./config)",
+        )
+        return sub
+
+    add("check-config", "läs och validera config/*.toml")
+    add("init", "skapa eller uppgradera databasen")
+    start = add("start", "starta systemet och kör tills det ombeds stanna")
+    start.add_argument(
+        "--poll-seconds",
+        type=_positive,
+        default=runtime.DEFAULT_POLL_SECONDS,
+        help="hur ofta en stoppbegäran kontrolleras (standard: 1)",
     )
+    stop = add("stop", "be systemet stanna och vänta tills det har stängt ned")
+    stop.add_argument(
+        "--wait-seconds",
+        type=_positive,
+        default=runtime.DEFAULT_STOP_WAIT_SECONDS,
+        help="hur länge stop väntar innan det ger upp med kod 1 (standard: 30)",
+    )
+    add("status", "visa driftläget och kontrollera revisionsloggen")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    commands = {
+        "check-config": lambda: _check_config(args.config_dir),
+        "init": lambda: runtime.init(args.config_dir),
+        "start": lambda: runtime.start(args.config_dir, args.poll_seconds),
+        "stop": lambda: runtime.stop(args.config_dir, args.wait_seconds),
+        "status": lambda: runtime.status(args.config_dir),
+    }
     try:
-        if args.command == "check-config":
-            return _check_config(args.config_dir)
+        return commands[args.command]()
     finally:
         shutdown_logging()  # släpper loggfilen
-    raise AssertionError(f"okänt kommando: {args.command}")  # argparse släpper inte igenom andra
 
 
 if __name__ == "__main__":
