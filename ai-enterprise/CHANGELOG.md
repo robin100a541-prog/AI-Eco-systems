@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 1.5: hashkedjad audit-logg
+### Tillagt
+- Migration 2: tabellen `audit_log` (seq, tid, actor, action, details, prev_hash, hash). Triggers gör att SQLite vägrar UPDATE och DELETE (SR-09).
+- `src/aie/audit/`: `AuditLog(db).append(actor, action, details)` lägger till en rad i en transaktion. Raden hashas med SHA-256 över kanonisk JSON plus föregående rads hash.
+- `AuditLog.verify()` går igenom kedjan och anger första trasiga raden: ändrat innehåll, bruten länk, saknad rad eller trasig JSON. `head_hash` är kedjans senaste hash.
+- Hemliga nycklar (samma regel som konfigurationen) avvisas innan något skrivs, eftersom audit-loggen aldrig kan rensas (SR-10).
+- `tests/unit/test_audit.py`: 15 tester, bland annat manipulation med triggers bortkopplade. Totalt 97 gröna på Windows 11, Python 3.12.0.
+### Känd begränsning
+- Om de sista raderna tas bort är resten av kedjan fortfarande giltig. Det syns bara om `head_hash` jämförs med en kopia som sparats någon annanstans, och den jämförelsen är inte byggd än.
+### Ändrat
+- `tests/unit/test_storage.py` räknar med antalet migrationer i stället för att anta att det bara finns en.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.4: SQLite-lager
 ### Tillagt
 - `src/aie/memory/`: `Database.open(data_dir, environment)` öppnar `<data_dir>/<miljö>.db` och kör migrationer, var och en i en egen transaktion (FR-03).

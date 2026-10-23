@@ -56,6 +56,37 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=2,
+        name="audit_log",
+        statements=(
+            # Fas 1.5 (SR-09): append-only och hashkedjad. Se src/aie/audit/log.py.
+            """
+            CREATE TABLE audit_log (
+                seq       INTEGER PRIMARY KEY,
+                timestamp TEXT NOT NULL,
+                actor     TEXT NOT NULL,
+                action    TEXT NOT NULL,
+                details   TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                hash      TEXT NOT NULL UNIQUE
+            ) STRICT
+            """,
+            # Databasen själv vägrar ändra eller radera rader, oavsett vilken kod som försöker.
+            """
+            CREATE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log
+            BEGIN
+                SELECT RAISE(ABORT, 'audit_log är append-only: rader får inte ändras');
+            END
+            """,
+            """
+            CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log
+            BEGIN
+                SELECT RAISE(ABORT, 'audit_log är append-only: rader får inte raderas');
+            END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
