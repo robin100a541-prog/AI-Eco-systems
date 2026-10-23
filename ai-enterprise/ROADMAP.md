@@ -63,6 +63,9 @@ Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`l
 CEO-flöde, departementschefer, beslutspost i 11 steg, samråd, oenighet, eskalering, godkännandekö. `manual`-provider införs.
 Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense → eskaleras med dokumenterad tvist.
 
+Uppdelning (överenskommen på plats 2026-10-23): Yorgo tar CEO-flöde, departementschefer och samråd; Robin tar beslutslogg, oenighet och eskalering.
+- 3.a Beslutslogg (FR-10, §20 steg 7): migration 7 `decisions`, `DecisionLog` med spårbarhet uppgift → beslut. ✅ (2026-10-23, gren `robin/fas3-beslutslogg`, 231 tester gröna)
+
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).
 Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger → avvisas · 10 köp à 99 under gräns 100 men inom samma initiativ → flaggas · nödstopp → inga nya transaktioner, ingen data raderad.

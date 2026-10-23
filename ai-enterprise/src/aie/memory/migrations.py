@@ -241,6 +241,46 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=7,
+        name="decisions",
+        statements=(
+            # Fas 3 (FR-10, §20 steg 7): beslutsloggen. Varje beslut hör till en uppgift och
+            # innehåller de åtta fälten i §20 steg 7. Append-only: ett beslut ändras aldrig,
+            # ett nytt beslut kan ersätta ett gammalt (supersedes).
+            """
+            CREATE TABLE decisions (
+                decision_id     INTEGER PRIMARY KEY,
+                task_id         INTEGER NOT NULL REFERENCES tasks (task_id),
+                decided_by      TEXT NOT NULL,
+                chosen_action   TEXT NOT NULL CHECK (length(trim(chosen_action)) > 0),
+                reasoning       TEXT NOT NULL CHECK (length(trim(reasoning)) > 0),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                budget_minor    INTEGER NOT NULL CHECK (budget_minor >= 0),
+                currency        TEXT NOT NULL,
+                risk_class      TEXT NOT NULL CHECK (risk_class IN ('low', 'medium', 'high', 'critical')),
+                expected_result TEXT NOT NULL CHECK (length(trim(expected_result)) > 0),
+                stop_conditions TEXT NOT NULL CHECK (length(trim(stop_conditions)) > 0),
+                follow_up       TEXT NOT NULL CHECK (length(trim(follow_up)) > 0),
+                supersedes      INTEGER REFERENCES decisions (decision_id),
+                decided_at      TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX decisions_by_task ON decisions (task_id)",
+            """
+            CREATE TRIGGER decisions_no_update BEFORE UPDATE ON decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'decisions är append-only: ett beslut ändras aldrig');
+            END
+            """,
+            """
+            CREATE TRIGGER decisions_no_delete BEFORE DELETE ON decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'decisions är append-only: ett beslut raderas aldrig');
+            END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
