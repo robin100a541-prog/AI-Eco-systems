@@ -3,6 +3,7 @@
 ROADMAP:s nyckeltest för Fas 3 ("CEO försöker höja sin egen gräns → nekas") är
 `test_ceo_cannot_raise_own_limit_or_change_own_mandate`.
 """
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -126,8 +127,8 @@ class TestGovernance(HierarchyCase):
     def test_governance_tool_cannot_be_granted_in_config(self):
         """Verifies SR-04: permissions.toml som ger en roll ett styrverktyg stoppar uppstart."""
         text = (ROOT / "config" / "permissions.toml").read_text(encoding="utf-8")
-        text = text.replace('tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete"]',
-                            'tools = ["report.read", "governance.change_limits"]', 1)
+        # CEO:s verktygsrad, oavsett vilka verktyg den har i dag (första rollen i filen).
+        text = re.sub(r"^tools = \[.*\]$", 'tools = ["report.read", "governance.change_limits"]', text, count=1, flags=re.M)
         (self.dir / "permissions.toml").write_text(text, encoding="utf-8")
         with self.assertRaises(ConfigError) as ctx:
             load_permissions(self.dir)

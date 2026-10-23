@@ -345,6 +345,120 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=9,
+        name="decisions",
+        statements=(
+            # Fas 3 (FR-10, §20 steg 7): beslutsloggen. (Robin; nummer 9 eftersom 7 och 8 är Yorgos.) Varje beslut hör till en uppgift och
+            # innehåller de åtta fälten i §20 steg 7. Append-only: ett beslut ändras aldrig,
+            # ett nytt beslut kan ersätta ett gammalt (supersedes).
+            """
+            CREATE TABLE decisions (
+                decision_id     INTEGER PRIMARY KEY,
+                task_id         INTEGER NOT NULL REFERENCES tasks (task_id),
+                decided_by      TEXT NOT NULL,
+                chosen_action   TEXT NOT NULL CHECK (length(trim(chosen_action)) > 0),
+                reasoning       TEXT NOT NULL CHECK (length(trim(reasoning)) > 0),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                budget_minor    INTEGER NOT NULL CHECK (budget_minor >= 0),
+                currency        TEXT NOT NULL,
+                risk_class      TEXT NOT NULL CHECK (risk_class IN ('low', 'medium', 'high', 'critical')),
+                expected_result TEXT NOT NULL CHECK (length(trim(expected_result)) > 0),
+                stop_conditions TEXT NOT NULL CHECK (length(trim(stop_conditions)) > 0),
+                follow_up       TEXT NOT NULL CHECK (length(trim(follow_up)) > 0),
+                supersedes      INTEGER REFERENCES decisions (decision_id),
+                decided_at      TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX decisions_by_task ON decisions (task_id)",
+            """
+            CREATE TRIGGER decisions_no_update BEFORE UPDATE ON decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'decisions är append-only: ett beslut ändras aldrig');
+            END
+            """,
+            """
+            CREATE TRIGGER decisions_no_delete BEFORE DELETE ON decisions
+            BEGIN
+                SELECT RAISE(ABORT, 'decisions är append-only: ett beslut raderas aldrig');
+            END
+            """,
+        ),
+    ),
+    Migration(
+        version=10,
+        name="disputes",
+        statements=(
+            # Fas 3 (FR-12, §21): oenighet mellan agenter (Robin). En tvist gäller en uppgift och ett
+            # förslag (åtgärd, budget, riskklass). Ståndpunkterna och händelserna är append-only.
+            """
+            CREATE TABLE disputes (
+                dispute_id          INTEGER PRIMARY KEY,
+                task_id             INTEGER NOT NULL REFERENCES tasks (task_id),
+                conflict_type       TEXT NOT NULL CHECK (conflict_type IN ('goal', 'data', 'risk', 'method')),
+                proposal            TEXT NOT NULL CHECK (length(trim(proposal)) > 0),
+                proposal_budget     INTEGER NOT NULL CHECK (proposal_budget >= 0),
+                proposal_risk_class TEXT NOT NULL CHECK (proposal_risk_class IN ('low', 'medium', 'high', 'critical')),
+                opened_by           TEXT NOT NULL,
+                status              TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'escalated')),
+                escalated_to        TEXT CHECK (escalated_to IN ('ceo', 'founders')),
+                opened_at           TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER disputes_no_delete BEFORE DELETE ON disputes
+            BEGIN
+                SELECT RAISE(ABORT, 'tvister raderas aldrig');
+            END
+            """,
+            """
+            CREATE TRIGGER disputes_final_status BEFORE UPDATE ON disputes
+            WHEN OLD.status = 'resolved'
+                OR (OLD.status = 'escalated' AND NOT (
+                    NEW.status = 'resolved'
+                    OR (NEW.status = 'escalated' AND OLD.escalated_to = 'ceo' AND NEW.escalated_to = 'founders')))
+            BEGIN
+                SELECT RAISE(ABORT, 'en avgjord tvist kan inte ändras');
+            END
+            """,
+            """
+            CREATE TABLE dispute_positions (
+                position_id INTEGER PRIMARY KEY,
+                dispute_id  INTEGER NOT NULL REFERENCES disputes (dispute_id),
+                agent_id    TEXT NOT NULL,
+                claim       TEXT NOT NULL CHECK (length(trim(claim)) > 0),
+                evidence    TEXT NOT NULL CHECK (json_valid(evidence)),
+                recorded_at TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TABLE dispute_events (
+                id         INTEGER PRIMARY KEY,
+                dispute_id INTEGER NOT NULL REFERENCES disputes (dispute_id),
+                event      TEXT NOT NULL,
+                actor      TEXT NOT NULL,
+                note       TEXT NOT NULL,
+                at         TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER dispute_positions_no_update BEFORE UPDATE ON dispute_positions
+            BEGIN SELECT RAISE(ABORT, 'dispute_positions är append-only'); END
+            """,
+            """
+            CREATE TRIGGER dispute_positions_no_delete BEFORE DELETE ON dispute_positions
+            BEGIN SELECT RAISE(ABORT, 'dispute_positions är append-only'); END
+            """,
+            """
+            CREATE TRIGGER dispute_events_no_update BEFORE UPDATE ON dispute_events
+            BEGIN SELECT RAISE(ABORT, 'dispute_events är append-only'); END
+            """,
+            """
+            CREATE TRIGGER dispute_events_no_delete BEFORE DELETE ON dispute_events
+            BEGIN SELECT RAISE(ABORT, 'dispute_events är append-only'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
