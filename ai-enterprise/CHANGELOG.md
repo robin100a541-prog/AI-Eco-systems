@@ -12,6 +12,15 @@
 ### Ändrat
 - `tests/unit/test_storage.py` räknar med antalet migrationer i stället för att anta att det bara finns en.
 
+## [Unreleased] — 2026-10-23 — Fas 1.4b: lagring från konfigurationen
+### Tillagt
+- `open_database(config.system)` i `src/aie/memory/` öppnar `<data_dir>/<miljö>.db` med värdena från `config/system.toml` (FR-03).
+- Lagringsfel loggas som ERROR i `aie.memory` innan de kastas vidare; en återrullad transaktion loggas som WARNING. Öppningen loggas som INFO med sökväg, miljö och schemaversion (FR-04).
+- En `data_dir` som inte kan skapas, eller ett SQLite-fel vid öppning, blir `StorageError` med tydligt meddelande i stället för ett råfel.
+- `tests/unit/test_storage_config.py`: 7 tester. Totalt 89, gröna på Python 3.11, 3.12 och 3.13.
+### Ändrat
+- Loggern `aie` har en `NullHandler` när loggningen inte är igång, så Pythons reserv-handler skriver inga varningar till stderr.
+
 ## [Unreleased] — 2026-10-23 — Fas 1.4: SQLite-lager
 ### Tillagt
 - `src/aie/memory/`: `Database.open(data_dir, environment)` öppnar `<data_dir>/<miljö>.db` och kör migrationer, var och en i en egen transaktion (FR-03).
