@@ -459,6 +459,61 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=12,
+        name="approvals",
+        statements=(
+            # Fas 3 (FR-13, D-019): grundarnas godkännandekö (Robin). En förfrågan kräver 1 eller 2
+            # grundare enligt D-019. Rösterna är append-only; en avgjord förfrågan ändras aldrig.
+            """
+            CREATE TABLE approval_requests (
+                request_id         INTEGER PRIMARY KEY,
+                kind               TEXT NOT NULL CHECK (kind IN ('decision', 'dispute', 'governance')),
+                task_id            INTEGER NOT NULL REFERENCES tasks (task_id),
+                dispute_id         INTEGER REFERENCES disputes (dispute_id),
+                requested_by       TEXT NOT NULL,
+                reason             TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                amount_minor       INTEGER NOT NULL CHECK (amount_minor >= 0),
+                currency           TEXT NOT NULL,
+                required_approvals INTEGER NOT NULL CHECK (required_approvals IN (1, 2)),
+                payload            TEXT NOT NULL CHECK (json_valid(payload)),
+                status             TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+                outcome_decision   INTEGER REFERENCES decisions (decision_id),
+                created_at         TEXT NOT NULL,
+                decided_at         TEXT,
+                CHECK (kind != 'dispute' OR dispute_id IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER approval_requests_no_delete BEFORE DELETE ON approval_requests
+            BEGIN SELECT RAISE(ABORT, 'förfrågningar i godkännandekön raderas aldrig'); END
+            """,
+            """
+            CREATE TRIGGER approval_requests_final BEFORE UPDATE ON approval_requests
+            WHEN OLD.status != 'pending'
+            BEGIN SELECT RAISE(ABORT, 'en avgjord förfrågan kan inte ändras'); END
+            """,
+            """
+            CREATE TABLE approval_votes (
+                id         INTEGER PRIMARY KEY,
+                request_id INTEGER NOT NULL REFERENCES approval_requests (request_id),
+                founder    TEXT NOT NULL,
+                verdict    TEXT NOT NULL CHECK (verdict IN ('approve', 'reject')),
+                note       TEXT NOT NULL,
+                at         TEXT NOT NULL,
+                UNIQUE (request_id, founder)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER approval_votes_no_update BEFORE UPDATE ON approval_votes
+            BEGIN SELECT RAISE(ABORT, 'approval_votes är append-only'); END
+            """,
+            """
+            CREATE TRIGGER approval_votes_no_delete BEFORE DELETE ON approval_votes
+            BEGIN SELECT RAISE(ABORT, 'approval_votes är append-only'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

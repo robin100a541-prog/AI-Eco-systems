@@ -98,7 +98,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="hur länge stop väntar innan det ger upp med kod 1 (standard: 30)",
     )
     add("status", "visa driftläget och kontrollera revisionsloggen")
+    approvals = add("approvals", "grundarnas godkännandekö: list, approve eller reject (D-019)")
+    approvals.add_argument("action", choices=("list", "approve", "reject"))
+    approvals.add_argument("request_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
+    approvals.add_argument("--as", dest="founder", help="vilken grundare som röstar (en av founders i system.toml)")
+    approvals.add_argument("--note", default="", help="motivering; krävs vid reject")
     return parser
+
+
+def _approvals(args: argparse.Namespace) -> int:
+    from .governance.cli import approvals  # importeras bara när kommandot används
+
+    if args.action != "list" and (args.request_id is None or not args.founder):
+        print("FEL: approve och reject kräver förfrågans nummer och --as <grundare>", file=sys.stderr)
+        return 1
+    return approvals(args.config_dir, args.action, args.request_id, args.founder, args.note)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -109,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         "start": lambda: runtime.start(args.config_dir, args.poll_seconds),
         "stop": lambda: runtime.stop(args.config_dir, args.wait_seconds),
         "status": lambda: runtime.status(args.config_dir),
+        "approvals": lambda: _approvals(args),
     }
     try:
         return commands[args.command]()

@@ -70,10 +70,10 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3c Samråd (FR-11), migration 8 | Yorgo | ✅ PR #27 |
 | 3d Beslutslogg (FR-10, §20 steg 7): migration 9 `decisions`, spårbarhet uppgift → beslut | Robin | ✅ gren `robin/fas3-beslutslogg` |
 | 3e Oenighet (FR-12, §21): migration 10, påståenden, underlag och konflikttyp; inga röster över hårda gränser; ROADMAP:s nyckeltest CFO mot CRO | Robin | ✅ gren `robin/fas3-oenighet` |
-| 3f Eskalering och godkännandekö (FR-13, D-019), migration 13 | Robin | ☐ |
+| 3f Eskalering och godkännandekö (FR-13, D-019, D-021), migration 12; `python -m aie approvals` | Robin | ✅ gren `robin/fas3-eskalering` |
 | 3g Externt innehåll är opålitlig data (SR-06) | Yorgo | ✅ gren `yorgo/fas3-externt` |
 | 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ☐ |
-| 3i Utred möjlighet (FR-25, D-011), migration 12, D-025 | Yorgo | ☐ |
+| 3i Utred möjlighet (FR-25, D-011), migration 13, D-025 | Yorgo | ☐ |
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).

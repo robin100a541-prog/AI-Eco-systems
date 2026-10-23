@@ -45,7 +45,8 @@ LIMITS: dict[str, str] = {
     "API_REINVEST_SHARE": PERCENT,
     "API_MONTHLY_CAP": AMOUNT,
 }
-SYSTEM_KEYS = ("config_version", "environment", "data_dir", "log_dir", "log_level", "base_currency")
+SYSTEM_KEYS = ("config_version", "environment", "data_dir", "log_dir", "log_level", "base_currency", "founders")
+_FOUNDER_ID = re.compile(r"[a-z][a-z0-9_-]{1,31}")
 LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 DEFAULT_LOG_LEVEL = "INFO"
 RISK_KEYS = ("currency", *LIMITS)
@@ -193,6 +194,7 @@ def _parse_system(data: dict[str, Any] | None, problems: _Problems) -> SystemCon
     dirs = {name: _parse_dir(where, name, data.get(name), problems) for name in ("data_dir", "log_dir")}
     currency = _parse_currency(where, "base_currency", data.get("base_currency"), environment, problems)
     log_level = _parse_log_level(where, data.get("log_level", DEFAULT_LOG_LEVEL), problems)
+    founders = _parse_founders(where, data.get("founders", []), problems)
 
     if len(problems.errors) > errors_before:
         return None
@@ -203,7 +205,21 @@ def _parse_system(data: dict[str, Any] | None, problems: _Problems) -> SystemCon
         base_currency=currency,
         config_version=version,
         log_level=log_level,
+        founders=founders,
     )
+
+
+def _parse_founders(where: str, value: Any, problems: _Problems) -> tuple[str, ...]:
+    """Valfri lista med grundarnas ID:n (D-021). Används av godkännandekön; inga hemligheter."""
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        problems.error(where, f"founders måste vara en lista med ID:n, fick {value!r}")
+        return ()
+    bad = [v for v in value if not _FOUNDER_ID.fullmatch(v)]
+    if bad:
+        problems.error(where, f"founders: ogiltiga ID:n {bad} (gemener, siffror, - och _)")
+    if len(set(value)) != len(value):
+        problems.error(where, "founders: samma grundare står flera gånger")
+    return tuple(value)
 
 
 def _parse_log_level(where: str, value: Any, problems: _Problems) -> str | None:
