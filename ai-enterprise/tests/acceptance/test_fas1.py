@@ -23,10 +23,26 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT = 30
+
+
+@contextmanager
+def open_sqlite(path):
+    """Som `with sqlite3.connect(...)`, men stänger också anslutningen.
+
+    `with sqlite3.connect()` committar bara. På Windows håller den öppna anslutningen
+    filen låst, så den temporära mappen kan inte raderas efter testet.
+    """
+    conn = sqlite3.connect(path)
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 class Fas1Acceptance(unittest.TestCase):
@@ -101,7 +117,7 @@ class Fas1Acceptance(unittest.TestCase):
         ]
 
     def audit_actions(self):
-        with sqlite3.connect(self.dir / "data" / "sim.db") as conn:
+        with open_sqlite(self.dir / "data" / "sim.db") as conn:
             return [
                 row[0]
                 for row in conn.execute("SELECT action FROM audit_log ORDER BY seq")
@@ -227,9 +243,7 @@ class TestTamperedAuditDetected(Fas1Acceptance):
     def test_tampered_row_detected_and_start_refused(self):
         """ROADMAP 1.7 (SR-09): en ändrad audit-rad upptäcks av status, och systemet vägrar starta."""
         self.assertEqual(self.aie("init").returncode, 0)
-        with sqlite3.connect(
-            self.dir / "data" / "sim.db"
-        ) as conn:  # som en angripare med filåtkomst
+        with open_sqlite(self.dir / "data" / "sim.db") as conn:  # som en angripare med filåtkomst
             conn.execute("DROP TRIGGER audit_log_no_update")
             conn.execute("UPDATE audit_log SET action = 'förfalskad' WHERE seq = 1")
         status = self.aie("status")
