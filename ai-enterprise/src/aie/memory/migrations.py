@@ -164,6 +164,66 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=5,
+        name="tasks",
+        statements=(
+            # Fas 2 (FR-07). Se src/aie/orchestration/tasks.py.
+            """
+            CREATE TABLE tasks (
+                task_id     INTEGER PRIMARY KEY,
+                title       TEXT NOT NULL CHECK (length(trim(title)) > 0),
+                description TEXT NOT NULL,
+                created_by  TEXT NOT NULL,
+                owner_id    TEXT REFERENCES agents (agent_id),
+                status      TEXT NOT NULL CHECK (status IN (
+                    'open', 'assigned', 'in_progress', 'blocked', 'done', 'cancelled')),
+                created_at  TEXT NOT NULL,
+                updated_at  TEXT NOT NULL,
+                CHECK (status = 'open' OR status = 'cancelled' OR owner_id IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER tasks_no_delete BEFORE DELETE ON tasks
+            BEGIN
+                SELECT RAISE(ABORT, 'uppgifter raderas aldrig; avbryt med status cancelled');
+            END
+            """,
+            """
+            CREATE TRIGGER tasks_final_status BEFORE UPDATE ON tasks
+            WHEN OLD.status IN ('done', 'cancelled')
+            BEGIN
+                SELECT RAISE(ABORT, 'en avslutad uppgift kan inte ändras');
+            END
+            """,
+            # Varje händelse för en uppgift. Append-only.
+            """
+            CREATE TABLE task_events (
+                id         INTEGER PRIMARY KEY,
+                task_id    INTEGER NOT NULL REFERENCES tasks (task_id),
+                event      TEXT NOT NULL,
+                actor      TEXT NOT NULL,
+                owner_id   TEXT,
+                old_status TEXT,
+                new_status TEXT NOT NULL,
+                note       TEXT NOT NULL,
+                at         TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER task_events_no_update BEFORE UPDATE ON task_events
+            BEGIN
+                SELECT RAISE(ABORT, 'task_events är append-only');
+            END
+            """,
+            """
+            CREATE TRIGGER task_events_no_delete BEFORE DELETE ON task_events
+            BEGIN
+                SELECT RAISE(ABORT, 'task_events är append-only');
+            END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

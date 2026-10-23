@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 2: uppgifter (FR-07)
+### Tillagt
+- Migration 5: `tasks` och `task_events`. Databasen vägrar radera uppgifter, ändra avslutade uppgifter och ta bort ägaren från en tilldelad uppgift. Historiken är append-only.
+- `src/aie/orchestration/`: `TaskBoard` med `create`, `assign`, `start`, `block`, `complete` och `cancel`. Status går `open → assigned → in_progress → done`, med `blocked` och `cancelled` vid sidan av.
+- Behörigheter kontrolleras av kod: `task.create` och `task.assign` via Authorization Engine (nekat försök loggas). Bara ägaren arbetar på uppgiften, ingen agent kan tilldela sig själv och grundarna får göra allt.
+- `complete` kräver en beskrivning av vad som gjordes (§7), och `block` och `cancel` kräver en motivering.
+- `tests/unit/test_tasks.py`: 13 tester. Totalt 169 gröna på Windows 11, Python 3.12.0 (två SIGINT-tester hoppas över).
+
 ## [Unreleased] — 2026-10-23 — Fas 2: agentregistret i databasen
 ### Tillagt
 - Migration 4: tabellerna `agents` och `agent_state_changes`. Databasen vägrar radera agenter och ändra roll eller chef (bara status får ändras). Historiken är append-only och statuskolumnen godtar bara de sju tillstånden (FR-05, FR-06, SR-14).
