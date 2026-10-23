@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Robins Fas 0-godkännanden
+### Ändrat
+- DECISIONS.md: Robin har godkänt D-001, D-002, D-003, D-004 och D-013.
+### Tillagt
+- D-014: GitHub-repot är publikt (föreslaget av Robin, väntar på Yorgo).
+- `docs/environment.md`: Robins miljörapport från Claude Code i molnet (REDO för Fas 1, 49 tester OK); `docs/setup.md` beskriver var respektive grundare utvecklar.
+
 ## [0.2.0] — 2026-10-23 — Fas 1.3: loggning
 ### Tillagt
 - `src/aie/monitoring/`: loggning med Pythons `logging` (FR-04). Varje händelse skrivs som en JSON-rad i `<log_dir>/aie.log` (tidsstämpel i UTC, nivå, källa, plats i koden, meddelande, valfria fält) och som läsbar text i konsolen.

@@ -2,7 +2,7 @@
 
 **Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Robin)
 **Aktuell fas:** Fas 1 — Grundsystem
-**Fasstatus:** 1.1 och 1.2 mergade till `main` (PR #1) · 1.3 klar på grenen `robin/fas1-3-loggning`, väntar på granskning · Fas 0-punkterna 0.8 och 0.10 är fortfarande öppna, 0.6 ligger i PR #3
+**Fasstatus:** 1.1 och 1.2 mergade till `main` (PR #1) · 1.3 klar på grenen `robin/fas1-3-loggning`, väntar på granskning · Fas 0-punkterna 0.8 och 0.10 är fortfarande öppna (0.6 klar: Robins miljörapport mergad i PR #3)
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -30,7 +30,7 @@
 - Repot finns på GitHub (`robin100a541-prog/AI-Eco-systems`, publikt), med projektet i `ai-enterprise/`. PR #1 (Fas 0 + 1.1–1.2) är mergad.
 - 1.3 byggd på grenen `robin/fas1-3-loggning`: loggning till fil och konsol, maskering av hemligheter, automatiskt skapad `log_dir`, tydligt fel och kod 1 när den inte kan skapas. `check-config` loggar sitt resultat och sina fel.
 - Ny valfri nyckel `log_level` i `config/system.toml` (standard INFO), föreslagen som D-015. Loggfilen roteras vid 5 MB och tre gamla filer sparas.
-- PR #3 (öppen): Robins miljörapport från Claude Code i molnet, Robins godkännanden av D-001–D-004 och D-013, och förslaget D-014 (repot är publikt).
+- PR #3 (mergad): Robins miljörapport från Claude Code i molnet, Robins godkännanden av D-001–D-004 och D-013, och förslaget D-014 (repot är publikt).
 
 ## Vad som INTE är gjort / inte verifierat
 - Ingen har granskat 1.3. Testerna för 1.3 är bara körda i Robins molnmiljö (Linux), inte på Windows hos Yorgo.
@@ -44,7 +44,7 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Granska och merga PR #3 (Robins miljörapport, godkännanden, D-014) | Yorgo |
+| 1 | Godkänna D-001–D-004, D-013, D-014 och D-015 | Yorgo |
 | 2 | Granska PR:en för 1.3 (`robin/fas1-3-loggning`) och köra testerna på Windows | Yorgo |
 | 3 | Fas 1.4: SQLite-lager med migrationer och metadatatabell | Den som har tid, efter att 1.3 är granskad |
 
