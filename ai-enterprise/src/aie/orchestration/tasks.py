@@ -113,6 +113,7 @@ class TaskBoard:
             raise TaskError(f"{owner_id!r} finns inte eller får inte ta uppgifter just nu")
         with self._db.transaction() as tx:
             task = self._fetch_open(tx, task_id)
+            self._require_no_legal_hold(tx, task_id)
             if task.status not in (T.OPEN, T.ASSIGNED, T.BLOCKED):
                 raise TaskError(f"uppgiften är {task.status.value} och kan inte få ny ägare")
             event = "assigned" if task.owner_id is None else "reassigned"
@@ -177,11 +178,38 @@ class TaskBoard:
         if actor not in self._founders:
             self._engine.require(actor, tool)  # PermissionDenied om inte tillåtet, och loggat
 
+    @staticmethod
+    def _require_no_legal_hold(tx: sqlite3.Connection, task_id: int) -> None:
+        """SR-16: en uppgift med en aktiv juridisk hållning kan inte startas, tilldelas eller slutföras."""
+        row = tx.execute(
+            "SELECT hold_id, description FROM legal_holds WHERE task_id = ? AND released_at IS NULL", (task_id,)
+        ).fetchone()
+        if row:
+            raise TaskError(f"uppgift {task_id} är hållen för juridisk granskning (hållning #{row[0]}: {row[1]}); "
+                            "Compliance måste yttra sig först (SR-16)")
+
+    def _apply_legal_hold(self, task_id: int, actor: str, note: str) -> Task:
+        """Anropas bara av LegalDesk efter att hållningen sparats. Blockerar uppgiften oavsett ägare."""
+        with self._db.transaction() as tx:
+            task = self._fetch_open(tx, task_id)
+            target = T.BLOCKED if task.owner_id is not None else task.status
+            return self._update(tx, task, target, actor, "legal_hold", note, owner_id=task.owner_id)
+
+    def _release_legal_hold(self, task_id: int, actor: str, note: str, cancel: bool) -> Task:
+        """Anropas bara av LegalDesk efter att hållningen släppts."""
+        with self._db.transaction() as tx:
+            task = self._fetch_open(tx, task_id)
+            if cancel:
+                return self._update(tx, task, T.CANCELLED, actor, "legal_cancelled", note, owner_id=task.owner_id)
+            target = T.ASSIGNED if task.owner_id is not None else T.OPEN
+            return self._update(tx, task, target, actor, "legal_cleared", note, owner_id=task.owner_id)
+
     def _owner_step(
         self, actor: str, task_id: int, allowed_from: set[TaskStatus], target: TaskStatus, event: str, note: str
     ) -> Task:
         with self._db.transaction() as tx:
             task = self._fetch_open(tx, task_id)
+            self._require_no_legal_hold(tx, task_id)
             if actor != task.owner_id and actor not in self._founders:
                 raise TaskError(f"bara ägaren ({task.owner_id}) får {event_verb(event)} uppgift {task_id}")
             if task.status not in allowed_from:
