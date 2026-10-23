@@ -24,6 +24,7 @@
 | Revisionslogg (1.5, Yorgo): `src/aie/audit/`, hashkedja, triggrar vägrar UPDATE/DELETE, `verify()` med `head_hash` | `tests/unit/test_audit.py`, 15 tester (PR #9) |
 | Start/stopp (1.6): `python -m aie init/start/stop/status`, driftläget i tabellen `runtime_state` (migration 3), ren nedstängning vid `stop`, Ctrl+C och SIGTERM, vägrar start vid manipulerad revisionslogg eller om systemet redan kör, upptäcker en körning som dog | `tests/unit/test_runtime.py`, 13 tester (bland annat riktiga processer), plus 1 samtidighetstest i `test_storage_config.py`; 118 OK på Python 3.11, 3.12 och 3.13; körda 40 gånger i rad utan fel |
 | Acceptanstester Fas 1 (1.7): ett per kriterium i §49 och ROADMAP 1.7, med de riktiga kommandona i egna processer | `tests/acceptance/test_fas1.py`, 12 tester; hela sviten 151 OK på Python 3.11, 3.12 och 3.13 och i CI |
+| LLM via Authorization Engine (Fas 2, Robin): `LLMGateway` kräver `llm.complete`; nekat anrop revideras och skickar inget; prompter med hemligheter avvisas | `tests/unit/test_llm_gateway.py`, 10 tester, bland annat läcktester mot extern transport, loggfil och audit-logg; 208 OK på Python 3.11, 3.12 och 3.13 |
 | CI på GitHub Actions: testerna körs på Python 3.11 och 3.12 vid varje PR och push till `main` | `.github/workflows/ai-enterprise-tests.yml`; checkarna syns på varje PR |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 

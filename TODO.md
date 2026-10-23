@@ -3,7 +3,6 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
-- [ ] ai-enterprise Fas 2: efter PR #18 — agenter når ProviderRouter bara via Authorization Engine (`llm.complete`), läcktester för logg/audit/prompt (DR-12, DR-13) — @robin (robin/fas2-llm-behorighet)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 - [ ] ai-enterprise Fas 2: ProviderRouter + kvoter (DR-12) och dataklassning (DR-13), migration 6 `provider_usage` — @yorgo-jarjous (yorgo/fas2-provider-router)
@@ -12,6 +11,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - ai-enterprise Fas 2-acceptans: agenter som resonerar via ProviderRouter (rule i tester), uppgift → rapport → audit från början till slut, ROADMAP:s nyckeltest som acceptanstest. Godkännande av D-018 (båda).
 
 ## Done
+- [x] ai-enterprise Fas 2: agenter når ProviderRouter bara via Authorization Engine (`llm.complete`), läcktester (DR-12, DR-13) — @robin (PR #19)
 - [x] ai-enterprise Fas 2: rapportformat FR-08 — @yorgo-jarjous (PR #17)
 - [x] ai-enterprise Fas 2: uppgifter FR-07 (migration 5) — @yorgo-jarjous (PR #16)
 - [x] ai-enterprise Fas 2: agentregistret i databasen (migration 4) — @yorgo-jarjous (PR #14)
