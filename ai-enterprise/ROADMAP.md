@@ -48,7 +48,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 Agentregister, mandat i `config/permissions.toml`, livscykel som tillståndsmaskin, uppgifter, rapportformat, Authorization Engine (default deny), ProviderRouter med Groq/OpenRouter/Ollama/`rule`, kvotspårning och dataklassning (DR-12, DR-13).
 Nyckeltest: en agent försöker använda ett verktyg utanför mandatet → nekas och loggas.
 
-Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017): livscykel, agentregister i minnet, `config/permissions.toml` och Authorization Engine med default deny och audit-loggning. Nyckeltestet är grönt (`test_tool_outside_mandate_denied_and_logged`). Kvar: registret sparas i databasen, uppgifter, rapportformat, ProviderRouter, kvoter och dataklassning.
+Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017): livscykel, agentregister i minnet, `config/permissions.toml` och Authorization Engine med default deny och audit-loggning. Nyckeltestet är grönt (`test_tool_outside_mandate_denied_and_logged`). Registret sparas i databasen sedan migration 4 (gren `yorgo/fas2-registry-db`). Kvar: uppgifter, rapportformat, ProviderRouter, kvoter och dataklassning.
 
 ## Fas 3 — Hierarki och samarbete (FR-09…14, SR-04…06, SR-16)
 CEO-flöde, departementschefer, beslutspost i 11 steg, samråd, oenighet, eskalering, godkännandekö. `manual`-provider införs.

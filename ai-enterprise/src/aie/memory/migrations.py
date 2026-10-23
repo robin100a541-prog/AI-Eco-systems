@@ -108,6 +108,62 @@ MIGRATIONS: tuple[Migration, ...] = (
             "INSERT INTO runtime_state (id, state) VALUES (1, 'stopped')",
         ),
     ),
+    Migration(
+        version=4,
+        name="agent_registry",
+        statements=(
+            # Fas 2 (FR-05, FR-06, SR-14). Se src/aie/agents/registry.py.
+            """
+            CREATE TABLE agents (
+                agent_id   TEXT PRIMARY KEY,
+                role       TEXT NOT NULL,
+                department TEXT NOT NULL,
+                manager_id TEXT REFERENCES agents (agent_id),
+                state      TEXT NOT NULL CHECK (state IN (
+                    'PROPOSED', 'CREATED', 'TESTING', 'ACTIVE', 'PROBATION', 'SUSPENDED', 'RETIRED')),
+                created_at TEXT NOT NULL
+            ) STRICT
+            """,
+            # En agent raderas aldrig (SR-14). Bara status får ändras; roll och chef är fasta.
+            """
+            CREATE TRIGGER agents_no_delete BEFORE DELETE ON agents
+            BEGIN
+                SELECT RAISE(ABORT, 'agenter raderas aldrig; avveckla med status RETIRED');
+            END
+            """,
+            """
+            CREATE TRIGGER agents_fixed_identity
+            BEFORE UPDATE OF agent_id, role, department, manager_id, created_at ON agents
+            BEGIN
+                SELECT RAISE(ABORT, 'bara status får ändras på en agent');
+            END
+            """,
+            # Historiken över statusändringar. Append-only, som audit_log.
+            """
+            CREATE TABLE agent_state_changes (
+                id         INTEGER PRIMARY KEY,
+                agent_id   TEXT NOT NULL REFERENCES agents (agent_id),
+                old_state  TEXT,
+                new_state  TEXT NOT NULL,
+                changed_by TEXT NOT NULL,
+                reason     TEXT NOT NULL,
+                at         TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER agent_state_changes_no_update BEFORE UPDATE ON agent_state_changes
+            BEGIN
+                SELECT RAISE(ABORT, 'agent_state_changes är append-only');
+            END
+            """,
+            """
+            CREATE TRIGGER agent_state_changes_no_delete BEFORE DELETE ON agent_state_changes
+            BEGIN
+                SELECT RAISE(ABORT, 'agent_state_changes är append-only');
+            END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
