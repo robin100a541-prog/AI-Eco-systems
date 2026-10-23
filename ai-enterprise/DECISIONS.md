@@ -9,7 +9,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 ## Fas 2 — föreslagna beslut
 
 ### D-018 ProviderRouter: `providers.toml`, kvoter i databasen, dataklasser i koden
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-008, D-009
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-008, D-009
 - **Beslut:**
   1. `config/providers.toml` listar leverantörerna i prioritetsordning: groq → openrouter → ollama → rule. Tillåtna typer är bara `groq`, `openrouter` (modellen måste sluta på `:free`), `ollama` och `rule`. Alla andra typer är ett konfigurationsfel tills D-009 öppnar för betalda API:er.
   2. Varje leverantör måste ha `daily_calls` och `daily_tokens` per UTC-dygn. En saknad gräns är ett fel (ER-02). Ett anrop räknas i databasen *innan* det skickas, och ett misslyckat anrop räknas också.
@@ -17,7 +17,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Dataklasserna `public`, `internal`, `personal` och `secret` är fasta i koden. Externa leverantörer tar bara `public`, och konfigurationen kan inte ändra det (DR-13).
   5. Varje leverantör provas högst en gång per förfrågan. När ingen är kvar kastas `NoProviderAvailable` och arbetet köas. Det finns aldrig någon betald reserv.
   6. Audit-loggen får leverantör, modell, tokens, dataklass och kostnad 0 per anrop, men aldrig prompt eller svar.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt, registrerat av Yorgo)
 
 ### D-017 Behörighetsmodell: rollmandat i `permissions.toml`, default deny, styrd livscykel
 - **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-007

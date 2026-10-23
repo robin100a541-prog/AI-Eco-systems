@@ -55,7 +55,7 @@ Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av b
 - [x] Uppgifter kan tilldelas och följas upp (`TestTasksEndToEnd`).
 - [x] Agenter kan inte använda obehöriga funktioner (`TestUnauthorized`, med nyckeltestet).
 - [x] Agentstatus sparas beständigt (`TestPersistence`).
-- [ ] D-018 godkänt av båda.
+- [x] D-018 godkänt av båda (2026-10-23).
 
 Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`llm.complete`), och prompter med hemligheter avvisas (2026-10-23, gren `robin/fas2-llm-behorighet`, 208 tester gröna).
 

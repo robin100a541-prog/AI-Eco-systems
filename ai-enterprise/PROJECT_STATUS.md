@@ -1,7 +1,7 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 2 — Agentramverk är **klar** (version 0.4.0). Kvar för formellt godkännande: D-018. Nästa: Fas 3 — Hierarki och samarbete.
+**Aktuell fas:** Fas 3 — Hierarki och samarbete pågår. Fas 2 är **klar och godkänd** (version 0.4.0, D-018 godkänt 2026-10-23).
 **Fasstatus:** Fas 1 och Fas 2 mergade till `main`. Alla acceptanskriterier i §49 och §50 har gröna acceptanstester (`tests/acceptance/`). Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
@@ -75,7 +75,7 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
-| 2 | Godkänna D-018 (ProviderRouter) | Båda |
+| 2 | ~~Godkänna D-018~~ klart 2026-10-23 | Båda |
 | 3 | Fas 3: CEO-flöde, departementschefer, 11-stegs beslutspost, samråd, oenighet, eskalering, godkännandekö | Båda; ta uppgiften i `TODO.md` först |
 
 ## Blockerare

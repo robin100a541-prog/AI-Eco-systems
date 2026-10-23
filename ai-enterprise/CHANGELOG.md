@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — D-018 godkänt
+### Ändrat
+- DECISIONS.md: D-018 (ProviderRouter) godkänt av båda grundarna, beslutat gemensamt och registrerat av Yorgo. Bara fälten *Status* och *Godkänd av* är ändrade. Fas 2 är därmed godkänd.
+
 ## [0.4.0] — 2026-10-23 — Fas 2 klar
 ### Tillagt
 - `src/aie/orchestration/worker.py`: `AgentWorker.work_on(task_id)` kör hela kedjan. Ägaren startar uppgiften, och `report.write` kontrolleras. Modellen nås via `LLMGateway` (PR #19, kräver `llm.complete`) och ProviderRouter, där en uppgift räknas som `internal` om inget annat anges och därför bara går till lokala leverantörer. Svaret blir en rapport, rapporten sparas i audit-loggen och uppgiften avslutas med `audit:<seq>` som underlag. Modellsvaret är alltid en obekräftad hypotes (§29).
