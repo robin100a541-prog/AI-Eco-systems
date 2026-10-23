@@ -69,7 +69,7 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3b Kontrollfunktionernas stopp (SR-05) | Yorgo | ☐ |
 | 3c Samråd (FR-11) | Yorgo | ☐ |
 | 3d Beslutslogg (FR-10, §20 steg 7): migration 7 `decisions`, spårbarhet uppgift → beslut | Robin | ✅ gren `robin/fas3-beslutslogg` |
-| 3e Oenighet (FR-12, §21) | Robin | ☐ |
+| 3e Oenighet (FR-12, §21): migration 8, påståenden, underlag och konflikttyp; inga röster över hårda gränser; ROADMAP:s nyckeltest CFO mot CRO | Robin | ✅ gren `robin/fas3-oenighet` |
 | 3f Eskalering och godkännandekö (FR-13, D-019) | Robin | ☐ |
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
