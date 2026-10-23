@@ -141,7 +141,8 @@ def setup_logging(
         )
     except OSError as exc:
         raise LoggingSetupError(
-            f"log_dir {str(log_dir)!r} kan inte skapas eller skrivas: {exc}"
+            # Inte !r: repr dubblerar backslash i Windows-sökvägar och gör meddelandet svårläst.
+            f"log_dir '{log_dir}' kan inte skapas eller skrivas: {exc}"
         ) from exc
 
     shutdown_logging()

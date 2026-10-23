@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 1.4: SQLite-lager
+### Tillagt
+- `src/aie/memory/`: `Database.open(data_dir, environment)` öppnar `<data_dir>/<miljö>.db` och kör migrationer, var och en i en egen transaktion (FR-03).
+- Migration 1: tabellerna `metadata` (miljö, skapad, programversion) och `schema_migrations` (version, namn, kontrollsumma, tid). Båda är STRICT-tabeller.
+- Uppstart stoppas med `StorageError` när databasen tillhör en annan miljö (SR-11), när den kommer från en nyare kodversion eller när en körd migration har ändrats.
+- WAL, `synchronous=FULL` och främmande nycklar slås på vid öppning. Kräver SQLite >= 3.37.
+- `tests/unit/test_storage.py`: 14 tester. Totalt 82 gröna på Yorgos dator (Windows 11, Python 3.12.0, SQLite 3.42.0), inklusive Fas 1.3.
+### Rättat
+- `monitoring/log.py`: felmeddelandet för en `log_dir` som inte kan skapas använde `repr()`, vilket dubblerade backslash i Windows-sökvägar. Därför föll `test_log_dir_that_is_a_file_gives_clear_error` på Windows. Felet syntes inte på Linux.
+
 ## [Unreleased] — 2026-10-23 — Arbetssätt och gemensamma godkännanden
 ### Tillagt
 - CI: `.github/workflows/ai-enterprise-tests.yml` kör `python -m unittest discover -s tests -v` i `ai-enterprise/` på Python 3.11 och 3.12, vid varje PR och varje push till `main`.
