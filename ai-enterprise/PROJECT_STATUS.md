@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Robin)
-**Aktuell fas:** Fas 1 — Grundsystem är **klar** (version 0.3.0). Nästa: Fas 2 — Agentramverk (förberedd av Yorgo i PR #11).
-**Fasstatus:** 1.1–1.7 mergade till `main`. Alla acceptanskriterier i §49 har gröna acceptanstester (se ROADMAP). Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Yorgo)
+**Aktuell fas:** Fas 2 — Agentramverk är **klar** (version 0.4.0). Kvar för formellt godkännande: D-018. Nästa: Fas 3 — Hierarki och samarbete.
+**Fasstatus:** Fas 1 och Fas 2 mergade till `main`. Alla acceptanskriterier i §49 och §50 har gröna acceptanstester (`tests/acceptance/`). Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -25,6 +25,7 @@
 | Start/stopp (1.6): `python -m aie init/start/stop/status`, driftläget i tabellen `runtime_state` (migration 3), ren nedstängning vid `stop`, Ctrl+C och SIGTERM, vägrar start vid manipulerad revisionslogg eller om systemet redan kör, upptäcker en körning som dog | `tests/unit/test_runtime.py`, 13 tester (bland annat riktiga processer), plus 1 samtidighetstest i `test_storage_config.py`; 118 OK på Python 3.11, 3.12 och 3.13; körda 40 gånger i rad utan fel |
 | Acceptanstester Fas 1 (1.7): ett per kriterium i §49 och ROADMAP 1.7, med de riktiga kommandona i egna processer | `tests/acceptance/test_fas1.py`, 12 tester; hela sviten 151 OK på Python 3.11, 3.12 och 3.13 och i CI |
 | CI på GitHub Actions: testerna körs på Python 3.11 och 3.12 vid varje PR och push till `main` | `.github/workflows/ai-enterprise-tests.yml`; checkarna syns på varje PR |
+| Fas 2, agentramverket (Yorgo): livscykel och agentregister i databasen (migration 4), `config/permissions.toml` och Authorization Engine med default deny (D-017), uppgifter (migration 5), rapportformat i §7:s tio kategorier, ProviderRouter med kvoter och dataklassning (migration 6, D-018), `AgentWorker` (uppgift → modell → rapport → audit) | PR #11, #14, #16, #17, #18 och Fas 2-acceptansen. `tests/acceptance/test_fas2.py` har 11 tester, minst ett per kriterium i §50. Hela sviten ger 208 OK (2 SIGINT-tester överhoppade) på Windows 11, Python 3.12.0, och i CI |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 
 ## Ändrat 2026-10-21 (Fas 1-session med Yorgo)
@@ -53,8 +54,17 @@
 - Acceptanstester för varje kriterium i §49 (`tests/acceptance/`). Version 0.3.0.
 - Hela testsviten skriver nu bara i temporära mappar.
 
+## Ändrat 2026-10-23 (Fas 2 — Yorgo)
+- **Arbetssätt:** Yorgos Claude tar nästa lediga uppgift utan att fråga. Ordningen är anspråk i `TODO.md`, bygg, testa, PR och merge vid grön CI (D-016).
+- **Rättat i Fas 1-acceptanstesterna:** `with sqlite3.connect()` stänger inte filen, så på Windows kunde den temporära mappen inte raderas.
+- **Rättat i `AuthorizationEngine`:** den nekar nu i stället för att krascha när registret inte kan läsas (§59).
+- **Modellsvar:** blir alltid en **obekräftad hypotes** i rapporten (§29).
+- **Tester:** inga nätverksanrop.
+- **Version:** 0.4.0.
+
 ## Vad som INTE är gjort / inte verifierat
-- `pid_alive` på Windows använder Win32-API:t (OpenProcess) och är bara testad i CI på Linux. Yorgo bör köra `py -m unittest discover -s tests -v` på Windows.
+- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (208 OK, 2026-10-23). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
+- Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - Groq-testet (0.10) är inte gjort. D-005–D-012 och Q-01 är inte beslutade (0.8).
 - Värdena i `config/risk_limits.toml` är simulerade (Q-04).
@@ -64,8 +74,8 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
-| 2 | Köra hela testsviten på Windows (`py -m unittest discover -s tests -v`), särskilt `pid_alive` och start/stopp | Yorgo |
-| 3 | Fas 2: spara agentregistret i databasen (ny migration), uppgifter, rapportformat, ProviderRouter | Båda; ta uppgiften i `TODO.md` först |
+| 2 | Godkänna D-018 (ProviderRouter) | Båda |
+| 3 | Fas 3: CEO-flöde, departementschefer, 11-stegs beslutspost, samråd, oenighet, eskalering, godkännandekö | Båda; ta uppgiften i `TODO.md` först |
 
 ## Blockerare
 Inga.

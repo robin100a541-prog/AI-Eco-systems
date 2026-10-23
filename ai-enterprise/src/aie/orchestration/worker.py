@@ -1,0 +1,93 @@
+"""AgentWorker (Fas 2): en agent arbetar på en uppgift, från början till slut.
+
+    uppgift (TaskBoard) → behörighet (AuthorizationEngine) → modell (ProviderRouter)
+        → rapport (Report) → audit-loggen → uppgiften avslutas med hänvisning till rapporten
+
+Regler:
+- Bara uppgiftens ägare kan arbeta på den. Agenten måste ha `report.write` i sitt mandat.
+- Uppgifter räknas som `internal` om inget annat anges, så de går bara till lokala
+  leverantörer (DR-13).
+- Ett modellsvar är alltid en **obekräftad hypotes** (§29), aldrig ett verifierat resultat.
+  Rapporten säger det uttryckligen.
+- Om ingen modell är tillgänglig blockeras uppgiften med skälet. Den köas och betalas aldrig (D-008).
+- Rapporten sparas i audit-loggen. Uppgiften avslutas med `audit:<seq>` som underlag (§7).
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from ..agents import AgentRegistry
+from ..audit import AuditLog
+from ..authorization import AuthorizationEngine
+from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable, ProviderRouter
+from ..reporting import Claim, ClaimKind, Report, ReportError
+from .tasks import Task, TaskBoard, TaskError, TaskStatus
+
+
+@dataclass(frozen=True, slots=True)
+class WorkResult:
+    task: Task
+    report: Report | None  # None när uppgiften blockerades
+    audit_seq: int | None
+
+
+class AgentWorker:
+    def __init__(
+        self,
+        agent_id: str,
+        registry: AgentRegistry,
+        engine: AuthorizationEngine,
+        router: ProviderRouter,
+        board: TaskBoard,
+        audit: AuditLog,
+    ) -> None:
+        self.agent_id = agent_id
+        self._registry = registry
+        self._engine = engine
+        self._router = router
+        self._board = board
+        self._audit = audit
+
+    def work_on(self, task_id: int, data_class: DataClass = DataClass.INTERNAL) -> WorkResult:
+        task = self._board.get(task_id)
+        if task is None:
+            raise TaskError(f"uppgift {task_id} finns inte")
+        if task.owner_id != self.agent_id:
+            raise TaskError(f"{self.agent_id} äger inte uppgift {task_id}")
+        self._engine.require(self.agent_id, "report.write")  # PermissionDenied om inte; loggat
+        if task.status in (TaskStatus.ASSIGNED, TaskStatus.BLOCKED):
+            task = self._board.start(self.agent_id, task_id)
+
+        agent = self._registry.get(self.agent_id)
+        request = ChatRequest(
+            messages=(
+                Message("system", f"Du är {agent.role} i avdelningen {agent.department}. "
+                                  "Svara sakligt och kort. Skilj på fakta och antaganden."),
+                Message("user", f"{task.title}\n\n{task.description}".strip()),
+            ),
+            data_class=data_class,
+        )
+        try:
+            response = self._router.complete(request, caller=self.agent_id)
+        except NoProviderAvailable as exc:
+            why = "; ".join(exc.reasons) or "inga leverantörer konfigurerade"
+            blocked = self._board.block(self.agent_id, task_id, f"ingen modell tillgänglig, köad: {why}")
+            return WorkResult(blocked, None, None)
+
+        try:
+            report = Report(
+                author=self.agent_id,
+                title=task.title,
+                task_id=task_id,
+                claims=(
+                    Claim(ClaimKind.ATTEMPT, f"modellsvar från {response.provider}/{response.model}"),
+                    Claim(ClaimKind.HYPOTHESIS, response.text),  # §29: obekräftad tills den verifierats
+                ),
+            )
+        except ReportError as exc:
+            blocked = self._board.block(self.agent_id, task_id, f"modellsvaret gav ingen giltig rapport: {exc.errors[0]}")
+            return WorkResult(blocked, None, None)
+
+        entry = self._audit.append(f"agent:{self.agent_id}", "report.submitted", report.to_dict())
+        done = self._board.complete(self.agent_id, task_id, f"rapport audit:{entry.seq} (obekräftad hypotes)")
+        return WorkResult(done, report, entry.seq)

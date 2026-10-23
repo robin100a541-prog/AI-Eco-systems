@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.4.0] — 2026-10-23 — Fas 2 klar
+### Tillagt
+- `src/aie/orchestration/worker.py`: `AgentWorker.work_on(task_id)` kör hela kedjan. Ägaren startar uppgiften, och `report.write` kontrolleras. Modellen nås via ProviderRouter, där en uppgift räknas som `internal` om inget annat anges och därför bara går till lokala leverantörer. Svaret blir en rapport, rapporten sparas i audit-loggen och uppgiften avslutas med `audit:<seq>` som underlag. Modellsvaret är alltid en obekräftad hypotes (§29).
+- Utan tillgänglig modell blockeras uppgiften med skälet. Den köas och kostar inget.
+- `tests/acceptance/test_fas2.py`: 11 acceptanstester, minst ett per kriterium i §50, plus DR-12 och DR-13 från början till slut. Hela sviten ger 208 OK på Windows 11, Python 3.12.0 (2 SIGINT-tester överhoppade).
+### Ändrat
+- Version 0.3.0 → 0.4.0. Fas 2-posterna (Unreleased) nedan ingår i den här versionen.
+
 ## [Unreleased] — 2026-10-23 — Fas 2: ProviderRouter, kvoter och dataklassning
 ### Tillagt
 - `src/aie/llm/`: `RuleProvider` och `OpenAICompatibleProvider` (groq, openrouter `:free`, ollama) med utbytbar transport, så att testerna aldrig går ut på nätet. Nyckeln läses från miljön och syns aldrig i fel, `repr` eller loggar (SR-10).

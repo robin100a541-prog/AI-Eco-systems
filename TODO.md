@@ -5,7 +5,6 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Now
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
-- [ ] ai-enterprise Fas 2: ProviderRouter + kvoter (DR-12) och dataklassning (DR-13), migration 6 `provider_usage` — @yorgo-jarjous (yorgo/fas2-provider-router)
 
 - [ ] ai-enterprise Fas 2-acceptans: AgentWorker (uppgift → router → rapport → audit) och acceptanstester för §50 — @yorgo-jarjous (yorgo/fas2-acceptans)
 
@@ -13,6 +12,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - Godkännande av D-018 (båda).
 
 ## Done
+- [x] ai-enterprise Fas 2: ProviderRouter, kvoter, dataklassning — @yorgo-jarjous (PR #18)
 - [x] ai-enterprise Fas 2: rapportformat FR-08 — @yorgo-jarjous (PR #17)
 - [x] ai-enterprise Fas 2: uppgifter FR-07 (migration 5) — @yorgo-jarjous (PR #16)
 - [x] ai-enterprise Fas 2: agentregistret i databasen (migration 4) — @yorgo-jarjous (PR #14)
