@@ -5,7 +5,10 @@ Default deny. Svaret är ja bara om **alla** villkor stämmer, i den här ordnin
 2. Agenten finns i registret.
 3. Agenten är i ett tillstånd som får agera (ACTIVE, PROBATION, TESTING).
 4. En agent i TESTING får bara agera i sim (SR-13).
-5. Agentens roll har verktyget i sitt mandat.
+5. Inget aktivt stopp från en kontrollfunktion träffar agenten, dess departement eller verktyget (SR-05).
+6. Agentens roll har verktyget i sitt mandat.
+
+Styrverktyg (`governance.*`) nekas alltid för agenter (SR-04).
 
 Varje beslut, ja eller nej, skrivs till audit-loggen när en sådan finns. Om loggningen
 misslyckas blir svaret nej. Systemet ska inte göra något det inte kan bevisa i efterhand (§59).
@@ -18,6 +21,7 @@ from dataclasses import dataclass
 from ..agents import ACTING_STATES, AgentRegistry, AgentState
 from ..audit import AuditLog
 from .permissions import PROTECTED_PREFIX, Permissions
+from .stops import ControlStops
 
 ENVIRONMENTS = ("sim", "prod")
 
@@ -43,6 +47,7 @@ class AuthorizationEngine:
         registry: AgentRegistry,
         environment: str,
         audit: AuditLog | None = None,
+        stops: ControlStops | None = None,
     ) -> None:
         if environment not in ENVIRONMENTS:
             raise ValueError(f"okänd miljö {environment!r}")
@@ -50,6 +55,7 @@ class AuthorizationEngine:
         self._registry = registry
         self._environment = environment
         self._audit = audit
+        self._stops = stops
 
     def check(self, agent_id: str, tool: str) -> Decision:
         try:
@@ -89,6 +95,10 @@ class AuthorizationEngine:
             return deny(f"agenten är {agent.state.value} och får inte agera")
         if agent.state is AgentState.TESTING and self._environment != "sim":
             return deny("agenten testas och får bara agera i sim (SR-13)")
+        if self._stops is not None:
+            blocking = self._stops.blocking(agent.agent_id, agent.department, tool)
+            if blocking:
+                return deny(f"{blocking[0].describe()} (SR-05)")
         mandate = self._permissions.roles.get(agent.role)
         if mandate is None:
             return deny(f"rollen {agent.role!r} saknar mandat")
