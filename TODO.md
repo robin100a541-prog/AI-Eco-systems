@@ -9,13 +9,13 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
-- [ ] ai-enterprise Fas 3b: kontrollfunktionernas stopp (SR-05), migration 7 `control_stops` — @yorgo-jarjous (yorgo/fas3-stopp)
-- [ ] ai-enterprise Fas 3c: samråd (FR-11), migration 8 `consultations` — @yorgo-jarjous (yorgo/fas3-samrad)
 
 ## Next
 - Migrationsnummer 7–8 och beslutsnummer D-020 är reserverade för Yorgos Fas 3-delar ovan (CEO-flöde, departementschefer, samråd, överenskommet på plats). Robin tar nästa lediga från 9 och D-021.
 
 ## Done
+- [x] ai-enterprise Fas 3c: samråd FR-11 (migration 8) — @yorgo-jarjous (yorgo/fas3-samrad)
+- [x] ai-enterprise Fas 3b: kontrollfunktionernas stopp SR-05 (migration 7) — @yorgo-jarjous (PR #26)
 - [x] ai-enterprise Fas 3a: hierarki, rapportvägar, styrverktyg (SR-04), Compliance, D-020 — @yorgo-jarjous (PR #24)
 - [x] ai-enterprise Fas 2-avslut: D-018 godkänt, D-019 beslutsrätt (Q-01 besvarad) — @robin
 - [x] ai-enterprise Fas 2-acceptans: AgentWorker via LLMGateway, acceptanstester §50, version 0.4.0 — Fas 2 klar — @yorgo-jarjous (PR #20)
