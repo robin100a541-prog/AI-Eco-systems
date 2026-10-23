@@ -11,7 +11,7 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 | 0.3 | Beslutsförslag D-001…D-007 + öppna frågor | Claude | ✅ |
 | 0.4 | Miljökontrollskript `scripts/check_env.py` + tester | Claude | ✅ (testat i Claudes Linux-miljö) |
 | 0.5 | Köra `check_env.py` på **Yorgos** dator, spara resultat i `docs/environment.md` | Yorgo | ✅ (2026-10-21, Windows 11) |
-| 0.6 | Köra `check_env.py` på **Robins** dator, spara resultat i `docs/environment.md` | Robin | ☐ |
+| 0.6 | Köra `check_env.py` på **Robins** dator, spara resultat i `docs/environment.md` | Robin | ✅ (2026-10-23, Claude Code i molnet, PR #3) |
 | 0.7 | Skapa privat GitHub-repo, lägga till varandra, pusha dessa filer | En grundare | ☐ |
 | 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ☐ |
 | 0.9 | Gratis modellgränssnitt: `scripts/llm_smoke_test.py` + 8 tester mot falsk server | Claude | ✅ (testat lokalt; riktiga API:er kunde inte nås från Claudes miljö) |
@@ -22,13 +22,13 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 - [x] Verktygsvalen är motiverade, med licens och kostnad.
 - [x] Inga okända obligatoriska betaltjänster finns i planen (API och hosting uttryckligen uteslutna).
 - [x] Kritiska säkerhetsgränser är identifierade (SR-01…SR-17).
-- [ ] Båda grundarnas miljöer är inventerade (0.5, 0.6).
+- [x] Båda grundarnas miljöer är inventerade (0.5, 0.6).
 - [ ] Besluten är godkända av grundarna (0.8).
 
 ## Fas 1 — Grundsystem (FR-01…04, SR-09 grund, SR-10, DR-08) ← **pågår**
 1.1 Paketstruktur `src/aie/`, `pyproject.toml`, `.gitignore`. ✅ (2026-10-21, gren `fas1-grund`)
 1.2 Konfigurationsläsning + validering (`config/system.toml`, `config/risk_limits.toml`). ✅ (2026-10-21, 31 tester gröna, väntar på granskning)
-1.3 Strukturerad loggning (JSON-rader till `logs/`).
+1.3 Strukturerad loggning (JSON-rader till `logs/`). ✅ (2026-10-23, gren `robin/fas1-3-loggning`, 68 tester gröna, sammanslagen i PR #4)
 1.4 SQLite-lager med migrationer och metadatatabell (miljö, schemaversion). ✅ (2026-10-23, gren `yorgo/fas1-4-sqlite`, 14 tester gröna, väntar på granskning)
 1.5 Hashkedjad audit-logg (append-only).
 1.6 CLI: `init`, `start`, `stop`, `status`.

@@ -8,6 +8,23 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 1 — föreslagna beslut
 
+### D-015 `log_level` är en valfri inställning i `system.toml`
+- **Status:** Föreslagen · **Föreslagen av:** Robin, 2026-10-23 · **Bygger på:** D-003, D-013
+- **Beslut:**
+  1. `config/system.toml` får nyckeln `log_level` med något av värdena `DEBUG`, `INFO`, `WARNING`, `ERROR` eller `CRITICAL` (versaler).
+  2. Nyckeln är valfri. Saknas den gäller `INFO`, så att äldre konfigurationer fortfarande är giltiga.
+  3. Ett annat värde är ett konfigurationsfel som stoppar uppstart (FR-02).
+  4. Loggfilen `<log_dir>/aie.log` roteras vid 5 MB och högst tre gamla filer sparas. Det är fasta värden i koden; att göra dem konfigurerbara kräver ett nytt beslut.
+- **Motivering:** Nivån behöver kunna sänkas till `DEBUG` vid felsökning utan kodändring. Rotationen hindrar att loggarna fyller disken när systemet körs länge.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
+
+### D-014 GitHub-repot är publikt
+- **Status:** Föreslagen · **Föreslagen av:** Robin, 2026-10-23 · **Ändrar:** D-004 (ordet "privat")
+- **Bakgrund:** Repot `robin100a541-prog/AI-Eco-systems`, där `ai-enterprise/` ligger, är publikt på GitHub. D-004 utgår från ett privat repo.
+- **Beslut:** Repot får vara publikt. Därför läggs aldrig hemligheter, personuppgifter (e-post, telefon, adress, personnummer), privata belopp eller kontouppgifter i repot. Det gäller även `docs/conversations/` och `docs/environment.md`, som alla kan läsa.
+- **Väntar på:** Yorgos godkännande.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
+
 ### D-013 Format och valideringsregler för konfigurationen
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-21 · **Bygger på:** D-003, D-006, D-009
 - **Beslut:**
@@ -19,7 +36,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   6. Nycklar som slutar på `_KEY`, `_TOKEN`, `_SECRET` eller `_PASSWORD`, eller heter `password`, `key`, `token` eller `secret`, avvisas i alla `config/*.toml`. Det gäller även filer som `.env` och `*.secret` i `config/` (SR-10).
   7. `config_version = 1` är den enda version som stöds.
 - **Motivering:** Det ska vara omöjligt att av misstag stänga av en gräns, till exempel genom ett stavfel eller ett glömt värde, eller att blanda simulerade och verkliga pengar.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
 
 ---
 
@@ -28,27 +45,27 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 ### D-001 Konstitutionen är styrande dokument
 - **Status:** Föreslagen · **Föreslagen av:** Claude (för Yorgo), 2026-10-21
 - **Beslut:** `CONSTITUTION.md` (v1.0) är projektets grunddokument. Ändringar kräver nytt beslut och ny version.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
 
 ### D-002 Programmeringsspråk: Python ≥ 3.11, endast standardbibliotek i MVP
 - **Status:** Föreslagen
 - **Motivering:** Gratis, plattformsoberoende, `sqlite3`/`tomllib`/`decimal`/`unittest` täcker MVP. Noll tredjepartslicenser.
 - **Alternativ som övervägts:** TypeScript/Node (fler beroenden), Go (mindre AI-ekosystem).
 - **Konsekvens:** Nya beroenden kräver eget beslut med licens och kostnad.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
 
 ### D-003 Lagring: SQLite, en fil per miljö; konfiguration i TOML
 - **Status:** Föreslagen
 - **Motivering:** Ingen server, ingen kostnad, transaktionssäker, lätt att säkerhetskopiera. TOML läses av standardbiblioteket.
 - **Avvikelse från konstitutionens förslag:** `config/*.yaml` → `config/*.toml` (konstitutionen tillåter anpassning, §45).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
 
 ### D-004 Samarbete: privat GitHub-repo är enda sanningskällan
 - **Status:** Föreslagen
 - **Beslut:** Ett privat repo `ai-enterprise` på GitHub Free. Båda grundarna är medarbetare. Arbetsflöde: egen gren per uppgift → pull request → den andra grundaren granskar → merge till `main`. `main` ändras aldrig direkt.
 - **Claude-projektet "Ai Ecosystem"** i Yorgos konto innehåller bara en kopia för bekvämlighet. Vid konflikt gäller repot.
 - **Motivering:** GitHub Free tillåter obegränsade privata repon med obegränsat antal medarbetare utan kostnad. Två separata Claude-konton delar ingen historik (§46), git gör det.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-23)
 
 ### D-011 Agenterna undersöker själva nya kanaler och lösningar — människor godkänner
 - **Status:** Föreslagen · **Föreslagen av:** Yorgo (idé), formulerat av Claude, 2026-10-21

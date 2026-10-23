@@ -10,4 +10,5 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Next
 
 ## Done
+- [x] ai-enterprise Fas 1.3: loggning (fil + konsol, maskerade hemligheter) — @robin (PR #4)
 - [x] Add ai-enterprise (Fas 0 + Fas 1.1–1.2: package + validated config) to `ai-enterprise/` — @yorgo-jarjous (PR #1)

@@ -45,7 +45,9 @@ LIMITS: dict[str, str] = {
     "API_REINVEST_SHARE": PERCENT,
     "API_MONTHLY_CAP": AMOUNT,
 }
-SYSTEM_KEYS = ("config_version", "environment", "data_dir", "log_dir", "base_currency")
+SYSTEM_KEYS = ("config_version", "environment", "data_dir", "log_dir", "log_level", "base_currency")
+LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+DEFAULT_LOG_LEVEL = "INFO"
 RISK_KEYS = ("currency", *LIMITS)
 
 _CURRENCY_CODE = re.compile(r"[A-Z]{3}")
@@ -132,7 +134,8 @@ def _read_all(config_dir: Path, problems: _Problems) -> dict[str, dict[str, Any]
     return documents
 
 
-def _is_secret_key(key: str) -> bool:
+def is_secret_key(key: str) -> bool:
+    """Nyckeln ser ut som en hemlighet. Används även för maskning i loggar (SR-10)."""
     lowered = key.lower()
     return lowered in _SECRET_NAMES or lowered.endswith(_SECRET_SUFFIXES)
 
@@ -147,7 +150,7 @@ def _reject_secrets(where: str, data: Any, problems: _Problems, prefix: str = ""
         return
     for key, value in data.items():
         dotted = f"{prefix}{key}"
-        if _is_secret_key(key):
+        if is_secret_key(key):
             problems.error(
                 where,
                 f"{dotted} ser ut som en hemlighet; hemligheter läses från miljövariabler (SR-10)",
@@ -159,7 +162,7 @@ def _reject_unknown_keys(
     where: str, data: dict[str, Any], allowed: tuple[str, ...], problems: _Problems
 ) -> None:
     for key in data:
-        if key not in allowed and not _is_secret_key(key):  # hemligheter rapporteras redan
+        if key not in allowed and not is_secret_key(key):  # hemligheter rapporteras redan
             problems.error(where, f"okänd nyckel {key!r} (stavfel? tillåtna: {', '.join(allowed)})")
 
 
@@ -189,6 +192,7 @@ def _parse_system(data: dict[str, Any] | None, problems: _Problems) -> SystemCon
 
     dirs = {name: _parse_dir(where, name, data.get(name), problems) for name in ("data_dir", "log_dir")}
     currency = _parse_currency(where, "base_currency", data.get("base_currency"), environment, problems)
+    log_level = _parse_log_level(where, data.get("log_level", DEFAULT_LOG_LEVEL), problems)
 
     if len(problems.errors) > errors_before:
         return None
@@ -198,7 +202,16 @@ def _parse_system(data: dict[str, Any] | None, problems: _Problems) -> SystemCon
         log_dir=dirs["log_dir"],
         base_currency=currency,
         config_version=version,
+        log_level=log_level,
     )
+
+
+def _parse_log_level(where: str, value: Any, problems: _Problems) -> str | None:
+    """Valfri nyckel. Saknas den gäller INFO. Andra värden än LOG_LEVELS är fel (FR-04)."""
+    if isinstance(value, str) and value in LOG_LEVELS:
+        return value
+    problems.error(where, f"log_level = {value!r} är okänd (tillåtna: {', '.join(LOG_LEVELS)})")
+    return None
 
 
 def _parse_dir(where: str, name: str, value: Any, problems: _Problems) -> Path | None:
