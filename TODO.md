@@ -5,14 +5,14 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 ## Now
 - [ ] ai-enterprise Fas 3: eskalering till grundarna enligt D-019, godkännandekö i CLI — @robin (robin/fas3-eskalering)
 - [ ] ai-enterprise Fas 3g: externt innehåll är opålitlig data (SR-06) — @yorgo-jarjous (yorgo/fas3-externt)
-- [ ] ai-enterprise Fas 3h: juridisk konflikt ⇒ åtgärden stoppas och går till Compliance (SR-16), migration 12 — @yorgo-jarjous (yorgo/fas3-juridik)
-- [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 13, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
+- [ ] ai-enterprise Fas 3h: juridisk konflikt ⇒ åtgärden stoppas och går till Compliance (SR-16), migration 11 — @yorgo-jarjous (yorgo/fas3-juridik)
+- [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 12, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
 
 ## Next
-- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–11 och D-021–D-024** (beslutslogg, oenighet, eskalering). **Yorgo: migration 12–13 och D-025** (SR-16, FR-25). Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
+- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 (använda) och 13, samt D-021–D-024** (beslutslogg, oenighet, eskalering). **Yorgo: migration 11–12 och D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
 - [x] ai-enterprise Fas 3: oenighet (§21) — @robin
