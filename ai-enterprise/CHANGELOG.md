@@ -2,7 +2,7 @@
 
 ## [Unreleased] — 2026-10-23 — Fas 3: oenighet
 ### Tillagt
-- Migration 8: `disputes`, `dispute_positions` och `dispute_events`. Ståndpunkter och händelser är append-only; en avgjord tvist kan inte ändras.
+- Migration 10: `disputes`, `dispute_positions` och `dispute_events`. Ståndpunkter och händelser är append-only; en avgjord tvist kan inte ändras.
 - `DisputeBoard` (`src/aie/governance/disputes.py`): `open()` kräver minst två ståndpunkter från olika agenter (ingen falsk konsensus), med påstående, underlag och konflikttyp `goal`/`data`/`risk`/`method` (§21). `request_analysis()`, `resolve()` och `escalate()` revideras.
 - Hårda gränser (§21): ett förslag över `MAX_SINGLE_TRANSACTION`, `MAX_DEPARTMENT_BUDGET` eller `MAX_SINGLE_EXPERIMENT_LOSS`, med en saknad gräns, eller med riskklass `critical` kan aldrig godtas via `resolve()`, oavsett röster och oavsett vem som avgör. Tvisten eskaleras då till grundarna. Över `HUMAN_APPROVAL_THRESHOLD` krävs grundarna (D-019).
 - Rätt nivå: CEO om CEO inte är part och förslaget är inom gränserna, annars grundarna. En eskalering går aldrig nedåt.
@@ -11,11 +11,35 @@
 
 ## [Unreleased] — 2026-10-23 — Fas 3: beslutslogg
 ### Tillagt
-- Migration 7 `decisions`: ett beslut per rad med de åtta fälten i §20 steg 7 (vald åtgärd, motivering, underlag, budget, riskklass, förväntat resultat, villkor för avbrytande, uppföljning). Varje beslut pekar på en uppgift. Append-only; ett nytt beslut kan ersätta ett gammalt (`supersedes`).
+- Migration 9 `decisions`: ett beslut per rad med de åtta fälten i §20 steg 7 (vald åtgärd, motivering, underlag, budget, riskklass, förväntat resultat, villkor för avbrytande, uppföljning). Varje beslut pekar på en uppgift. Append-only; ett nytt beslut kan ersätta ett gammalt (`supersedes`).
 - `src/aie/governance/`: `DecisionLog.record()`, `for_task()`, `trace()` (uppgift, uppgiftshistorik och alla beslut om uppgiften, §51). Varje beslut revideras som `decision.recorded`.
 - Befogenheter kontrolleras av kod: agenter behöver `decision.record` och får bara besluta om egna uppgifter. Över `HUMAN_APPROVAL_THRESHOLD` kastas `NeedsApproval` för agenter och för en ensam grundare (D-019). Fritext med hemligheter avvisas.
 - `config/permissions.toml`: verktyget `decision.record` för CEO, CFO, CRO och Research-chefen.
 - `tests/unit/test_decisions.py`: 12 tester. Totalt 231.
+
+## [Unreleased] — 2026-10-23 — Fas 3c: samråd (FR-11)
+### Tillagt
+- Migration 8: `consultations` och `consultation_opinions`. Samråd ändras aldrig. Yttranden är append-only, och varje roll får ett yttrande per samråd.
+- `src/aie/collaboration/`: `required_for` avgör vilka som måste yttra sig.
+  - Ett belopp kräver CFO, riskklass medium eller högre kräver CRO och juridik eller villkor kräver Compliance.
+  - Grundarna krävs över `HUMAN_APPROVAL_THRESHOLD`, vid kritisk risk och när gränsen saknas (D-019, ER-02).
+- `ConsultationBoard`:
+  - Bara nivå 1–3 och grundare får öppna ett samråd.
+  - Bara krävda roller får yttra sig, och ett yttrande kräver motivering. En invändning kräver underlag.
+  - Samrådet är klart när alla krävda roller har yttrat sig. Enighet krävs inte, utan invändningarna lämnas vidare till oenighetshanteringen (§20, §21).
+  - Varje steg loggas i audit-loggen.
+- `tests/unit/test_consultation.py`: 13 tester.
+
+## [Unreleased] — 2026-10-23 — Fas 3b: kontrollfunktionernas stopp (SR-05)
+### Tillagt
+- Migration 7 `control_stops`. Ett stopp gäller en agent, ett departement eller ett verktyg. Det raderas aldrig, kan inte ändras och kan bara hävas en gång.
+- `src/aie/authorization/stops.py`: `ControlStops.place`, `lift`, `active` och `blocking`.
+  - Bara grundare eller aktiva kontrollfunktioner med `action.block` får sätta stopp.
+  - Kontrollfunktioner kan inte stoppa varandra, sina departement eller själva stoppverktyget (§18). Det kan bara grundarna.
+  - Bara den som satte stoppet, eller en grundare, kan häva det. Ingen operativ chef kan det, inte ens CEO (SR-05).
+  - Satta och hävda stopp loggas i audit-loggen.
+- `AuthorizationEngine(..., stops=...)` nekar alla verktyg som träffas av ett aktivt stopp och anger stoppets nummer och skäl.
+- `tests/unit/test_stops.py`: 13 tester.
 
 ## [Unreleased] — 2026-10-23 — Fas 3a: hierarki och styrverktyg
 ### Tillagt

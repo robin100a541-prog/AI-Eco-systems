@@ -1,6 +1,6 @@
 """Beslutsloggen (Fas 3, FR-10, konstitutionen §20 steg 7 och §51).
 
-Varje beslut sparas i tabellen `decisions` (migration 7) med de åtta fälten i §20 steg 7:
+Varje beslut sparas i tabellen `decisions` (migration 9) med de åtta fälten i §20 steg 7:
 vald åtgärd, motivering, underlag, budget, riskklass, förväntat resultat, villkor för
 avbrytande och krav på uppföljning. Varje beslut hör till den uppgift som orsakade det,
 så det finns alltid spårbarhet från uppgift till beslut (§51). Tabellen är append-only;

@@ -243,9 +243,113 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(
         version=7,
+        name="control_stops",
+        statements=(
+            # Fas 3b (SR-05): stopp från kontrollfunktionerna. Se src/aie/authorization/stops.py.
+            # Ett stopp raderas aldrig. Det hävs genom att lifted_* fylls i, och det kan bara göras en gång.
+            """
+            CREATE TABLE control_stops (
+                stop_id     INTEGER PRIMARY KEY,
+                scope_kind  TEXT NOT NULL CHECK (scope_kind IN ('agent', 'department', 'tool')),
+                scope_value TEXT NOT NULL,
+                reason      TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                placed_by   TEXT NOT NULL,
+                placed_at   TEXT NOT NULL,
+                lifted_by   TEXT,
+                lifted_at   TEXT,
+                lift_reason TEXT,
+                CHECK ((lifted_by IS NULL) = (lifted_at IS NULL) AND (lifted_at IS NULL) = (lift_reason IS NULL))
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER control_stops_no_delete BEFORE DELETE ON control_stops
+            BEGIN
+                SELECT RAISE(ABORT, 'stopp raderas aldrig; de hävs');
+            END
+            """,
+            """
+            CREATE TRIGGER control_stops_fixed BEFORE UPDATE OF
+                stop_id, scope_kind, scope_value, reason, placed_by, placed_at ON control_stops
+            BEGIN
+                SELECT RAISE(ABORT, 'ett stopp kan inte ändras, bara hävas');
+            END
+            """,
+            """
+            CREATE TRIGGER control_stops_lift_once BEFORE UPDATE ON control_stops
+            WHEN OLD.lifted_at IS NOT NULL
+            BEGIN
+                SELECT RAISE(ABORT, 'stoppet är redan hävt');
+            END
+            """,
+        ),
+    ),
+    Migration(
+        version=8,
+        name="consultations",
+        statements=(
+            # Fas 3c (FR-11, §20 steg 5). Se src/aie/collaboration/consultation.py.
+            # required_roles och requires_founders räknas fram när samrådet öppnas och ändras aldrig.
+            """
+            CREATE TABLE consultations (
+                consultation_id   INTEGER PRIMARY KEY,
+                subject           TEXT NOT NULL CHECK (length(trim(subject)) > 0),
+                question          TEXT NOT NULL CHECK (length(trim(question)) > 0),
+                opened_by         TEXT NOT NULL,
+                amount_minor      INTEGER CHECK (amount_minor IS NULL OR amount_minor >= 0),
+                currency          TEXT,
+                risk_class        TEXT NOT NULL CHECK (risk_class IN ('low', 'medium', 'high', 'critical')),
+                legal             INTEGER NOT NULL CHECK (legal IN (0, 1)),
+                required_roles    TEXT NOT NULL,
+                requires_founders INTEGER NOT NULL CHECK (requires_founders IN (0, 1)),
+                opened_at         TEXT NOT NULL,
+                CHECK ((amount_minor IS NULL) = (currency IS NULL))
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER consultations_immutable BEFORE UPDATE ON consultations
+            BEGIN
+                SELECT RAISE(ABORT, 'ett samråd ändras aldrig; yttranden läggs till');
+            END
+            """,
+            """
+            CREATE TRIGGER consultations_no_delete BEFORE DELETE ON consultations
+            BEGIN
+                SELECT RAISE(ABORT, 'samråd raderas aldrig');
+            END
+            """,
+            # Ett yttrande per roll och samråd. Append-only.
+            """
+            CREATE TABLE consultation_opinions (
+                id              INTEGER PRIMARY KEY,
+                consultation_id INTEGER NOT NULL REFERENCES consultations (consultation_id),
+                role            TEXT NOT NULL,
+                agent_id        TEXT NOT NULL REFERENCES agents (agent_id),
+                position        TEXT NOT NULL CHECK (position IN ('support', 'object', 'abstain')),
+                reasoning       TEXT NOT NULL CHECK (length(trim(reasoning)) > 0),
+                evidence        TEXT NOT NULL,
+                at              TEXT NOT NULL,
+                UNIQUE (consultation_id, role)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER consultation_opinions_no_update BEFORE UPDATE ON consultation_opinions
+            BEGIN
+                SELECT RAISE(ABORT, 'ett yttrande ändras aldrig');
+            END
+            """,
+            """
+            CREATE TRIGGER consultation_opinions_no_delete BEFORE DELETE ON consultation_opinions
+            BEGIN
+                SELECT RAISE(ABORT, 'ett yttrande raderas aldrig');
+            END
+            """,
+        ),
+    ),
+    Migration(
+        version=9,
         name="decisions",
         statements=(
-            # Fas 3 (FR-10, §20 steg 7): beslutsloggen. Varje beslut hör till en uppgift och
+            # Fas 3 (FR-10, §20 steg 7): beslutsloggen. (Robin; nummer 9 eftersom 7 och 8 är Yorgos.) Varje beslut hör till en uppgift och
             # innehåller de åtta fälten i §20 steg 7. Append-only: ett beslut ändras aldrig,
             # ett nytt beslut kan ersätta ett gammalt (supersedes).
             """
@@ -282,10 +386,10 @@ MIGRATIONS: tuple[Migration, ...] = (
         ),
     ),
     Migration(
-        version=8,
+        version=10,
         name="disputes",
         statements=(
-            # Fas 3 (FR-12, §21): oenighet mellan agenter. En tvist gäller en uppgift och ett
+            # Fas 3 (FR-12, §21): oenighet mellan agenter (Robin). En tvist gäller en uppgift och ett
             # förslag (åtgärd, budget, riskklass). Ståndpunkterna och händelserna är append-only.
             """
             CREATE TABLE disputes (

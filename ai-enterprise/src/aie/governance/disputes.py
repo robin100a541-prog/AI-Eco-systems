@@ -3,7 +3,7 @@
 En tvist gäller en uppgift och ett förslag (åtgärd, budget, riskklass). Systemet registrerar
 exakt vilka påståenden agenterna är oense om, vilka underlag som stöder varje ståndpunkt och
 om konflikten gäller mål, data, risk eller metod (`goal`, `data`, `risk`, `method`).
-Ståndpunkter och händelser är append-only (migration 8).
+Ståndpunkter och händelser är append-only (migration 10).
 
 Flöde:
 1. `open()`: minst två ståndpunkter från olika agenter. Ingen falsk konsensus (§21).
