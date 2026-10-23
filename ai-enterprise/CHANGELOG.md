@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — D-017 och D-014 godkända
+### Ändrat
+- DECISIONS.md: D-017 (behörighetsmodellen) godkänd av båda grundarna. I D-014 är raden *Väntar på* uppdaterad till godkänd av båda. Ingen annan beslutstext ändrad.
+
 ## [0.3.0] — 2026-10-23 — Fas 1 klar
 ### Tillagt
 - `tests/acceptance/test_fas1.py`: 12 acceptanstester, ett eller flera per kriterium i konstitutionen §49 och ROADMAP 1.7. De kör `python -m aie ...` i egna processer i en tom mapp. Totalt 151 tester.

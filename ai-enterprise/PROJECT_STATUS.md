@@ -63,7 +63,7 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-005–D-012, D-017 och besvara Q-01 (0.8) | Båda, på plats |
+| 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
 | 2 | Köra hela testsviten på Windows (`py -m unittest discover -s tests -v`), särskilt `pid_alive` och start/stopp | Yorgo |
 | 3 | Fas 2: spara agentregistret i databasen (ny migration), uppgifter, rapportformat, ProviderRouter | Båda; ta uppgiften i `TODO.md` först |
 
