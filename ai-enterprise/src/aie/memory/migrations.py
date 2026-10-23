@@ -460,6 +460,47 @@ MIGRATIONS: tuple[Migration, ...] = (
         ),
     ),
     Migration(
+        version=11,
+        name="legal_holds",
+        statements=(
+            # Fas 3h (SR-16, §6): juridisk eller avtalsmässig konflikt (Yorgo). Uppgiften hålls tills
+            # Compliance har yttrat sig. En hållning raderas aldrig och släpps bara en gång.
+            """
+            CREATE TABLE legal_holds (
+                hold_id         INTEGER PRIMARY KEY,
+                task_id         INTEGER NOT NULL REFERENCES tasks (task_id),
+                description     TEXT NOT NULL CHECK (length(trim(description)) > 0),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                raised_by       TEXT NOT NULL,
+                consultation_id INTEGER NOT NULL REFERENCES consultations (consultation_id),
+                raised_at       TEXT NOT NULL,
+                released_by     TEXT,
+                released_at     TEXT,
+                outcome         TEXT CHECK (outcome IN ('cleared', 'cancelled')),
+                release_reason  TEXT,
+                CHECK ((released_at IS NULL) = (outcome IS NULL) AND (outcome IS NULL) = (released_by IS NULL)
+                       AND (outcome IS NULL) = (release_reason IS NULL))
+            ) STRICT
+            """,
+            # Högst en aktiv hållning per uppgift.
+            "CREATE UNIQUE INDEX legal_holds_one_active ON legal_holds (task_id) WHERE released_at IS NULL",
+            """
+            CREATE TRIGGER legal_holds_no_delete BEFORE DELETE ON legal_holds
+            BEGIN SELECT RAISE(ABORT, 'juridiska hållningar raderas aldrig'); END
+            """,
+            """
+            CREATE TRIGGER legal_holds_fixed BEFORE UPDATE OF
+                hold_id, task_id, description, evidence, raised_by, consultation_id, raised_at ON legal_holds
+            BEGIN SELECT RAISE(ABORT, 'en hållning kan inte ändras, bara släppas'); END
+            """,
+            """
+            CREATE TRIGGER legal_holds_release_once BEFORE UPDATE ON legal_holds
+            WHEN OLD.released_at IS NOT NULL
+            BEGIN SELECT RAISE(ABORT, 'hållningen är redan släppt'); END
+            """,
+        ),
+    ),
+    Migration(
         version=12,
         name="approvals",
         statements=(

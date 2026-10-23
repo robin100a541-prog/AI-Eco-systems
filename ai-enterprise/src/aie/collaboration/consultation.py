@@ -145,6 +145,14 @@ class ConsultationBoard:
         self._threshold = approval_threshold
         self._clock = clock
 
+    def open_for_legal_review(self, subject: str, question: str) -> Consultation:
+        """SR-16: systemet självt öppnar ett samråd när en juridisk konflikt flaggas.
+
+        Den som flaggar kan vara en arbetsagent (nivå 4), som annars inte får öppna samråd.
+        Riskklassen är alltid high och frågan alltid juridisk, så att CRO och Compliance krävs.
+        """
+        return self._open("system:sr16", subject, question, RiskClass.HIGH, None, True)
+
     def open(
         self,
         actor: str,
@@ -155,6 +163,11 @@ class ConsultationBoard:
         legal: bool = False,
     ) -> Consultation:
         self._require_opener(actor)
+        return self._open(actor, subject, question, risk_class, amount, legal)
+
+    def _open(
+        self, actor: str, subject: str, question: str, risk_class: RiskClass, amount: Money | None, legal: bool
+    ) -> Consultation:
         if not subject.strip() or not question.strip():
             raise ConsultationError("ett samråd behöver ämne och fråga")
         if amount is not None:
