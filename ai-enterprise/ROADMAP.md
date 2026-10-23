@@ -68,7 +68,9 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3a Hierarki nivå 0–5, rapportvägar, departementschefer, styrverktyg (SR-04), Compliance (D-020) | Yorgo | ✅ första nyckeltestet grönt (`test_ceo_cannot_raise_own_limit_or_change_own_mandate`), PR #24 |
 | 3b Kontrollfunktionernas stopp (SR-05), migration 7 | Yorgo | ✅ PR #26 |
 | 3c Samråd (FR-11), migration 8 | Yorgo | ✅ gren `yorgo/fas3-samrad` |
-| Beslutslogg (FR-10), oenighet (FR-12), eskalering och godkännandekö (FR-13) | Robin | ☐ |
+| 3d Beslutslogg (FR-10, §20 steg 7): migration 9 `decisions`, spårbarhet uppgift → beslut | Robin | ✅ gren `robin/fas3-beslutslogg` |
+| 3e Oenighet (FR-12, §21) | Robin | ☐ |
+| 3f Eskalering och godkännandekö (FR-13, D-019) | Robin | ☐ |
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).

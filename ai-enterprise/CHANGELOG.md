@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3: beslutslogg
+### Tillagt
+- Migration 9 `decisions`: ett beslut per rad med de åtta fälten i §20 steg 7 (vald åtgärd, motivering, underlag, budget, riskklass, förväntat resultat, villkor för avbrytande, uppföljning). Varje beslut pekar på en uppgift. Append-only; ett nytt beslut kan ersätta ett gammalt (`supersedes`).
+- `src/aie/governance/`: `DecisionLog.record()`, `for_task()`, `trace()` (uppgift, uppgiftshistorik och alla beslut om uppgiften, §51). Varje beslut revideras som `decision.recorded`.
+- Befogenheter kontrolleras av kod: agenter behöver `decision.record` och får bara besluta om egna uppgifter. Över `HUMAN_APPROVAL_THRESHOLD` kastas `NeedsApproval` för agenter och för en ensam grundare (D-019). Fritext med hemligheter avvisas.
+- `config/permissions.toml`: verktyget `decision.record` för CEO, CFO, CRO och Research-chefen.
+- `tests/unit/test_decisions.py`: 12 tester. Totalt 231.
+
 ## [Unreleased] — 2026-10-23 — Fas 3c: samråd (FR-11)
 ### Tillagt
 - Migration 8: `consultations` och `consultation_opinions`. Samråd ändras aldrig. Yttranden är append-only, och varje roll får ett yttrande per samråd.

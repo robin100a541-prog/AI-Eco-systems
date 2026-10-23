@@ -3,7 +3,6 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
-- [ ] ai-enterprise Fas 3: beslutslogg (§20 steg 7, spårbarhet uppgift → beslut) — @robin (robin/fas3-beslutslogg)
 - [ ] ai-enterprise Fas 3: oenighet (§21: påståenden, bevis, konflikttyp; inga omröstningar över hårda gränser) — @robin (robin/fas3-oenighet)
 - [ ] ai-enterprise Fas 3: eskalering till grundarna enligt D-019, godkännandekö i CLI — @robin (robin/fas3-eskalering)
 - [ ] ai-enterprise Fas 3d: externt innehåll är opålitlig data (SR-06) — @yorgo-jarjous (yorgo/fas3-externt)
@@ -17,6 +16,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–11 och D-021–D-024** (beslutslogg, oenighet, eskalering). **Yorgo: migration 12–13 och D-025** (SR-16, FR-25). Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
+- [x] ai-enterprise Fas 3: beslutslogg (§20 steg 7, spårbarhet uppgift → beslut) — @robin
 - [x] ai-enterprise Fas 3c: samråd FR-11 (migration 8) — @yorgo-jarjous (yorgo/fas3-samrad)
 - [x] ai-enterprise Fas 3b: kontrollfunktionernas stopp SR-05 (migration 7) — @yorgo-jarjous (PR #26)
 - [x] ai-enterprise Fas 3a: hierarki, rapportvägar, styrverktyg (SR-04), Compliance, D-020 — @yorgo-jarjous (PR #24)
