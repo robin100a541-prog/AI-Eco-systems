@@ -1,10 +1,12 @@
 """AgentWorker (Fas 2): en agent arbetar på en uppgift, från början till slut.
 
-    uppgift (TaskBoard) → behörighet (AuthorizationEngine) → modell (ProviderRouter)
+    uppgift (TaskBoard) → behörighet (AuthorizationEngine) → modell (LLMGateway → ProviderRouter)
         → rapport (Report) → audit-loggen → uppgiften avslutas med hänvisning till rapporten
 
 Regler:
-- Bara uppgiftens ägare kan arbeta på den. Agenten måste ha `report.write` i sitt mandat.
+- Bara uppgiftens ägare kan arbeta på den. Agenten måste ha `report.write` och `llm.complete`.
+- Modellen nås bara via `LLMGateway` (PR #19), aldrig direkt via routern. En prompt med en
+  hemlighet blockerar uppgiften och skickas inte någonstans (SR-10).
 - Uppgifter räknas som `internal` om inget annat anges, så de går bara till lokala
   leverantörer (DR-13).
 - Ett modellsvar är alltid en **obekräftad hypotes** (§29), aldrig ett verifierat resultat.
@@ -19,7 +21,8 @@ from dataclasses import dataclass
 from ..agents import AgentRegistry
 from ..audit import AuditLog
 from ..authorization import AuthorizationEngine
-from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable, ProviderRouter
+from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable
+from ..llm.gateway import LLMGateway, SecretInPrompt
 from ..reporting import Claim, ClaimKind, Report, ReportError
 from .tasks import Task, TaskBoard, TaskError, TaskStatus
 
@@ -37,14 +40,14 @@ class AgentWorker:
         agent_id: str,
         registry: AgentRegistry,
         engine: AuthorizationEngine,
-        router: ProviderRouter,
+        llm: LLMGateway,
         board: TaskBoard,
         audit: AuditLog,
     ) -> None:
         self.agent_id = agent_id
         self._registry = registry
         self._engine = engine
-        self._router = router
+        self._llm = llm
         self._board = board
         self._audit = audit
 
@@ -68,7 +71,10 @@ class AgentWorker:
             data_class=data_class,
         )
         try:
-            response = self._router.complete(request, caller=self.agent_id)
+            response = self._llm.complete(self.agent_id, request)
+        except SecretInPrompt:
+            blocked = self._board.block(self.agent_id, task_id, "uppgiften innehåller en hemlighet; skickades inte till någon modell (SR-10)")
+            return WorkResult(blocked, None, None)
         except NoProviderAvailable as exc:
             why = "; ".join(exc.reasons) or "inga leverantörer konfigurerade"
             blocked = self._board.block(self.agent_id, task_id, f"ingen modell tillgänglig, köad: {why}")

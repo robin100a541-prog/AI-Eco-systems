@@ -1,7 +1,7 @@
 """Acceptanstester för Fas 2 (konstitutionen §50, ROADMAP Fas 2).
 
 Hela kedjan körs med de riktiga konfigurationsfilerna i `config/` och en riktig databas:
-registret → behörigheter → uppgifter → ProviderRouter → rapport → audit-loggen.
+registret → behörigheter → uppgifter → LLMGateway → ProviderRouter → rapport → audit-loggen.
 Externa leverantörer ersätts av en inspelande fejk, så inget går ut på nätet.
 
 §50 acceptanskriterier:
@@ -20,6 +20,7 @@ from aie.agents import AgentRegistry, AgentState
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, PermissionDenied, load_permissions
 from aie.llm import DataClass, OpenAICompatibleProvider, ProviderRouter, QuotaLedger, RuleProvider, Slot
+from aie.llm.gateway import LLMGateway
 from aie.memory import Database
 from aie.orchestration import AgentWorker, TaskBoard, TaskStatus
 
@@ -69,10 +70,13 @@ class Fas2Acceptance(unittest.TestCase):
         self.board = TaskBoard(self.db, self.registry, self.engine, FOUNDERS)
         groq = OpenAICompatibleProvider("groq", "groq", "openai/gpt-oss-20b", "test-key", self.external)
         self.slots = [Slot(groq, 100, 10_000), Slot(RuleProvider(responder=lambda req: rule_answer), 100, 10_000)]
-        self.router = ProviderRouter(tuple(self.slots), QuotaLedger(self.db), self.audit)
+        self.use_router(ProviderRouter(tuple(self.slots), QuotaLedger(self.db), self.audit))
+
+    def use_router(self, router):
+        self.llm = LLMGateway(router, self.engine, self.audit)
 
     def worker(self, agent_id):
-        return AgentWorker(agent_id, self.registry, self.engine, self.router, self.board, self.audit)
+        return AgentWorker(agent_id, self.registry, self.engine, self.llm, self.board, self.audit)
 
 
 class TestRoles(Fas2Acceptance):
@@ -123,7 +127,7 @@ class TestTasksEndToEnd(Fas2Acceptance):
 
     def test_no_model_available_blocks_and_queues(self):
         """DR-12 (D-008): utan modell blockeras uppgiften med skäl. Den köas och kostar inget."""
-        self.router = ProviderRouter((), QuotaLedger(self.db), self.audit)
+        self.use_router(ProviderRouter((), QuotaLedger(self.db), self.audit))
         task = self.board.create("yorgo", "x")
         self.board.assign("yorgo", task.task_id, "res-1")
         result = self.worker("res-1").work_on(task.task_id)
@@ -156,6 +160,16 @@ class TestUnauthorized(Fas2Acceptance):
         with self.assertRaises(PermissionDenied):
             self.worker("res-1").work_on(task.task_id)
         self.assertEqual(self.external.calls, [])
+
+    def test_secret_in_task_blocks_and_sends_nothing(self):
+        """SR-10 via LLMGateway: en uppgift med en nyckel i texten skickas inte till någon modell."""
+        task = self.board.create("ceo-1", "Testa API", "använd api_key=sk-ABCDEF1234567890 mot Groq")
+        self.board.assign("ceo-1", task.task_id, "res-1")
+        result = self.worker("res-1").work_on(task.task_id, DataClass.PUBLIC)
+        self.assertEqual(result.task.status, TaskStatus.BLOCKED)
+        self.assertEqual(self.external.calls, [])
+        self.assertIn("llm.blocked_secret", [e.action for e in self.audit.entries()])
+        self.assertNotIn("sk-ABCDEF1234567890", json.dumps([e.details for e in self.audit.entries()]))
 
     def test_auditor_reports_to_founders_not_ceo(self):
         """§18 och §50: Audit står utanför CEO:s linje och kan inte styras via den."""

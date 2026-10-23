@@ -57,6 +57,8 @@ Förberett 2026-10-23 (gren `yorgo/fas2-prep-behorigheter`, D-017, godkänt av b
 - [x] Agentstatus sparas beständigt (`TestPersistence`).
 - [ ] D-018 godkänt av båda.
 
+Agenter når `ProviderRouter` bara via `LLMGateway` och Authorization Engine (`llm.complete`), och prompter med hemligheter avvisas (2026-10-23, gren `robin/fas2-llm-behorighet`, 208 tester gröna).
+
 ## Fas 3 — Hierarki och samarbete (FR-09…14, SR-04…06, SR-16)
 CEO-flöde, departementschefer, beslutspost i 11 steg, samråd, oenighet, eskalering, godkännandekö. `manual`-provider införs.
 Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense → eskaleras med dokumenterad tvist.

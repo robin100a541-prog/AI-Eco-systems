@@ -24,8 +24,9 @@
 | Revisionslogg (1.5, Yorgo): `src/aie/audit/`, hashkedja, triggrar vägrar UPDATE/DELETE, `verify()` med `head_hash` | `tests/unit/test_audit.py`, 15 tester (PR #9) |
 | Start/stopp (1.6): `python -m aie init/start/stop/status`, driftläget i tabellen `runtime_state` (migration 3), ren nedstängning vid `stop`, Ctrl+C och SIGTERM, vägrar start vid manipulerad revisionslogg eller om systemet redan kör, upptäcker en körning som dog | `tests/unit/test_runtime.py`, 13 tester (bland annat riktiga processer), plus 1 samtidighetstest i `test_storage_config.py`; 118 OK på Python 3.11, 3.12 och 3.13; körda 40 gånger i rad utan fel |
 | Acceptanstester Fas 1 (1.7): ett per kriterium i §49 och ROADMAP 1.7, med de riktiga kommandona i egna processer | `tests/acceptance/test_fas1.py`, 12 tester; hela sviten 151 OK på Python 3.11, 3.12 och 3.13 och i CI |
+| LLM via Authorization Engine (Fas 2, Robin): `LLMGateway` kräver `llm.complete`; nekat anrop revideras och skickar inget; prompter med hemligheter avvisas | `tests/unit/test_llm_gateway.py`, 10 tester, bland annat läcktester mot extern transport, loggfil och audit-logg; 208 OK på Python 3.11, 3.12 och 3.13 |
 | CI på GitHub Actions: testerna körs på Python 3.11 och 3.12 vid varje PR och push till `main` | `.github/workflows/ai-enterprise-tests.yml`; checkarna syns på varje PR |
-| Fas 2, agentramverket (Yorgo): livscykel och agentregister i databasen (migration 4), `config/permissions.toml` och Authorization Engine med default deny (D-017), uppgifter (migration 5), rapportformat i §7:s tio kategorier, ProviderRouter med kvoter och dataklassning (migration 6, D-018), `AgentWorker` (uppgift → modell → rapport → audit) | PR #11, #14, #16, #17, #18 och Fas 2-acceptansen. `tests/acceptance/test_fas2.py` har 11 tester, minst ett per kriterium i §50. Hela sviten ger 208 OK (2 SIGINT-tester överhoppade) på Windows 11, Python 3.12.0, och i CI |
+| Fas 2, agentramverket (Yorgo): livscykel och agentregister i databasen (migration 4), `config/permissions.toml` och Authorization Engine med default deny (D-017), uppgifter (migration 5), rapportformat i §7:s tio kategorier, ProviderRouter med kvoter och dataklassning (migration 6, D-018), `AgentWorker` (uppgift → modell → rapport → audit) | PR #11, #14, #16, #17, #18 och Fas 2-acceptansen. `tests/acceptance/test_fas2.py` har 12 tester, minst ett per kriterium i §50. Hela sviten ger 219 OK (2 SIGINT-tester överhoppade) på Windows 11, Python 3.12.0, och i CI |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 
 ## Ändrat 2026-10-21 (Fas 1-session med Yorgo)
@@ -63,7 +64,7 @@
 - **Version:** 0.4.0.
 
 ## Vad som INTE är gjort / inte verifierat
-- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (208 OK, 2026-10-23). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
+- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (219 OK, 2026-10-23). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
 - Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - Groq-testet (0.10) är inte gjort. D-005–D-012 och Q-01 är inte beslutade (0.8).

@@ -9,12 +9,16 @@ from .providers import (
     ProviderError,
     RuleProvider,
 )
+from .gateway import TOOL as LLM_TOOL
+from .gateway import LLMGateway, SecretInPrompt
 from .router import NoProviderAvailable, ProviderRouter, QuotaLedger, Slot, load_providers
 
 __all__ = [
     "ChatRequest",
     "ChatResponse",
     "DataClass",
+    "LLMGateway",
+    "LLM_TOOL",
     "Message",
     "NoProviderAvailable",
     "OpenAICompatibleProvider",
@@ -23,6 +27,7 @@ __all__ = [
     "ProviderRouter",
     "QuotaLedger",
     "RuleProvider",
+    "SecretInPrompt",
     "Slot",
     "load_providers",
 ]
