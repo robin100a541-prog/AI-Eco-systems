@@ -1,5 +1,10 @@
 # Setup — kom igång (Fas 0)
 
+## 0. Var grundarna utvecklar
+- **Robin** utvecklar via Claude Code i molnet (Claude-appen). Molnmiljön är Robins utvecklingsmiljö; ingen lokal installation behövs.
+- **Yorgo** utvecklar lokalt på Windows.
+- **Båda** måste få `REDO för Fas 1` från `check_env.py` och `OK` från testerna i sin miljö. Rapporten läggs i `docs/environment.md`.
+
 ## 1. Installera grunderna (gratis)
 - **Python 3.11 eller nyare:** https://www.python.org/downloads/ (Windows: kryssa i "Add python.exe to PATH").
 - **Git:** https://git-scm.com/downloads
