@@ -1,5 +1,6 @@
 """Authorization Engine (ARCHITECTURE.md §2): rollmandat och default deny. Förberedelse för Fas 2."""
 from .engine import AuthorizationEngine, Decision, PermissionDenied
+from .stops import ControlStops, Stop, StopError
 from .permissions import (
     DEPARTMENTS,
     LEVEL_CEO,
@@ -13,6 +14,9 @@ from .permissions import (
 )
 
 __all__ = [
+    "ControlStops",
+    "Stop",
+    "StopError",
     "DEPARTMENTS",
     "LEVEL_CEO",
     "LEVEL_CONTROL",
