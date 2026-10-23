@@ -30,11 +30,11 @@
 - Repot finns på GitHub (`robin100a541-prog/AI-Eco-systems`, publikt), med projektet i `ai-enterprise/`. PR #1 (Fas 0 + 1.1–1.2) är mergad.
 - 1.3 byggd på grenen `robin/fas1-3-loggning`: loggning till fil och konsol, maskering av hemligheter, automatiskt skapad `log_dir`, tydligt fel och kod 1 när den inte kan skapas. `check-config` loggar sitt resultat och sina fel.
 - Ny valfri nyckel `log_level` i `config/system.toml` (standard INFO), föreslagen som D-015. Loggfilen roteras vid 5 MB och tre gamla filer sparas.
+- D-001–D-004 och D-013–D-016 är godkända av båda grundarna. D-016: under byggfaserna mergar författaren sin PR när alla tester är gröna, utan granskning.
 - PR #3 (mergad): Robins miljörapport från Claude Code i molnet, Robins godkännanden av D-001–D-004 och D-013, och förslaget D-014 (repot är publikt).
 
 ## Vad som INTE är gjort / inte verifierat
 - Ingen har granskat 1.3. Testerna för 1.3 är bara körda i Robins molnmiljö (Linux), inte på Windows hos Yorgo.
-- D-015 (`log_level` och loggrotation) är föreslaget men inte godkänt av Yorgo.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - De gamla CLI-testerna körs med repots rot som arbetsmapp och skapar därför `ai-enterprise/logs/aie.log`. Mappen är gitignorerad.
 - Groq-testet (0.10) är inte gjort. Inget beslut är godkänt av båda grundarna (0.8).
@@ -44,7 +44,7 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-001–D-004, D-013, D-014 och D-015 | Yorgo |
+| 1 | Godkänna D-005–D-012 och besvara Q-01 (0.8) | Båda, på plats |
 | 2 | Granska PR:en för 1.3 (`robin/fas1-3-loggning`) och köra testerna på Windows | Yorgo |
 | 3 | Fas 1.4: SQLite-lager med migrationer och metadatatabell | Den som har tid, efter att 1.3 är granskad |
 
