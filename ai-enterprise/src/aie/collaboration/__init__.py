@@ -10,7 +10,14 @@ from .consultation import (
     required_for,
 )
 
+from .opportunities import KINDS, Opportunity, OpportunityError, OpportunityRegister, Step
+
 __all__ = [
+    "KINDS",
+    "Opportunity",
+    "OpportunityError",
+    "OpportunityRegister",
+    "Step",
     "Consultation",
     "ConsultationBoard",
     "ConsultationError",
