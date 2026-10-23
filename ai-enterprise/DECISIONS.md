@@ -6,10 +6,36 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ---
 
+## Fas 3 — beslut
+
+### D-020 Hierarkin i koden: nivåer per roll, fasta rapportvägar, skyddade styrverktyg
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-017, D-019 · **Ändrar:** formatet för `permissions.toml` (D-017): ny obligatorisk nyckel `level`
+- **Beslut:**
+  1. Varje roll i `config/permissions.toml` har `level`: 1 är CEO, 2 kontrollfunktion, 3 departementschef och 4 arbetsagent (§8). Nivå 0 är grundarna och nivå 5 tillfälliga grupper. Ingen av dem är en roll.
+  2. Registret kräver dessa rapportvägar:
+     - CEO och kontrollfunktionerna (CFO, CRO, Compliance, Audit) rapporterar **direkt till grundarna**. Kontrollfunktionerna lyder inte under CEO, eftersom CEO annars kunde styra sin egen granskning (§8 nivå 2, §18).
+     - En departementschef rapporterar till CEO.
+     - En arbetsagent rapporterar till en chef på nivå 2 eller 3 i samma departement.
+  3. Verktyg vars namn börjar med `governance.` (ändra konstitution, gränser eller mandat) kan stå i katalogen men aldrig ges till en roll. Ett sådant mandat är ett konfigurationsfel. Authorization Engine nekar dem alltid och loggar försöket (SR-04). Ändringarna görs bara av grundarna via PR, och enligt D-019 punkt 3 krävs båda.
+  4. Ny roll `compliance` på nivå 2. Den behövs för SR-16 och flödet i D-011.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-019 Grundarnas beslutsrätt (besvarar Q-01)
+- **Status:** Godkänd · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016
+- **Beslut:**
+  1. **En grundare räcker** för att godkänna en åtgärd vars belopp är högst `HUMAN_APPROVAL_THRESHOLD` i `config/risk_limits.toml`, och för en åtgärd utan belopp.
+  2. **Båda grundarna krävs** för en åtgärd vars belopp är högre än `HUMAN_APPROVAL_THRESHOLD`.
+  3. **Båda grundarna krävs alltid**, oavsett belopp, för ändringar i `CONSTITUTION.md`, i riskgränserna (`config/risk_limits.toml`) och i behörigheterna (`config/permissions.toml`).
+  4. Gränsen står i konfigurationen, inte i det här beslutet. Att ändra den är en ändring i riskgränserna och kräver därför båda (punkt 3).
+- **Följd:** `HUMAN_APPROVAL_THRESHOLD` är också gränsen för när en agent alls måste fråga en människa. Allt som eskaleras på grund av sitt belopp kräver därför båda grundarna. En grundare räcker för eskaleringar utan belopp eller under gränsen, till exempel en åtgärd utanför en agents mandat.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt på plats, registrerat av Robin)
+
+---
+
 ## Fas 2 — föreslagna beslut
 
 ### D-018 ProviderRouter: `providers.toml`, kvoter i databasen, dataklasser i koden
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-008, D-009
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-008, D-009
 - **Beslut:**
   1. `config/providers.toml` listar leverantörerna i prioritetsordning: groq → openrouter → ollama → rule. Tillåtna typer är bara `groq`, `openrouter` (modellen måste sluta på `:free`), `ollama` och `rule`. Alla andra typer är ett konfigurationsfel tills D-009 öppnar för betalda API:er.
   2. Varje leverantör måste ha `daily_calls` och `daily_tokens` per UTC-dygn. En saknad gräns är ett fel (ER-02). Ett anrop räknas i databasen *innan* det skickas, och ett misslyckat anrop räknas också.
@@ -17,7 +43,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Dataklasserna `public`, `internal`, `personal` och `secret` är fasta i koden. Externa leverantörer tar bara `public`, och konfigurationen kan inte ändra det (DR-13).
   5. Varje leverantör provas högst en gång per förfrågan. När ingen är kvar kastas `NoProviderAvailable` och arbetet köas. Det finns aldrig någon betald reserv.
   6. Audit-loggen får leverantör, modell, tokens, dataklass och kostnad 0 per anrop, men aldrig prompt eller svar.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt på plats, registrerat av Robin)
 
 ### D-017 Behörighetsmodell: rollmandat i `permissions.toml`, default deny, styrd livscykel
 - **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-007
@@ -183,7 +209,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 | ID | Fråga | Behövs före | Förslag från Claude |
 |---|---|---|---|
-| Q-01 | Hur är beslutsmakten fördelad mellan Yorgo och Robin? (Båda måste godkänna? Någon av er räcker under ett visst belopp? Ansvarsområden?) | Fas 3 | Båda godkänner konstitution, gränser och verkligt kapital; en räcker för kod-PR och simulering. |
+| Q-01 | ~~Hur är beslutsmakten fördelad mellan Yorgo och Robin?~~ **Besvarad av D-019 (2026-10-23).** | Fas 3 | — |
 | Q-02 | Vilka datorer/OS har ni? (Besvaras av `check_env.py`) | Fas 1 | — |
 | Q-03 | Valuta för verkligt kapital (SEK?) | Fas 4 | SEK |
 | Q-04 | Värden för de 10 parametrarna i §25 | Fas 7 (simulerade värden räcker till dess) | Sätts först efter Fas 6-resultat |
