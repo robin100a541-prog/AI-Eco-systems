@@ -1,2 +1,2 @@
 # AI-Eco-systems
-AI Eco systems - shared project built with Claude Coe
+AI Eco systems - shared project built with Claude Code
