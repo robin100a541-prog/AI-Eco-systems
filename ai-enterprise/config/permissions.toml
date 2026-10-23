@@ -24,6 +24,7 @@ config_version = 1
 "audit.verify"    = "verifiera audit-loggens hashkedja"
 "llm.complete"    = "fråga en språkmodell via LLMGateway; bara public lämnar datorn (DR-12, DR-13)"
 "decision.record" = "fatta och logga ett beslut om en uppgift enligt §20 steg 7 (FR-10)"
+"dispute.resolve" = "avgöra en tvist mellan andra agenter inom hårda gränser (§21, FR-12)"
 # Styrverktyg (SR-04). Står här bara för att försök ska kunna loggas med rätt namn.
 # Ingen roll kan få dem, och Authorization Engine nekar dem alltid.
 "governance.change_constitution" = "ändra konstitutionen; bara grundarna (D-001)"
@@ -34,7 +35,7 @@ config_version = 1
 department = "executive"
 level = 1
 description = "samordnar, prioriterar, tilldelar uppgifter (§8 nivå 1)"
-tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete", "decision.record"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete", "decision.record", "dispute.resolve"]
 
 [roles.cfo]
 department = "finance"

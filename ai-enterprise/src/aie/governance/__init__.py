@@ -9,13 +9,35 @@ from .decisions import (
     RiskClass,
     Trace,
 )
+from .disputes import (
+    ConflictType,
+    Dispute,
+    DisputeBoard,
+    DisputeError,
+    DisputeEvent,
+    DisputeStatus,
+    HardLimitViolation,
+    Level,
+    Position,
+    hard_limit_violations,
+)
 
 __all__ = [
+    "ConflictType",
     "Decision",
     "DecisionDraft",
     "DecisionError",
     "DecisionLog",
+    "Dispute",
+    "DisputeBoard",
+    "DisputeError",
+    "DisputeEvent",
+    "DisputeStatus",
+    "HardLimitViolation",
+    "Level",
     "NeedsApproval",
+    "Position",
     "RiskClass",
     "Trace",
+    "hard_limit_violations",
 ]

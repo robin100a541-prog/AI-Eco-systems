@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-23 — Fas 3: oenighet
+### Tillagt
+- Migration 10: `disputes`, `dispute_positions` och `dispute_events`. Ståndpunkter och händelser är append-only; en avgjord tvist kan inte ändras.
+- `DisputeBoard` (`src/aie/governance/disputes.py`): `open()` kräver minst två ståndpunkter från olika agenter (ingen falsk konsensus), med påstående, underlag och konflikttyp `goal`/`data`/`risk`/`method` (§21). `request_analysis()`, `resolve()` och `escalate()` revideras.
+- Hårda gränser (§21): ett förslag över `MAX_SINGLE_TRANSACTION`, `MAX_DEPARTMENT_BUDGET` eller `MAX_SINGLE_EXPERIMENT_LOSS`, med en saknad gräns, eller med riskklass `critical` kan aldrig godtas via `resolve()`, oavsett röster och oavsett vem som avgör. Tvisten eskaleras då till grundarna. Över `HUMAN_APPROVAL_THRESHOLD` krävs grundarna (D-019).
+- Rätt nivå: CEO om CEO inte är part och förslaget är inom gränserna, annars grundarna. En eskalering går aldrig nedåt.
+- `config/permissions.toml`: verktyget `dispute.resolve` för CEO.
+- `tests/unit/test_disputes.py`: 16 tester, bland annat ROADMAP:s nyckeltest (CFO och CRO oense → eskaleras med dokumenterad tvist).
+
 ## [Unreleased] — 2026-10-23 — Fas 3: beslutslogg
 ### Tillagt
 - Migration 9 `decisions`: ett beslut per rad med de åtta fälten i §20 steg 7 (vald åtgärd, motivering, underlag, budget, riskklass, förväntat resultat, villkor för avbrytande, uppföljning). Varje beslut pekar på en uppgift. Append-only; ett nytt beslut kan ersätta ett gammalt (`supersedes`).
