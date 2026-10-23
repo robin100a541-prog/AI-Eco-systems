@@ -6,9 +6,12 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
+- [ ] ai-enterprise Fas 3a: hierarki nivå 0–5 och chefsregler (FR-09), departementschefer, skyddade styrverktyg så att CEO inte kan ändra gränser eller egna befogenheter (SR-04), Compliance-roll. Beslut D-020 — @yorgo-jarjous (yorgo/fas3-hierarki)
+- [ ] ai-enterprise Fas 3b: kontrollfunktionernas stopp (SR-05), migration 7 `control_stops` — @yorgo-jarjous (yorgo/fas3-stopp)
+- [ ] ai-enterprise Fas 3c: samråd (FR-11), migration 8 `consultations` — @yorgo-jarjous (yorgo/fas3-samrad)
+
 ## Next
-- Godkännande av D-018 (båda).
-- ai-enterprise Fas 3: hierarki och samarbete (ROADMAP). Ta en deluppgift här innan du börjar.
+- Migrationsnummer 7–8 och beslutsnummer D-020 är reserverade för Yorgos Fas 3-delar ovan. Robin tar nästa lediga från 9 och D-021 (D-019 är Robins).
 
 ## Done
 - [x] ai-enterprise Fas 2-acceptans: AgentWorker via LLMGateway, acceptanstester §50, version 0.4.0 — Fas 2 klar — @yorgo-jarjous (PR #20)
