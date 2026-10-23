@@ -6,6 +6,22 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ---
 
+## Fas 2 — föreslagna beslut
+
+### D-017 Behörighetsmodell: rollmandat i `permissions.toml`, default deny, styrd livscykel
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-007
+- **Beslut:**
+  1. `config/permissions.toml` har en katalog `[tools]` över alla verktyg och ett mandat `[roles.<roll>]` per roll, med departement och en uttrycklig verktygslista. Ett verktyg som inte står i katalogen kan ingen roll få, så ett stavfel blir ett fel vid uppstart.
+  2. Authorization Engine nekar allt som inte uttryckligen är tillåtet. Den kontrollerar i ordning: verktyget finns, agenten finns, agenten får agera, TESTING bara i sim (SR-13) och att verktyget ingår i mandatet.
+  3. Varje beslut skrivs till audit-loggen. Går det inte att logga blir svaret nej (§59).
+  4. Livscykelns övergångar är fasta i koden (`agents/lifecycle.py`). SUSPENDED går tillbaka via PROBATION, aldrig direkt till ACTIVE. RETIRED är slutgiltigt.
+  5. En agent kan inte ändra sin egen status (SR-03). Varje ändring kräver en motivering och sparas i historiken.
+  6. Mandaten ändras bara via PR, aldrig medan systemet kör.
+- **Ännu inte med:** registret sparas i databasen och dataklassningen (DR-13) tillkommer när Fas 1 är klar. Detsamma gäller ProviderRouter.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+---
+
 ## Fas 1 — föreslagna beslut
 
 ### D-016 Under byggfaserna mergar författaren sin egen PR när alla tester är gröna
