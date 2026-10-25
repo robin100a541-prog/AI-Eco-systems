@@ -104,6 +104,17 @@ python3 -m aie approvals reject 3 --as yorgo --note "För hög risk" # ett nej a
 
 Kod 0 betyder att det lyckades. Kod 1 betyder ett fel, till exempel att du inte är grundare, redan har röstat eller försöker godkänna något över en hård gräns. Allt hamnar i revisionsloggen.
 
+## 2f. Manuella svar från Claude (Fas 3, D-022)
+Slå på `manual` i `config/providers.toml` genom att ta bort `#` framför blocket. När en agent behöver ett svar läggs förfrågan i `<data_dir>/manual/<miljö>/`.
+
+```bash
+python3 -m aie manual list                                       # väntande förfrågningar
+python3 -m aie manual show 3f2a9c0d1b4e5a67                       # texten att köra i Claude
+python3 -m aie manual answer 3f2a9c0d1b4e5a67 --as robin --file svar.txt
+```
+
+Bara data som är klassad `public` hamnar här. Klistra aldrig in nycklar eller lösenord i svaret; det avvisas.
+
 ## 3. Skapa det gemensamma repot (en av er)
 ```bash
 cd ai-enterprise

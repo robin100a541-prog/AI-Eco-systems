@@ -4,7 +4,6 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
 - [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 13, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
-- [ ] ai-enterprise Fas 3j: `manual`-provider (D-005: grundaren kör prompten i Claude och klistrar in svaret), `python -m aie manual`, ingen migration — @robin (robin/fas3-manual)
 - [ ] ai-enterprise Fas 3-acceptans: `tests/acceptance/test_fas3.py`, minst ett test per kriterium i §51 — @robin (robin/fas3-acceptans)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
@@ -15,6 +14,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Done
 - [x] ai-enterprise Fas 3k: uppgifter tilldelas bara nedåt i befälskedjan (D-023, ändrar Yorgos `TaskBoard.assign`) — @robin
+- [x] ai-enterprise Fas 3j: `manual`-provider, `python -m aie manual`, D-022 — @robin
 - [x] ai-enterprise Fas 3h: juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 — @yorgo-jarjous (PR #31)
 - [x] ai-enterprise Fas 3g: externt innehåll är opålitlig data (SR-06) — @yorgo-jarjous (PR #30)
 - [x] ai-enterprise Fas 3: eskalering till grundarna enligt D-019, godkännandekö i CLI — @robin

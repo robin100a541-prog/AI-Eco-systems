@@ -9,6 +9,7 @@ from .providers import (
     ProviderError,
     RuleProvider,
 )
+from .manual import ManualInbox, ManualPending, ManualProvider, manual_dir
 from .gateway import TOOL as LLM_TOOL
 from .gateway import LLMGateway, SecretInPrompt
 from .router import NoProviderAvailable, ProviderRouter, QuotaLedger, Slot, load_providers
@@ -19,6 +20,9 @@ __all__ = [
     "DataClass",
     "LLMGateway",
     "LLM_TOOL",
+    "ManualInbox",
+    "ManualPending",
+    "ManualProvider",
     "Message",
     "NoProviderAvailable",
     "OpenAICompatibleProvider",
@@ -30,4 +34,5 @@ __all__ = [
     "SecretInPrompt",
     "Slot",
     "load_providers",
+    "manual_dir",
 ]
