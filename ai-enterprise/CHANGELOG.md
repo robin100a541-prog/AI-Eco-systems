@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 4c: skyddad reserv och kapitalbegrepp
+### Tillagt
+- `src/aie/budget/capital.py`: `capital_position()` räknar §23:s sju begrepp från ledgern (likvida, bundet, totalt, reserv, åtaget, disponibelt, återinvesterbart). Väntade inbetalningar räknas aldrig (ER-11); återinvesterbar vinst är 0 tills Tax Engine finns.
+- Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet (likvida − `MINIMUM_RESERVE` − åtaget), så att den skyddade reserven aldrig används (§5, ER-05). Saknas `MINIMUM_RESERVE` blockeras allt (ER-02).
+- D-027 (föreslagen). `tests/unit/test_capital.py`: 10 tester.
+### Ändrat
+- `tests/unit/test_budget.py`: startkapitalet sätts in som en `capital_in`-post, eftersom kapital bara räknas från ledgern.
+
 ## [Unreleased] — 2026-10-25 — Fas 4b: budgetmotor och kontroll före transaktion
 ### Tillagt
 - `config/budgets.toml` (D-026, föreslagen): budget, maxåtagande, riskutrymme och användningsområde per departement (ER-17). Laddaren avvisar okända departement, budgetar över `MAX_DEPARTMENT_BUDGET`, maxåtagande över budgeten, `critical` som riskutrymme och budgetar som tillsammans äter av den skyddade reserven.

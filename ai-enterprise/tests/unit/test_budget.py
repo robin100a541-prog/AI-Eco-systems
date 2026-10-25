@@ -63,6 +63,11 @@ class BudgetCase(unittest.TestCase):
         self.budgets = load_budgets(ROOT / "config", self.departments, self.limits)
         self.engine = BudgetEngine(self.ledger, self.limits, self.budgets, self.audit)
         self.n = 0
+        # Startkapitalet sätts in som en riktig ledgerpost (§23: kapital räknas bara från ledgern).
+        self.ledger.record("robin", EntryDraft(
+            "startkapital", "finance", self.limits.start_capital.amount_minor, "SIM", EntryType.CAPITAL_IN,
+            "start", Approval.APPROVED, ("decision:start",), status=Status.SETTLED,
+        ))
 
     def book(
         self, amount, kind=EntryType.COST, status=Status.SETTLED, department="research"

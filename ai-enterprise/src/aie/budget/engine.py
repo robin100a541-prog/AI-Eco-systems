@@ -16,8 +16,10 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
 7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs båda grundarna
    (D-019). Det blockerar inte, men svaret är nej tills godkännandet finns (ER-14).
 
+8. **Skyddad reserv** (Fas 4c, §5, ER-05): beloppet får inte vara större än det disponibla kapitalet,
+   alltså likvida medel minus `MINIMUM_RESERVE` minus redan åtagna kostnader (`capital.py`).
+
 Saknas en gräns som behövs blockeras handlingen (ER-02). Varje kontroll skrivs till revisionsloggen.
-Den skyddade reserven (ER-05) och kapitalbegreppen (ER-10) hör till 4c.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from dataclasses import dataclass
 from ..audit import AuditLog
 from ..config.models import RiskLimits
 from ..ledger import EntryType, Ledger, Status
+from .capital import capital_position
 from .config import Budget, Risk
 
 API_SPEND = "API_SPEND"
@@ -133,6 +136,14 @@ class BudgetEngine:
         if r.risk_class is Risk.CRITICAL:
             blocked.append("riskklass critical tillåts aldrig (§24)")
         blocked += self._hard_limits(amount, limits)
+        position = capital_position(self._ledger.entries(limits.currency), limits)
+        if position.reserve_minor is None:
+            blocked.append("MINIMUM_RESERVE saknas; den skyddade reserven kan inte skyddas (ER-02, ER-05)")
+        elif amount > position.disposable_minor:
+            blocked.append(
+                f"den skyddade reserven skulle användas: {amount} > disponibelt {position.disposable_minor} "
+                f"(likvida {position.liquid_minor} − reserv {position.reserve_minor} − åtaget {position.committed_minor}, §5, ER-05)"
+            )
         required = self._required_approvals(amount)
         result = BudgetCheck(
             not blocked and required == 0,
