@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 3k: tilldelning nedåt i befälskedjan
+### Ändrat
+- `TaskBoard.assign` (Yorgos FR-07): en agent får bara tilldela nedåt i sin egen befälskedja (§8, D-020, D-023). Gäller både den nya och, vid byte, den gamla ägaren. CEO kan inte styra kontrollfunktionerna; grundarna får tilldela vem som helst. Före ändringen kunde Research-chefen ge uppgifter till CFO och till CEO.
+- `tests/unit/test_tasks.py`: agenterna får en riktig befälskedja (CEO → Research-chef → forskare).
+### Tillagt
+- `tests/unit/test_delegation.py`: 7 tester. D-023 (föreslagen).
+
 ## [Unreleased] — 2026-10-23 — Fas 3: eskalering till grundarna och godkännandekö
 ### Tillagt
 - Migration 12: `approval_requests` och `approval_votes`. Förfrågningar raderas aldrig, en avgjord förfrågan ändras aldrig och rösterna är append-only.

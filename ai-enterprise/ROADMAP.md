@@ -73,6 +73,7 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3f Eskalering och godkännandekö (FR-13, D-019, D-021), migration 12; `python -m aie approvals` | Robin | ✅ PR #33 |
 | 3g Externt innehåll är opålitlig data (SR-06) | Yorgo | ✅ PR #30 |
 | 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ✅ PR #31 |
+| 3k Tilldelning nedåt i befälskedjan (§51 "rätt ansvarig roll", D-023) | Robin | ✅ gren `robin/fas3-delegering` |
 | 3i Utred möjlighet (FR-25, D-011), migration 13, D-025 | Yorgo | ☐ |
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)

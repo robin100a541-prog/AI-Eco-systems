@@ -27,16 +27,25 @@ class TaskCase(unittest.TestCase):
         self.audit = AuditLog(self.db)
         engine = AuthorizationEngine(self.permissions, self.registry, "sim", self.audit)
         self.board = TaskBoard(self.db, self.registry, engine, founders=frozenset({"yorgo", "robin"}))
-        for agent_id, role in (("ceo-1", "ceo"), ("lead-1", "research_lead"), ("res-1", "researcher"), ("res-2", "researcher")):
-            self.activate(agent_id, role)
+        # En riktig befälskedja: uppgifter tilldelas bara nedåt i den (§8, D-023).
+        for agent_id, role, manager in (
+            ("ceo-1", "ceo", None),
+            ("lead-1", "research_lead", "ceo-1"),
+            ("res-1", "researcher", "lead-1"),
+            ("res-2", "researcher", "lead-1"),
+        ):
+            self.activate(agent_id, role, manager)
 
     def open_db(self):
         db = Database.open(self.dir / "data", "sim")
         self.addCleanup(db.close)
         return db
 
-    def activate(self, agent_id, role):
-        register_in_line(self.registry, self.permissions, agent_id, role)
+    def activate(self, agent_id, role, manager=...):
+        if manager is ...:
+            register_in_line(self.registry, self.permissions, agent_id, role)
+        else:
+            self.registry.register(agent_id, role, manager, "yorgo", "test")
         for state in (S.CREATED, S.TESTING, S.ACTIVE):
             self.registry.transition(agent_id, state, "yorgo", "test")
 

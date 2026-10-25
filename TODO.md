@@ -14,6 +14,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Yorgo: migration 11 och 13 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
+- [x] ai-enterprise Fas 3k: uppgifter tilldelas bara nedåt i befälskedjan (D-023, ändrar Yorgos `TaskBoard.assign`) — @robin
 - [x] ai-enterprise Fas 3h: juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 — @yorgo-jarjous (PR #31)
 - [x] ai-enterprise Fas 3g: externt innehåll är opålitlig data (SR-06) — @yorgo-jarjous (PR #30)
 - [x] ai-enterprise Fas 3: eskalering till grundarna enligt D-019, godkännandekö i CLI — @robin

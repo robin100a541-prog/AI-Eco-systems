@@ -10,6 +10,10 @@ Vem får göra vad (kontrolleras av kod, SR-01):
 - **Skapa:** grundare, eller agent med verktyget `task.create`.
 - **Tilldela eller byta ägare:** grundare, eller agent med `task.assign`. Den nya ägaren
   måste finnas och vara i ett tillstånd som får agera. En agent kan inte tilldela sig själv.
+  En agent får bara tilldela **nedåt i sin egen befälskedja** (§8, D-020, D-023): den nya ägaren
+  ska ha agenten som chef, chefs chef och så vidare. En departementschef fördelar alltså arbete
+  inom sitt departement, och CEO kan inte styra kontrollfunktionerna, som rapporterar till grundarna.
+  Vid byte av ägare gäller samma sak för den gamla ägaren: ingen tar en uppgift från ett annat team.
 - **Starta, blockera, återuppta, slutföra:** bara ägaren (eller en grundare).
 - **Avbryta:** den som skapade uppgiften, en agent med `task.assign`, eller en grundare.
 
@@ -116,6 +120,12 @@ class TaskBoard:
             self._require_no_legal_hold(tx, task_id)
             if task.status not in (T.OPEN, T.ASSIGNED, T.BLOCKED):
                 raise TaskError(f"uppgiften är {task.status.value} och kan inte få ny ägare")
+            for affected in (owner_id, task.owner_id):  # den nya ägaren och, vid byte, den gamla
+                if affected and actor not in self._founders and actor not in self._chain_above(affected):
+                    raise TaskError(
+                        f"{actor!r} får bara tilldela uppgifter nedåt i sin egen befälskedja; "
+                        f"{affected!r} rapporterar inte till {actor!r} (§8, D-023)"
+                    )
             event = "assigned" if task.owner_id is None else "reassigned"
             return self._update(tx, task, T.ASSIGNED, actor, event, note, owner_id=owner_id)
 
@@ -173,6 +183,15 @@ class TaskBoard:
 
     def _allowed(self, actor: str, tool: str) -> bool:
         return actor in self._founders or self._engine.check(actor, tool).allowed
+
+    def _chain_above(self, agent_id: str) -> tuple[str, ...]:
+        """Agentens chef, chefs chef och så vidare upp till den som rapporterar till grundarna."""
+        chain: list[str] = []
+        current = self._registry.get(agent_id)
+        while current is not None and current.manager_id is not None and current.manager_id not in chain:
+            chain.append(current.manager_id)
+            current = self._registry.get(current.manager_id)
+        return tuple(chain)
 
     def _require(self, actor: str, tool: str) -> None:
         if actor not in self._founders:
