@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 3k: tilldelning nedåt i befälskedjan
+### Ändrat
+- `TaskBoard.assign` (Yorgos FR-07): en agent får bara tilldela nedåt i sin egen befälskedja (§8, D-020, D-023). Gäller både den nya och, vid byte, den gamla ägaren. CEO kan inte styra kontrollfunktionerna; grundarna får tilldela vem som helst. Före ändringen kunde Research-chefen ge uppgifter till CFO och till CEO.
+- `tests/unit/test_tasks.py`: agenterna får en riktig befälskedja (CEO → Research-chef → forskare).
+### Tillagt
+- `tests/unit/test_delegation.py`: 8 tester. D-023 (föreslagen).
 ## [Unreleased] — 2026-10-25 — Fas 3j: `manual`-provider
 ### Tillagt
 - `src/aie/llm/manual.py`: `ManualProvider` och `ManualInbox`. Förfrågan läggs i `<data_dir>/manual/<miljö>/` och providern kastar `ManualPending`. När en grundare har svarat returneras svaret nästa gång samma förfrågan görs. Inget nätverk, bara `public`-data (DR-13), dagsgränser som andra leverantörer (ER-02). Svar med hemligheter, tomma svar, för långa svar och dubbla svar avvisas.

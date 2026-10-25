@@ -8,6 +8,15 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-023 Uppgifter tilldelas bara nedåt i befälskedjan
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-020 · **Ändrar:** tilldelningsregeln i `TaskBoard.assign` (FR-07, Yorgos kod)
+- **Beslut:**
+  1. En agent med `task.assign` får bara ge en uppgift till en agent som har den som chef, chefs chef och så vidare (rapportvägarna i D-020). En departementschef fördelar alltså arbete inom sitt team (§8 nivå 3). CEO fördelar till departementscheferna och deras agenter (§8 nivå 1).
+  2. CEO kan inte ge uppgifter till kontrollfunktionerna (CFO, CRO, Compliance, Audit), eftersom de rapporterar till grundarna och ska vara oberoende (§8 nivå 2).
+  3. Vid byte av ägare gäller regeln både den gamla och den nya ägaren. Ingen tar en uppgift från ett annat team. Ägaren själv får lämna sin uppgift vidare nedåt (till exempel CEO till en departementschef).
+  4. Grundarna får tilldela vem som helst.
+  5. En juridisk hållning (SR-16) prövas före regeln, så att rätt skäl visas.
+- **Motivering:** §51 kräver att uppgifter går till rätt ansvarig roll. Före ändringen kunde Research-chefen ge uppgifter till CFO och till sin egen chef, CEO.
 ### D-022 `manual`-provider: grundaren kör prompten i Claude och klistrar in svaret
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-005, D-008, D-009, D-021
 - **Beslut:**
