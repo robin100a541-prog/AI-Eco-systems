@@ -4,15 +4,15 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
 - [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 14, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
-- [ ] ai-enterprise Fas 4b: budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22), `config/budgets.toml`, ingen migration — @robin (robin/fas4-budget)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
 
 ## Next
-- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Robin: migration 13 (ledgern) och D-024.** **Yorgo: migration 11 och 14 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Ändrat 2026-10-25 (Robin): ledgern blev klar medan FR-25 (#32) fortfarande var ett utkast med nummer 12 som ändå måste bytas, så ledgern tog 13 och FR-25 får 14. Övriga Fas 4-delar (budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp, skyddat driftläge, Tax Engine) är inte tagna. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
+- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Robin: migration 13 (ledgern), D-024 och D-026** (D-021–D-024 var slut; D-025 är Yorgos). **Yorgo: migration 11 och 14 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Ändrat 2026-10-25 (Robin): ledgern blev klar medan FR-25 (#32) fortfarande var ett utkast med nummer 12 som ändå måste bytas, så ledgern tog 13 och FR-25 får 14. Övriga Fas 4-delar (budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp, skyddat driftläge, Tax Engine) är inte tagna. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
+- [x] ai-enterprise Fas 4b: budgetmotor och kontroll före transaktion, `config/budgets.toml`, D-026 — @robin
 - [x] ai-enterprise Fas 4a: ledger (§40, ER-01, ER-06–09, ER-11, ER-14–16, SR-12), migration 13, D-024 — @robin
 - [x] ai-enterprise Fas 3-acceptans: `tests/acceptance/test_fas3.py`, ett eller flera tester per kriterium i §51 — @robin
 - [x] ai-enterprise Fas 3k: uppgifter tilldelas bara nedåt i befälskedjan (D-023, ändrar Yorgos `TaskBoard.assign`) — @robin
