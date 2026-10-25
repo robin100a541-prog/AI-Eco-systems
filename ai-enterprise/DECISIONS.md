@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-027 Kapitalbegreppen räknas från ledgern; reserven skyddas av budgetmotorn
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-024, D-026
+- **Beslut:**
+  1. Kapital finns bara om det finns i ledgern. `START_CAPITAL` i `risk_limits.toml` är en gräns, inte pengar; startkapitalet ska registreras som en `capital_in`-post, godkänd med hänvisning till beslutet.
+  2. De sju begreppen i §23 räknas från ledgern i en valuta i taget: likvida medel (genomförda in- och utbetalningar), bundet kapital, totalt, skyddad reserv (`MINIMUM_RESERVE`), åtaget (väntade utbetalningar), disponibelt (likvida − reserv − åtaget, aldrig under 0) och återinvesterbart.
+  3. Bundet kapital är 0 tills ledgern får tillgångsposter. En tillgång räknas aldrig som likvid (§23).
+  4. Återinvesterbar vinst är 0 tills Tax Engine (4f) kan reservera skatten (ER-19). Vinst före skatt är inte disponibel för återinvestering.
+  5. Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet. Ett godkännande från grundarna låser inte upp reserven; att använda den kräver att gränsen ändras, vilket kräver båda (D-019 punkt 3). Saknas `MINIMUM_RESERVE` blockeras alla utgifter (ER-02).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-026 Departementsbudgetar och budgetmotorn
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-009, D-019, D-024 · **Ändrar:** ny konfigurationsfil `config/budgets.toml` (en ändring i gränserna, därför krävs båda grundarna enligt D-019 punkt 3)
 - **Beslut:**
