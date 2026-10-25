@@ -70,8 +70,10 @@ class BudgetCase(unittest.TestCase):
         ))
 
     def book(
-        self, amount, kind=EntryType.COST, status=Status.SETTLED, department="research"
+        self, amount, kind=EntryType.COST, status=Status.SETTLED, department="research", initiative=None
     ):
+        """Bokför en post. Varje post får ett eget initiativ, så att budgettesterna inte ser ut som
+        uppdelade köp (ER-04 testas i test_split.py)."""
         self.n += 1
         approval = (
             Approval.UNAPPROVED
@@ -86,7 +88,7 @@ class BudgetCase(unittest.TestCase):
                 amount,
                 "SIM",
                 kind,
-                "etsy-mallar",
+                initiative or f"initiativ-{self.n}",
                 approval,
                 ("file:kvitto.pdf",),
                 status=status,

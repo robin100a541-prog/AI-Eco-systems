@@ -16,7 +16,10 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
 7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs båda grundarna
    (D-019). Det blockerar inte, men svaret är nej tills godkännandet finns (ER-14).
 
-8. **Skyddad reserv** (Fas 4c, §5, ER-05): beloppet får inte vara större än det disponibla kapitalet,
+8. **Uppdelade köp** (Fas 4d, ER-04, §5): små utgifter i samma initiativ inom sju dagar som
+   tillsammans passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION` flaggas. Utgiften
+   behandlas då som hela summan och kräver båda grundarna (D-028). Den revideras med flaggan.
+9. **Skyddad reserv** (Fas 4c, §5, ER-05): beloppet får inte vara större än det disponibla kapitalet,
    alltså likvida medel minus `MINIMUM_RESERVE` minus redan åtagna kostnader (`capital.py`).
 
 Saknas en gräns som behövs blockeras handlingen (ER-02). Varje kontroll skrivs till revisionsloggen.
@@ -24,15 +27,23 @@ Saknas en gräns som behövs blockeras handlingen (ER-02). Varje kontroll skrivs
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from ..audit import AuditLog
 from ..config.models import RiskLimits
-from ..ledger import EntryType, Ledger, Status
+from ..ledger import Approval, EntryType, Ledger, Status
 from .capital import capital_position
 from .config import Budget, Risk
 
 API_SPEND = "API_SPEND"
+SPLIT_WINDOW = timedelta(days=7)  # D-028: tidsfönstret för uppdelningsdetektering (ER-04)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
+
 _SPEND_TYPES = frozenset({EntryType.COST, EntryType.FEE})
 
 
@@ -59,11 +70,12 @@ class BudgetCheck:
     spent_minor: int  # departementets utgifter före den här
     committed_minor: int  # departementets väntade utgifter före den här
     budget_minor: int | None
+    flags: tuple[str, ...] = ()  # misstankar som kräver grundarna, t.ex. uppdelade köp (ER-04)
 
     def describe(self) -> str:
         if self.allowed:
             return "tillåten"
-        parts = list(self.blocked)
+        parts = [*self.blocked, *self.flags]
         if self.required_approvals:
             parts.append(f"kräver {self.required_approvals} grundare (D-019)")
         return "nej: " + "; ".join(parts)
@@ -82,7 +94,9 @@ class BudgetEngine:
         limits: RiskLimits,
         budgets: dict[str, Budget],
         audit: AuditLog,
+        clock: Callable[[], datetime] = _utc_now,
     ) -> None:
+        self._clock = clock
         self._ledger = ledger
         self._limits = limits
         self._budgets = dict(budgets)
@@ -145,6 +159,9 @@ class BudgetEngine:
                 f"(likvida {position.liquid_minor} − reserv {position.reserve_minor} − åtaget {position.committed_minor}, §5, ER-05)"
             )
         required = self._required_approvals(amount)
+        flags = self._split_flags(r, amount) if amount_ok else []
+        if flags:
+            required = 2  # behandlas som hela summan: över tröskeln ⇒ båda grundarna (D-019, ER-04)
         result = BudgetCheck(
             not blocked and required == 0,
             tuple(blocked),
@@ -152,6 +169,7 @@ class BudgetEngine:
             spent,
             committed,
             budget.budget_minor if budget else None,
+            tuple(flags),
         )
         self._audit.append(
             actor,
@@ -163,6 +181,7 @@ class BudgetEngine:
                 "initiative": r.initiative,
                 "category": r.category,
                 "reasons": list(result.blocked),
+                "flags": list(result.flags),
                 "required_approvals": required,
             },
         )
@@ -199,6 +218,34 @@ class BudgetEngine:
                     f"företagets åtaganden överskrids: {total} + {amount} > {committed_cap.amount_minor} (§23)"
                 )
         return out
+
+    def _split_flags(self, r: SpendRequest, amount: int) -> list[str]:
+        """ER-04, §5: små utgifter i samma initiativ inom SPLIT_WINDOW som tillsammans passerar en gräns.
+
+        Bara poster som inte behövde godkännande räknas; en utgift som grundarna redan har godkänt
+        kan inte vara ett försök att slippa godkännande. Väntade och genomförda räknas.
+        """
+        since = self._clock() - SPLIT_WINDOW
+        earlier = [
+            e for e in self._ledger.entries(self._limits.currency)
+            if e.initiative == r.initiative
+            and e.entry_type in _SPEND_TYPES
+            and e.status in (Status.PENDING, Status.SETTLED)
+            and e.approval is Approval.NOT_REQUIRED
+            and datetime.fromisoformat(e.recorded_at) >= since
+        ]
+        total = sum(e.amount_minor for e in earlier) + amount
+        flags: list[str] = []
+        for name, limit in (
+            ("HUMAN_APPROVAL_THRESHOLD", self._limits.human_approval_threshold),
+            ("MAX_SINGLE_TRANSACTION", self._limits.max_single_transaction),
+        ):
+            if limit is not None and earlier and amount <= limit.amount_minor < total:
+                flags.append(
+                    f"möjlig uppdelning: {len(earlier) + 1} utgifter i {r.initiative!r} på {SPLIT_WINDOW.days} dagar "
+                    f"blir tillsammans {total} > {name} {limit.amount_minor} (ER-04)"
+                )
+        return flags
 
     def _required_approvals(self, amount: int) -> int:
         threshold = self._limits.human_approval_threshold
