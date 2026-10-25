@@ -72,6 +72,12 @@ class TestDownTheChain(DelegationCase):
                 self.board.assign("ceo-1", self.new_task(), owner).owner_id, owner
             )
 
+    def test_owner_hands_own_task_down(self):
+        """Verifies §8: CEO får ett uppdrag av grundarna och lämnar det vidare till en chef, som lämnar det till en forskare."""
+        task = self.board.assign("robin", self.new_task(), "ceo-1")
+        self.assertEqual(self.board.assign("ceo-1", task.task_id, "lead-1").owner_id, "lead-1")
+        self.assertEqual(self.board.assign("lead-1", task.task_id, "res-2").owner_id, "res-2")
+
     def test_founders_assign_to_anyone(self):
         """Verifies §8 nivå 0: grundarna står över hela kedjan, även kontrollfunktionerna."""
         for owner in ("ceo-1", "cfo-1", "comp-1", "audit-1", "res-3"):

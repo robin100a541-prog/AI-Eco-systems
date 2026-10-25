@@ -121,7 +121,9 @@ class TaskBoard:
             if task.status not in (T.OPEN, T.ASSIGNED, T.BLOCKED):
                 raise TaskError(f"uppgiften är {task.status.value} och kan inte få ny ägare")
             for affected in (owner_id, task.owner_id):  # den nya ägaren och, vid byte, den gamla
-                if affected and actor not in self._founders and actor not in self._chain_above(affected):
+                if affected in (None, actor) or actor in self._founders:
+                    continue  # ägaren får lämna sin egen uppgift vidare nedåt
+                if actor not in self._chain_above(affected):
                     raise TaskError(
                         f"{actor!r} får bara tilldela uppgifter nedåt i sin egen befälskedja; "
                         f"{affected!r} rapporterar inte till {actor!r} (§8, D-023)"
