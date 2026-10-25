@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-022 `manual`-provider: grundaren kör prompten i Claude och klistrar in svaret
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-005, D-008, D-009, D-021
+- **Beslut:**
+  1. `kind = "manual"` är en tillåten leverantör i `config/providers.toml`. Den är avstängd som standard (bortkommenterad).
+  2. Providern anropar inget API. Den lägger förfrågan i `<data_dir>/manual/<miljö>/` och väntar. En grundare (`founders`, D-021) läser den med `python -m aie manual show`, kör den själv i Claude och lämnar svaret med `python -m aie manual answer`. Nästa körning av samma förfrågan får svaret.
+  3. Prompten lämnar datorn via grundaren, så providern räknas som extern och tar bara emot data som är klassad `public` (DR-13).
+  4. Den har dagsgränser som alla andra leverantörer (ER-02). Svar med något som ser ut som en hemlighet avvisas (SR-10). Svaren och nekade försök revideras, men aldrig texten.
+- **Motivering:** ROADMAP Fas 3 inför `manual`. D-005 tillät den men är ersatt av D-008, som inte nämner den. Grundarnas Claude-abonnemang används för hand och kostar inget extra, så D-009 (inga betalda API:er) gäller fortfarande.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-021 Grundarna står i konfigurationen; godkännandekön följer D-019
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-23 · **Bygger på:** D-019, D-020
 - **Beslut:**

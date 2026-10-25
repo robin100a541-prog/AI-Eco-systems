@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 3j: `manual`-provider
+### Tillagt
+- `src/aie/llm/manual.py`: `ManualProvider` och `ManualInbox`. Förfrågan läggs i `<data_dir>/manual/<miljö>/` och providern kastar `ManualPending`. När en grundare har svarat returneras svaret nästa gång samma förfrågan görs. Inget nätverk, bara `public`-data (DR-13), dagsgränser som andra leverantörer (ER-02). Svar med hemligheter, tomma svar, för långa svar och dubbla svar avvisas.
+- `kind = "manual"` i `config/providers.toml` (bortkommenterad som standard) och `load_providers(..., manual_dir=...)`.
+- `python -m aie manual list|show|answer <id> --as <grundare> --file <fil|->`. Bara grundare (D-021); `manual.answered` och `manual.denied` revideras utan texten.
+- D-022 (föreslagen).
+- `tests/unit/test_manual.py`: 11 tester.
+
 ## [Unreleased] — 2026-10-23 — Fas 3: eskalering till grundarna och godkännandekö
 ### Tillagt
 - Migration 12: `approval_requests` och `approval_votes`. Förfrågningar raderas aldrig, en avgjord förfrågan ändras aldrig och rösterna är append-only.
