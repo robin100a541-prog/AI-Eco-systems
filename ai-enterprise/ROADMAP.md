@@ -77,6 +77,14 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3k Tilldelning nedåt i befälskedjan (§51 "rätt ansvarig roll", D-023) | Robin | ✅ gren `robin/fas3-delegering` |
 | 3i Utred möjlighet (FR-25, D-011), migration 13, D-025 | Yorgo | ☐ |
 
+**Acceptanskriterier Fas 3 (§51)**, i `tests/acceptance/test_fas3.py` (12 tester, hela kedjan med de riktiga konfigurationsfilerna, ingen språkmodell):
+- [x] Uppgifter går till rätt ansvarig roll (`TestRightRole`, D-023).
+- [x] Beslut fattas endast inom tillåtna befogenheter (`TestAuthority`, med nyckeltestet "CEO försöker höja sin egen gräns").
+- [x] Konflikter dokumenteras (`TestConflictsDocumented`).
+- [x] Eskalering fungerar (`TestEscalation`, med nyckeltestet "CFO och CRO oense").
+- [x] Det finns spårbarhet från uppgift till beslut (`TestTraceability`).
+- [ ] 3i (Yorgo) och godkännande av D-020–D-023 återstår innan Fas 3 stängs.
+
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).
 Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger → avvisas · 10 köp à 99 under gräns 100 men inom samma initiativ → flaggas · nödstopp → inga nya transaktioner, ingen data raderad.

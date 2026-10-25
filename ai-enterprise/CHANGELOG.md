@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 3-acceptans (§51)
+### Tillagt
+- `tests/acceptance/test_fas3.py`: 12 tester, minst ett per kriterium i §51, och båda nyckeltesten i ROADMAP Fas 3. Kedjan byggs som `python -m aie approvals` bygger den (`aie.governance.cli.build`) med de riktiga konfigurationsfilerna. Testet hittade att en ägare inte kunde lämna sin egen uppgift vidare nedåt; rättat i PR #36.
+
 ## [Unreleased] — 2026-10-25 — Fas 3k: tilldelning nedåt i befälskedjan
 ### Ändrat
 - `TaskBoard.assign` (Yorgos FR-07): en agent får bara tilldela nedåt i sin egen befälskedja (§8, D-020, D-023). Gäller både den nya och, vid byte, den gamla ägaren. CEO kan inte styra kontrollfunktionerna; grundarna får tilldela vem som helst. Före ändringen kunde Research-chefen ge uppgifter till CFO och till CEO.
