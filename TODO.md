@@ -4,6 +4,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
 - [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 14, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
+- [ ] ai-enterprise Fas 4b: budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22), `config/budgets.toml`, ingen migration — @robin (robin/fas4-budget)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
