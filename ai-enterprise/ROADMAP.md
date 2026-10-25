@@ -75,7 +75,7 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ✅ PR #31 |
 | 3j `manual`-provider (D-005, D-022): `python -m aie manual`, ingen migration | Robin | ✅ PR #35 |
 | 3k Tilldelning nedåt i befälskedjan (§51 "rätt ansvarig roll", D-023) | Robin | ✅ gren `robin/fas3-delegering` |
-| 3i Utred möjlighet (FR-25, D-011), migration 13, D-025 | Yorgo | ☐ |
+| 3i Utred möjlighet (FR-25, D-011), migration 14, D-025 | Yorgo | ☐ |
 
 **Acceptanskriterier Fas 3 (§51)**, i `tests/acceptance/test_fas3.py` (12 tester, hela kedjan med de riktiga konfigurationsfilerna, ingen språkmodell):
 - [x] Uppgifter går till rätt ansvarig roll (`TestRightRole`, D-023).
@@ -89,7 +89,12 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).
 | Del | Vem | Status |
 |---|---|---|
-| 4a Ledger (ER-01, ER-06–09, ER-11, ER-15, ER-16, SR-12), migration 14 | Robin | ☐ tagen |
+| 4a Ledger (ER-01, ER-06–09, ER-11, ER-14–16, SR-12), migration 13, D-024: `src/aie/ledger/`, nettovinst och Audits återberäkning | Robin | ✅ gren `robin/fas4-ledger` |
+| 4b Budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22) | – | ☐ ledig |
+| 4c Reserv och kapitalbegrepp (ER-05, ER-10) | – | ☐ ledig |
+| 4d Uppdelningsdetektering (ER-04) | – | ☐ ledig |
+| 4e Stop-loss, nödstopp, skyddat driftläge (ER-13, SR-07, SR-08) | – | ☐ ledig |
+| 4f Tax Engine (ER-18…21) | – | ☐ ledig |
 
 Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger → avvisas · 10 köp à 99 under gräns 100 men inom samma initiativ → flaggas · nödstopp → inga nya transaktioner, ingen data raderad.
 
