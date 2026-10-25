@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 4b: budgetmotor och kontroll före transaktion
+### Tillagt
+- `config/budgets.toml` (D-026, föreslagen): budget, maxåtagande, riskutrymme och användningsområde per departement (ER-17). Laddaren avvisar okända departement, budgetar över `MAX_DEPARTMENT_BUDGET`, maxåtagande över budgeten, `critical` som riskutrymme och budgetar som tillsammans äter av den skyddade reserven.
+- `src/aie/budget/`: `BudgetEngine.check()` och `require()` före varje ekonomisk handling (ER-03). De blockerar överskriden budget (§52), departementets maxåtagande, `MAX_COMMITTED_CAPITAL`, `MAX_SINGLE_TRANSACTION`, riskklass över utrymmet eller `critical`, saknade gränser (ER-02) och `API_SPEND` (ER-22). Över `HUMAN_APPROVAL_THRESHOLD` krävs båda grundarna. Varje kontroll revideras.
+- `tests/unit/test_budget.py`: 13 tester, bland annat ROADMAP Fas 4-nyckeltestet "budgetöverskridande blockeras".
+
 ## [Unreleased] — 2026-10-25 — Fas 4a: ledger
 ### Tillagt
 - Migration 13: `ledger_entries` (§40:s tolv fält, unik idempotensnyckel och unikt externt ID) och `ledger_status` (statushändelser). Allt är append-only; status går bara från `pending` till `settled`, `failed` eller `cancelled`.

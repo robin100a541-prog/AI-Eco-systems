@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-026 Departementsbudgetar och budgetmotorn
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-009, D-019, D-024 · **Ändrar:** ny konfigurationsfil `config/budgets.toml` (en ändring i gränserna, därför krävs båda grundarna enligt D-019 punkt 3)
+- **Beslut:**
+  1. Varje departement har i `config/budgets.toml` en budget, ett maxåtagande (väntade utgifter samtidigt), ett riskutrymme (low, medium eller high) och ett användningsområde (ER-17). Ett departement utan post får inga utgifter (ER-02).
+  2. Föreslagna värden i SIM: Research 50 000 (åtagande 20 000, medium), Executive 20 000 (10 000, low), Finance 10 000 (5 000, low), Risk, Compliance och Audit 5 000 vardera (2 000, low). Summan är 95 000.
+  3. Ingen budget får överstiga `MAX_DEPARTMENT_BUDGET`, och summan får inte överstiga `START_CAPITAL − MINIMUM_RESERVE`, så att budgetarna aldrig äter av den skyddade reserven (§5).
+  4. Budgeten räknas på kostnader och avgifter i ledgern, väntade och genomförda, med korrigeringar. Budgetarna gäller tills vidare för hela miljöns livstid; perioder (till exempel per månad) kräver ett nytt beslut.
+  5. `BudgetEngine.check()` körs före varje ekonomisk handling (ER-03) och blockerar vid överskriden budget, maxåtagande, `MAX_SINGLE_TRANSACTION`, `MAX_COMMITTED_CAPITAL`, riskutrymme, riskklass `critical`, saknad gräns och `API_SPEND`. Över `HUMAN_APPROVAL_THRESHOLD` är svaret nej tills båda grundarna har godkänt (D-019).
+  6. `API_SPEND` är alltid spärrad tills Tax Engine (4f) kan visa realiserad nettovinst efter skatt (ER-22, D-009).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-024 Ledgern: vem skriver, fakta avvisas aldrig, nettovinst bara från genomförda poster
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-006, D-019, D-021
 - **Beslut:**
