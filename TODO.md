@@ -4,12 +4,13 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
 - [ ] ai-enterprise Fas 3i: "Utred möjlighet", Research → Compliance → CFO → grundare (FR-25, D-011), migration 13, D-025 — @yorgo-jarjous (yorgo/fas3-utred)
+- [ ] ai-enterprise Fas 4a: ledger `src/aie/ledger/` — §40:s tolv fält, append-only, idempotens/externt ID, korrigeringsposter, SIM skilt från verklig valuta, nettovinst endast från ledgern (preliminär när kostnader saknas), återberäkning för Audit (ER-01, ER-06–09, ER-11, ER-15, ER-16, SR-12), migration 14 — @robin (robin/fas4-ledger)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
 
 ## Next
-- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Yorgo: migration 11 och 13 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
+- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Yorgo: migration 11 och 13 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Fas 4 (2026-10-25, Robin): migration 14 för ledgern; väntar på att Yorgos 13 (FR-25) är mergad. Övriga Fas 4-delar (budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp, skyddat driftläge, Tax Engine) är inte tagna. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
 - [x] ai-enterprise Fas 3-acceptans: `tests/acceptance/test_fas3.py`, ett eller flera tester per kriterium i §51 — @robin
