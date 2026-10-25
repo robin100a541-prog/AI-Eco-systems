@@ -7,6 +7,10 @@
 - D-027 (föreslagen). `tests/unit/test_capital.py`: 10 tester.
 ### Ändrat
 - `tests/unit/test_budget.py`: startkapitalet sätts in som en `capital_in`-post, eftersom kapital bara räknas från ledgern.
+## [Unreleased] — 2026-10-25 — Robin godkänner D-020–D-024 och D-026
+### Ändrat
+- `DECISIONS.md`: Robin ☑ på D-020, D-021, D-022, D-023, D-024 och D-026 (bara fältet *Godkänd av*). Yorgos godkännande saknas; besluten är fortfarande `Föreslagen` tills båda har godkänt. D-026 ändrar gränser och kräver båda enligt D-019 punkt 3.
+- D-023 hade tappat fältet *Godkänd av* vid en merge; fältet är återställt. Beslutstexten är oförändrad.
 
 ## [Unreleased] — 2026-10-25 — Fas 4b: budgetmotor och kontroll före transaktion
 ### Tillagt
