@@ -92,7 +92,7 @@ Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nöd
 | 4a Ledger (ER-01, ER-06–09, ER-11, ER-14–16, SR-12), migration 13, D-024: `src/aie/ledger/`, nettovinst och Audits återberäkning | Robin | ✅ gren `robin/fas4-ledger` |
 | 4b Budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22), `config/budgets.toml`, D-026 | Robin | ✅ gren `robin/fas4-budget` |
 | 4c Reserv och kapitalbegrepp (ER-05, ER-10, D-027): `src/aie/budget/capital.py` | Robin | ✅ gren `robin/fas4-reserv` |
-| 4d Uppdelningsdetektering (ER-04) | – | ☐ ledig |
+| 4d Uppdelningsdetektering (ER-04, D-028) i budgetmotorn | Robin | ✅ gren `robin/fas4-uppdelning` |
 | 4e Stop-loss, nödstopp, skyddat driftläge (ER-13, SR-07, SR-08) | – | ☐ ledig |
 | 4f Tax Engine (ER-18…21) | – | ☐ ledig |
 

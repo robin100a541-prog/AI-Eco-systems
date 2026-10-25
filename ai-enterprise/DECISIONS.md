@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-028 Uppdelade köp: samma initiativ, sju dagar, grundarna avgör
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-019, D-026
+- **Beslut:**
+  1. Budgetmotorn summerar utgifter (kostnader och avgifter, väntade och genomförda) i **samma affärsinitiativ** som registrerats de senaste **sju dagarna** och som inte behövde godkännande, plus den nya utgiften.
+  2. Om summan passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`, men den nya utgiften inte gör det själv, flaggas den som möjlig uppdelning (ER-04, §5).
+  3. En flaggad utgift blockeras inte automatiskt, eftersom flera små köp kan vara helt legitima. Den behandlas som hela summan och kräver **båda grundarna** (D-019). Flaggan revideras.
+  4. Köp som grundarna redan har godkänt räknas inte, eftersom de inte kan vara ett försök att slippa godkännande.
+  5. Ledgern har inget motpartsfält än, så motpart används inte. Fönstret på sju dagar står i koden (`SPLIT_WINDOW`); att ändra det kräver ett nytt beslut.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-027 Kapitalbegreppen räknas från ledgern; reserven skyddas av budgetmotorn
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-024, D-026
 - **Beslut:**

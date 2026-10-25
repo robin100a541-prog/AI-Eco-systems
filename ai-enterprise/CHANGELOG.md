@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 4d: uppdelningsdetektering
+### Tillagt
+- Budgetmotorn flaggar möjliga uppdelade köp (ER-04, §5, D-028): utgifter i samma initiativ inom sju dagar, som inte behövde godkännande, och som tillsammans med den nya passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`. En flaggad utgift kräver båda grundarna. Flaggan står i `BudgetCheck.flags` och i revisionsloggen.
+- D-028 (föreslagen). `tests/unit/test_split.py`: 5 tester, bland annat ROADMAP Fas 4-nyckeltestet "10 köp à 99 under gräns 100 i samma initiativ → flaggas".
+### Ändrat
+- `tests/unit/test_budget.py`: varje testpost får ett eget initiativ, så att budgettesterna inte ser ut som uppdelade köp.
+
 ## [Unreleased] — 2026-10-25 — Fas 4c: skyddad reserv och kapitalbegrepp
 ### Tillagt
 - `src/aie/budget/capital.py`: `capital_position()` räknar §23:s sju begrepp från ledgern (likvida, bundet, totalt, reserv, åtaget, disponibelt, återinvesterbart). Väntade inbetalningar räknas aldrig (ER-11); återinvesterbar vinst är 0 tills Tax Engine finns.
