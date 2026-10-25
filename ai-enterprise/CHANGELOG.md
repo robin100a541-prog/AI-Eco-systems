@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Robin godkänner D-020–D-024 och D-026
+### Ändrat
+- `DECISIONS.md`: Robin ☑ på D-020, D-021, D-022, D-023, D-024 och D-026 (bara fältet *Godkänd av*). Yorgos godkännande saknas; besluten är fortfarande `Föreslagen` tills båda har godkänt. D-026 ändrar gränser och kräver båda enligt D-019 punkt 3.
+- D-023 hade tappat fältet *Godkänd av* vid en merge; fältet är återställt. Beslutstexten är oförändrad.
+
 ## [Unreleased] — 2026-10-25 — Fas 4b: budgetmotor och kontroll före transaktion
 ### Tillagt
 - `config/budgets.toml` (D-026, föreslagen): budget, maxåtagande, riskutrymme och användningsområde per departement (ER-17). Laddaren avvisar okända departement, budgetar över `MAX_DEPARTMENT_BUDGET`, maxåtagande över budgeten, `critical` som riskutrymme och budgetar som tillsammans äter av den skyddade reserven.

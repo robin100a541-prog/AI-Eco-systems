@@ -17,7 +17,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Budgeten räknas på kostnader och avgifter i ledgern, väntade och genomförda, med korrigeringar. Budgetarna gäller tills vidare för hela miljöns livstid; perioder (till exempel per månad) kräver ett nytt beslut.
   5. `BudgetEngine.check()` körs före varje ekonomisk handling (ER-03) och blockerar vid överskriden budget, maxåtagande, `MAX_SINGLE_TRANSACTION`, `MAX_COMMITTED_CAPITAL`, riskutrymme, riskklass `critical`, saknad gräns och `API_SPEND`. Över `HUMAN_APPROVAL_THRESHOLD` är svaret nej tills båda grundarna har godkänt (D-019).
   6. `API_SPEND` är alltid spärrad tills Tax Engine (4f) kan visa realiserad nettovinst efter skatt (ER-22, D-009).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-024 Ledgern: vem skriver, fakta avvisas aldrig, nettovinst bara från genomförda poster
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-006, D-019, D-021
@@ -28,7 +28,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Nettovinst = intäkter − återbetalningar − kostnader − avgifter, räknat bara på poster med status `settled`, i en valuta i taget. Kapitalrörelser räknas inte. Resultatet är preliminärt när något i urvalet väntar eller när ett initiativ har intäkter men inga kostnader eller avgifter (ER-09, ER-11).
   5. Audit räknar om resultatet med en separat SQL-fråga direkt mot tabellerna (ER-16). CFO saknar `audit.verify` och granskar därför inte sin egen rapport (§18).
   6. Idempotensnyckel krävs på varje post. Samma nyckel och samma innehåll ger den befintliga posten; annat innehåll eller ett externt ID som redan finns avvisas (ER-07, SR-12).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-023 Uppgifter tilldelas bara nedåt i befälskedjan
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-020 · **Ändrar:** tilldelningsregeln i `TaskBoard.assign` (FR-07, Yorgos kod)
@@ -39,6 +39,8 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Grundarna får tilldela vem som helst.
   5. En juridisk hållning (SR-16) prövas före regeln, så att rätt skäl visas.
 - **Motivering:** §51 kräver att uppgifter går till rätt ansvarig roll. Före ändringen kunde Research-chefen ge uppgifter till CFO och till sin egen chef, CEO.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
 ### D-022 `manual`-provider: grundaren kör prompten i Claude och klistrar in svaret
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-005, D-008, D-009, D-021
 - **Beslut:**
@@ -47,7 +49,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   3. Prompten lämnar datorn via grundaren, så providern räknas som extern och tar bara emot data som är klassad `public` (DR-13).
   4. Den har dagsgränser som alla andra leverantörer (ER-02). Svar med något som ser ut som en hemlighet avvisas (SR-10). Svaren och nekade försök revideras, men aldrig texten.
 - **Motivering:** ROADMAP Fas 3 inför `manual`. D-005 tillät den men är ersatt av D-008, som inte nämner den. Grundarnas Claude-abonnemang används för hand och kostar inget extra, så D-009 (inga betalda API:er) gäller fortfarande.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-021 Grundarna står i konfigurationen; godkännandekön följer D-019
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-23 · **Bygger på:** D-019, D-020
@@ -57,7 +59,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   3. Varje grundare röstar högst en gång per förfrågan. Ett nej från en grundare avslår förfrågan och kräver en motivering.
   4. En tvist vars förslag bryter mot en hård gräns (§21) kan inte godkännas, inte ens av båda grundarna. Den kan bara avslås, eller så ändras gränsen först (D-019 punkt 3).
   5. Röster, godkännanden, avslag och nekade försök skrivs till revisionsloggen. Förfrågningar raderas aldrig, och en avgjord förfrågan ändras aldrig.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-020 Hierarkin i koden: nivåer per roll, fasta rapportvägar, skyddade styrverktyg
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-017, D-019 · **Ändrar:** formatet för `permissions.toml` (D-017): ny obligatorisk nyckel `level`
@@ -69,7 +71,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
      - En arbetsagent rapporterar till en chef på nivå 2 eller 3 i samma departement.
   3. Verktyg vars namn börjar med `governance.` (ändra konstitution, gränser eller mandat) kan stå i katalogen men aldrig ges till en roll. Ett sådant mandat är ett konfigurationsfel. Authorization Engine nekar dem alltid och loggar försöket (SR-04). Ändringarna görs bara av grundarna via PR, och enligt D-019 punkt 3 krävs båda.
   4. Ny roll `compliance` på nivå 2. Den behövs för SR-16 och flödet i D-011.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-019 Grundarnas beslutsrätt (besvarar Q-01)
 - **Status:** Godkänd · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016
