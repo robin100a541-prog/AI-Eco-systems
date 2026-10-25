@@ -87,6 +87,10 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).
+| Del | Vem | Status |
+|---|---|---|
+| 4a Ledger (ER-01, ER-06–09, ER-11, ER-15, ER-16, SR-12), migration 14 | Robin | ☐ tagen |
+
 Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger → avvisas · 10 köp à 99 under gräns 100 men inom samma initiativ → flaggas · nödstopp → inga nya transaktioner, ingen data raderad.
 
 ## Fas 5 — Lärande och utvärdering (FR-15…19, SR-17)
