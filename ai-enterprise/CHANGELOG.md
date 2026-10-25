@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-25 — Fas 4a: ledger
+### Tillagt
+- Migration 13: `ledger_entries` (§40:s tolv fält, unik idempotensnyckel och unikt externt ID) och `ledger_status` (statushändelser). Allt är append-only; status går bara från `pending` till `settled`, `failed` eller `cancelled`.
+- `src/aie/ledger/`: `Ledger.record()`, `set_status()`, `correct()` (korrigeringsposter, ER-08), `entries()`, `corrections()`. Heltal med valuta (ER-01); bara `SIM` i sim och aldrig `SIM` i prod (ER-15); idempotens och dubblettskydd (ER-07, SR-12); godkännande över `HUMAN_APPROVAL_THRESHOLD` måste anges (ER-14); underlag krävs; hemligheter avvisas. Allt revideras.
+- `compute_result()` och `result_for()`: nettovinst bara från genomförda poster, preliminär när något väntar eller kostnader saknas (ER-09, ER-11). `recompute()`: Audit räknar om med SQL direkt mot tabellerna och får avvikelserna (ER-16).
+- D-024 (föreslagen). `tests/unit/test_ledger.py`: 22 tester.
+### Ändrat
+- Migrationsnummer: ledgern tog 13 och Yorgos FR-25 (#32) får 14 (se `TODO.md`).
+
 ## [Unreleased] — 2026-10-25 — Fas 3-acceptans (§51)
 ### Tillagt
 - `tests/acceptance/test_fas3.py`: 12 tester, minst ett per kriterium i §51, och båda nyckeltesten i ROADMAP Fas 3. Kedjan byggs som `python -m aie approvals` bygger den (`aie.governance.cli.build`) med de riktiga konfigurationsfilerna. Testet hittade att en ägare inte kunde lämna sin egen uppgift vidare nedåt; rättat i PR #36.

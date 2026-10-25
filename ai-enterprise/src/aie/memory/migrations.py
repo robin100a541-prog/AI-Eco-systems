@@ -555,6 +555,66 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=13,
+        name="ledger",
+        statements=(
+            # Fas 4a (§40, ER-06–08, ER-15, SR-12): ledgern (Robin). En post ändras eller raderas aldrig.
+            # Fel rättas med en korrigeringspost (`corrects`). Status ändras bara framåt, som händelser.
+            """
+            CREATE TABLE ledger_entries (
+                entry_id        INTEGER PRIMARY KEY,
+                idempotency_key TEXT NOT NULL UNIQUE CHECK (length(trim(idempotency_key)) > 0),
+                recorded_at     TEXT NOT NULL,
+                recorded_by     TEXT NOT NULL CHECK (length(trim(recorded_by)) > 0),
+                department      TEXT NOT NULL CHECK (length(trim(department)) > 0),
+                amount_minor    INTEGER NOT NULL CHECK (amount_minor != 0),
+                currency        TEXT NOT NULL CHECK (length(currency) = 3 AND currency = upper(currency)),
+                entry_type      TEXT NOT NULL CHECK (entry_type IN
+                                ('revenue', 'cost', 'fee', 'refund', 'capital_in', 'capital_out')),
+                initiative      TEXT NOT NULL CHECK (length(trim(initiative)) > 0),
+                approval_status TEXT NOT NULL CHECK (approval_status IN ('not_required', 'approved', 'unapproved')),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                external_id     TEXT UNIQUE,
+                corrects        INTEGER REFERENCES ledger_entries (entry_id),
+                note            TEXT NOT NULL,
+                CHECK (amount_minor > 0 OR corrects IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER ledger_entries_no_update BEFORE UPDATE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter ändras aldrig; gör en korrigeringspost (ER-08)'); END
+            """,
+            """
+            CREATE TRIGGER ledger_entries_no_delete BEFORE DELETE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter raderas aldrig (ER-08)'); END
+            """,
+            """
+            CREATE TABLE ledger_status (
+                id       INTEGER PRIMARY KEY,
+                entry_id INTEGER NOT NULL REFERENCES ledger_entries (entry_id),
+                status   TEXT NOT NULL CHECK (status IN ('pending', 'settled', 'failed', 'cancelled')),
+                actor    TEXT NOT NULL,
+                note     TEXT NOT NULL,
+                at       TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER ledger_status_no_update BEFORE UPDATE ON ledger_status
+            BEGIN SELECT RAISE(ABORT, 'ledger_status är append-only'); END
+            """,
+            """
+            CREATE TRIGGER ledger_status_no_delete BEFORE DELETE ON ledger_status
+            BEGIN SELECT RAISE(ABORT, 'ledger_status är append-only'); END
+            """,
+            """
+            CREATE TRIGGER ledger_status_forward BEFORE INSERT ON ledger_status
+            WHEN EXISTS (SELECT 1 FROM ledger_status WHERE entry_id = NEW.entry_id)
+             AND (SELECT status FROM ledger_status WHERE entry_id = NEW.entry_id ORDER BY id DESC LIMIT 1) != 'pending'
+            BEGIN SELECT RAISE(ABORT, 'en post med slutlig status kan inte få ny status (§40)'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

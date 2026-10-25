@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-024 Ledgern: vem skriver, fakta avvisas aldrig, nettovinst bara från genomförda poster
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-006, D-019, D-021
+- **Beslut:**
+  1. I Fas 4a skriver bara grundarna och uttryckligen angivna systemkomponenter (`system:<namn>`, till exempel `system:payments`) i ledgern. Agenter skriver inte där. Läsa får grundarna och agenter med `ledger.read` (CFO, Audit). Ingen ändring i `permissions.toml`.
+  2. Ledgern registrerar det som har hänt. En kostnad som redan skett avvisas aldrig för att den bryter mot en gräns, eftersom det skulle gömma ett faktum. Att stoppa en handling innan den sker är budgetmotorns uppgift (ER-03, 4b).
+  3. Godkännandestatus är `not_required`, `approved` (underlaget pekar på `approval:` eller `decision:`) eller `unapproved`. En utgående post över `HUMAN_APPROVAL_THRESHOLD`, eller vilken utgående post som helst när gränsen saknas, får inte vara `not_required` (ER-14, ER-02). `unapproved` visas som avvikelse i resultatet.
+  4. Nettovinst = intäkter − återbetalningar − kostnader − avgifter, räknat bara på poster med status `settled`, i en valuta i taget. Kapitalrörelser räknas inte. Resultatet är preliminärt när något i urvalet väntar eller när ett initiativ har intäkter men inga kostnader eller avgifter (ER-09, ER-11).
+  5. Audit räknar om resultatet med en separat SQL-fråga direkt mot tabellerna (ER-16). CFO saknar `audit.verify` och granskar därför inte sin egen rapport (§18).
+  6. Idempotensnyckel krävs på varje post. Samma nyckel och samma innehåll ger den befintliga posten; annat innehåll eller ett externt ID som redan finns avvisas (ER-07, SR-12).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-023 Uppgifter tilldelas bara nedåt i befälskedjan
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-020 · **Ändrar:** tilldelningsregeln i `TaskBoard.assign` (FR-07, Yorgos kod)
 - **Beslut:**
