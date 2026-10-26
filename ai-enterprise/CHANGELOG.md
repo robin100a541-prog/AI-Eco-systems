@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Yorgo godkänner D-020–D-028
+### Ändrat
+- DECISIONS.md: Yorgo har godkänt D-020–D-028 (2026-10-26). D-020–D-024 och D-026 har nu godkänts av båda och har status Godkänd. D-025, D-027 och D-028 väntar på Robin. Bara fälten *Status* och *Godkänd av* är ändrade.
+
 ## [Unreleased] — 2026-10-26 — Fas 3i: Utred möjlighet (FR-25)
 ### Tillagt
 - Migration 14: `opportunities` och `opportunity_steps`. Bara stage och status får ändras, ett avslutat ärende ändras aldrig och stegen är append-only.
