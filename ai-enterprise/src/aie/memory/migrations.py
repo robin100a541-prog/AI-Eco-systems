@@ -1039,6 +1039,53 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=25,
+        name="removal_cases",
+        statements=(
+            # Fas 5f (SR-17, §33, D-040): ärenden om avstängning och avveckling (Robins uppgift, gjord av
+            # Yorgo vid överlämningen 2026-10-26). Ärenden och händelser är append-only.
+            """
+            CREATE TABLE removal_cases (
+                case_id   INTEGER PRIMARY KEY,
+                agent_id  TEXT NOT NULL REFERENCES agents (agent_id),
+                target    TEXT NOT NULL CHECK (target IN ('SUSPENDED', 'RETIRED')),
+                criteria  TEXT NOT NULL CHECK (json_valid(criteria)),
+                evidence  TEXT NOT NULL CHECK (json_valid(evidence)),
+                note      TEXT NOT NULL CHECK (length(trim(note)) > 0),
+                opened_by TEXT NOT NULL,
+                at        TEXT NOT NULL,
+                CHECK (opened_by <> agent_id)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER removal_cases_no_update BEFORE UPDATE ON removal_cases
+            BEGIN SELECT RAISE(ABORT, 'ett ärende skrivs aldrig om; lägg till en händelse'); END
+            """,
+            """
+            CREATE TRIGGER removal_cases_no_delete BEFORE DELETE ON removal_cases
+            BEGIN SELECT RAISE(ABORT, 'ärenden raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE removal_events (
+                id       INTEGER PRIMARY KEY,
+                case_id  INTEGER NOT NULL REFERENCES removal_cases (case_id),
+                event    TEXT NOT NULL CHECK (event IN ('response', 'vote', 'dismissed', 'approved', 'executed')),
+                actor    TEXT NOT NULL,
+                note     TEXT NOT NULL,
+                at       TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER removal_events_no_update BEFORE UPDATE ON removal_events
+            BEGIN SELECT RAISE(ABORT, 'ärendehändelser är append-only'); END
+            """,
+            """
+            CREATE TRIGGER removal_events_no_delete BEFORE DELETE ON removal_events
+            BEGIN SELECT RAISE(ABORT, 'ärendehändelser raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

@@ -117,10 +117,10 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 | 5b Prognoslogg och prognos mot utfall (FR-16, §20 steg 10), migration 19, D-036 | Yorgo | ✅ PR #52 |
 | 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ PR #53 |
 | 5d Lärdomsregister (FR-17), migration 23, D-038 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #57 |
-| 5e Versionerade strategier (FR-18), migration 24, D-039 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5e-strategier` |
-| 5f Ingen avveckling för obekväma slutsatser (SR-17) | Robin | ☐ |
+| 5e Versionerade strategier (FR-18), migration 24, D-039 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #58 |
+| 5f Ingen avveckling för obekväma slutsatser (SR-17), migration 25, D-040 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5f-sr17` |
 
-**Acceptanskriterier Fas 5 (§53):**
+**Acceptanskriterier Fas 5 (§53):** alla är uppfyllda (`tests/acceptance/test_fas5.py`). **Fas 5 är stängd 2026-10-26.** Besluten D-038–D-040 väntar på godkännande.
 - [x] Fel kan spåras till konkreta händelser (`test_incidents.py::TestFromStops`, källorna `stoploss:`, `kill:` och `mode:`).
 - [x] Prognoser kan jämföras med utfall (`test_forecasts.py::TestAutomaticComparison`).
 - [x] Lärdomar kan granskas (`test_lessons.py`: status, källor och hela historiken).

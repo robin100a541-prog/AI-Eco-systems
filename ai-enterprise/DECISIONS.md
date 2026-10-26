@@ -8,6 +8,25 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-040 SR-17: avstängning och avveckling bara genom ärende med kriterier ur §33 och kontrollerat underlag
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-019, D-035, D-037 · **Ändrar:** `AgentRegistry` får `set_guard()` (Yorgos kod, FR-06) · **Gäller:** SR-17, §31, §33
+- **Beslut:**
+  1. När `RemovalReview` är kopplad blockerar registret övergångar till SUSPENDED och RETIRED för en verksam agent (ACTIVE, PROBATION eller SUSPENDED), om de inte sker genom ett beslutat ärende. Prövning (PROBATION) och avveckling av agenter som aldrig varit verksamma påverkas inte.
+  2. Ett ärende anger kriterier ur §33 och underlag för vart och ett. Underlaget kontrolleras:
+     - **incident:** verifierad, och agenten är involverad, inte bara rapportör.
+     - **audit:** `tool.denied` utanför rollens mandat.
+     - **review:** en sparad prestationsbedömning.
+     - **ledger:** en ledgerpost.
+
+     Upprepade fel kräver minst två underlag.
+  3. Slutsatser (`report:`, `decision:`, `dispute:`, `lesson:`, `consultation:`) är aldrig underlag. En agent stängs av för vad den gjorde, aldrig för vad den kom fram till (SR-17).
+  4. Ärenden öppnas av grundarna eller nivå 1–3, aldrig om sig själv. Agenten kan yttra sig.
+     - **Avstängning:** beslutas av en grundare som inte själv öppnade ärendet.
+     - **Avveckling:** kräver båda grundarna.
+     - Ärenden kan avskrivas.
+  5. Ärenden och händelser är append-only (migration 25) och loggas i revisionsloggen.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-039 Versionerade strategier: varje ändring är en ny version, återställning är en ny version, obligatoriskt kräver en regel
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-038 · **Gäller:** FR-18, FR-17, §30, §53
 - **Beslut:**
