@@ -8,6 +8,36 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-034 Skatteunderlag: inget raderas, export per grundare och år med kontrollsumma
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-010, D-024, D-032 · **Gäller:** ER-21, §30
+- **Beslut:**
+  1. Underlaget arkiveras genom att ingenting kan raderas. Ledgern (migration 13) och skattetabellerna (migration 21–22) har triggers mot ändring och radering, så underlaget finns kvar i minst 7 år (`ARCHIVE_YEARS`).
+  2. `TaxEngine.export(founder, year, out_dir)` skriver ett deklarationsunderlag per grundare och kalenderår som JSON. Filen innehåller varje post med andel, spår och underlag. Spår C får också grundarens andel av årets kostnader och avgifter, som underlag för NE-bilagan.
+  3. Varje export loggas med filnamn och SHA-256 i `tax_events` och i revisionsloggen.
+  4. Underlaget är inte en deklaration. Intäkter utan spår markeras och ska märkas innan deklarationen.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-033 Momsgränsen: varning vid 80 %, ny försäljning blockeras vid gränsen tills båda grundarna har beslutat
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-010, D-019, D-024 · **Gäller:** ER-20
+- **Beslut:**
+  1. Årets försäljning är realiserade och väntade intäkter minus realiserade återbetalningar, per kalenderår. Gränsen är `vat_threshold` i `config/tax.toml` (120 000 kr; simulerat i `SIM`).
+  2. Vid `vat_warning_percent` (80 %) loggas en varning till grundarna och CFO, en gång per år. Vid gränsen loggas det en gång till.
+  3. Vid gränsen blockerar spärren `TaxEngine.tool_block_reason` alla verktyg som börjar med `sales.`, `publish.` eller `payment.`, tills **båda** grundarna har röstat med `vat_vote()`, till exempel efter momsregistrering. Det är en fråga som binder båda (D-019).
+  4. Ledgern tar fortfarande emot försäljning som redan har skett (D-024). Bara *ny* försäljning stoppas.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-032 Tax Engine: skattespår per intäkt, försiktig skattereserv som åtagande, CFO får märka
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-010, D-024, D-027 · **Ändrar:** `config/permissions.toml` (nytt verktyg `tax.assign` för CFO) och D-027 punkt 4 (återinvesterbar vinst när Tax Engine är kopplad) · **Gäller:** ER-18, ER-19
+- **Beslut:**
+  1. Tax Engine räknar och reserverar skatt, men väljer inte spår åt Skatteverket. D-010 och Q-05 är fortfarande öppna, och satserna i `config/tax.toml` är simulerade och försiktiga.
+  2. Varje intäkt och återbetalning märks med ett spår (A ISK, B egenanställning, C enkelt bolag, D hobby) och en fördelning mellan grundarna. Spår C delas enligt `partnership_shares`, och A, B och D ägs av en grundare. En rättelse i ledgern ärver spåret. Ett byte av spår är en ny rad med motivering (migration 21).
+  3. Märker gör grundarna och roller med `tax.assign`. Det är bara CFO.
+  4. Reserverad skatt beräknas per spår och kalenderår som satsen × realiserad bruttointäkt, avrundat uppåt. En intäkt utan spår reserveras med `untracked_rate`, som måste vara minst lika hög som den högsta satsen.
+  5. `capital_position(tax_reserved_minor=)` räknar den reserverade skatten som ett åtagande, så att den aldrig blir disponibel. `BudgetEngine(tax=)` använder den före varje utgift.
+  6. När Tax Engine är kopplad är återinvesterbar vinst (nettovinst − reserverad skatt) × `REINVESTMENT_POLICY`, högst det disponibla. Utan Tax Engine är den 0, som i D-027.
+  7. `API_SPEND` är fortfarande spärrad (ER-22) tills grundarna sätter `API_MONTHLY_CAP` över 0.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-037 Prestationsmätning: rollprofiler enligt §31, ingen totalpoäng, den som hittar fel straffas aldrig
 - **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-035, D-036 · **Gäller:** FR-19, §31, §33
 - **Beslut:**

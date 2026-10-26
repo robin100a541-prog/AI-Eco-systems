@@ -1,0 +1,28 @@
+# Tax Engine (Fas 4f, ER-18–21, D-010, D-032–D-034).
+#
+# SIMULERADE VÄRDEN. Vilket skattespår som gäller avgör Skatteverket utifrån verksamheten (Q-05),
+# och satserna nedan är försiktiga uppskattningar, inte skatteberäkningar. De ska bekräftas innan
+# riktiga pengar används (Fas 7). Belopp: heltal i minsta enhet (D-006). Satser: baspunkter,
+# där 10 000 = 100 %.
+
+config_version = 1
+currency = "SIM"
+
+# ER-20: momsgränsen 120 000 kr per kalenderår (12 000 000 öre). Varning vid 80 %.
+vat_threshold = 12_000_000
+vat_warning_percent = 80
+
+# ER-19: reserverad skatt per spår, i baspunkter av årets realiserade bruttointäkt (försiktighetsprincip).
+# En intäkt utan spår reserveras med untracked_rate, som är högst.
+untracked_rate = 5_000
+
+[rates]
+isk = 100                 # A. ISK: banken tar schablonskatten; liten buffert
+self_employment = 0       # B. Egenanställning: företaget drar skatt innan utbetalning
+partnership = 4_000       # C. Enkelt bolag: inkomst av näringsverksamhet plus egenavgifter
+hobby = 3_500             # D. Hobby (T2)
+
+# Spår C: fördelning mellan grundarna i baspunkter (summa 10 000). Används för NE-underlaget.
+[partnership_shares]
+robin = 5_000
+yorgo = 5_000

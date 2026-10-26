@@ -906,6 +906,59 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=21,
+        name="tax_assignments",
+        statements=(
+            # Fas 4f (ER-18, D-010, D-032): skattespår per intäkt. Robins nummer, använt av Yorgo vid
+            # överlämningen 2026-10-26. En ändring av spåret är en ny rad som pekar på den gamla (corrects).
+            """
+            CREATE TABLE tax_assignments (
+                id        INTEGER PRIMARY KEY,
+                entry_id  INTEGER NOT NULL REFERENCES ledger_entries (entry_id),
+                track     TEXT NOT NULL CHECK (track IN ('isk', 'self_employment', 'partnership', 'hobby')),
+                owners    TEXT NOT NULL CHECK (json_valid(owners)),
+                actor     TEXT NOT NULL,
+                note      TEXT NOT NULL,
+                corrects  INTEGER REFERENCES tax_assignments (id),
+                at        TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER tax_assignments_no_update BEFORE UPDATE ON tax_assignments
+            BEGIN SELECT RAISE(ABORT, 'skattespår skrivs aldrig om; gör en rättelse'); END
+            """,
+            """
+            CREATE TRIGGER tax_assignments_no_delete BEFORE DELETE ON tax_assignments
+            BEGIN SELECT RAISE(ABORT, 'skattespår raderas aldrig (ER-21)'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=22,
+        name="tax_events",
+        statements=(
+            # Fas 4f (ER-20, ER-21, D-033, D-034): momsgränsen och exporterade deklarationsunderlag.
+            """
+            CREATE TABLE tax_events (
+                id       INTEGER PRIMARY KEY,
+                event    TEXT NOT NULL CHECK (event IN ('vat_warning', 'vat_limit', 'vat_vote', 'vat_decided', 'export')),
+                year     INTEGER NOT NULL,
+                actor    TEXT NOT NULL,
+                details  TEXT NOT NULL CHECK (json_valid(details)),
+                at       TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER tax_events_no_update BEFORE UPDATE ON tax_events
+            BEGIN SELECT RAISE(ABORT, 'skattehändelser är append-only'); END
+            """,
+            """
+            CREATE TRIGGER tax_events_no_delete BEFORE DELETE ON tax_events
+            BEGIN SELECT RAISE(ABORT, 'skattehändelser raderas aldrig (ER-21)'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

@@ -10,8 +10,9 @@
 | Skyddad reserv                   | `MINIMUM_RESERVE` i `risk_limits.toml`; ändras bara av grundarna (§5, SR-04) |
 | Redan åtagna kostnader           | väntade utgifter (kostnader, avgifter, återbetalningar, uttag med status `pending`) |
 | Kapital som får disponeras       | likvida medel − reserven − åtagandena, aldrig under 0                |
-| Realiserad vinst som får återinvesteras | 0 tills Tax Engine (4f) kan reservera skatten (ER-19); vinst före skatt är inte disponibel |
+| Realiserad vinst som får återinvesteras | med Tax Engine: (nettovinst − reserverad skatt) × `REINVESTMENT_POLICY`, högst det disponibla; utan Tax Engine 0 (ER-19, D-032) |
 
+Med Tax Engine (`tax_reserved_minor=`) räknas den reserverade skatten som ett åtagande (ER-19, D-032).
 En väntad inbetalning räknas aldrig (ER-11). Saknas `MINIMUM_RESERVE` kan inget disponeras (ER-02).
 Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet, så att reserven
 aldrig används i normal verksamhet (ER-05, §52 "skyddad reserv respekteras").
@@ -22,7 +23,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..config.models import RiskLimits
-from ..ledger import Entry, EntryType, Status
+from ..ledger import Entry, EntryType, Status, compute_result
 
 _IN = frozenset({EntryType.REVENUE, EntryType.CAPITAL_IN})
 _OUT = frozenset(
@@ -51,7 +52,10 @@ class CapitalPosition:
         )
 
 
-def capital_position(entries: tuple[Entry, ...], limits: RiskLimits) -> CapitalPosition:
+def capital_position(
+    entries: tuple[Entry, ...], limits: RiskLimits, tax_reserved_minor: int | None = None
+) -> CapitalPosition:
+    """`tax_reserved_minor`: reserverad skatt från Tax Engine (ER-19). `None` = Tax Engine är inte kopplad."""
     currency = limits.currency
     liquid = committed = 0
     for e in entries:
@@ -65,6 +69,9 @@ def capital_position(entries: tuple[Entry, ...], limits: RiskLimits) -> CapitalP
         elif e.status is Status.PENDING and e.entry_type in _OUT:
             committed += e.amount_minor
     notes = ["bundet kapital räknas som 0: ledgern har inga tillgångsposter än"]
+    if tax_reserved_minor is not None:
+        committed += tax_reserved_minor  # ER-19: reserverad skatt är ett åtagande, aldrig disponibelt
+        notes.append(f"reserverad skatt {tax_reserved_minor} räknas som åtagande (ER-19)")
     reserve = (
         limits.minimum_reserve.amount_minor
         if limits.minimum_reserve is not None
@@ -75,9 +82,16 @@ def capital_position(entries: tuple[Entry, ...], limits: RiskLimits) -> CapitalP
         notes.append("MINIMUM_RESERVE saknas; inget kapital får disponeras (ER-02)")
     else:
         disposable = max(0, liquid - reserve - committed)
-    notes.append(
-        "återinvesterbar vinst är 0 tills Tax Engine kan reservera skatten (ER-19, 4f)"
-    )
+    if tax_reserved_minor is None:
+        reinvestable = 0
+        notes.append("återinvesterbar vinst är 0 när Tax Engine inte är kopplad (ER-19, D-032)")
+    elif limits.reinvestment_policy is None:
+        reinvestable = 0
+        notes.append("REINVESTMENT_POLICY saknas; inget får återinvesteras (ER-02)")
+    else:
+        after_tax = max(0, compute_result(entries, currency).net_minor - tax_reserved_minor)
+        share = int(after_tax * limits.reinvestment_policy) // 100
+        reinvestable = min(disposable, share)
     return CapitalPosition(
-        currency, liquid, 0, liquid, reserve, committed, disposable, 0, tuple(notes)
+        currency, liquid, 0, liquid, reserve, committed, disposable, reinvestable, tuple(notes)
     )

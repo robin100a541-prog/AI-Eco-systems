@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 4 och 5 pågår parallellt. Fas 4a–4e är klara. **Kvar i Fas 4: Tax Engine (4f, Robin).** Fas 5a–5c är klara: incidentrapporter, prognoslogg och prestationsmätning. **Kvar i Fas 5: FR-17, FR-18 och SR-17 (Robin).** Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
-**Fasstatus:** Fas 1–3, Fas 4a–4e och Fas 5a–5c är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Aktuell fas:** Fas 5. **Fas 4 är stängd:** 4a–4f är klara, och §52 är acceptanstestad. Fas 5a–5c är klara: incidentrapporter, prognoslogg och prestationsmätning. **Kvar i Fas 5: FR-17, FR-18 och SR-17 (Robin).** Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
+**Fasstatus:** Fas 1–4 och Fas 5a–5c är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -104,6 +104,16 @@
 ## Ändrat 2026-10-26 (godkännanden)
 - Yorgo och Robin godkände D-035–D-037 gemensamt. Robin godkände också D-025, D-027, D-028 och D-029–D-031. Därmed är D-020–D-031 och D-035–D-037 godkända av båda. Inga Fas 3–5-beslut väntar.
 
+## Ändrat 2026-10-26 (Yorgo tar Robins uppgifter, endast idag)
+- **Överlämning:** Robin har lämnat över sina uppgifter till Yorgo för 2026-10-26 (godkänt av Robin, endast idag). Från 2026-10-27 gäller den vanliga fördelningen igen.
+- **Fas 4f Tax Engine:** `src/aie/tax/`, `config/tax.toml`, migration 21–22 och D-032–D-034.
+  - Skattespår per intäkt (ER-18).
+  - Försiktig skattereserv som åtagande, kopplad via `BudgetEngine(tax=)` (ER-19).
+  - Momsgränsen med varning och blockering (ER-20).
+  - Deklarationsunderlag per grundare (ER-21).
+  - Satserna är simulerade, och spåren bekräftas med Skatteverket före Fas 7 (Q-05).
+- **Fas 4 stängd:** `tests/acceptance/test_fas4.py` täcker de fem kriterierna i §52 och ROADMAP:s nyckeltester.
+
 ## Vad som INTE är gjort / inte verifierat
 - Spärrarna kopplas inte in automatiskt i `python -m aie start`. Den som bygger en `AuthorizationEngine` eller `BudgetEngine` måste skicka med `gates=`. `python -m aie kill` fungerar fristående. Att koppla in alla spärrar i körningen är kvar till Fas 6, när systemet kör agenter i en arbetscykel.
 - `IncidentLog`, `ForecastLog` och `PerformanceReview` kopplas inte in i `python -m aie start`, precis som spärrarna. Det görs i Fas 6. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
@@ -117,10 +127,9 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Fas 4f: Tax Engine (ER-18–21), migration 21–22, D-032–D-034 | Robin |
+| 1 | Godkänna D-032–D-034 (Tax Engine) | Båda |
 | 2 | Fas 5: lärdomsregister (FR-17), versionerade strategier (FR-18) och SR-17, med nästa lediga migration och D-038 och uppåt | Robin |
-| 3 | Fas 4-acceptanstester för §52, när 4f är klar | Den som tar det i `TODO.md` |
-| 4 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 3 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare
 Inga.
