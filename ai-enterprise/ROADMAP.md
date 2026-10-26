@@ -85,7 +85,7 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 - [x] Det finns spårbarhet från uppgift till beslut (`TestTraceability`).
 - [x] 3i (Yorgo) är klar (PR #32).
 - [x] D-020–D-023 godkända av båda (Yorgo 2026-10-26).
-- [ ] Robins godkännande av D-025 återstår innan Fas 3 stängs.
+- [x] D-025 godkänd av båda (Robin 2026-10-26). Fas 3 är stängd.
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).

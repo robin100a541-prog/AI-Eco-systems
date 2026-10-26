@@ -9,7 +9,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 ## Fas 3 — beslut
 
 ### D-037 Prestationsmätning: rollprofiler enligt §31, ingen totalpoäng, den som hittar fel straffas aldrig
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-035, D-036 · **Gäller:** FR-19, §31, §33
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-035, D-036 · **Gäller:** FR-19, §31, §33
 - **Beslut:**
   1. `PerformanceReview.scorecard()` mäter varje agent med rollens profil (`PROFILES`). Måtten är måluppfyllelse (uppgifter), prognosprecision (prognosloggen, med trend), ekonomiskt bidrag (ledgerns nettovinst för departementet, för CEO hela företaget), regelefterlevnad, felhantering, riskidentifiering (CRO) och verifierade incidenter.
   2. Kontrollfunktionerna (nivå 2) mäts aldrig på ekonomiskt bidrag. Arbetsagenter i research mäts inte heller på det. Granskande roller mäts på hur väl de hittar problem.
@@ -17,10 +17,10 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Regelefterlevnad räknar bara försök att använda verktyg utanför rollens mandat. Nekanden från nödstopp, skyddat läge, stop-loss eller avstängning räknas inte.
   5. Det finns ingen sammanvägd totalpoäng. Det som §31 nämner men som ännu inte kan mätas (kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation) listas öppet.
   6. `review()` sparar en ögonblicksbild som aldrig ändras (migration 20). Den görs av grundarna eller nivå 1–3, aldrig av agenten själv, och ändrar aldrig agentens tillstånd. Prövning och avstängning är egna beslut (§33, SR-17).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo; genomgånget gemensamt)
 
 ### D-036 Prognoslogg: prognoser skrivs aldrig om, utfall från ledgern jämförs automatiskt, ingen bedömer sin egen prognos
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-006, D-020, D-024 · **Gäller:** FR-16, §20 steg 10, ER-11
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-006, D-020, D-024 · **Gäller:** FR-16, §20 steg 10, ER-11
 - **Beslut:**
   1. `ForecastLog` sparar en prognos innan utfallet finns, med mått, enhet, väntat värde, valfritt intervall, förfallodag och valfri länk till beslutet (`decision:<id>`). Alla värden är heltal (D-006).
   2. Måtten `net`, `revenue` och `costs` räknas från ledgerns affärsinitiativ (ER-09). Måttet `count` rapporteras.
@@ -28,10 +28,10 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. `evaluate()` hämtar utfallet från ledgern när prognosen har förfallit och resultatet inte är preliminärt (ER-11). Underlaget, det vill säga ledgerposterna, sparas med utfallet. `overdue()` visar förfallna prognoser som saknar utfall.
   5. Rapporterade utfall registreras av grundarna eller nivå 1–3, aldrig av den som gjorde prognosen. Rättelser är nya poster med motivering.
   6. `accuracy(agent)` ger antal jämförda prognoser, träffar inom intervallet, genomsnittligt fel i baspunkter och antal förfallna. Prestationsmätningen (5c) använder den.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo; genomgånget gemensamt)
 
 ### D-035 Incidentrapporter: 16 fält enligt §28, bara rättelseposter, varje stopp blir en incident
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-029, D-030, D-031 · **Gäller:** FR-15, §28, §31, §33
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-029, D-030, D-031 · **Gäller:** FR-15, §28, §31, §33
 - **Beslut:**
   1. `IncidentLog` har de 16 fälten i §28 i samma ordning. Incident-ID och datum sätts automatiskt, och resten fylls i efter hand.
   2. Inget raderas eller skrivs om. Varje fält är en append-only post (migration 18). En ändring av ett ifyllt fält är en rättelse: en ny post som pekar på den gamla och har en motivering.
@@ -39,10 +39,10 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Fält 16 (verifiering) fylls i sist, och inte av den som är ansvarig för uppföljningen (fält 15).
   5. Varje stop-loss-utlösning (D-029), nödstopp (D-030) och inträde i skyddat driftläge (D-031) blir automatiskt en incident med förifyllda fält. `sync()` skapar aldrig dubbletter.
   6. Den som rapporterar ett fel räknas inte som involverad (§31, §33). `involving()` visar bara incidenter där agenten finns i fält 4.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo; genomgånget gemensamt)
 
 ### D-031 Skyddat driftläge: sju villkor i §59, automatiskt inträde, en grundare lämnar när skälen är borta
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-027, D-030 · **Gäller:** SR-08, §59
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-027, D-030 · **Gäller:** SR-08, §59
 - **Beslut:**
   1. `ProtectedMode.assess()` kontrollerar §59:
      - disponibelt kapital ≤ 10 % av `MINIMUM_RESERVE`, eller reserven saknas
@@ -57,20 +57,20 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Säkerhetsincidenter anmäls av grundarna eller av kontrollfunktionerna.
   5. **En grundare** lämnar läget (D-019 punkt 1: ingen beloppsåtgärd), och bara när inget skäl längre gäller. Obehöriga poster kan kvitteras uttryckligen i samma steg. Incidenter stängs när läget lämnas.
   6. Händelserna är append-only (migration 17).
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-030 Nödstopp: vad som stoppas, vem aktiverar, återstart kräver två grundare och intakt revisionslogg
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-020 · **Gäller:** SR-07, §38
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-020 · **Gäller:** SR-07, §38
 - **Beslut:**
   1. När nödstoppet är aktivt blockerar `BudgetEngine` alla nya utgifter. `AuthorizationEngine` nekar alla verktyg utom `report.read`, `report.write`, `ledger.read`, `audit.verify`, `risk.assess` och `action.block`. Det betyder inga modellanrop, ingen webbsökning och inga nya eller tilldelade uppgifter.
   2. Ingenting raderas, och ledgern tar fortfarande emot fakta (D-024). Händelserna är append-only (migration 16).
   3. Nödstoppet kan aktiveras av grundarna, av aktiva kontrollfunktioner (nivå 2 med `action.block`) och av uttryckligen angivna systemkomponenter, till exempel `system:protected-mode`. CEO och chefer kan inte aktivera det.
   4. Återstart följer `docs/operations.md`: två *olika* grundare röstar var för sig efter den senaste aktiveringen, och revisionsloggen måste vara intakt vid varje röst.
   5. `python -m aie kill status|engage|release` är gränssnittet för grundarna.
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-029 Stop-loss: fyra gränser mäts från ledgern, nya åtaganden stoppas, två grundare återupptar
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-024, D-026, D-027 · **Gäller:** ER-13, §26
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-024, D-026, D-027 · **Gäller:** ER-13, §26
 - **Beslut:**
   1. `StopLoss.evaluate()` mäter fyra gränser från ledgern:
      - `MAX_SINGLE_EXPERIMENT_LOSS` per initiativ: realiserad nettoförlust ≥ gränsen.
@@ -83,10 +83,10 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Verksamheten återupptas först när **två olika grundare** har godkänt en återhämtningsplan (D-019 punkt 3, riskgränser). Det går inte medan gränsen fortfarande är nådd. Då måste läget åtgärdas först, eller gränsen ändras via PR.
   5. `evaluate()` utlöser inte samma gräns två gånger. Utlösningar och godkännanden är append-only.
   6. Kan en spärr inte avgöra blir svaret nej (§59).
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-025 "Utred möjlighet": fast ordning, osäkert räknas som risk, skatt kräver Skatteverket
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
 - **Beslut:**
   1. Ett utredningsärende (kanal, verktyg, gratis-API, intäktsväg, skatt, villkor, licens eller marknad) går alltid i ordningen **Research → Compliance → CFO → grundarna**. Inget steg kan hoppas över (migration 14, `collaboration/opportunities.py`).
   2. Ärendet öppnas av grundarna eller nivå 1–3. Fynden lämnas av Research (departementet research med `research.search`) med minst en källa (`url:` eller `file:`). De är alltid en **obekräftad hypotes** (§29).
@@ -95,27 +95,27 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   5. Grundarna godkänner eller avvisar. En **skattefråga** kan bara godkännas om någon källa är Skatteverket (`skatteverket.se`) eller en rådgivares underlag (`file:`). Godkända skatte-, villkors- och licensfrågor får status `approved_rule`, övriga `approved`.
   6. Ärendet kan valfritt hänvisa till en fråga i `research/QUESTIONS.md` (`R-01` …). Varje fråga utreds i högst ett ärende.
   7. Stegen är append-only, ett avslutat ärende ändras aldrig och allt loggas i revisionsloggen. Agenterna föreslår bara. De skapar inga konton, godkänner inga villkor och väljer inget skattespår (D-011).
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-028 Uppdelade köp: samma initiativ, sju dagar, grundarna avgör
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-019, D-026
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-019, D-026
 - **Beslut:**
   1. Budgetmotorn summerar utgifter (kostnader och avgifter, väntade och genomförda) i **samma affärsinitiativ** som registrerats de senaste **sju dagarna** och som inte behövde godkännande, plus den nya utgiften.
   2. Om summan passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`, men den nya utgiften inte gör det själv, flaggas den som möjlig uppdelning (ER-04, §5).
   3. En flaggad utgift blockeras inte automatiskt, eftersom flera små köp kan vara helt legitima. Den behandlas som hela summan och kräver **båda grundarna** (D-019). Flaggan revideras.
   4. Köp som grundarna redan har godkänt räknas inte, eftersom de inte kan vara ett försök att slippa godkännande.
   5. Ledgern har inget motpartsfält än, så motpart används inte. Fönstret på sju dagar står i koden (`SPLIT_WINDOW`); att ändra det kräver ett nytt beslut.
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-027 Kapitalbegreppen räknas från ledgern; reserven skyddas av budgetmotorn
-- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-024, D-026
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-024, D-026
 - **Beslut:**
   1. Kapital finns bara om det finns i ledgern. `START_CAPITAL` i `risk_limits.toml` är en gräns, inte pengar; startkapitalet ska registreras som en `capital_in`-post, godkänd med hänvisning till beslutet.
   2. De sju begreppen i §23 räknas från ledgern i en valuta i taget: likvida medel (genomförda in- och utbetalningar), bundet kapital, totalt, skyddad reserv (`MINIMUM_RESERVE`), åtaget (väntade utbetalningar), disponibelt (likvida − reserv − åtaget, aldrig under 0) och återinvesterbart.
   3. Bundet kapital är 0 tills ledgern får tillgångsposter. En tillgång räknas aldrig som likvid (§23).
   4. Återinvesterbar vinst är 0 tills Tax Engine (4f) kan reservera skatten (ER-19). Vinst före skatt är inte disponibel för återinvestering.
   5. Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet. Ett godkännande från grundarna låser inte upp reserven; att använda den kräver att gränsen ändras, vilket kräver båda (D-019 punkt 3). Saknas `MINIMUM_RESERVE` blockeras alla utgifter (ER-02).
-- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-26, registrerat av Yorgo)
 
 ### D-026 Departementsbudgetar och budgetmotorn
 - **Status:** Godkänd · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-009, D-019, D-024 · **Ändrar:** ny konfigurationsfil `config/budgets.toml` (en ändring i gränserna, därför krävs båda grundarna enligt D-019 punkt 3)

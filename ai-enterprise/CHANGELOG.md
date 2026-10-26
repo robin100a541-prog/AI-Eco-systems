@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — godkännanden av D-025, D-027–D-031 och D-035–D-037
+### Ändrat
+- DECISIONS.md: Robin har godkänt D-025, D-027, D-028 och D-029–D-031. Yorgo och Robin har gemensamt godkänt D-035–D-037. Alla nio har nu status Godkänd. Bara fälten *Status* och *Godkänd av* är ändrade.
+- PROJECT_STATUS och ROADMAP: Fas 3 är stängd, och godkännandena är borttagna från nästa åtgärder.
+
 ## [Unreleased] — 2026-10-26 — Fas 5c: prestationsmätning per roll (FR-19)
 ### Tillagt
 - Migration 20 `performance_reviews`, append-only. Den var reserverad som 22 och är omnumrerad (TODO.md).
