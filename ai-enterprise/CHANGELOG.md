@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5f: SR-17, Fas 5 stängd
+### Tillagt
+- Migration 25 `removal_cases` och `removal_events`, append-only.
+- `src/aie/evaluation/removal.py`: `RemovalReview` med `open`, `respond`, `vote`, `dismiss` och spärren `transition_block_reason`.
+  - Ett ärende kräver kriterier ur §33 med kontrollerat underlag. Slutsatser är aldrig underlag.
+  - Avstängning beslutas av en grundare, och avveckling av båda.
+- `AgentRegistry.set_guard()`: när spärren är kopplad kan avstängning och avveckling av en verksam agent bara ske genom ett beslutat ärende.
+- D-040 (föreslaget).
+- `tests/unit/test_removal.py`: 7 tester.
+- `tests/acceptance/test_fas5.py`: 6 acceptanstester för §53 och SR-17.
+- Hela sviten ger 512 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 5e: versionerade strategier (FR-18)
 ### Tillagt
 - Migration 24 `strategy_versions`, append-only.

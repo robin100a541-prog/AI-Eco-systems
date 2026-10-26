@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 5. **Fas 4 är stängd:** 4a–4f är klara, och §52 är acceptanstestad. Fas 5a–5c är klara: incidentrapporter, prognoslogg och prestationsmätning. **Kvar i Fas 5: FR-17, FR-18 och SR-17 (Robin).** Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
-**Fasstatus:** Fas 1–4 och Fas 5a–5c är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Aktuell fas:** Fas 6 — Affärssimulering. **Fas 4 och Fas 5 är stängda** och acceptanstestade (§52, §53). Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
+**Fasstatus:** Fas 1–5 är mergade till `main`. Acceptanstester finns för §49–§53. Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -113,6 +113,16 @@
   - Deklarationsunderlag per grundare (ER-21).
   - Satserna är simulerade, och spåren bekräftas med Skatteverket före Fas 7 (Q-05).
 - **Fas 4 stängd:** `tests/acceptance/test_fas4.py` täcker de fem kriterierna i §52 och ROADMAP:s nyckeltester.
+- **Fas 5d lärdomsregister** (PR #57): `evaluation/lessons.py`, migration 23 och D-038.
+  - De fem statusarna i §29 går ett steg i taget, och test krävs.
+  - En regel kräver båda grundarna, och `require_rule()` stoppar allt annat.
+- **Fas 5e strategier** (PR #58): `evaluation/strategies.py`, migration 24 och D-039.
+  - Versioner av strategier och agenter. En återställning blir en ny version.
+  - Obligatoriska ändringar kräver operativa regler.
+- **Fas 5f SR-17:** `evaluation/removal.py`, migration 25 och D-040.
+  - Avstängning och avveckling sker bara genom ett ärende med kriterier ur §33 och kontrollerat underlag.
+  - Slutsatser är aldrig underlag. Registret blockerar andra vägar via `set_guard()`.
+- **Fas 5 stängd:** `tests/acceptance/test_fas5.py` täcker de fem kriterierna i §53 och SR-17.
 
 ## Vad som INTE är gjort / inte verifierat
 - Spärrarna kopplas inte in automatiskt i `python -m aie start`. Den som bygger en `AuthorizationEngine` eller `BudgetEngine` måste skicka med `gates=`. `python -m aie kill` fungerar fristående. Att koppla in alla spärrar i körningen är kvar till Fas 6, när systemet kör agenter i en arbetscykel.
@@ -127,8 +137,8 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-032–D-034 (Tax Engine) | Båda |
-| 2 | Fas 5: lärdomsregister (FR-17), versionerade strategier (FR-18) och SR-17, med nästa lediga migration och D-038 och uppåt | Robin |
+| 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
+| 2 | Fas 6a: koppla in spärrar, Tax Engine och utvärdering i `python -m aie start` | Yorgo |
 | 3 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare

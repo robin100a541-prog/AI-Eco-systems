@@ -32,6 +32,10 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+_SANCTIONS = frozenset({AgentState.SUSPENDED, AgentState.RETIRED})  # SR-17: kräver dokumenterade kriterier
+_SERVING = frozenset({AgentState.ACTIVE, AgentState.PROBATION, AgentState.SUSPENDED})
+
+
 class RegistryError(ValueError):
     pass
 
@@ -60,6 +64,14 @@ class AgentRegistry:
         self._permissions = permissions
         self._db = db
         self._clock = clock
+        self._guard = None
+
+    def set_guard(self, guard) -> None:
+        """SR-17 (D-040): avstängning och avveckling av en verksam agent kräver då ett beslutat ärende.
+
+        `guard.transition_block_reason(agent_id, old, new, changed_by) -> str | None`; None = tillåtet.
+        """
+        self._guard = guard
 
     def register(self, agent_id: str, role: str, manager_id: str | None, registered_by: str, reason: str) -> Agent:
         if not _AGENT_ID.fullmatch(agent_id):
@@ -113,6 +125,10 @@ class AgentRegistry:
             if agent is None:
                 raise RegistryError(f"agenten {agent_id!r} finns inte")
             check_transition(agent.state, target)
+            if self._guard is not None and target in _SANCTIONS and agent.state in _SERVING:
+                blocked = self._guard.transition_block_reason(agent_id, agent.state, target, changed_by)
+                if blocked:
+                    raise RegistryError(blocked)
             tx.execute("UPDATE agents SET state = ? WHERE agent_id = ?", (target.value, agent_id))
             self._record(tx, StateChange(agent_id, agent.state, target, changed_by, reason, self._clock()))
         return Agent(agent.agent_id, agent.role, agent.department, agent.manager_id, target)
