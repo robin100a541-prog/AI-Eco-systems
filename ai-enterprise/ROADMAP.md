@@ -98,7 +98,7 @@ Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nöd
 | 4e-1 Stop-loss (ER-13, §26), migration 15, D-029 | Yorgo | ✅ PR #46 |
 | 4e-2 Nödstopp / kill switch (SR-07, §38), migration 16, D-030; `python -m aie kill` | Yorgo | ✅ PR #47 |
 | 4e-3 Skyddat driftläge (SR-08, §59), migration 17, D-031 | Yorgo | ✅ PR #48 |
-| 4f Tax Engine (ER-18…21), migration 21–22, D-032–D-034: `src/aie/tax/`, `config/tax.toml` | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas4f-tax` |
+| 4f Tax Engine (ER-18…21), migration 21–22, D-032–D-034: `src/aie/tax/`, `config/tax.toml` | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #56 |
 
 **Acceptanskriterier Fas 4 (§52):** alla är uppfyllda (`tests/acceptance/test_fas4.py`). **Fas 4 är stängd 2026-10-26.** Besluten D-032–D-034 väntar på godkännande.
 - [x] Budgetöverskridanden blockeras (`test_budget.py::test_budget_overrun_is_blocked`).
@@ -116,15 +116,15 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 | 5a Incidentrapporter med de 16 fälten i §28 (FR-15), migration 18, D-035; varje stopp blir en incident | Yorgo | ✅ PR #51 |
 | 5b Prognoslogg och prognos mot utfall (FR-16, §20 steg 10), migration 19, D-036 | Yorgo | ✅ PR #52 |
 | 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ PR #53 |
-| 5d Lärdomsregister (FR-17), migration 23, D-038 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5d-lardomar` |
-| 5e Versionerade strategier (FR-18) | Robin | ☐ |
+| 5d Lärdomsregister (FR-17), migration 23, D-038 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #57 |
+| 5e Versionerade strategier (FR-18), migration 24, D-039 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5e-strategier` |
 | 5f Ingen avveckling för obekväma slutsatser (SR-17) | Robin | ☐ |
 
 **Acceptanskriterier Fas 5 (§53):**
 - [x] Fel kan spåras till konkreta händelser (`test_incidents.py::TestFromStops`, källorna `stoploss:`, `kill:` och `mode:`).
 - [x] Prognoser kan jämföras med utfall (`test_forecasts.py::TestAutomaticComparison`).
 - [x] Lärdomar kan granskas (`test_lessons.py`: status, källor och hela historiken).
-- [ ] Strategiförändringar kan återställas (FR-18, Robin).
+- [x] Strategiförändringar kan återställas (`test_strategies.py::test_restore_is_a_new_version_and_history_stays`).
 - [x] En obekräftad hypotes blir inte automatiskt en obligatorisk regel (`test_lessons.py::test_unconfirmed_hypothesis_never_becomes_a_rule`).
 
 ## Fas 6 — Affärssimulering (FR-20…24)

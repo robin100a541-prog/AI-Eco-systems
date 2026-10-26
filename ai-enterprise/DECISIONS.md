@@ -8,6 +8,16 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-039 Versionerade strategier: varje ändring är en ny version, återställning är en ny version, obligatoriskt kräver en regel
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-038 · **Gäller:** FR-18, FR-17, §30, §53
+- **Beslut:**
+  1. `StrategyRegistry` sparar strategier och agentversioner (`agent:<id>`) som numrerade versioner. Varje version har innehåll (JSON-objekt), motivering, författare och de lärdomar den bygger på, med lärdomarnas status vid sparandet. Den senaste versionen gäller.
+  2. Inget skrivs om (migration 24). `restore()` skapar en ny version med den gamla versionens innehåll som pekar på den (`restores`), så att strategiförändringar kan återställas utan att historiken försvinner (§53).
+  3. En obligatorisk ändring av gemensamma regler (`mandatory=True`) kräver minst en lärdom. Alla lärdomar som anges måste vara godkända operativa regler, och ändringen görs av en grundare (FR-17).
+  4. Vanliga ändringar görs av grundarna eller nivå 1–3. De får hänvisa till lärdomar med lägre status, och sådana lärdomar markeras som ej verifierade.
+  5. `diff()` visar vilka nycklar som ändrades mellan två versioner.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-038 Lärdomsregister: fem statusar ett steg i taget, test krävs, bara båda grundarna gör en regel
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-019, D-035, D-036 · **Gäller:** FR-17, §27, §29, §30, §53
 - **Beslut:**
