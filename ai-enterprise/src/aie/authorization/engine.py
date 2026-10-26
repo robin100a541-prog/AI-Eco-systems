@@ -61,6 +61,10 @@ class AuthorizationEngine:
         self._stops = stops
         self._gates = tuple(gates)
 
+    def add_gate(self, gate) -> None:
+        """Lägger till en spärr efteråt. Skyddat driftläge behöver motorn för sin egen kontroll (SR-08)."""
+        self._gates = (*self._gates, gate)
+
     def check(self, agent_id: str, tool: str) -> Decision:
         try:
             decision = self._decide(agent_id, tool)

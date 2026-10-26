@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-10-23 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 3 — Hierarki och samarbete **pågår**. Fas 2 är klar (version 0.4.0); D-018 godkänt och Q-01 besvarat (D-019).
-**Fasstatus:** Fas 1 och Fas 2 mergade till `main`. Alla acceptanskriterier i §49 och §50 har gröna acceptanstester (`tests/acceptance/`). Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
+**Aktuell fas:** Fas 4 — Ekonomisk kontroll. 4a–4e är klara: ledger, budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp och skyddat driftläge. **Kvar: Tax Engine (4f, Robin).** Fas 3 är byggd och acceptanstestad (§51) och väntar bara på Robins godkännande av D-025.
+**Fasstatus:** Fas 1–3 och Fas 4a–4e är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -37,6 +37,10 @@
 | Uppdelningsdetektering (Fas 4d, Robin): budgetmotorn flaggar små utgifter i samma initiativ inom sju dagar som tillsammans passerar tröskeln eller `MAX_SINGLE_TRANSACTION`; flaggade kräver båda grundarna (D-028) | `tests/unit/test_split.py`, 5 tester; 395 OK på Python 3.11, 3.12 och 3.13 |
 | CI på GitHub Actions: testerna körs på Python 3.11 och 3.12 vid varje PR och push till `main` | `.github/workflows/ai-enterprise-tests.yml`; checkarna syns på varje PR |
 | Fas 2, agentramverket (Yorgo): livscykel och agentregister i databasen (migration 4), `config/permissions.toml` och Authorization Engine med default deny (D-017), uppgifter (migration 5), rapportformat i §7:s tio kategorier, ProviderRouter med kvoter och dataklassning (migration 6, D-018), `AgentWorker` (uppgift → modell → rapport → audit) | PR #11, #14, #16, #17, #18 och Fas 2-acceptansen. `tests/acceptance/test_fas2.py` har 12 tester, minst ett per kriterium i §50. Hela sviten ger 219 OK (2 SIGINT-tester överhoppade) på Windows 11, Python 3.12.0, och i CI |
+| Fas 3 (Yorgo): hierarki och styrverktyg (PR #24, D-020), kontrollfunktionernas stopp (PR #26), samråd (PR #27), externt innehåll som opålitlig data (PR #30), juridisk konflikt till Compliance (PR #31), "Utred möjlighet" (PR #32, D-025) | `test_hierarchy.py`, `test_stops.py`, `test_consultation.py`, `test_external.py`, `test_legal.py` och `test_opportunities.py`; 406 OK efter PR #32 |
+| Stop-loss (Fas 4e-1, Yorgo): `src/aie/risk/stoploss.py`, migration 15. Fyra gränser mäts från ledgern, nya åtaganden blockeras via `BudgetEngine(gates=)`, förpliktelser listas men avbryts aldrig, återupptagande kräver plan och två grundare (D-029) | `tests/unit/test_stoploss.py`, 12 tester (PR #46) |
+| Nödstopp (Fas 4e-2, Yorgo): `src/aie/risk/killswitch.py`, migration 16, `python -m aie kill`. Inga utgifter, bara läs-, rapport-, verifierings- och stoppverktyg, inget raderas. Återstart enligt `docs/operations.md`: två grundare och intakt revisionslogg (D-030) | `tests/unit/test_killswitch.py`, 10 tester, bland annat CLI:t i en egen process (PR #47) |
+| Skyddat driftläge (Fas 4e-3, Yorgo): `src/aie/risk/protected.py`, migration 17. Sju villkor i §59, automatiskt inträde före varje utgift, utgifter och externa verktyg blockeras, bruten bokföring aktiverar dessutom nödstoppet, en grundare lämnar läget när skälen är borta (D-031) | `tests/unit/test_protected_mode.py`, 15 tester. Hela sviten ger 443 OK på Windows 11, Python 3.12.0 |
 | Inga tredjepartsimporter i `src/` | Sökning efter `^import\|^from` i `src/`: bara standardbiblioteket och relativa importer (kontrollerad igen 2026-10-23) |
 
 ## Ändrat 2026-10-21 (Fas 1-session med Yorgo)
@@ -73,8 +77,19 @@
 - **Tester:** inga nätverksanrop.
 - **Version:** 0.4.0.
 
+## Ändrat 2026-10-26 (Yorgo: godkännanden och Fas 4e)
+- **Godkännanden:** Yorgo godkände D-020–D-028 (PR #44). D-020–D-024 och D-026 är nu godkända av båda. D-025, D-027 och D-028 väntar på Robin.
+- **Fas 4e** byggd som tre PR:er:
+  - stop-loss (PR #46)
+  - nödstopp (PR #47)
+  - skyddat driftläge
+  Det gav migration 15–17 och D-029–D-031 (föreslagna). Tax Engine lämnas åt Robin, som tar migration 18 och D-032 och uppåt.
+- **Spärrar:** `BudgetEngine` och `AuthorizationEngine` har den nya valfria parametern `gates=`. Där kopplas stop-loss, nödstopp och skyddat driftläge in. En spärr som inte kan avgöra ger nej (§59).
+- **`docs/operations.md`:** den dokumenterade processen för nödstopp, stop-loss och återstart.
+
 ## Vad som INTE är gjort / inte verifierat
-- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (219 OK, 2026-10-23). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
+- Spärrarna kopplas inte in automatiskt i `python -m aie start`. Den som bygger en `AuthorizationEngine` eller `BudgetEngine` måste skicka med `gates=`. `python -m aie kill` fungerar fristående. Att koppla in alla spärrar i körningen är kvar till Fas 6, när systemet kör agenter i en arbetscykel.
+- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (443 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
 - Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - Groq-testet (0.10) är inte gjort. D-005–D-012 är inte beslutade (0.8); Q-01 är besvarad av D-019.
@@ -84,9 +99,11 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
-| 2 | Fas 3: beslutslogg, oenighet, eskalering (Robin); CEO-flöde, departementschefer, samråd (Yorgo) | Robin och Yorgo |
-| 3 | Fas 3: CEO-flöde, departementschefer, 11-stegs beslutspost, samråd, oenighet, eskalering, godkännandekö | Båda; ta uppgiften i `TODO.md` först |
+| 1 | Godkänna D-025, D-027 och D-028 | Robin |
+| 2 | Godkänna D-029, D-030 och D-031 (stop-loss, nödstopp, skyddat driftläge) | Båda |
+| 3 | Fas 4f: Tax Engine (ER-18–21), migration 18 och D-032 och uppåt | Robin |
+| 4 | Fas 4-acceptanstester för §52, när 4f är klar | Den som tar det i `TODO.md` |
+| 5 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare
 Inga.
