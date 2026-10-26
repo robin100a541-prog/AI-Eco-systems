@@ -8,6 +8,25 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-041 `python -m aie start` bygger hela systemet med spärrar; utan spärrar ingen start
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-029–D-040 · **Ändrar:** startordningen i `runtime.py` (FR-01) · **Gäller:** Fas 6, §38, §59, SR-07, SR-08, SR-17, ER-13, ER-19, ER-20
+- **Beslut:**
+  1. `aie.system.build_system()` kopplar ihop alla komponenter:
+     - nödstopp, skyddat driftläge, kontrollstopp och momsgränsen som spärrar i `AuthorizationEngine`
+     - stop-loss, nödstopp och skyddat driftläge som spärrar i `BudgetEngine`, plus den reserverade skatten
+     - incidentloggen för alla stopp
+     - prognoser, lärdomar, strategier och prestationsmätning
+     - SR-17-spärren i `AgentRegistry`
+  2. `python -m aie start` bygger systemet efter kontrollen av revisionsloggen. Saknas `permissions.toml`, `budgets.toml` eller `tax.toml`, eller är någon av dem ogiltig, startar systemet inte (kod 1, §59). Komponenterna loggas i `system.start`.
+  3. Varje varv i körloopen kör `System.tick()`:
+     - stop-loss, men först när kapital finns i ledgern (D-027 punkt 1)
+     - `IncidentLog.sync()`
+     - `TaxEngine.check_vat()`
+     - `ForecastLog.evaluate()`
+
+     Skyddat driftläge bedöms före varje utgift, inte i loopen. En kontroll som kraschar loggas, och de andra körs ändå.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-040 SR-17: avstängning och avveckling bara genom ärende med kriterier ur §33 och kontrollerat underlag
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-019, D-035, D-037 · **Ändrar:** `AgentRegistry` får `set_guard()` (Yorgos kod, FR-06) · **Gäller:** SR-17, §31, §33
 - **Beslut:**

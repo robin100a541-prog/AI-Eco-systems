@@ -10,6 +10,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -46,6 +47,7 @@ class RuntimeTestCase(unittest.TestCase):
             {
                 "data_dir": str(self.dir / "data"),
                 "log_dir": str(self.dir / "logs"),
+                "founders": ["robin", "yorgo"],
                 **system_changes,
             },
         )
@@ -53,6 +55,8 @@ class RuntimeTestCase(unittest.TestCase):
         (config_dir / "risk_limits.toml").write_text(
             _toml(VALID_RISK), encoding="utf-8"
         )
+        for name in ("permissions.toml", "budgets.toml", "tax.toml"):  # Fas 6a: spärrarna byggs vid start
+            shutil.copy(ROOT / "config" / name, config_dir / name)
         return config_dir
 
     def db(self):

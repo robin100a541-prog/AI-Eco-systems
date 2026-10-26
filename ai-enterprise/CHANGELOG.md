@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 6a: hela systemet kopplat i `python -m aie start`
+### Tillagt
+- `src/aie/system.py`: `build_system()` och `System.tick()`. Alla spärrar, Tax Engine och Fas 5-komponenterna kopplas ihop på ett ställe.
+- `runtime.start` bygger systemet och kör `tick()` i varje varv. Utan konfigurationen för spärrarna startar systemet inte.
+- D-041 (föreslaget).
+- `tests/unit/test_system.py`: 7 tester. `tests/unit/test_runtime.py` kopierar nu `permissions.toml`, `budgets.toml` och `tax.toml` och sätter grundarna.
+- Hela sviten ger 519 OK på Windows 11, Python 3.12.0.
+- Provat på riktigt: `python -m aie start`, `status` och `stop` med repots konfiguration. Schemaversion 25, alla elva komponenter står i `system.start` och avslutet var rent.
+
 ## [Unreleased] — 2026-10-26 — Fas 5f: SR-17, Fas 5 stängd
 ### Tillagt
 - Migration 25 `removal_cases` och `removal_events`, append-only.

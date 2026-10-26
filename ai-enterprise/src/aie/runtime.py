@@ -8,10 +8,13 @@ Ordning vid `start`:
 2. Starta loggningen (FR-04). En `log_dir` som inte kan skapas → kod 1.
 3. Öppna databasen och kör migrationer (FR-03). Lagringsfel → kod 1.
 4. Kontrollera revisionsloggen (SR-09). En manipulerad kedja → kod 1, systemet startar inte.
-5. Vägra starta om en annan process redan kör. Har en tidigare körning dött utan att
+5. Bygg hela systemet med spärrar och loggar (`aie.system.build_system`, Fas 6a). Saknas en
+   konfigurationsfil, eller går något inte att bygga → kod 1. Systemet startar aldrig utan spärrar.
+6. Vägra starta om en annan process redan kör. Har en tidigare körning dött utan att
    stänga ned (strömavbrott, dödad process) loggas och revideras det, sedan startas systemet.
-6. Markera systemet som igång och vänta tills `aie stop`, Ctrl+C eller SIGTERM ber det stanna.
-7. Stäng ned rent: markera som stoppat, skriv revisionsrad med kedjans senaste hash, stäng
+7. Markera systemet som igång. Kör `System.tick()` (stop-loss, incidenter, momsgräns, prognoser)
+   i varje varv tills `aie stop`, Ctrl+C eller SIGTERM ber det stanna.
+8. Stäng ned rent: markera som stoppat, skriv revisionsrad med kedjans senaste hash, stäng
    databasen. Ett oväntat fel loggas med traceback och ger kod 1, men nedstängningen görs ändå.
 """
 
@@ -31,6 +34,7 @@ from .audit import AuditLog
 from .config import Config, ConfigError, load_config
 from .memory import Database, StorageError, open_database
 from .monitoring import LoggingSetupError, get_logger, setup_logging
+from .system import build_system
 
 # När konfigurationen är ogiltig är log_dir okänd. Felen loggas då här, relativt
 # mappen kommandot körs från, samma som standardvärdet i config/system.toml.
@@ -311,6 +315,10 @@ def _run(
                 f"FEL: revisionsloggen är manipulerad vid rad {check.first_bad_seq}: {check.reason}. "
                 "Systemet startar inte (SR-09)."
             )
+        try:
+            system = build_system(config, db, config_dir)
+        except ConfigError as exc:
+            raise StartupError(f"{exc}\nSystemet startar inte utan sina spärrar (§59).") from exc
         previous = read_state(db)
         if previous.state == "running" and previous.pid is not None:
             if previous.pid != pid and pid_alive(previous.pid):
@@ -323,7 +331,8 @@ def _run(
 
         _set_running(db, pid)
         marked_running = True
-        audit.append(ACTOR, "system.start", {"pid": pid, "environment": db.environment})
+        audit.append(ACTOR, "system.start", {"pid": pid, "environment": db.environment,
+                                             "components": list(system.components)})
         log.info(
             "systemet startat",
             extra={"fields": {"pid": pid, "environment": db.environment}},
@@ -337,6 +346,7 @@ def _run(
         while not stop_event.wait(poll_seconds):  # returnerar direkt om stopp redan begärts
             if read_state(db).stop_requested:
                 break
+            system.tick()
     except StartupError as exc:
         log.error("%s", exc)
         exit_code = _fail(exc)

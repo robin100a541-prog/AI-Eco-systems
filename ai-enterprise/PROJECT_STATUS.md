@@ -123,10 +123,10 @@
   - Avstängning och avveckling sker bara genom ett ärende med kriterier ur §33 och kontrollerat underlag.
   - Slutsatser är aldrig underlag. Registret blockerar andra vägar via `set_guard()`.
 - **Fas 5 stängd:** `tests/acceptance/test_fas5.py` täcker de fem kriterierna i §53 och SR-17.
+- **Fas 6a:** `src/aie/system.py` bygger hela systemet, och `python -m aie start` startar inte utan spärrarna. Det är provat på riktigt med start, status och stopp.
 
 ## Vad som INTE är gjort / inte verifierat
-- Spärrarna kopplas inte in automatiskt i `python -m aie start`. Den som bygger en `AuthorizationEngine` eller `BudgetEngine` måste skicka med `gates=`. `python -m aie kill` fungerar fristående. Att koppla in alla spärrar i körningen är kvar till Fas 6, när systemet kör agenter i en arbetscykel.
-- `IncidentLog`, `ForecastLog` och `PerformanceReview` kopplas inte in i `python -m aie start`, precis som spärrarna. Det görs i Fas 6. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
+- `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
 - Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
 - Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
@@ -138,8 +138,9 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
-| 2 | Fas 6a: koppla in spärrar, Tax Engine och utvärdering i `python -m aie start` | Yorgo |
-| 3 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 2 | Godkänna D-041 (systemet byggs med spärrar vid start) | Båda |
+| 3 | Fas 6b: simulerat startkapital, marknadsscenarier och arbetscykel (FR-20…24) | Claima i `TODO.md` |
+| 4 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare
 Inga.
