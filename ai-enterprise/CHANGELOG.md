@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5a: incidentrapporter (FR-15)
+### Tillagt
+- Migration 18 `incidents` och `incident_entries`, append-only. Den var reserverad som 20 men numrerades om eftersom Tax Engine inte var påbörjad. Robin får 21–22 (TODO.md).
+- `src/aie/evaluation/incidents.py`: `IncidentLog` med de 16 fälten i §28.
+  - Ifyllda fält ändras bara genom rättelseposter med motivering.
+  - Verifieringen (fält 16) görs sist och inte av den som ansvarar för uppföljningen.
+  - Rapportören räknas inte som involverad (§31, §33).
+- `StopLoss`, `KillSwitch` och `ProtectedMode` tar `incidents=`. Varje utlöst stopp blir då automatiskt en incident. `IncidentLog.sync()` hittar stopp som skett utan koppling.
+- D-035 (föreslaget).
+- `tests/unit/test_incidents.py`: 11 tester. Hela sviten ger 454 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Yorgo godkänner D-029–D-031
 ### Ändrat
 - DECISIONS.md: Yorgo har godkänt D-029 (stop-loss), D-030 (nödstopp) och D-031 (skyddat driftläge). Alla tre väntar på Robin och har därför status Föreslagen. Bara fältet *Godkänd av* är ändrat.

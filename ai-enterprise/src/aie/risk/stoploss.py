@@ -104,8 +104,12 @@ class StopLoss:
         founders: frozenset[str],
         notify: Callable[[str, str], tuple[str, ...]] | None = None,
         clock: Callable[[], str] = _now,
+        incidents=None,
     ) -> None:
-        """`notify(scope_kind, scope_value)` returnerar vilka som ska informeras. Standard: roller."""
+        """`notify(scope_kind, scope_value)` returnerar vilka som ska informeras. Standard: roller.
+
+        `incidents`: en `IncidentLog`; varje ny utlösning blir då en incident (FR-15, Fas 5a).
+        """
         self._db = db
         self._ledger = ledger
         self._limits = limits
@@ -114,6 +118,7 @@ class StopLoss:
         self._founders = frozenset(founders)
         self._notify = notify or _default_recipients
         self._clock = clock
+        self._incident_log = incidents
 
     # --- Mätning -------------------------------------------------------------------------
 
@@ -184,6 +189,8 @@ class StopLoss:
             })
             new.append(trip)
             active.add(breach.key)
+        if new and self._incident_log is not None:
+            self._incident_log.sync()
         return tuple(new)
 
     # --- Återupptagande ------------------------------------------------------------------
