@@ -96,7 +96,7 @@
 - **5b prognoslogg** (PR #52): `evaluation/forecasts.py`, migration 19 och D-036.
   - Utfall för ledgermått hämtas automatiskt, men aldrig från ett preliminärt resultat.
   - En revidering är en ny prognos.
-- **5c prestationsmätning:** `evaluation/performance.py`, migration 20 och D-037.
+- **5c prestationsmätning** (PR #53): `evaluation/performance.py`, migration 20 och D-037.
   - Varje roll har en profil, och det finns ingen totalpoäng.
   - Den som rapporterar fel krediteras, och bara verifierade incidenter räknas mot de involverade.
 - **Fas 5-acceptans (§53):** två av fem kriterier är uppfyllda. De tre andra hör till Robins FR-17 och FR-18.

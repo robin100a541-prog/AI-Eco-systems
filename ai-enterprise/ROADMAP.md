@@ -115,7 +115,7 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 |---|---|---|
 | 5a Incidentrapporter med de 16 fälten i §28 (FR-15), migration 18, D-035; varje stopp blir en incident | Yorgo | ✅ PR #51 |
 | 5b Prognoslogg och prognos mot utfall (FR-16, §20 steg 10), migration 19, D-036 | Yorgo | ✅ PR #52 |
-| 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ gren `yorgo/fas5c-prestation` |
+| 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ PR #53 |
 | 5d Lärdomsregister (FR-17) | Robin | ☐ |
 | 5e Versionerade strategier (FR-18) | Robin | ☐ |
 | 5f Ingen avveckling för obekväma slutsatser (SR-17) | Robin | ☐ |
