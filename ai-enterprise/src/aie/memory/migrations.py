@@ -878,6 +878,34 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=20,
+        name="performance_reviews",
+        statements=(
+            # Fas 5c (FR-19, §31, D-037): sparade prestationsbedömningar (Yorgo). Reserverad som 22, numrerad
+            # om till 20; se TODO.md. En bedömning är en ögonblicksbild med underlag och ändras aldrig.
+            """
+            CREATE TABLE performance_reviews (
+                review_id   INTEGER PRIMARY KEY,
+                agent_id    TEXT NOT NULL,
+                role        TEXT NOT NULL,
+                reviewer    TEXT NOT NULL,
+                scorecard   TEXT NOT NULL CHECK (json_valid(scorecard)),
+                note        TEXT NOT NULL,
+                at          TEXT NOT NULL,
+                CHECK (reviewer <> agent_id)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER performance_reviews_no_update BEFORE UPDATE ON performance_reviews
+            BEGIN SELECT RAISE(ABORT, 'en bedömning skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER performance_reviews_no_delete BEFORE DELETE ON performance_reviews
+            BEGIN SELECT RAISE(ABORT, 'bedömningar raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

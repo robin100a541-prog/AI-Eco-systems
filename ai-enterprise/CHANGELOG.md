@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5c: prestationsmätning per roll (FR-19)
+### Tillagt
+- Migration 20 `performance_reviews`, append-only. Den var reserverad som 22 och är omnumrerad (TODO.md).
+- `src/aie/evaluation/performance.py`: `PerformanceReview.scorecard`, `review` och `reviews`, med rollprofiler (`PROFILES`) för alla sju roller.
+  - Måtten är måluppfyllelse, prognosprecision med trend, ekonomiskt bidrag (bara CEO och departementschefer), regelefterlevnad, felhantering, riskidentifiering och verifierade incidenter.
+  - Den som rapporterar fel krediteras. Bara verifierade incidenter räknas mot de involverade. Nekanden från stopp räknas inte.
+  - Det finns ingen totalpoäng, och bedömningen ändrar aldrig agentens tillstånd.
+- D-037 (föreslaget).
+- `tests/unit/test_performance.py`: 10 tester. Hela sviten ger 473 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 5b: prognoslogg och prognos mot utfall (FR-16)
 ### Tillagt
 - Migration 19 `forecasts` och `forecast_outcomes`, append-only. Den var reserverad som 21 och är omnumrerad (TODO.md).
