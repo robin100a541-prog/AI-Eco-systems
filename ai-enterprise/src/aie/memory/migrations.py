@@ -959,6 +959,54 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=23,
+        name="lessons",
+        statements=(
+            # Fas 5d (FR-17, §29, D-038): lärdomsregister (Robins uppgift, gjord av Yorgo vid överlämningen
+            # 2026-10-26). En lärdom skrivs aldrig om; statusen ändras genom händelser.
+            """
+            CREATE TABLE lessons (
+                lesson_id   INTEGER PRIMARY KEY,
+                statement   TEXT NOT NULL CHECK (length(trim(statement)) > 0),
+                cause       TEXT NOT NULL CHECK (cause IN ('random', 'predictable_error', 'bad_information',
+                            'bad_execution', 'bad_strategy', 'market_change', 'insufficient_data')),
+                scope       TEXT NOT NULL,
+                sources     TEXT NOT NULL CHECK (json_valid(sources)),
+                proposed_by TEXT NOT NULL,
+                at          TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER lessons_no_update BEFORE UPDATE ON lessons
+            BEGIN SELECT RAISE(ABORT, 'en lärdom skrivs aldrig om; lägg till en händelse'); END
+            """,
+            """
+            CREATE TRIGGER lessons_no_delete BEFORE DELETE ON lessons
+            BEGIN SELECT RAISE(ABORT, 'lärdomar raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE lesson_events (
+                id        INTEGER PRIMARY KEY,
+                lesson_id INTEGER NOT NULL REFERENCES lessons (lesson_id),
+                event     TEXT NOT NULL CHECK (event IN ('evidence', 'promote', 'rule_vote', 'demote', 'reject')),
+                status    TEXT,
+                actor     TEXT NOT NULL,
+                note      TEXT NOT NULL,
+                evidence  TEXT NOT NULL CHECK (json_valid(evidence)),
+                at        TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER lesson_events_no_update BEFORE UPDATE ON lesson_events
+            BEGIN SELECT RAISE(ABORT, 'lärdomshändelser är append-only'); END
+            """,
+            """
+            CREATE TRIGGER lesson_events_no_delete BEFORE DELETE ON lesson_events
+            BEGIN SELECT RAISE(ABORT, 'lärdomshändelser raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

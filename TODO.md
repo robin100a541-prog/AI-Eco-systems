@@ -7,7 +7,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [x] Fill in Goal + Tech stack in CLAUDE.md — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/overlamning-idag)
 - [x] Add friend as collaborator — klart (Yorgo-jarjous är collaborator); fill in Team table — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/overlamning-idag)
 - [x] ai-enterprise Fas 4f: Tax Engine (ER-18–21), migration 21–22, D-032–D-034, Fas 4 stängd — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas4f-tax)
-- [ ] ai-enterprise Fas 5d: lärdomsregister (FR-17), migration 23, D-038 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5d-lardomar)
+- [x] ai-enterprise Fas 5d: lärdomsregister (FR-17), migration 23, D-038 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5d-lardomar)
 - [ ] ai-enterprise Fas 5e: versionerade strategier (FR-18), migration 24, D-039 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5e-strategier)
 - [ ] ai-enterprise Fas 5f: ingen avveckling för obekväma slutsatser (SR-17), D-040 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5f-sr17)
 - [ ] ai-enterprise Fas 6a: koppla in spärrar, incidentlogg, prognoslogg och prestationsmätning i `python -m aie start` — @yorgo-jarjous (yorgo/fas6a-koppling)

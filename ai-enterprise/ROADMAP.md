@@ -116,16 +116,16 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 | 5a Incidentrapporter med de 16 fälten i §28 (FR-15), migration 18, D-035; varje stopp blir en incident | Yorgo | ✅ PR #51 |
 | 5b Prognoslogg och prognos mot utfall (FR-16, §20 steg 10), migration 19, D-036 | Yorgo | ✅ PR #52 |
 | 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ PR #53 |
-| 5d Lärdomsregister (FR-17) | Robin | ☐ |
+| 5d Lärdomsregister (FR-17), migration 23, D-038 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5d-lardomar` |
 | 5e Versionerade strategier (FR-18) | Robin | ☐ |
 | 5f Ingen avveckling för obekväma slutsatser (SR-17) | Robin | ☐ |
 
 **Acceptanskriterier Fas 5 (§53):**
 - [x] Fel kan spåras till konkreta händelser (`test_incidents.py::TestFromStops`, källorna `stoploss:`, `kill:` och `mode:`).
 - [x] Prognoser kan jämföras med utfall (`test_forecasts.py::TestAutomaticComparison`).
-- [ ] Lärdomar kan granskas (FR-17, Robin).
+- [x] Lärdomar kan granskas (`test_lessons.py`: status, källor och hela historiken).
 - [ ] Strategiförändringar kan återställas (FR-18, Robin).
-- [ ] En obekräftad hypotes blir inte automatiskt en obligatorisk regel (FR-17, Robin).
+- [x] En obekräftad hypotes blir inte automatiskt en obligatorisk regel (`test_lessons.py::test_unconfirmed_hypothesis_never_becomes_a_rule`).
 
 ## Fas 6 — Affärssimulering (FR-20…24)
 Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar.
