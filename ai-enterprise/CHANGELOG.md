@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 4e-1: stop-loss (ER-13)
+### Tillagt
+- Migration 15: `stop_loss_trips` och `stop_loss_votes`. Båda är append-only.
+- `src/aie/risk/stoploss.py`: `StopLoss`.
+  - `breaches()` mäter förlust per initiativ, total drawdown, departementsbudget och reserv från ledgern. En saknad gräns räknas som nådd.
+  - `evaluate()` sparar utlösningar med exponering, förpliktelser och vilka som informerats, och loggar dem i revisionsloggen.
+  - `approve_resume()` kräver plan, åtgärdat läge och två olika grundare.
+- `BudgetEngine(..., gates=...)`: spärrar som blockerar nya åtaganden. Stop-lossen är den första. Kan en spärr inte avgöra blir svaret nej.
+- D-029 (föreslaget).
+- `tests/unit/test_stoploss.py`: 12 tester. Hela sviten ger 418 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Yorgo godkänner D-020–D-028
 ### Ändrat
 - DECISIONS.md: Yorgo har godkänt D-020–D-028 (2026-10-26). D-020–D-024 och D-026 har nu godkänts av båda och har status Godkänd. D-025, D-027 och D-028 väntar på Robin. Bara fälten *Status* och *Godkänd av* är ändrade.

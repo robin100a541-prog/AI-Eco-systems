@@ -22,6 +22,9 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
 9. **Skyddad reserv** (Fas 4c, §5, ER-05): beloppet får inte vara större än det disponibla kapitalet,
    alltså likvida medel minus `MINIMUM_RESERVE` minus redan åtagna kostnader (`capital.py`).
 
+10. **Spärrar** (Fas 4e, `gates=`): en aktiv stop-loss (ER-13) blockerar nya åtaganden i sitt område.
+    Kan en spärr inte avgöra blir svaret nej (§59).
+
 Saknas en gräns som behövs blockeras handlingen (ER-02). Varje kontroll skrivs till revisionsloggen.
 """
 
@@ -95,8 +98,11 @@ class BudgetEngine:
         budgets: dict[str, Budget],
         audit: AuditLog,
         clock: Callable[[], datetime] = _utc_now,
+        gates: tuple = (),
     ) -> None:
+        """`gates`: spärrar med `spend_block_reasons(request) -> list[str]`, t.ex. stop-loss (ER-13)."""
         self._clock = clock
+        self._gates = tuple(gates)
         self._ledger = ledger
         self._limits = limits
         self._budgets = dict(budgets)
@@ -158,6 +164,11 @@ class BudgetEngine:
                 f"den skyddade reserven skulle användas: {amount} > disponibelt {position.disposable_minor} "
                 f"(likvida {position.liquid_minor} − reserv {position.reserve_minor} − åtaget {position.committed_minor}, §5, ER-05)"
             )
+        for gate in self._gates:  # 10. stop-loss, nödstopp och skyddat driftläge (Fas 4e)
+            try:
+                blocked += gate.spend_block_reasons(r)
+            except Exception as exc:  # noqa: BLE001 — kan spärren inte avgöra blir svaret nej (§59)
+                blocked.append(f"spärren {type(gate).__name__} kunde inte avgöra ({type(exc).__name__}); nekas")
         required = self._required_approvals(amount)
         flags = self._split_flags(r, amount) if amount_ok else []
         if flags:
