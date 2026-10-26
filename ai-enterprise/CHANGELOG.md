@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Yorgo godkänner D-029–D-031
+### Ändrat
+- DECISIONS.md: Yorgo har godkänt D-029 (stop-loss), D-030 (nödstopp) och D-031 (skyddat driftläge). Alla tre väntar på Robin och har därför status Föreslagen. Bara fältet *Godkänd av* är ändrat.
+
 ## [Unreleased] — 2026-10-26 — Fas 4e-3: skyddat driftläge (SR-08)
 ### Tillagt
 - Migration 17 `operating_mode_events`, append-only.
