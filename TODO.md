@@ -6,7 +6,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - **Överlämning endast 2026-10-26:** Robin lämnar över alla sina uppgifter till @yorgo-jarjous **endast idag**. Robin har godkänt överlämningen 2026-10-26 (endast idag). Från 2026-10-27 gäller den vanliga fördelningen igen, och det som inte är klart går tillbaka till @robin.
 - [x] Fill in Goal + Tech stack in CLAUDE.md — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/overlamning-idag)
 - [x] Add friend as collaborator — klart (Yorgo-jarjous är collaborator); fill in Team table — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/overlamning-idag)
-- [ ] ai-enterprise Fas 4f: Tax Engine (ER-18–21), migration 21–22, D-032–D-034 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas4f-tax)
+- [x] ai-enterprise Fas 4f: Tax Engine (ER-18–21), migration 21–22, D-032–D-034, Fas 4 stängd — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas4f-tax)
 - [ ] ai-enterprise Fas 5d: lärdomsregister (FR-17), migration 23, D-038 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5d-lardomar)
 - [ ] ai-enterprise Fas 5e: versionerade strategier (FR-18), migration 24, D-039 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5e-strategier)
 - [ ] ai-enterprise Fas 5f: ingen avveckling för obekväma slutsatser (SR-17), D-040 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5f-sr17)

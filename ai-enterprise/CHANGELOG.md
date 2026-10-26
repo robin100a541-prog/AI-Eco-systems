@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 4f: Tax Engine (ER-18–21), Fas 4 stängd
+### Tillagt
+- Migration 21 `tax_assignments` och 22 `tax_events`, append-only. De är Robins nummer och användes av Yorgo vid överlämningen.
+- `config/tax.toml` med simulerade, försiktiga satser per spår, momsgränsen och fördelningen mellan grundarna i spår C.
+- `src/aie/tax/`:
+  - `TaxEngine.assign`: skattespår per intäkt (ER-18).
+  - `position` och `reserved_minor`: reserverad skatt (ER-19).
+  - `vat_status`, `check_vat`, `vat_vote` och spärren `tool_block_reason`: momsgränsen (ER-20).
+  - `export`: deklarationsunderlag per grundare med SHA-256 (ER-21).
+- `capital_position(tax_reserved_minor=)` och `BudgetEngine(tax=)`. Reserverad skatt räknas som åtagande, och återinvesterbar vinst räknas efter skatt.
+- `config/permissions.toml`: verktyget `tax.assign` för CFO.
+- D-032–D-034 (föreslagna).
+- `tests/unit/test_tax.py`: 8 tester.
+- `tests/acceptance/test_fas4.py`: 7 acceptanstester för §52 och ROADMAP:s nyckeltester.
+- Hela sviten ger 488 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — godkännanden av D-025, D-027–D-031 och D-035–D-037
 ### Ändrat
 - DECISIONS.md: Robin har godkänt D-025, D-027, D-028 och D-029–D-031. Yorgo och Robin har gemensamt godkänt D-035–D-037. Alla nio har nu status Godkänd. Bara fälten *Status* och *Godkänd av* är ändrade.

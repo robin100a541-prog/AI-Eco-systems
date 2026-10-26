@@ -98,9 +98,9 @@ Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nöd
 | 4e-1 Stop-loss (ER-13, §26), migration 15, D-029 | Yorgo | ✅ PR #46 |
 | 4e-2 Nödstopp / kill switch (SR-07, §38), migration 16, D-030; `python -m aie kill` | Yorgo | ✅ PR #47 |
 | 4e-3 Skyddat driftläge (SR-08, §59), migration 17, D-031 | Yorgo | ✅ PR #48 |
-| 4f Tax Engine (ER-18…21) | Robin (migration 21–22 efter omnumrering, D-032–D-034) | ☐ |
+| 4f Tax Engine (ER-18…21), migration 21–22, D-032–D-034: `src/aie/tax/`, `config/tax.toml` | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas4f-tax` |
 
-**Acceptanskriterier Fas 4 (§52):**
+**Acceptanskriterier Fas 4 (§52):** alla är uppfyllda (`tests/acceptance/test_fas4.py`). **Fas 4 är stängd 2026-10-26.** Besluten D-032–D-034 väntar på godkännande.
 - [x] Budgetöverskridanden blockeras (`test_budget.py::test_budget_overrun_is_blocked`).
 - [x] Dubbelregistrering hanteras (`test_ledger.py::TestDuplicates`).
 - [x] Nettovinst kan beräknas från registrerade poster (`test_ledger.py::TestResult`).

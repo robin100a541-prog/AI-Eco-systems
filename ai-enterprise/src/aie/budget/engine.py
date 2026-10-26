@@ -99,9 +99,12 @@ class BudgetEngine:
         audit: AuditLog,
         clock: Callable[[], datetime] = _utc_now,
         gates: tuple = (),
+        tax=None,
     ) -> None:
-        """`gates`: spärrar med `spend_block_reasons(request) -> list[str]`, t.ex. stop-loss (ER-13)."""
+        """`gates`: spärrar med `spend_block_reasons(request) -> list[str]`, t.ex. stop-loss (ER-13).
+        `tax`: en `TaxEngine`; den reserverade skatten räknas då som åtagande (ER-19, D-032)."""
         self._clock = clock
+        self._tax = tax
         self._gates = tuple(gates)
         self._ledger = ledger
         self._limits = limits
@@ -156,7 +159,8 @@ class BudgetEngine:
         if r.risk_class is Risk.CRITICAL:
             blocked.append("riskklass critical tillåts aldrig (§24)")
         blocked += self._hard_limits(amount, limits)
-        position = capital_position(self._ledger.entries(limits.currency), limits)
+        tax_reserved = self._tax.reserved_minor(limits.currency) if self._tax is not None else None
+        position = capital_position(self._ledger.entries(limits.currency), limits, tax_reserved)
         if position.reserve_minor is None:
             blocked.append("MINIMUM_RESERVE saknas; den skyddade reserven kan inte skyddas (ER-02, ER-05)")
         elif amount > position.disposable_minor:
