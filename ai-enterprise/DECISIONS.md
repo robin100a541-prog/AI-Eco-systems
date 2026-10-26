@@ -24,7 +24,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Säkerhetsincidenter anmäls av grundarna eller av kontrollfunktionerna.
   5. **En grundare** lämnar läget (D-019 punkt 1: ingen beloppsåtgärd), och bara när inget skäl längre gäller. Obehöriga poster kan kvitteras uttryckligen i samma steg. Incidenter stängs när läget lämnas.
   6. Händelserna är append-only (migration 17).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
 
 ### D-030 Nödstopp: vad som stoppas, vem aktiverar, återstart kräver två grundare och intakt revisionslogg
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-020 · **Gäller:** SR-07, §38
@@ -34,7 +34,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   3. Nödstoppet kan aktiveras av grundarna, av aktiva kontrollfunktioner (nivå 2 med `action.block`) och av uttryckligen angivna systemkomponenter, till exempel `system:protected-mode`. CEO och chefer kan inte aktivera det.
   4. Återstart följer `docs/operations.md`: två *olika* grundare röstar var för sig efter den senaste aktiveringen, och revisionsloggen måste vara intakt vid varje röst.
   5. `python -m aie kill status|engage|release` är gränssnittet för grundarna.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
 
 ### D-029 Stop-loss: fyra gränser mäts från ledgern, nya åtaganden stoppas, två grundare återupptar
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-024, D-026, D-027 · **Gäller:** ER-13, §26
@@ -50,7 +50,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Verksamheten återupptas först när **två olika grundare** har godkänt en återhämtningsplan (D-019 punkt 3, riskgränser). Det går inte medan gränsen fortfarande är nådd. Då måste läget åtgärdas först, eller gränsen ändras via PR.
   5. `evaluate()` utlöser inte samma gräns två gånger. Utlösningar och godkännanden är append-only.
   6. Kan en spärr inte avgöra blir svaret nej (§59).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☐
 
 ### D-025 "Utred möjlighet": fast ordning, osäkert räknas som risk, skatt kräver Skatteverket
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
