@@ -8,6 +8,20 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-038 Lärdomsregister: fem statusar ett steg i taget, test krävs, bara båda grundarna gör en regel
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-019, D-035, D-036 · **Gäller:** FR-17, §27, §29, §30, §53
+- **Beslut:**
+  1. `LessonRegistry` sparar lärdomar med påstående, orsakstyp (de sju i §29), område och minst en källa (`incident:`, `forecast:`, `decision:`, `task:`, `ledger:` eller `test:`). Incident- och prognoskällor kontrolleras mot loggarna.
+  2. Statusarna är de fem i §29, och de går ett steg i taget:
+     - **Preliminär:** granskas av grundare eller nivå 1–3, inte av den som föreslog lärdomen.
+     - **Testad:** kräver minst ett test, det vill säga en prognos med utfall eller ett `test:`-underlag.
+     - **Reproducerbar:** kräver minst två olika test.
+     - **Godkänd operativ regel:** kräver att båda grundarna röstar.
+  3. Bara godkända operativa regler får ändra gemensamma regler. `require_rule()` kastar för allt annat, och en obekräftad hypotes kan aldrig bli en regel automatiskt (§53).
+  4. Sänkning och avvisning görs med motivering. Inget raderas eller skrivs om (migration 23).
+  5. `from_incident()` skapar en hypotes från en incidents förebyggande åtgärd eller grundorsak (§27).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-034 Skatteunderlag: inget raderas, export per grundare och år med kontrollsumma
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo, under Robins överlämning), 2026-10-26 · **Bygger på:** D-010, D-024, D-032 · **Gäller:** ER-21, §30
 - **Beslut:**

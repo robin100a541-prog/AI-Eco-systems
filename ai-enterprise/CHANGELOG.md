@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5d: lärdomsregister (FR-17)
+### Tillagt
+- Migration 23 `lessons` och `lesson_events`, append-only.
+- `src/aie/evaluation/lessons.py`: `LessonRegistry` med `propose`, `from_incident`, `add_evidence`, `promote`, `vote_rule`, `demote`, `reject`, `rules` och `require_rule`.
+  - De fem statusarna och sju orsakstyperna i §29 finns.
+  - Statusen går ett steg i taget. Test krävs för att lärdomen ska räknas som testad, och två test för reproducerbar. En regel kräver båda grundarna.
+- D-038 (föreslaget).
+- `tests/unit/test_lessons.py`: 6 tester. Hela sviten ger 494 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 4f: Tax Engine (ER-18–21), Fas 4 stängd
 ### Tillagt
 - Migration 21 `tax_assignments` och 22 `tax_events`, append-only. De är Robins nummer och användes av Yorgo vid överlämningen.
