@@ -820,6 +820,64 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=19,
+        name="forecasts",
+        statements=(
+            # Fas 5b (FR-16, §20 steg 10, D-036): prognoslogg (Yorgo). Reserverad som 21, numrerad om till 19;
+            # se TODO.md. En prognos ändras aldrig. En ny bedömning är en ny prognos som pekar på den gamla
+            # (revises). Utfall är append-only; en rättelse pekar på det gamla utfallet (corrects).
+            """
+            CREATE TABLE forecasts (
+                forecast_id INTEGER PRIMARY KEY,
+                agent       TEXT NOT NULL,
+                subject     TEXT NOT NULL CHECK (length(trim(subject)) > 0),
+                metric      TEXT NOT NULL CHECK (metric IN ('net', 'revenue', 'costs', 'count')),
+                unit        TEXT NOT NULL,
+                expected    INTEGER NOT NULL,
+                low         INTEGER,
+                high        INTEGER,
+                initiative  TEXT,
+                decision    TEXT,
+                due         TEXT NOT NULL,
+                revises     INTEGER REFERENCES forecasts (forecast_id),
+                made_at     TEXT NOT NULL,
+                CHECK (low IS NULL OR low <= expected),
+                CHECK (high IS NULL OR high >= expected),
+                CHECK (metric = 'count' OR initiative IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER forecasts_no_update BEFORE UPDATE ON forecasts
+            BEGIN SELECT RAISE(ABORT, 'en prognos skrivs aldrig om; gör en ny som pekar på den gamla'); END
+            """,
+            """
+            CREATE TRIGGER forecasts_no_delete BEFORE DELETE ON forecasts
+            BEGIN SELECT RAISE(ABORT, 'prognoser raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE forecast_outcomes (
+                id          INTEGER PRIMARY KEY,
+                forecast_id INTEGER NOT NULL REFERENCES forecasts (forecast_id),
+                actual      INTEGER NOT NULL,
+                source      TEXT NOT NULL CHECK (source IN ('ledger', 'manual')),
+                evidence    TEXT NOT NULL CHECK (json_valid(evidence)),
+                note        TEXT NOT NULL,
+                actor       TEXT NOT NULL,
+                corrects    INTEGER REFERENCES forecast_outcomes (id),
+                at          TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER forecast_outcomes_no_update BEFORE UPDATE ON forecast_outcomes
+            BEGIN SELECT RAISE(ABORT, 'utfall är append-only; gör en rättelse'); END
+            """,
+            """
+            CREATE TRIGGER forecast_outcomes_no_delete BEFORE DELETE ON forecast_outcomes
+            BEGIN SELECT RAISE(ABORT, 'utfall raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

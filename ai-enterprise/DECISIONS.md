@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-036 Prognoslogg: prognoser skrivs aldrig om, utfall från ledgern jämförs automatiskt, ingen bedömer sin egen prognos
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-006, D-020, D-024 · **Gäller:** FR-16, §20 steg 10, ER-11
+- **Beslut:**
+  1. `ForecastLog` sparar en prognos innan utfallet finns, med mått, enhet, väntat värde, valfritt intervall, förfallodag och valfri länk till beslutet (`decision:<id>`). Alla värden är heltal (D-006).
+  2. Måtten `net`, `revenue` och `costs` räknas från ledgerns affärsinitiativ (ER-09). Måttet `count` rapporteras.
+  3. Inget raderas eller skrivs om (migration 19). En ny bedömning är en ny prognos som pekar på den gamla. Båda jämförs, eftersom §20 steg 10 jämför med den ursprungliga prognosen. Ingen reviderar efter förfallodagen.
+  4. `evaluate()` hämtar utfallet från ledgern när prognosen har förfallit och resultatet inte är preliminärt (ER-11). Underlaget, det vill säga ledgerposterna, sparas med utfallet. `overdue()` visar förfallna prognoser som saknar utfall.
+  5. Rapporterade utfall registreras av grundarna eller nivå 1–3, aldrig av den som gjorde prognosen. Rättelser är nya poster med motivering.
+  6. `accuracy(agent)` ger antal jämförda prognoser, träffar inom intervallet, genomsnittligt fel i baspunkter och antal förfallna. Prestationsmätningen (5c) använder den.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-035 Incidentrapporter: 16 fält enligt §28, bara rättelseposter, varje stopp blir en incident
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-029, D-030, D-031 · **Gäller:** FR-15, §28, §31, §33
 - **Beslut:**
