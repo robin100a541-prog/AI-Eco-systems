@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 4e-3: skyddat driftläge (SR-08)
+### Tillagt
+- Migration 17 `operating_mode_events`, append-only.
+- `src/aie/risk/protected.py`: `ProtectedMode.assess`, `update`, `report_incident` och `exit`.
+  - Bedömningen kontrollerar de sju villkoren i §59: reserven nära, behörighetskontrollen, revisionsloggen och ledgerns siffror (ER-16), obehöriga poster, incidenter, saknade kontrollfunktioner och kontroller som inte kan genomföras.
+  - Läget aktiveras automatiskt före varje utgift. Bruten bokföring aktiverar dessutom nödstoppet.
+  - Utgifter och externa verktyg blockeras, medan analys och dokumentation fortsätter.
+  - En grundare lämnar läget när skälen är borta, och obehöriga poster kan kvitteras.
+- `AuthorizationEngine.add_gate()`.
+- D-031 (föreslaget).
+- `tests/unit/test_protected_mode.py`: 15 tester. Hela sviten ger 443 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 4e-2: nödstopp (SR-07)
 ### Tillagt
 - Migration 16 `kill_switch_events`, append-only.

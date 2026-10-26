@@ -750,6 +750,31 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=17,
+        name="operating_mode",
+        statements=(
+            # Fas 4e-3 (SR-08, §59, D-031): skyddat driftläge (Yorgo). Bara händelser, append-only.
+            # Läget är skyddat från 'entered' till nästa 'exited'. 'incident' är en anmäld säkerhetsincident.
+            """
+            CREATE TABLE operating_mode_events (
+                id      INTEGER PRIMARY KEY,
+                event   TEXT NOT NULL CHECK (event IN ('entered', 'incident', 'exited')),
+                actor   TEXT NOT NULL,
+                reasons TEXT NOT NULL CHECK (json_valid(reasons) AND json_array_length(reasons) > 0),
+                at      TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER operating_mode_events_no_update BEFORE UPDATE ON operating_mode_events
+            BEGIN SELECT RAISE(ABORT, 'driftlägets händelser ändras aldrig'); END
+            """,
+            """
+            CREATE TRIGGER operating_mode_events_no_delete BEFORE DELETE ON operating_mode_events
+            BEGIN SELECT RAISE(ABORT, 'driftlägets händelser raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

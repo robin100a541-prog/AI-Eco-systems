@@ -8,6 +8,24 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-031 Skyddat driftläge: sju villkor i §59, automatiskt inträde, en grundare lämnar när skälen är borta
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-027, D-030 · **Gäller:** SR-08, §59
+- **Beslut:**
+  1. `ProtectedMode.assess()` kontrollerar §59:
+     - disponibelt kapital ≤ 10 % av `MINIMUM_RESERVE`, eller reserven saknas
+     - behörighetskontrollen släpper igenom ett styrverktyg
+     - revisionsloggens kedja är bruten, eller ledgerns resultat räknat på två sätt skiljer sig (ER-16)
+     - obehöriga (`unapproved`) ledgerposter som inte är kvitterade eller korrigerade
+     - en anmäld säkerhetsincident
+     - ingen aktiv CFO, CRO, Compliance eller Audit
+     - en kontroll som kraschar, eftersom systemet då inte kan avgöra läget
+  2. Läget aktiveras automatiskt före varje utgift (spärren i `BudgetEngine`). Bruten bokföring, det vill säga revisionsloggen, ledgerns siffror eller obehöriga transaktioner, aktiverar dessutom nödstoppet (D-030) som `system:protected-mode`.
+  3. I skyddat läge blockeras alla utgifter och externa verktyg: `research.search` och verktyg som börjar med `external.`, `money.`, `publish.` eller `payment.`. Analys och dokumentation fortsätter, även modellanrop, eftersom ProviderRouter håller intern data på datorn (DR-13).
+  4. Säkerhetsincidenter anmäls av grundarna eller av kontrollfunktionerna.
+  5. **En grundare** lämnar läget (D-019 punkt 1: ingen beloppsåtgärd), och bara när inget skäl längre gäller. Obehöriga poster kan kvitteras uttryckligen i samma steg. Incidenter stängs när läget lämnas.
+  6. Händelserna är append-only (migration 17).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-030 Nödstopp: vad som stoppas, vem aktiverar, återstart kräver två grundare och intakt revisionslogg
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-020 · **Gäller:** SR-07, §38
 - **Beslut:**
