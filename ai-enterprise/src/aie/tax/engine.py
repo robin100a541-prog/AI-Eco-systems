@@ -110,8 +110,10 @@ class TaxEngine:
         founders: frozenset[str],
         engine=None,
         clock: Callable[[], str] = _now,
+        components: frozenset[str] = frozenset(),
     ) -> None:
-        """`engine`: en `AuthorizationEngine`, så att roller med `tax.assign` kan märka intäkter."""
+        """`engine`: en `AuthorizationEngine`, så att roller med `tax.assign` kan märka intäkter.
+        `components`: systemkomponenter som får märka, till exempel `system:simulation` i sim (D-042)."""
         self._db = db
         self._ledger = ledger
         self._config = config
@@ -119,6 +121,7 @@ class TaxEngine:
         self._founders = frozenset(founders)
         self._engine = engine
         self._clock = clock
+        self._components = frozenset(components)
 
     # --- ER-18 skattespår ------------------------------------------------------------------
 
@@ -323,7 +326,7 @@ class TaxEngine:
         return -e.amount_minor if e.entry_type is EntryType.REFUND else e.amount_minor
 
     def _require_assigner(self, actor: str) -> None:
-        if actor in self._founders:
+        if actor in self._founders or actor in self._components:
             return
         if self._engine is None or not self._engine.check(actor, ASSIGN_TOOL).allowed:
             raise TaxError("skattespår märks av grundarna eller roller med tax.assign (CFO)")

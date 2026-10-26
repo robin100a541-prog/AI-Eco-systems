@@ -1,0 +1,31 @@
+# Budgetöverskridande: en agent försöker spendera mer än budgeten (tolkas av arbetscykeln, 6b-2).
+config_version = 1
+name = "budget_overrun"
+description = "Normal försäljning; dag 3 och 8 försöker en agent köpa annonser över budgeten."
+seed = "budget-1"
+days = 15
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "etsy-mallar"
+department = "research"
+track = "partnership"
+price = 4_900
+unit_cost = 0
+fee_fixed = 20
+fee_bp = 650
+visitors = 40
+conversion_bp = 500
+refund_bp = 200
+
+[[events]]
+day = 3
+kind = "overspend_attempt"
+initiative = "etsy-mallar"
+note = "annonskampanj större än departementets budget"
+
+[[events]]
+day = 8
+kind = "overspend_attempt"
+initiative = "etsy-mallar"
+note = "andra försöket"

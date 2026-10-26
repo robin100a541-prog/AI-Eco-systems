@@ -1,0 +1,20 @@
+# Momsgränsen: hög försäljning når varning (80 %) och gräns (ER-20). Direktförsäljning utan plattformsavgifter,
+# eftersom avgifterna annars räknas mot departementsbudgeten och stoppar försäljningen först.
+config_version = 1
+name = "vat"
+description = "En storsäljare som passerar momsgränsen; ny försäljning ska stoppas tills grundarna beslutat."
+seed = "vat-1"
+days = 40
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "kurspaket"
+department = "research"
+track = "partnership"
+price = 9_900
+unit_cost = 0
+fee_fixed = 0
+fee_bp = 0
+visitors = 200
+conversion_bp = 2_000
+refund_bp = 100

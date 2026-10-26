@@ -125,6 +125,15 @@
 - **Fas 5 stängd:** `tests/acceptance/test_fas5.py` täcker de fem kriterierna i §53 och SR-17.
 - **Fas 6a:** `src/aie/system.py` bygger hela systemet, och `python -m aie start` startar inte utan spärrarna. Det är provat på riktigt med start, status och stopp.
 
+## Ändrat 2026-10-26 (Fas 6b-1)
+- **Simuleringens grund:** `src/aie/simulation/`, migration 26 och D-042.
+  - Startkapital från `START_CAPITAL`.
+  - Seedad marknad och sju scenarier.
+  - Order bokförs som ledgerposter med simulerat datum och skattespår.
+  - Spärrarna pausar försäljningen, och en körning kan återupptas efter omstart.
+  - Det finns ännu inga agenter som fattar beslut. De kommer i 6b-2.
+- **Fynd:** med `budgets.toml` (research 50 000, utan period) räknas plattformsavgifter och styckkostnader mot departementets budget. Därför stoppar stop-loss en lönsam verksamhet när avgifterna har nått 50 000, och förlustgränsen per initiativ (50 000) nås aldrig före departementsbudgeten. Det kräver ett beslut av er båda: budgetperiod, och om avgifter som dras vid försäljning ska räknas som utgift mot budgeten. Momsscenariot säljer därför utan plattformsavgifter.
+
 ## Vad som INTE är gjort / inte verifierat
 - `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
 - Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
@@ -138,9 +147,10 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
-| 2 | Godkänna D-041 (systemet byggs med spärrar vid start) | Båda |
-| 3 | Fas 6b: simulerat startkapital, marknadsscenarier och arbetscykel (FR-20…24) | Claima i `TODO.md` |
-| 4 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 2 | Godkänna D-041 och D-042 (spärrar vid start, simulering) | Båda |
+| 3 | Fas 6b-2–6b-5: arbetscykel, rapporter, övervakning och acceptanstester (plan godkänd av båda) | Yorgo |
+| 4 | Besluta om budgetperiod och om plattformsavgifter ska räknas mot departementsbudgeten (fynd i 6b-1) | Båda |
+| 5 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare
 Inga.

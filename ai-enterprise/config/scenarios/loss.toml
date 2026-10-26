@@ -1,0 +1,31 @@
+# Förlustbringande initiativ: varje order kostar mer än den ger. Stop-loss ska lösa ut (§54 punkt 2–3).
+config_version = 1
+name = "loss"
+description = "Tryckta affischer där tryckkostnaden är högre än priset; mallarna går med vinst."
+seed = "loss-1"
+days = 20
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "tryckta-affischer"
+department = "research"
+track = "partnership"
+price = 2_000
+unit_cost = 3_500
+fee_fixed = 20
+fee_bp = 650
+visitors = 30
+conversion_bp = 1_000
+refund_bp = 500
+
+[[initiatives]]
+key = "etsy-mallar"
+department = "research"
+track = "partnership"
+price = 4_900
+unit_cost = 0
+fee_fixed = 20
+fee_bp = 650
+visitors = 40
+conversion_bp = 500
+refund_bp = 200

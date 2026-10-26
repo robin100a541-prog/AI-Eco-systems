@@ -1,0 +1,25 @@
+# Nödstopp mitt i en körning: CRO aktiverar nödstoppet dag 5 (SR-07). Inga nya transaktioner, inget raderas.
+config_version = 1
+name = "kill"
+description = "Normal försäljning; CRO trycker på nödstoppet dag 5."
+seed = "kill-1"
+days = 10
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "etsy-mallar"
+department = "research"
+track = "partnership"
+price = 4_900
+unit_cost = 0
+fee_fixed = 20
+fee_bp = 650
+visitors = 40
+conversion_bp = 500
+refund_bp = 200
+
+[[events]]
+day = 5
+kind = "kill_switch"
+role = "cro"
+note = "okända transaktioner på plattformskontot"

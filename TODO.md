@@ -11,7 +11,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [x] ai-enterprise Fas 5e: versionerade strategier (FR-18), migration 24, D-039 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5e-strategier)
 - [x] ai-enterprise Fas 5f: ingen avveckling för obekväma slutsatser (SR-17), D-040 — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/fas5f-sr17)
 - [x] ai-enterprise Fas 6a: koppla in spärrar, incidentlogg, prognoslogg och prestationsmätning i `python -m aie start` — @yorgo-jarjous (yorgo/fas6a-koppling)
-- [ ] ai-enterprise Fas 6b-1: simulerat startkapital, marknad och scenarier (FR-20), migration 26, D-042 — @yorgo-jarjous (yorgo/fas6b1-marknad)
+- [x] ai-enterprise Fas 6b-1: simulerat startkapital, marknad och scenarier (FR-20), migration 26, D-042 — @yorgo-jarjous (yorgo/fas6b1-marknad)
 - [ ] ai-enterprise Fas 6b-2: åtgärdsprotokoll och arbetscykel, `python -m aie simulate` (FR-20, FR-23), D-043, D-044 (behörighetsändring) — @yorgo-jarjous
 - [ ] ai-enterprise Fas 6b-3: daglig rapport och affärsförslag (FR-21, FR-23), D-045 — @yorgo-jarjous
 - [ ] ai-enterprise Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22), migration 27, D-046 — @yorgo-jarjous

@@ -1,0 +1,25 @@
+# Säkerhetsincident: revisionen anmäler ett misstänkt intrång dag 6 (SR-08). Försäljningen ska pausas.
+config_version = 1
+name = "intrusion"
+description = "Normal försäljning tills Audit anmäler ett intrång; skyddat driftläge stoppar ekonomiska handlingar."
+seed = "intrusion-1"
+days = 12
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "etsy-mallar"
+department = "research"
+track = "partnership"
+price = 4_900
+unit_cost = 0
+fee_fixed = 20
+fee_bp = 650
+visitors = 40
+conversion_bp = 500
+refund_bp = 200
+
+[[events]]
+day = 6
+kind = "security_incident"
+role = "auditor"
+note = "misstänkt intrång i plattformskontot"
