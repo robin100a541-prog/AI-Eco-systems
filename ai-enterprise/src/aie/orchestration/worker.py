@@ -22,6 +22,7 @@ from ..agents import AgentRegistry
 from ..audit import AuditLog
 from ..authorization import AuthorizationEngine
 from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable
+from ..authorization import PermissionDenied
 from ..llm.gateway import LLMGateway, SecretInPrompt
 from ..reporting import Claim, ClaimKind, Report, ReportError
 from ..security import ExternalContent
@@ -86,6 +87,9 @@ class AgentWorker:
         )
         try:
             response = self._llm.complete(self.agent_id, request)
+        except PermissionDenied as exc:  # t.ex. nödstopp (SR-07): uppgiften blockeras med skälet, inget skickas
+            blocked = self._board.block(self.agent_id, task_id, f"modellanrop nekat: {exc.decision.reason}")
+            return WorkResult(blocked, None, None)
         except SecretInPrompt:
             blocked = self._board.block(self.agent_id, task_id, "uppgiften innehåller en hemlighet; skickades inte till någon modell (SR-10)")
             return WorkResult(blocked, None, None)

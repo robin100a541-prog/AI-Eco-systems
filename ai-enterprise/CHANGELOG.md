@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 4e-2: nödstopp (SR-07)
+### Tillagt
+- Migration 16 `kill_switch_events`, append-only.
+- `src/aie/risk/killswitch.py`: `KillSwitch.engage`, `vote_release` och `state`.
+  - Spärrarna `tool_block_reason`, för `AuthorizationEngine(..., gates=...)`, och `spend_block_reasons`, för `BudgetEngine`.
+  - Under nödstopp är bara läsa, rapportera, verifiera, riskbedöma och stoppa tillåtet, och inga utgifter görs. Inget raderas.
+  - Återstart kräver två olika grundare och en intakt revisionslogg.
+- `python -m aie kill status|engage|release --as <grundare> --reason ...`.
+- `docs/operations.md`: den dokumenterade processen för nödstopp, stop-loss och återstart (§26, §38).
+- `AgentWorker` blockerar uppgiften med skälet om modellanropet nekas, till exempel under nödstopp, i stället för att krascha.
+- D-030 (föreslaget).
+- `tests/unit/test_killswitch.py`: 10 tester, bland annat CLI:t i en egen process. Hela sviten ger 428 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 4e-1: stop-loss (ER-13)
 ### Tillagt
 - Migration 15: `stop_loss_trips` och `stop_loss_votes`. Båda är append-only.

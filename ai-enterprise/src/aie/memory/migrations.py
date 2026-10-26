@@ -725,6 +725,31 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=16,
+        name="kill_switch",
+        statements=(
+            # Fas 4e-2 (SR-07, §38, D-030): nödstoppet (Yorgo). Bara händelser, append-only. Läget är
+            # den senaste av engaged/released; en återstart kräver två grundares release_vote efter engaged.
+            """
+            CREATE TABLE kill_switch_events (
+                id     INTEGER PRIMARY KEY,
+                event  TEXT NOT NULL CHECK (event IN ('engaged', 'release_vote', 'released')),
+                actor  TEXT NOT NULL,
+                reason TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                at     TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER kill_switch_events_no_update BEFORE UPDATE ON kill_switch_events
+            BEGIN SELECT RAISE(ABORT, 'nödstoppets händelser ändras aldrig'); END
+            """,
+            """
+            CREATE TRIGGER kill_switch_events_no_delete BEFORE DELETE ON kill_switch_events
+            BEGIN SELECT RAISE(ABORT, 'nödstoppets händelser raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
