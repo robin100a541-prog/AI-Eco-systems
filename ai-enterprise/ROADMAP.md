@@ -97,8 +97,8 @@ Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nöd
 | 4d Uppdelningsdetektering (ER-04, D-028) i budgetmotorn | Robin | ✅ gren `robin/fas4-uppdelning` |
 | 4e-1 Stop-loss (ER-13, §26), migration 15, D-029 | Yorgo | ✅ PR #46 |
 | 4e-2 Nödstopp / kill switch (SR-07, §38), migration 16, D-030; `python -m aie kill` | Yorgo | ✅ PR #47 |
-| 4e-3 Skyddat driftläge (SR-08, §59), migration 17, D-031 | Yorgo | ✅ gren `yorgo/fas4e-skyddat-lage` |
-| 4f Tax Engine (ER-18…21) | Robin (lämnad åt Robin, migration 18 och D-032 och uppåt) | ☐ |
+| 4e-3 Skyddat driftläge (SR-08, §59), migration 17, D-031 | Yorgo | ✅ PR #48 |
+| 4f Tax Engine (ER-18…21) | Robin (migration 21–22 efter omnumrering, D-032–D-034) | ☐ |
 
 **Acceptanskriterier Fas 4 (§52):**
 - [x] Budgetöverskridanden blockeras (`test_budget.py::test_budget_overrun_is_blocked`).
@@ -111,6 +111,21 @@ Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger �
 
 ## Fas 5 — Lärande och utvärdering (FR-15…19, SR-17)
 Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringsstatus, versionerade strategier.
+| Del | Vem | Status |
+|---|---|---|
+| 5a Incidentrapporter med de 16 fälten i §28 (FR-15), migration 18, D-035; varje stopp blir en incident | Yorgo | ✅ PR #51 |
+| 5b Prognoslogg och prognos mot utfall (FR-16, §20 steg 10), migration 19, D-036 | Yorgo | ✅ PR #52 |
+| 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ gren `yorgo/fas5c-prestation` |
+| 5d Lärdomsregister (FR-17) | Robin | ☐ |
+| 5e Versionerade strategier (FR-18) | Robin | ☐ |
+| 5f Ingen avveckling för obekväma slutsatser (SR-17) | Robin | ☐ |
+
+**Acceptanskriterier Fas 5 (§53):**
+- [x] Fel kan spåras till konkreta händelser (`test_incidents.py::TestFromStops`, källorna `stoploss:`, `kill:` och `mode:`).
+- [x] Prognoser kan jämföras med utfall (`test_forecasts.py::TestAutomaticComparison`).
+- [ ] Lärdomar kan granskas (FR-17, Robin).
+- [ ] Strategiförändringar kan återställas (FR-18, Robin).
+- [ ] En obekräftad hypotes blir inte automatiskt en obligatorisk regel (FR-17, Robin).
 
 ## Fas 6 — Affärssimulering (FR-20…24)
 Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar.

@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-037 Prestationsmätning: rollprofiler enligt §31, ingen totalpoäng, den som hittar fel straffas aldrig
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-035, D-036 · **Gäller:** FR-19, §31, §33
+- **Beslut:**
+  1. `PerformanceReview.scorecard()` mäter varje agent med rollens profil (`PROFILES`). Måtten är måluppfyllelse (uppgifter), prognosprecision (prognosloggen, med trend), ekonomiskt bidrag (ledgerns nettovinst för departementet, för CEO hela företaget), regelefterlevnad, felhantering, riskidentifiering (CRO) och verifierade incidenter.
+  2. Kontrollfunktionerna (nivå 2) mäts aldrig på ekonomiskt bidrag. Arbetsagenter i research mäts inte heller på det. Granskande roller mäts på hur väl de hittar problem.
+  3. Att rapportera en incident räknas som ett bidrag och ger aldrig ett sämre värde. En incident räknas mot en involverad agent först när den är verifierad (fält 16).
+  4. Regelefterlevnad räknar bara försök att använda verktyg utanför rollens mandat. Nekanden från nödstopp, skyddat läge, stop-loss eller avstängning räknas inte.
+  5. Det finns ingen sammanvägd totalpoäng. Det som §31 nämner men som ännu inte kan mätas (kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation) listas öppet.
+  6. `review()` sparar en ögonblicksbild som aldrig ändras (migration 20). Den görs av grundarna eller nivå 1–3, aldrig av agenten själv, och ändrar aldrig agentens tillstånd. Prövning och avstängning är egna beslut (§33, SR-17).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-036 Prognoslogg: prognoser skrivs aldrig om, utfall från ledgern jämförs automatiskt, ingen bedömer sin egen prognos
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-006, D-020, D-024 · **Gäller:** FR-16, §20 steg 10, ER-11
 - **Beslut:**

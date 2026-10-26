@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 4 — Ekonomisk kontroll. 4a–4e är klara: ledger, budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp och skyddat driftläge. **Kvar: Tax Engine (4f, Robin).** Fas 3 är byggd och acceptanstestad (§51) och väntar bara på Robins godkännande av D-025.
-**Fasstatus:** Fas 1–3 och Fas 4a–4e är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Aktuell fas:** Fas 4 och 5 pågår parallellt. Fas 4a–4e är klara. **Kvar i Fas 4: Tax Engine (4f, Robin).** Fas 5a–5c är klara: incidentrapporter, prognoslogg och prestationsmätning. **Kvar i Fas 5: FR-17, FR-18 och SR-17 (Robin).** Fas 3 är byggd och acceptanstestad (§51) och väntar bara på Robins godkännande av D-025.
+**Fasstatus:** Fas 1–3, Fas 4a–4e och Fas 5a–5c är mergade till `main`. Acceptanstester finns för §49, §50 och §51. Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -87,9 +87,24 @@
 - **Spärrar:** `BudgetEngine` och `AuthorizationEngine` har den nya valfria parametern `gates=`. Där kopplas stop-loss, nödstopp och skyddat driftläge in. En spärr som inte kan avgöra ger nej (§59).
 - **`docs/operations.md`:** den dokumenterade processen för nödstopp, stop-loss och återstart.
 
+## Ändrat 2026-10-26 (Yorgo: Fas 5a–5c)
+- **Godkännanden:** Yorgo godkände D-029–D-031 (PR #49). De väntar på Robin.
+- **Nummer:** Tax Engine var inte påbörjad, så Fas 5a–5c tog migration 18–20 i stället för 20–22. Robin får 21–22. Det står i TODO.md.
+- **5a incidentrapporter** (PR #51): `evaluation/incidents.py`, migration 18 och D-035.
+  - Alla 16 fälten i §28 finns, och fälten ändras bara genom rättelseposter.
+  - Stop-loss, nödstopp och skyddat driftläge skapar automatiskt en incident när de kopplas med `incidents=`. `sync()` hittar stopp som skett utan koppling.
+- **5b prognoslogg** (PR #52): `evaluation/forecasts.py`, migration 19 och D-036.
+  - Utfall för ledgermått hämtas automatiskt, men aldrig från ett preliminärt resultat.
+  - En revidering är en ny prognos.
+- **5c prestationsmätning:** `evaluation/performance.py`, migration 20 och D-037.
+  - Varje roll har en profil, och det finns ingen totalpoäng.
+  - Den som rapporterar fel krediteras, och bara verifierade incidenter räknas mot de involverade.
+- **Fas 5-acceptans (§53):** två av fem kriterier är uppfyllda. De tre andra hör till Robins FR-17 och FR-18.
+
 ## Vad som INTE är gjort / inte verifierat
 - Spärrarna kopplas inte in automatiskt i `python -m aie start`. Den som bygger en `AuthorizationEngine` eller `BudgetEngine` måste skicka med `gates=`. `python -m aie kill` fungerar fristående. Att koppla in alla spärrar i körningen är kvar till Fas 6, när systemet kör agenter i en arbetscykel.
-- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (443 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
+- `IncidentLog`, `ForecastLog` och `PerformanceReview` kopplas inte in i `python -m aie start`, precis som spärrarna. Det görs i Fas 6. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
+- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
 - Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
 - När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
 - Groq-testet (0.10) är inte gjort. D-005–D-012 är inte beslutade (0.8); Q-01 är besvarad av D-019.
@@ -99,11 +114,12 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-025, D-027 och D-028 | Robin |
-| 2 | Godkänna D-029, D-030 och D-031 (stop-loss, nödstopp, skyddat driftläge) | Båda |
-| 3 | Fas 4f: Tax Engine (ER-18–21), migration 18 och D-032 och uppåt | Robin |
-| 4 | Fas 4-acceptanstester för §52, när 4f är klar | Den som tar det i `TODO.md` |
-| 5 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 1 | Godkänna D-025, D-027, D-028 och D-029–D-031 | Robin |
+| 2 | Godkänna D-035–D-037 (incidenter, prognoser, prestationsmätning) | Båda |
+| 3 | Fas 4f: Tax Engine (ER-18–21), migration 21–22, D-032–D-034 | Robin |
+| 4 | Fas 5: lärdomsregister (FR-17), versionerade strategier (FR-18) och SR-17, med nästa lediga migration och D-038 och uppåt | Robin |
+| 5 | Fas 4-acceptanstester för §52, när 4f är klar | Den som tar det i `TODO.md` |
+| 6 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare
 Inga.
