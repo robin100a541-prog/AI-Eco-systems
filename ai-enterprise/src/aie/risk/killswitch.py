@@ -60,7 +60,9 @@ class KillSwitch:
         founders: frozenset[str],
         components: frozenset[str] = frozenset(),
         clock: Callable[[], str] = _now,
+        incidents=None,
     ) -> None:
+        """`incidents`: en `IncidentLog`; varje aktivering blir då en incident (FR-15, Fas 5a)."""
         self._db = db
         self._registry = registry
         self._permissions = permissions
@@ -68,6 +70,7 @@ class KillSwitch:
         self._founders = frozenset(founders)
         self._components = frozenset(components)
         self._clock = clock
+        self._incident_log = incidents
 
     # --- Kommandon -------------------------------------------------------------------------
 
@@ -80,6 +83,8 @@ class KillSwitch:
             return state  # redan aktivt; ingen ny händelse behövs
         self._event("engaged", actor, reason)
         self._audit.append(actor, "kill.engaged", {"reason": reason, "notify": ["founders", "role:cro", "role:auditor"]})
+        if self._incident_log is not None:
+            self._incident_log.sync()
         return self.state()
 
     def vote_release(self, founder: str, reason: str) -> KillState:

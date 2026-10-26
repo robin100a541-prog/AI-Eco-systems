@@ -775,6 +775,51 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=18,
+        name="incidents",
+        statements=(
+            # Fas 5a (FR-15, §28, D-035): incidentrapporter (Yorgo). Reserverad som 20, numrerad om till 18
+            # eftersom Tax Engine (18–19) inte hade börjat; se TODO.md. Kärnan ändras aldrig. Fälten är
+            # append-only poster; en rättelse är en ny post som pekar på den gamla (corrects).
+            """
+            CREATE TABLE incidents (
+                incident_id INTEGER PRIMARY KEY,
+                source      TEXT NOT NULL UNIQUE,
+                title       TEXT NOT NULL CHECK (length(trim(title)) > 0),
+                reported_by TEXT NOT NULL,
+                opened_at   TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER incidents_no_update BEFORE UPDATE ON incidents
+            BEGIN SELECT RAISE(ABORT, 'en incident skrivs aldrig om; lägg till en post'); END
+            """,
+            """
+            CREATE TRIGGER incidents_no_delete BEFORE DELETE ON incidents
+            BEGIN SELECT RAISE(ABORT, 'incidenter raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE incident_entries (
+                id          INTEGER PRIMARY KEY,
+                incident_id INTEGER NOT NULL REFERENCES incidents (incident_id),
+                field       TEXT NOT NULL,
+                value       TEXT NOT NULL CHECK (json_valid(value)),
+                actor       TEXT NOT NULL,
+                corrects    INTEGER REFERENCES incident_entries (id),
+                at          TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER incident_entries_no_update BEFORE UPDATE ON incident_entries
+            BEGIN SELECT RAISE(ABORT, 'incidentposter är append-only; gör en rättelse'); END
+            """,
+            """
+            CREATE TRIGGER incident_entries_no_delete BEFORE DELETE ON incident_entries
+            BEGIN SELECT RAISE(ABORT, 'incidentposter raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

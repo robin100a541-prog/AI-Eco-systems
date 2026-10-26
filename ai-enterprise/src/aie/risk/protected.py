@@ -75,7 +75,9 @@ class ProtectedMode:
         founders: frozenset[str],
         kill_switch=None,
         clock: Callable[[], str] = _now,
+        incidents=None,
     ) -> None:
+        """`incidents`: en `IncidentLog`; varje inträde i skyddat läge blir då en incident (FR-15, Fas 5a)."""
         self._db = db
         self._ledger = ledger
         self._registry = registry
@@ -86,6 +88,7 @@ class ProtectedMode:
         self._founders = frozenset(founders)
         self._kill = kill_switch
         self._clock = clock
+        self._incident_log = incidents
 
     # --- Bedömning -----------------------------------------------------------------------
 
@@ -179,6 +182,8 @@ class ProtectedMode:
             reasons = [text for _, text in findings]
             self._event("entered", COMPONENT, reasons)
             self._audit.append(COMPONENT, "mode.protected_entered", {"reasons": reasons, "notify": ["founders"]})
+            if self._incident_log is not None:
+                self._incident_log.sync()
             state = self.state()
         if self._kill is not None and any(code in _BOOKKEEPING for code, _ in findings):
             self._kill.engage(COMPONENT, "bokföringen går inte att lita på: " +

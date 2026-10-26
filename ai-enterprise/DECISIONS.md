@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-035 Incidentrapporter: 16 fält enligt §28, bara rättelseposter, varje stopp blir en incident
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-020, D-029, D-030, D-031 · **Gäller:** FR-15, §28, §31, §33
+- **Beslut:**
+  1. `IncidentLog` har de 16 fälten i §28 i samma ordning. Incident-ID och datum sätts automatiskt, och resten fylls i efter hand.
+  2. Inget raderas eller skrivs om. Varje fält är en append-only post (migration 18). En ändring av ett ifyllt fält är en rättelse: en ny post som pekar på den gamla och har en motivering.
+  3. Alla agenter som får agera kan öppna en incident. Grundarna, rapportören och agenter på nivå 1–3 kan skriva i den.
+  4. Fält 16 (verifiering) fylls i sist, och inte av den som är ansvarig för uppföljningen (fält 15).
+  5. Varje stop-loss-utlösning (D-029), nödstopp (D-030) och inträde i skyddat driftläge (D-031) blir automatiskt en incident med förifyllda fält. `sync()` skapar aldrig dubbletter.
+  6. Den som rapporterar ett fel räknas inte som involverad (§31, §33). `involving()` visar bara incidenter där agenten finns i fält 4.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-031 Skyddat driftläge: sju villkor i §59, automatiskt inträde, en grundare lämnar när skälen är borta
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-027, D-030 · **Gäller:** SR-08, §59
 - **Beslut:**
