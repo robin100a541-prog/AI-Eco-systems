@@ -372,6 +372,31 @@ class DisputeBoard:
         )
         return self.get(dispute_id)
 
+    def resolve_approved(
+        self, approvers: Sequence[str], dispute_id: int, accept_proposal: bool, resolution: str
+    ) -> Dispute:
+        """Avgör en tvist som grundarna har godkänt i godkännandekön (D-019).
+
+        Hårda gränser gäller även här: ett förslag som bryter mot dem kan aldrig godtas,
+        bara avslås. Gränserna ändras bara i risk_limits.toml.
+        """
+        if not approvers or not set(approvers) <= self._founders:
+            raise DisputeError("bara grundare kan avgöra via godkännandekön")
+        dispute = self.get(dispute_id)
+        if dispute is None or dispute.status is DisputeStatus.RESOLVED:
+            raise DisputeError(f"tvist {dispute_id} finns inte eller är redan avgjord")
+        if accept_proposal:
+            violations = hard_limit_violations(self._limits, dispute.proposal_budget, dispute.proposal_risk_class)
+            if violations:
+                raise HardLimitViolation(dispute_id, violations)
+        actor = "+".join(sorted(set(approvers)))
+        with self._db.transaction() as tx:
+            tx.execute("UPDATE disputes SET status = 'resolved' WHERE dispute_id = ?", (dispute_id,))
+            verdict = "förslaget godtas" if accept_proposal else "förslaget avslås"
+            self._event(tx, dispute_id, "resolved", actor, f"{verdict} av grundarna: {resolution.strip()}", self._clock())
+        self._audit.append(actor, "dispute.resolved", {"dispute_id": dispute_id, "accepted": accept_proposal, "votes": 0})
+        return self.get(dispute_id)
+
     def escalate(
         self, actor: str, dispute_id: int, reason: str, level: Level | None = None
     ) -> Level:

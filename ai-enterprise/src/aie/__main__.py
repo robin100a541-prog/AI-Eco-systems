@@ -6,6 +6,8 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `start`         starta systemet och kör tills `stop`, Ctrl+C eller SIGTERM (Fas 1.6)
 - `stop`          be det körande systemet stanna och vänta tills det har stängt ned (Fas 1.6)
 - `status`        visa driftläget och kontrollera revisionsloggen (Fas 1.6)
+- `approvals`     grundarnas godkännandekö (Fas 3, D-019)
+- `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
 gäller relativt mappen kommandot körs från.
@@ -98,7 +100,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="hur länge stop väntar innan det ger upp med kod 1 (standard: 30)",
     )
     add("status", "visa driftläget och kontrollera revisionsloggen")
+    approvals = add("approvals", "grundarnas godkännandekö: list, approve eller reject (D-019)")
+    approvals.add_argument("action", choices=("list", "approve", "reject"))
+    approvals.add_argument("request_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
+    approvals.add_argument("--as", dest="founder", help="vilken grundare som röstar (en av founders i system.toml)")
+    approvals.add_argument("--note", default="", help="motivering; krävs vid reject")
+    manual = add("manual", "manuella svar till manual-providern: list, show eller answer (D-005)")
+    manual.add_argument("action", choices=("list", "show", "answer"))
+    manual.add_argument("request_id", nargs="?", help="förfrågans id (för show och answer)")
+    manual.add_argument("--as", dest="founder", help="vilken grundare som svarar (en av founders i system.toml)")
+    manual.add_argument("--file", dest="answer_file", help="fil med svaret, eller - för stdin")
     return parser
+
+
+def _manual(args: argparse.Namespace) -> int:
+    from .llm.cli import manual  # importeras bara när kommandot används
+
+    if args.action != "list" and not args.request_id:
+        print("FEL: show och answer kräver förfrågans id", file=sys.stderr)
+        return 1
+    return manual(args.config_dir, args.action, args.request_id, args.founder, args.answer_file)
+
+
+def _approvals(args: argparse.Namespace) -> int:
+    from .governance.cli import approvals  # importeras bara när kommandot används
+
+    if args.action != "list" and (args.request_id is None or not args.founder):
+        print("FEL: approve och reject kräver förfrågans nummer och --as <grundare>", file=sys.stderr)
+        return 1
+    return approvals(args.config_dir, args.action, args.request_id, args.founder, args.note)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -109,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
         "start": lambda: runtime.start(args.config_dir, args.poll_seconds),
         "stop": lambda: runtime.stop(args.config_dir, args.wait_seconds),
         "status": lambda: runtime.status(args.config_dir),
+        "approvals": lambda: _approvals(args),
+        "manual": lambda: _manual(args),
     }
     try:
         return commands[args.command]()

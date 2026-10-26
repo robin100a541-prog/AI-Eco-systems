@@ -30,6 +30,14 @@ model = "llama3.2"
 daily_calls = 10000
 daily_tokens = 10000000
 
+# Manuell leverantör (D-005, D-022): en grundare kör prompten i Claude och klistrar in svaret med
+# `python -m aie manual answer`. Bara public-data. Avstängd som standard; ta bort # för att slå på.
+# [[providers]]
+# name = "manual"
+# kind = "manual"
+# daily_calls = 20
+# daily_tokens = 200000
+
 # Deterministisk reserv i ren Python. Används i tester och när allt annat är slut i sim.
 [[providers]]
 name = "rule"

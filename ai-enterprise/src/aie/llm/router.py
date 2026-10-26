@@ -28,6 +28,7 @@ from ..audit import AuditLog
 from ..config import ConfigError
 from ..config.loader import is_secret_key
 from ..memory import Database
+from .manual import ManualInbox, ManualProvider
 from .providers import (
     KINDS,
     ChatRequest,
@@ -41,7 +42,7 @@ from .providers import (
 )
 
 PROVIDERS_FILE = "providers.toml"
-ALLOWED_KINDS = (*KINDS, "rule")
+ALLOWED_KINDS = (*KINDS, "rule", "manual")
 PROVIDER_KEYS = ("name", "kind", "model", "daily_calls", "daily_tokens", "base_url")
 _NAME = re.compile(r"[a-z][a-z0-9_-]*")
 
@@ -135,10 +136,12 @@ def load_providers(
     config_dir: Path | str = "config",
     environ: Mapping[str, str] = os.environ,
     transport: Transport = urllib_transport,
+    manual_dir: Path | str | None = None,
 ) -> tuple[tuple[Slot, ...], tuple[str, ...]]:
     """Läser `providers.toml`. Returnerar (leverantörer i prioritetsordning, överhoppade med skäl).
 
-    En leverantör vars nyckel saknas i miljön hoppas över (det är inget fel). Allt annat som
+    En leverantör vars nyckel saknas i miljön hoppas över (det är inget fel). Samma sak gäller
+    `manual` när ingen inkorg (`manual_dir`) är angiven. Allt annat som
     är fel i filen samlas och kastas som `ConfigError`.
     """
     path = Path(config_dir) / PROVIDERS_FILE
@@ -193,7 +196,7 @@ def load_providers(
             error(f"{where}: kind = {kind!r} är inte tillåten (tillåtna: {', '.join(ALLOWED_KINDS)}; "
                   "betalda API:er är spärrade enligt D-009)")
             ok = False
-        if kind != "rule" and (not isinstance(model, str) or not model.strip()):
+        if kind not in ("rule", "manual") and (not isinstance(model, str) or not model.strip()):
             error(f"{where}: model saknas")
             ok = False
         if kind == "openrouter" and isinstance(model, str) and not model.endswith(":free"):
@@ -214,6 +217,11 @@ def load_providers(
             continue
         if kind == "rule":
             provider: Provider = RuleProvider(name)
+        elif kind == "manual":
+            if manual_dir is None:
+                skipped.append(f"{name}: ingen inkorg för manual angiven; leverantören hoppas över")
+                continue
+            provider = ManualProvider(name, ManualInbox(manual_dir))
         else:
             key_env = KINDS[kind][1]
             api_key = environ.get(key_env) if key_env else None

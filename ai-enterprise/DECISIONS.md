@@ -8,6 +8,91 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-025 "Utred möjlighet": fast ordning, osäkert räknas som risk, skatt kräver Skatteverket
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
+- **Beslut:**
+  1. Ett utredningsärende (kanal, verktyg, gratis-API, intäktsväg, skatt, villkor, licens eller marknad) går alltid i ordningen **Research → Compliance → CFO → grundarna**. Inget steg kan hoppas över (migration 14, `collaboration/opportunities.py`).
+  2. Ärendet öppnas av grundarna eller nivå 1–3. Fynden lämnas av Research (departementet research med `research.search`) med minst en källa (`url:` eller `file:`). De är alltid en **obekräftad hypotes** (§29).
+  3. Compliance svarar `ok`, `not_ok` eller `uncertain`. **`uncertain` skickar ärendet tillbaka till Research** (§17: osäkerhet är risk, inte OK). `not_ok` avslutar ärendet som avvisat.
+  4. CFO räknar fram förväntat netto efter avgifter och skatt, i heltal i minsta enhet. Det kan vara negativt.
+  5. Grundarna godkänner eller avvisar. En **skattefråga** kan bara godkännas om någon källa är Skatteverket (`skatteverket.se`) eller en rådgivares underlag (`file:`). Godkända skatte-, villkors- och licensfrågor får status `approved_rule`, övriga `approved`.
+  6. Ärendet kan valfritt hänvisa till en fråga i `research/QUESTIONS.md` (`R-01` …). Varje fråga utreds i högst ett ärende.
+  7. Stegen är append-only, ett avslutat ärende ändras aldrig och allt loggas i revisionsloggen. Agenterna föreslår bara. De skapar inga konton, godkänner inga villkor och väljer inget skattespår (D-011).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-028 Uppdelade köp: samma initiativ, sju dagar, grundarna avgör
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-019, D-026
+- **Beslut:**
+  1. Budgetmotorn summerar utgifter (kostnader och avgifter, väntade och genomförda) i **samma affärsinitiativ** som registrerats de senaste **sju dagarna** och som inte behövde godkännande, plus den nya utgiften.
+  2. Om summan passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`, men den nya utgiften inte gör det själv, flaggas den som möjlig uppdelning (ER-04, §5).
+  3. En flaggad utgift blockeras inte automatiskt, eftersom flera små köp kan vara helt legitima. Den behandlas som hela summan och kräver **båda grundarna** (D-019). Flaggan revideras.
+  4. Köp som grundarna redan har godkänt räknas inte, eftersom de inte kan vara ett försök att slippa godkännande.
+  5. Ledgern har inget motpartsfält än, så motpart används inte. Fönstret på sju dagar står i koden (`SPLIT_WINDOW`); att ändra det kräver ett nytt beslut.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-027 Kapitalbegreppen räknas från ledgern; reserven skyddas av budgetmotorn
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-024, D-026
+- **Beslut:**
+  1. Kapital finns bara om det finns i ledgern. `START_CAPITAL` i `risk_limits.toml` är en gräns, inte pengar; startkapitalet ska registreras som en `capital_in`-post, godkänd med hänvisning till beslutet.
+  2. De sju begreppen i §23 räknas från ledgern i en valuta i taget: likvida medel (genomförda in- och utbetalningar), bundet kapital, totalt, skyddad reserv (`MINIMUM_RESERVE`), åtaget (väntade utbetalningar), disponibelt (likvida − reserv − åtaget, aldrig under 0) och återinvesterbart.
+  3. Bundet kapital är 0 tills ledgern får tillgångsposter. En tillgång räknas aldrig som likvid (§23).
+  4. Återinvesterbar vinst är 0 tills Tax Engine (4f) kan reservera skatten (ER-19). Vinst före skatt är inte disponibel för återinvestering.
+  5. Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet. Ett godkännande från grundarna låser inte upp reserven; att använda den kräver att gränsen ändras, vilket kräver båda (D-019 punkt 3). Saknas `MINIMUM_RESERVE` blockeras alla utgifter (ER-02).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-026 Departementsbudgetar och budgetmotorn
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-009, D-019, D-024 · **Ändrar:** ny konfigurationsfil `config/budgets.toml` (en ändring i gränserna, därför krävs båda grundarna enligt D-019 punkt 3)
+- **Beslut:**
+  1. Varje departement har i `config/budgets.toml` en budget, ett maxåtagande (väntade utgifter samtidigt), ett riskutrymme (low, medium eller high) och ett användningsområde (ER-17). Ett departement utan post får inga utgifter (ER-02).
+  2. Föreslagna värden i SIM: Research 50 000 (åtagande 20 000, medium), Executive 20 000 (10 000, low), Finance 10 000 (5 000, low), Risk, Compliance och Audit 5 000 vardera (2 000, low). Summan är 95 000.
+  3. Ingen budget får överstiga `MAX_DEPARTMENT_BUDGET`, och summan får inte överstiga `START_CAPITAL − MINIMUM_RESERVE`, så att budgetarna aldrig äter av den skyddade reserven (§5).
+  4. Budgeten räknas på kostnader och avgifter i ledgern, väntade och genomförda, med korrigeringar. Budgetarna gäller tills vidare för hela miljöns livstid; perioder (till exempel per månad) kräver ett nytt beslut.
+  5. `BudgetEngine.check()` körs före varje ekonomisk handling (ER-03) och blockerar vid överskriden budget, maxåtagande, `MAX_SINGLE_TRANSACTION`, `MAX_COMMITTED_CAPITAL`, riskutrymme, riskklass `critical`, saknad gräns och `API_SPEND`. Över `HUMAN_APPROVAL_THRESHOLD` är svaret nej tills båda grundarna har godkänt (D-019).
+  6. `API_SPEND` är alltid spärrad tills Tax Engine (4f) kan visa realiserad nettovinst efter skatt (ER-22, D-009).
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
+### D-024 Ledgern: vem skriver, fakta avvisas aldrig, nettovinst bara från genomförda poster
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-006, D-019, D-021
+- **Beslut:**
+  1. I Fas 4a skriver bara grundarna och uttryckligen angivna systemkomponenter (`system:<namn>`, till exempel `system:payments`) i ledgern. Agenter skriver inte där. Läsa får grundarna och agenter med `ledger.read` (CFO, Audit). Ingen ändring i `permissions.toml`.
+  2. Ledgern registrerar det som har hänt. En kostnad som redan skett avvisas aldrig för att den bryter mot en gräns, eftersom det skulle gömma ett faktum. Att stoppa en handling innan den sker är budgetmotorns uppgift (ER-03, 4b).
+  3. Godkännandestatus är `not_required`, `approved` (underlaget pekar på `approval:` eller `decision:`) eller `unapproved`. En utgående post över `HUMAN_APPROVAL_THRESHOLD`, eller vilken utgående post som helst när gränsen saknas, får inte vara `not_required` (ER-14, ER-02). `unapproved` visas som avvikelse i resultatet.
+  4. Nettovinst = intäkter − återbetalningar − kostnader − avgifter, räknat bara på poster med status `settled`, i en valuta i taget. Kapitalrörelser räknas inte. Resultatet är preliminärt när något i urvalet väntar eller när ett initiativ har intäkter men inga kostnader eller avgifter (ER-09, ER-11).
+  5. Audit räknar om resultatet med en separat SQL-fråga direkt mot tabellerna (ER-16). CFO saknar `audit.verify` och granskar därför inte sin egen rapport (§18).
+  6. Idempotensnyckel krävs på varje post. Samma nyckel och samma innehåll ger den befintliga posten; annat innehåll eller ett externt ID som redan finns avvisas (ER-07, SR-12).
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
+### D-023 Uppgifter tilldelas bara nedåt i befälskedjan
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-020 · **Ändrar:** tilldelningsregeln i `TaskBoard.assign` (FR-07, Yorgos kod)
+- **Beslut:**
+  1. En agent med `task.assign` får bara ge en uppgift till en agent som har den som chef, chefs chef och så vidare (rapportvägarna i D-020). En departementschef fördelar alltså arbete inom sitt team (§8 nivå 3). CEO fördelar till departementscheferna och deras agenter (§8 nivå 1).
+  2. CEO kan inte ge uppgifter till kontrollfunktionerna (CFO, CRO, Compliance, Audit), eftersom de rapporterar till grundarna och ska vara oberoende (§8 nivå 2).
+  3. Vid byte av ägare gäller regeln både den gamla och den nya ägaren. Ingen tar en uppgift från ett annat team. Ägaren själv får lämna sin uppgift vidare nedåt (till exempel CEO till en departementschef).
+  4. Grundarna får tilldela vem som helst.
+  5. En juridisk hållning (SR-16) prövas före regeln, så att rätt skäl visas.
+- **Motivering:** §51 kräver att uppgifter går till rätt ansvarig roll. Före ändringen kunde Research-chefen ge uppgifter till CFO och till sin egen chef, CEO.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
+### D-022 `manual`-provider: grundaren kör prompten i Claude och klistrar in svaret
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-005, D-008, D-009, D-021
+- **Beslut:**
+  1. `kind = "manual"` är en tillåten leverantör i `config/providers.toml`. Den är avstängd som standard (bortkommenterad).
+  2. Providern anropar inget API. Den lägger förfrågan i `<data_dir>/manual/<miljö>/` och väntar. En grundare (`founders`, D-021) läser den med `python -m aie manual show`, kör den själv i Claude och lämnar svaret med `python -m aie manual answer`. Nästa körning av samma förfrågan får svaret.
+  3. Prompten lämnar datorn via grundaren, så providern räknas som extern och tar bara emot data som är klassad `public` (DR-13).
+  4. Den har dagsgränser som alla andra leverantörer (ER-02). Svar med något som ser ut som en hemlighet avvisas (SR-10). Svaren och nekade försök revideras, men aldrig texten.
+- **Motivering:** ROADMAP Fas 3 inför `manual`. D-005 tillät den men är ersatt av D-008, som inte nämner den. Grundarnas Claude-abonnemang används för hand och kostar inget extra, så D-009 (inga betalda API:er) gäller fortfarande.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
+### D-021 Grundarna står i konfigurationen; godkännandekön följer D-019
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-23 · **Bygger på:** D-019, D-020
+- **Beslut:**
+  1. `config/system.toml` får den valfria nyckeln `founders`, en lista med grundarnas id (små bokstäver, siffror, `-` och `_`). Nu `["robin", "yorgo"]`. Godkännandekön startar inte med färre än två grundare.
+  2. Det som ligger utanför en agents mandat eller över `HUMAN_APPROVAL_THRESHOLD` hamnar i grundarnas godkännandekö (migration 12, `approval_requests` och `approval_votes`). Kön räknar ut hur många som krävs enligt D-019: en grundare upp till gränsen, båda över den, och båda för ändringar i konstitution, gränser eller mandat.
+  3. Varje grundare röstar högst en gång per förfrågan. Ett nej från en grundare avslår förfrågan och kräver en motivering.
+  4. En tvist vars förslag bryter mot en hård gräns (§21) kan inte godkännas, inte ens av båda grundarna. Den kan bara avslås, eller så ändras gränsen först (D-019 punkt 3).
+  5. Röster, godkännanden, avslag och nekade försök skrivs till revisionsloggen. Förfrågningar raderas aldrig, och en avgjord förfrågan ändras aldrig.
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
+
 ### D-020 Hierarkin i koden: nivåer per roll, fasta rapportvägar, skyddade styrverktyg
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-23 · **Bygger på:** D-017, D-019 · **Ändrar:** formatet för `permissions.toml` (D-017): ny obligatorisk nyckel `level`
 - **Beslut:**
@@ -18,7 +103,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
      - En arbetsagent rapporterar till en chef på nivå 2 eller 3 i samma departement.
   3. Verktyg vars namn börjar med `governance.` (ändra konstitution, gränser eller mandat) kan stå i katalogen men aldrig ges till en roll. Ett sådant mandat är ett konfigurationsfel. Authorization Engine nekar dem alltid och loggar försöket (SR-04). Ändringarna görs bara av grundarna via PR, och enligt D-019 punkt 3 krävs båda.
   4. Ny roll `compliance` på nivå 2. Den behövs för SR-16 och flödet i D-011.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Yorgo ☐ · Robin ☑ (2026-10-25)
 
 ### D-019 Grundarnas beslutsrätt (besvarar Q-01)
 - **Status:** Godkänd · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016

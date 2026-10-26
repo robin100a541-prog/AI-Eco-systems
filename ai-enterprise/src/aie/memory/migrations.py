@@ -502,6 +502,121 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(
         version=12,
+        name="approvals",
+        statements=(
+            # Fas 3 (FR-13, D-019): grundarnas godkännandekö (Robin). En förfrågan kräver 1 eller 2
+            # grundare enligt D-019. Rösterna är append-only; en avgjord förfrågan ändras aldrig.
+            """
+            CREATE TABLE approval_requests (
+                request_id         INTEGER PRIMARY KEY,
+                kind               TEXT NOT NULL CHECK (kind IN ('decision', 'dispute', 'governance')),
+                task_id            INTEGER NOT NULL REFERENCES tasks (task_id),
+                dispute_id         INTEGER REFERENCES disputes (dispute_id),
+                requested_by       TEXT NOT NULL,
+                reason             TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                amount_minor       INTEGER NOT NULL CHECK (amount_minor >= 0),
+                currency           TEXT NOT NULL,
+                required_approvals INTEGER NOT NULL CHECK (required_approvals IN (1, 2)),
+                payload            TEXT NOT NULL CHECK (json_valid(payload)),
+                status             TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
+                outcome_decision   INTEGER REFERENCES decisions (decision_id),
+                created_at         TEXT NOT NULL,
+                decided_at         TEXT,
+                CHECK (kind != 'dispute' OR dispute_id IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER approval_requests_no_delete BEFORE DELETE ON approval_requests
+            BEGIN SELECT RAISE(ABORT, 'förfrågningar i godkännandekön raderas aldrig'); END
+            """,
+            """
+            CREATE TRIGGER approval_requests_final BEFORE UPDATE ON approval_requests
+            WHEN OLD.status != 'pending'
+            BEGIN SELECT RAISE(ABORT, 'en avgjord förfrågan kan inte ändras'); END
+            """,
+            """
+            CREATE TABLE approval_votes (
+                id         INTEGER PRIMARY KEY,
+                request_id INTEGER NOT NULL REFERENCES approval_requests (request_id),
+                founder    TEXT NOT NULL,
+                verdict    TEXT NOT NULL CHECK (verdict IN ('approve', 'reject')),
+                note       TEXT NOT NULL,
+                at         TEXT NOT NULL,
+                UNIQUE (request_id, founder)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER approval_votes_no_update BEFORE UPDATE ON approval_votes
+            BEGIN SELECT RAISE(ABORT, 'approval_votes är append-only'); END
+            """,
+            """
+            CREATE TRIGGER approval_votes_no_delete BEFORE DELETE ON approval_votes
+            BEGIN SELECT RAISE(ABORT, 'approval_votes är append-only'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=13,
+        name="ledger",
+        statements=(
+            # Fas 4a (§40, ER-06–08, ER-15, SR-12): ledgern (Robin). En post ändras eller raderas aldrig.
+            # Fel rättas med en korrigeringspost (`corrects`). Status ändras bara framåt, som händelser.
+            """
+            CREATE TABLE ledger_entries (
+                entry_id        INTEGER PRIMARY KEY,
+                idempotency_key TEXT NOT NULL UNIQUE CHECK (length(trim(idempotency_key)) > 0),
+                recorded_at     TEXT NOT NULL,
+                recorded_by     TEXT NOT NULL CHECK (length(trim(recorded_by)) > 0),
+                department      TEXT NOT NULL CHECK (length(trim(department)) > 0),
+                amount_minor    INTEGER NOT NULL CHECK (amount_minor != 0),
+                currency        TEXT NOT NULL CHECK (length(currency) = 3 AND currency = upper(currency)),
+                entry_type      TEXT NOT NULL CHECK (entry_type IN
+                                ('revenue', 'cost', 'fee', 'refund', 'capital_in', 'capital_out')),
+                initiative      TEXT NOT NULL CHECK (length(trim(initiative)) > 0),
+                approval_status TEXT NOT NULL CHECK (approval_status IN ('not_required', 'approved', 'unapproved')),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                external_id     TEXT UNIQUE,
+                corrects        INTEGER REFERENCES ledger_entries (entry_id),
+                note            TEXT NOT NULL,
+                CHECK (amount_minor > 0 OR corrects IS NOT NULL)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER ledger_entries_no_update BEFORE UPDATE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter ändras aldrig; gör en korrigeringspost (ER-08)'); END
+            """,
+            """
+            CREATE TRIGGER ledger_entries_no_delete BEFORE DELETE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter raderas aldrig (ER-08)'); END
+            """,
+            """
+            CREATE TABLE ledger_status (
+                id       INTEGER PRIMARY KEY,
+                entry_id INTEGER NOT NULL REFERENCES ledger_entries (entry_id),
+                status   TEXT NOT NULL CHECK (status IN ('pending', 'settled', 'failed', 'cancelled')),
+                actor    TEXT NOT NULL,
+                note     TEXT NOT NULL,
+                at       TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER ledger_status_no_update BEFORE UPDATE ON ledger_status
+            BEGIN SELECT RAISE(ABORT, 'ledger_status är append-only'); END
+            """,
+            """
+            CREATE TRIGGER ledger_status_no_delete BEFORE DELETE ON ledger_status
+            BEGIN SELECT RAISE(ABORT, 'ledger_status är append-only'); END
+            """,
+            """
+            CREATE TRIGGER ledger_status_forward BEFORE INSERT ON ledger_status
+            WHEN EXISTS (SELECT 1 FROM ledger_status WHERE entry_id = NEW.entry_id)
+             AND (SELECT status FROM ledger_status WHERE entry_id = NEW.entry_id ORDER BY id DESC LIMIT 1) != 'pending'
+            BEGIN SELECT RAISE(ABORT, 'en post med slutlig status kan inte få ny status (§40)'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=14,
         name="opportunities",
         statements=(
             # Fas 3i (FR-25, D-011, D-025): "Utred möjlighet" (Yorgo). Ett ärende går

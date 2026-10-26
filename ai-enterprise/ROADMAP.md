@@ -70,13 +70,40 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3c Samråd (FR-11), migration 8 | Yorgo | ✅ PR #27 |
 | 3d Beslutslogg (FR-10, §20 steg 7): migration 9 `decisions`, spårbarhet uppgift → beslut | Robin | ✅ gren `robin/fas3-beslutslogg` |
 | 3e Oenighet (FR-12, §21): migration 10, påståenden, underlag och konflikttyp; inga röster över hårda gränser; ROADMAP:s nyckeltest CFO mot CRO | Robin | ✅ gren `robin/fas3-oenighet` |
-| 3f Eskalering och godkännandekö (FR-13, D-019), migration 13 | Robin | ☐ |
+| 3f Eskalering och godkännandekö (FR-13, D-019, D-021), migration 12; `python -m aie approvals` | Robin | ✅ PR #33 |
 | 3g Externt innehåll är opålitlig data (SR-06) | Yorgo | ✅ PR #30 |
-| 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ✅ gren `yorgo/fas3-juridik` |
-| 3i Utred möjlighet (FR-25, D-011), migration 12, D-025 | Yorgo | ☐ |
+| 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ✅ PR #31 |
+| 3j `manual`-provider (D-005, D-022): `python -m aie manual`, ingen migration | Robin | ✅ PR #35 |
+| 3k Tilldelning nedåt i befälskedjan (§51 "rätt ansvarig roll", D-023) | Robin | ✅ gren `robin/fas3-delegering` |
+| 3i Utred möjlighet (FR-25, D-011), migration 14, D-025 | Yorgo | ✅ PR #32 |
+
+**Acceptanskriterier Fas 3 (§51)**, i `tests/acceptance/test_fas3.py` (12 tester, hela kedjan med de riktiga konfigurationsfilerna, ingen språkmodell):
+- [x] Uppgifter går till rätt ansvarig roll (`TestRightRole`, D-023).
+- [x] Beslut fattas endast inom tillåtna befogenheter (`TestAuthority`, med nyckeltestet "CEO försöker höja sin egen gräns").
+- [x] Konflikter dokumenteras (`TestConflictsDocumented`).
+- [x] Eskalering fungerar (`TestEscalation`, med nyckeltestet "CFO och CRO oense").
+- [x] Det finns spårbarhet från uppgift till beslut (`TestTraceability`).
+- [x] 3i (Yorgo) är klar (PR #32).
+- [ ] Yorgos godkännande av D-020–D-023 och bådas godkännande av D-025 återstår innan Fas 3 stängs.
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).
+| Del | Vem | Status |
+|---|---|---|
+| 4a Ledger (ER-01, ER-06–09, ER-11, ER-14–16, SR-12), migration 13, D-024: `src/aie/ledger/`, nettovinst och Audits återberäkning | Robin | ✅ gren `robin/fas4-ledger` |
+| 4b Budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22), `config/budgets.toml`, D-026 | Robin | ✅ gren `robin/fas4-budget` |
+| 4c Reserv och kapitalbegrepp (ER-05, ER-10, D-027): `src/aie/budget/capital.py` | Robin | ✅ gren `robin/fas4-reserv` |
+| 4d Uppdelningsdetektering (ER-04, D-028) i budgetmotorn | Robin | ✅ gren `robin/fas4-uppdelning` |
+| 4e Stop-loss, nödstopp, skyddat driftläge (ER-13, SR-07, SR-08) | – | ☐ ledig |
+| 4f Tax Engine (ER-18…21) | – | ☐ ledig |
+
+**Acceptanskriterier Fas 4 (§52):**
+- [x] Budgetöverskridanden blockeras (`test_budget.py::test_budget_overrun_is_blocked`).
+- [x] Dubbelregistrering hanteras (`test_ledger.py::TestDuplicates`).
+- [x] Nettovinst kan beräknas från registrerade poster (`test_ledger.py::TestResult`).
+- [x] Skyddad reserv respekteras (`test_capital.py::TestReserveIsRespected`; budgetarna kan inte heller äta reserven).
+- [x] Ekonomiska rapporter kan granskas mot underlaget (`test_ledger.py::test_audit_recomputes_from_the_ledger`).
+
 Nyckeltester: budgetöverskridande blockeras · samma externa ID två gånger → avvisas · 10 köp à 99 under gräns 100 men inom samma initiativ → flaggas · nödstopp → inga nya transaktioner, ingen data raderad.
 
 ## Fas 5 — Lärande och utvärdering (FR-15…19, SR-17)

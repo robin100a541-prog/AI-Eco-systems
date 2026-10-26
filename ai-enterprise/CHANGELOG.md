@@ -1,5 +1,79 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 3i: Utred möjlighet (FR-25)
+### Tillagt
+- Migration 14: `opportunities` och `opportunity_steps`. Bara stage och status får ändras, ett avslutat ärende ändras aldrig och stegen är append-only.
+- `src/aie/collaboration/opportunities.py`: `OpportunityRegister` med `open`, `submit_findings`, `compliance_review`, `cfo_estimate`, `founder_decision` och `waiting_for`.
+  - Fast ordning: Research → Compliance → CFO → grundare (D-011).
+  - Compliance `uncertain` skickar ärendet tillbaka till Research (§17).
+  - Fynd är obekräftade hypoteser (§29).
+  - En skattefråga godkänns bara med underlag från Skatteverket eller en rådgivare.
+  - Allt loggas i revisionsloggen.
+- D-025 (föreslaget).
+- `tests/unit/test_opportunities.py`: 11 tester. Hela sviten ger 406 OK på Windows 11, Python 3.12.0 (2 SIGINT-tester överhoppade).
+### Ändrat
+- Migrationsnummer 14 i stället för 12, enligt fördelningen i `TODO.md`. Robins godkännandekö tog 12 och ledgern 13.
+
+## [Unreleased] — 2026-10-25 — Fas 4d: uppdelningsdetektering
+### Tillagt
+- Budgetmotorn flaggar möjliga uppdelade köp (ER-04, §5, D-028): utgifter i samma initiativ inom sju dagar, som inte behövde godkännande, och som tillsammans med den nya passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`. En flaggad utgift kräver båda grundarna. Flaggan står i `BudgetCheck.flags` och i revisionsloggen.
+- D-028 (föreslagen). `tests/unit/test_split.py`: 5 tester, bland annat ROADMAP Fas 4-nyckeltestet "10 köp à 99 under gräns 100 i samma initiativ → flaggas".
+### Ändrat
+- `tests/unit/test_budget.py`: varje testpost får ett eget initiativ, så att budgettesterna inte ser ut som uppdelade köp.
+
+## [Unreleased] — 2026-10-25 — Fas 4c: skyddad reserv och kapitalbegrepp
+### Tillagt
+- `src/aie/budget/capital.py`: `capital_position()` räknar §23:s sju begrepp från ledgern (likvida, bundet, totalt, reserv, åtaget, disponibelt, återinvesterbart). Väntade inbetalningar räknas aldrig (ER-11); återinvesterbar vinst är 0 tills Tax Engine finns.
+- Budgetmotorn blockerar varje utgift som är större än det disponibla kapitalet (likvida − `MINIMUM_RESERVE` − åtaget), så att den skyddade reserven aldrig används (§5, ER-05). Saknas `MINIMUM_RESERVE` blockeras allt (ER-02).
+- D-027 (föreslagen). `tests/unit/test_capital.py`: 10 tester.
+### Ändrat
+- `tests/unit/test_budget.py`: startkapitalet sätts in som en `capital_in`-post, eftersom kapital bara räknas från ledgern.
+## [Unreleased] — 2026-10-25 — Robin godkänner D-020–D-024 och D-026
+### Ändrat
+- `DECISIONS.md`: Robin ☑ på D-020, D-021, D-022, D-023, D-024 och D-026 (bara fältet *Godkänd av*). Yorgos godkännande saknas; besluten är fortfarande `Föreslagen` tills båda har godkänt. D-026 ändrar gränser och kräver båda enligt D-019 punkt 3.
+- D-023 hade tappat fältet *Godkänd av* vid en merge; fältet är återställt. Beslutstexten är oförändrad.
+
+## [Unreleased] — 2026-10-25 — Fas 4b: budgetmotor och kontroll före transaktion
+### Tillagt
+- `config/budgets.toml` (D-026, föreslagen): budget, maxåtagande, riskutrymme och användningsområde per departement (ER-17). Laddaren avvisar okända departement, budgetar över `MAX_DEPARTMENT_BUDGET`, maxåtagande över budgeten, `critical` som riskutrymme och budgetar som tillsammans äter av den skyddade reserven.
+- `src/aie/budget/`: `BudgetEngine.check()` och `require()` före varje ekonomisk handling (ER-03). De blockerar överskriden budget (§52), departementets maxåtagande, `MAX_COMMITTED_CAPITAL`, `MAX_SINGLE_TRANSACTION`, riskklass över utrymmet eller `critical`, saknade gränser (ER-02) och `API_SPEND` (ER-22). Över `HUMAN_APPROVAL_THRESHOLD` krävs båda grundarna. Varje kontroll revideras.
+- `tests/unit/test_budget.py`: 13 tester, bland annat ROADMAP Fas 4-nyckeltestet "budgetöverskridande blockeras".
+
+## [Unreleased] — 2026-10-25 — Fas 4a: ledger
+### Tillagt
+- Migration 13: `ledger_entries` (§40:s tolv fält, unik idempotensnyckel och unikt externt ID) och `ledger_status` (statushändelser). Allt är append-only; status går bara från `pending` till `settled`, `failed` eller `cancelled`.
+- `src/aie/ledger/`: `Ledger.record()`, `set_status()`, `correct()` (korrigeringsposter, ER-08), `entries()`, `corrections()`. Heltal med valuta (ER-01); bara `SIM` i sim och aldrig `SIM` i prod (ER-15); idempotens och dubblettskydd (ER-07, SR-12); godkännande över `HUMAN_APPROVAL_THRESHOLD` måste anges (ER-14); underlag krävs; hemligheter avvisas. Allt revideras.
+- `compute_result()` och `result_for()`: nettovinst bara från genomförda poster, preliminär när något väntar eller kostnader saknas (ER-09, ER-11). `recompute()`: Audit räknar om med SQL direkt mot tabellerna och får avvikelserna (ER-16).
+- D-024 (föreslagen). `tests/unit/test_ledger.py`: 22 tester.
+### Ändrat
+- Migrationsnummer: ledgern tog 13 och Yorgos FR-25 (#32) får 14 (se `TODO.md`).
+
+## [Unreleased] — 2026-10-25 — Fas 3-acceptans (§51)
+### Tillagt
+- `tests/acceptance/test_fas3.py`: 12 tester, minst ett per kriterium i §51, och båda nyckeltesten i ROADMAP Fas 3. Kedjan byggs som `python -m aie approvals` bygger den (`aie.governance.cli.build`) med de riktiga konfigurationsfilerna. Testet hittade att en ägare inte kunde lämna sin egen uppgift vidare nedåt; rättat i PR #36.
+
+## [Unreleased] — 2026-10-25 — Fas 3k: tilldelning nedåt i befälskedjan
+### Ändrat
+- `TaskBoard.assign` (Yorgos FR-07): en agent får bara tilldela nedåt i sin egen befälskedja (§8, D-020, D-023). Gäller både den nya och, vid byte, den gamla ägaren. CEO kan inte styra kontrollfunktionerna; grundarna får tilldela vem som helst. Före ändringen kunde Research-chefen ge uppgifter till CFO och till CEO.
+- `tests/unit/test_tasks.py`: agenterna får en riktig befälskedja (CEO → Research-chef → forskare).
+### Tillagt
+- `tests/unit/test_delegation.py`: 8 tester. D-023 (föreslagen).
+## [Unreleased] — 2026-10-25 — Fas 3j: `manual`-provider
+### Tillagt
+- `src/aie/llm/manual.py`: `ManualProvider` och `ManualInbox`. Förfrågan läggs i `<data_dir>/manual/<miljö>/` och providern kastar `ManualPending`. När en grundare har svarat returneras svaret nästa gång samma förfrågan görs. Inget nätverk, bara `public`-data (DR-13), dagsgränser som andra leverantörer (ER-02). Svar med hemligheter, tomma svar, för långa svar och dubbla svar avvisas.
+- `kind = "manual"` i `config/providers.toml` (bortkommenterad som standard) och `load_providers(..., manual_dir=...)`.
+- `python -m aie manual list|show|answer <id> --as <grundare> --file <fil|->`. Bara grundare (D-021); `manual.answered` och `manual.denied` revideras utan texten.
+- D-022 (föreslagen).
+- `tests/unit/test_manual.py`: 11 tester.
+
+## [Unreleased] — 2026-10-23 — Fas 3: eskalering till grundarna och godkännandekö
+### Tillagt
+- Migration 12: `approval_requests` och `approval_votes`. Förfrågningar raderas aldrig, en avgjord förfrågan ändras aldrig och rösterna är append-only.
+- `ApprovalQueue` (`src/aie/governance/escalation.py`): `submit_decision()` registrerar beslutet direkt när det är inom mandat och gräns, annars hamnar det i kön (över `HUMAN_APPROVAL_THRESHOLD` eller utanför agentens mandat). `submit_dispute()` tar en tvist som är eskalerad till grundarna, och `submit_governance()` en ändring i konstitution, gränser eller mandat. Kön räknar ut 1 eller 2 grundare enligt D-019.
+- `approve()` och `reject()`: bara grundare, en röst var, ett nej med motivering avslår. Ett godkänt beslut skrivs i beslutsloggen med grundarna som beslutsfattare. En tvist över en hård gräns kan aldrig godkännas, bara avslås.
+- `python -m aie approvals list|approve|reject [id] --as <grundare> --note "..."` visar och avgör kön. Allt revideras.
+- `config/system.toml`: `founders = ["robin", "yorgo"]` (D-021).
+- `tests/unit/test_escalation.py`: 16 tester, bland annat att allt fungerar när alla kvoter är slut och att styrningskoden aldrig importerar en modellklient.
 ## [Unreleased] — 2026-10-23 — Fas 3h: juridisk konflikt ⇒ stopp och Compliance (SR-16)
 ### Tillagt
 - Migration 11 `legal_holds`. Högst en aktiv hållning per uppgift. En hållning raderas aldrig, kan inte ändras och släpps bara en gång.

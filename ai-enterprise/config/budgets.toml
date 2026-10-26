@@ -1,0 +1,49 @@
+# Departementens budgetar (ER-17, D-026). Föreslagna värden i SIM; ändringar kräver båda grundarna (D-019 p. 3).
+#
+# Per departement:
+#   budget          största summa utgifter (kostnader och avgifter, väntade och genomförda) i ledgern
+#   max_commitment  största summa väntade (ännu inte genomförda) utgifter samtidigt
+#   risk_room       högsta riskklass för en ny utgift: low, medium eller high (critical tillåts aldrig)
+#   purpose         vad budgeten får användas till
+#
+# Ett departement som saknas här får inte göra några utgifter (ER-02: saknad gräns = blockera).
+# Ingen budget får vara större än MAX_DEPARTMENT_BUDGET, och summan får inte äta av den skyddade
+# reserven: summan ≤ START_CAPITAL − MINIMUM_RESERVE (§5, ER-05).
+
+config_version = 1
+
+[departments.research]
+budget = 50_000
+max_commitment = 20_000
+risk_room = "medium"
+purpose = "Marknadsanalys, mallar och små försök med nya kanaler"
+
+[departments.executive]
+budget = 20_000
+max_commitment = 10_000
+risk_room = "low"
+purpose = "Samordning och verktyg för CEO"
+
+[departments.finance]
+budget = 10_000
+max_commitment = 5_000
+risk_room = "low"
+purpose = "Bokföring och betalningsverktyg"
+
+[departments.risk]
+budget = 5_000
+max_commitment = 2_000
+risk_room = "low"
+purpose = "Riskanalys"
+
+[departments.compliance]
+budget = 5_000
+max_commitment = 2_000
+risk_room = "low"
+purpose = "Juridisk granskning och villkor"
+
+[departments.audit]
+budget = 5_000
+max_commitment = 2_000
+risk_room = "low"
+purpose = "Oberoende granskning"

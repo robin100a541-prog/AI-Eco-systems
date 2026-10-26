@@ -21,8 +21,19 @@ from .disputes import (
     Position,
     hard_limit_violations,
 )
+from .escalation import (
+    ApprovalError,
+    ApprovalQueue,
+    ApprovalRequest,
+    RequestKind,
+    RequestStatus,
+    Vote,
+)
 
 __all__ = [
+    "ApprovalError",
+    "ApprovalQueue",
+    "ApprovalRequest",
     "ConflictType",
     "Decision",
     "DecisionDraft",
@@ -37,7 +48,10 @@ __all__ = [
     "Level",
     "NeedsApproval",
     "Position",
+    "RequestKind",
+    "RequestStatus",
     "RiskClass",
     "Trace",
+    "Vote",
     "hard_limit_violations",
 ]
