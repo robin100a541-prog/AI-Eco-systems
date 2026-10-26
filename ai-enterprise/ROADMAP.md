@@ -131,7 +131,7 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar.
 | Del | Vem | Status |
 |---|---|---|
-| 6a Hela systemet kopplat i `python -m aie start`: spärrar, Tax Engine, incidenter, prognoser, lärdomar, strategier, prestation, SR-17 (D-041) | Yorgo | ✅ gren `yorgo/fas6a-koppling` |
+| 6a Hela systemet kopplat i `python -m aie start`: spärrar, Tax Engine, incidenter, prognoser, lärdomar, strategier, prestation, SR-17 (D-041) | Yorgo | ✅ PR #60 |
 | 6b Simulerat startkapital och marknadsscenarier (FR-20…24) | — | ☐ |
 
 ## Fas 7 — Kontrollerad pilot
