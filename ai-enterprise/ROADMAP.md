@@ -118,7 +118,7 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 | 5c Prestationsmätning per roll (FR-19, §31), migration 20, D-037 | Yorgo | ✅ PR #53 |
 | 5d Lärdomsregister (FR-17), migration 23, D-038 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #57 |
 | 5e Versionerade strategier (FR-18), migration 24, D-039 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #58 |
-| 5f Ingen avveckling för obekväma slutsatser (SR-17), migration 25, D-040 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ gren `yorgo/fas5f-sr17` |
+| 5f Ingen avveckling för obekväma slutsatser (SR-17), migration 25, D-040 | Yorgo (Robins uppgift, överlämnad 2026-10-26, endast idag) | ✅ PR #59 |
 
 **Acceptanskriterier Fas 5 (§53):** alla är uppfyllda (`tests/acceptance/test_fas5.py`). **Fas 5 är stängd 2026-10-26.** Besluten D-038–D-040 väntar på godkännande.
 - [x] Fel kan spåras till konkreta händelser (`test_incidents.py::TestFromStops`, källorna `stoploss:`, `kill:` och `mode:`).
@@ -129,6 +129,10 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 
 ## Fas 6 — Affärssimulering (FR-20…24)
 Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar.
+| Del | Vem | Status |
+|---|---|---|
+| 6a Hela systemet kopplat i `python -m aie start`: spärrar, Tax Engine, incidenter, prognoser, lärdomar, strategier, prestation, SR-17 (D-041) | Yorgo | ✅ gren `yorgo/fas6a-koppling` |
+| 6b Simulerat startkapital och marknadsscenarier (FR-20…24) | — | ☐ |
 
 ## Fas 7 — Kontrollerad pilot
 Kräver: Fas 1–6 godkända, Q-03…Q-05 och Q-07 besvarade, §25-parametrar satta, nödstopp testat, skattespår för pilotens intäkter bekräftat med Skatteverket.
