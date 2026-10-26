@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5e: versionerade strategier (FR-18)
+### Tillagt
+- Migration 24 `strategy_versions`, append-only.
+- `src/aie/evaluation/strategies.py`: `StrategyRegistry` med `save`, `restore`, `active`, `get`, `history`, `names` och `diff`. Den hanterar både strategier och agentversioner.
+  - En återställning är en ny version.
+  - Obligatoriska ändringar kräver godkända operativa regler (FR-17) och en grundare.
+- D-039 (föreslaget).
+- `tests/unit/test_strategies.py`: 5 tester. Hela sviten ger 499 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 5d: lärdomsregister (FR-17)
 ### Tillagt
 - Migration 23 `lessons` och `lesson_events`, append-only.

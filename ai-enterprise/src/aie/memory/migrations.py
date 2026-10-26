@@ -1007,6 +1007,38 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=24,
+        name="strategy_versions",
+        statements=(
+            # Fas 5e (FR-18, §53, D-039): versionerade strategier och agentversioner (Robins uppgift, gjord av
+            # Yorgo vid överlämningen 2026-10-26). En återställning är en ny version som pekar på den gamla.
+            """
+            CREATE TABLE strategy_versions (
+                id         INTEGER PRIMARY KEY,
+                name       TEXT NOT NULL,
+                kind       TEXT NOT NULL CHECK (kind IN ('strategy', 'agent')),
+                version    INTEGER NOT NULL CHECK (version >= 1),
+                content    TEXT NOT NULL CHECK (json_valid(content)),
+                reason     TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                lessons    TEXT NOT NULL CHECK (json_valid(lessons)),
+                mandatory  INTEGER NOT NULL CHECK (mandatory IN (0, 1)),
+                restores   INTEGER REFERENCES strategy_versions (id),
+                author     TEXT NOT NULL,
+                at         TEXT NOT NULL,
+                UNIQUE (name, version)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER strategy_versions_no_update BEFORE UPDATE ON strategy_versions
+            BEGIN SELECT RAISE(ABORT, 'en version skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER strategy_versions_no_delete BEFORE DELETE ON strategy_versions
+            BEGIN SELECT RAISE(ABORT, 'versioner raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
