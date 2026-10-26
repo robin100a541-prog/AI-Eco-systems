@@ -3,17 +3,16 @@
 Both collaborators' Claude Code sessions read this file. Keep it current; edit it via PR like any other code.
 
 ## Goal
-<!-- One or two sentences: what are we building and for whom? -->
-TBD — fill in the project goal.
+Ett självstyrande AI-företagssamhälle (`ai-enterprise/`) där specialiserade AI-agenter arbetar som ett företag med hierarki, budgetar och revision, under grundarnas kontroll. Det byggs för Robin och Yorgo enligt `ai-enterprise/CONSTITUTION.md`, och allt körs i simulering (`SIM`) tills Fas 7.
 
 ## Team
 | Person | GitHub | Owns |
 |---|---|---|
-| Robin | @robin100a541-prog | TBD |
-| Friend | @TBD | TBD |
+| Robin | @robin100a541-prog | ai-enterprise: styrning (beslut, oenighet, eskalering), ledger, budgetmotor, reserv, Tax Engine, lärdomar och strategier |
+| Yorgo | @yorgo-jarjous | ai-enterprise: agenter och behörigheter, orkestrering, samråd, stopp (stop-loss, nödstopp, skyddat läge), incidenter, prognoser och prestationsmätning |
 
 ## Tech stack
-TBD — languages, frameworks, hosting, key services.
+Python ≥ 3.11 med bara standardbiblioteket, SQLite (STRICT-tabeller och append-only-triggers) och `unittest`. CI är GitHub Actions på Python 3.11 och 3.12. Lokala modeller körs via Ollama, och molnmodeller via Groq och OpenRouter bakom `ProviderRouter`. Det finns inget hosting; allt körs lokalt. Se `ai-enterprise/ARCHITECTURE.md`.
 
 ## Folder structure
 ```
