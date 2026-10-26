@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 5b: prognoslogg och prognos mot utfall (FR-16)
+### Tillagt
+- Migration 19 `forecasts` och `forecast_outcomes`, append-only. Den var reserverad som 21 och är omnumrerad (TODO.md).
+- `src/aie/evaluation/forecasts.py`: `ForecastLog.make`, `revise`, `record_outcome`, `evaluate`, `compare`, `overdue` och `accuracy`.
+  - Utfall för `net`, `revenue` och `costs` hämtas automatiskt från ledgerns initiativ, men aldrig från ett preliminärt resultat (ER-11).
+  - En revidering är en ny prognos. Den ursprungliga jämförs också (§20 steg 10).
+  - Den som gjorde prognosen rapporterar inte själv utfallet.
+- D-036 (föreslaget).
+- `tests/unit/test_forecasts.py`: 9 tester. Hela sviten ger 463 OK på Windows 11, Python 3.12.0.
+
 ## [Unreleased] — 2026-10-26 — Fas 5a: incidentrapporter (FR-15)
 ### Tillagt
 - Migration 18 `incidents` och `incident_entries`, append-only. Den var reserverad som 20 men numrerades om eftersom Tax Engine inte var påbörjad. Robin får 21–22 (TODO.md).
