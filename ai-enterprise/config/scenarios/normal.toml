@@ -1,0 +1,38 @@
+# Normal marknad: två lönsamma initiativ och en kort plattformsstörning. SIMULERADE VÄRDEN (D-042).
+config_version = 1
+name = "normal"
+description = "Två digitala produkter som säljer stadigt; Etsy ligger nere en dag."
+seed = "normal-1"
+days = 30
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "etsy-mallar"
+department = "research"
+track = "partnership"
+price = 4_900
+unit_cost = 0
+fee_fixed = 20
+fee_bp = 650
+visitors = 40
+conversion_bp = 500
+refund_bp = 200
+
+[[initiatives]]
+key = "gumroad-guider"
+department = "research"
+track = "partnership"
+price = 9_900
+unit_cost = 0
+fee_fixed = 50
+fee_bp = 1_000
+visitors = 20
+conversion_bp = 400
+refund_bp = 300
+listed_from = 5
+
+[[events]]
+day = 12
+kind = "platform_outage"
+initiative = "etsy-mallar"
+note = "Etsy ligger nere"

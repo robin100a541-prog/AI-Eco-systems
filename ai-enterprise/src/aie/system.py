@@ -45,6 +45,8 @@ from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
 
+SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
+
 log = get_logger("system")
 
 
@@ -67,6 +69,8 @@ class System:
     performance: PerformanceReview
     removal: RemovalReview
     currency: str = "SIM"
+    db: Database | None = None
+    permissions: object = None
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -96,8 +100,13 @@ class System:
             self.stoploss.evaluate()
 
 
-def build_system(config: Config, db: Database, config_dir: Path | str) -> System:
-    """Bygger hela systemet. Kastar `ConfigError` om en konfigurationsfil saknas eller är fel."""
+def build_system(config: Config, db: Database, config_dir: Path | str, clock=None) -> System:
+    """Bygger hela systemet. Kastar `ConfigError` om en konfigurationsfil saknas eller är fel.
+
+    `clock`: simulerad affärstid (`simulation.SimClock`, Fas 6b). Den används av ledgern, skatten, stoppen,
+    budgetmotorn och utvärderingen. Revisionsloggen, registret och uppgifterna har alltid riktig tid.
+    I miljön `sim` får komponenten `system:simulation` skriva i ledgern och märka skattespår (D-042).
+    """
     founders = frozenset(config.system.founders)
     limits = config.risk
     permissions = load_permissions(config_dir)
@@ -105,29 +114,34 @@ def build_system(config: Config, db: Database, config_dir: Path | str) -> System
     budgets = load_budgets(config_dir, departments, limits)
     tax_config = load_tax_config(config_dir, founders)
 
+    t = {} if clock is None else {"clock": clock}  # affärstid; utan clock gäller varje komponents egen
+    sim = frozenset({SIMULATION}) if config.system.environment == "sim" else frozenset()
+
     audit = AuditLog(db)
     registry = AgentRegistry(permissions, db)
-    incidents = IncidentLog(db, registry, permissions, audit, founders)
+    incidents = IncidentLog(db, registry, permissions, audit, founders, **t)
     kill = KillSwitch(db, registry, permissions, audit, founders, components=frozenset({PROTECTED_MODE}),
-                      incidents=incidents)
+                      incidents=incidents, **t)
     stops = ControlStops(db, registry, permissions, audit, founders)
     engine = AuthorizationEngine(permissions, registry, config.system.environment, audit, stops=stops, gates=(kill,))
     threshold = limits.human_approval_threshold.amount_minor if limits.human_approval_threshold else None
-    ledger = Ledger(db, engine, departments, founders, audit, threshold)
-    tax = TaxEngine(db, ledger, tax_config, audit, founders, engine)
+    ledger = Ledger(db, engine, departments, founders, audit, threshold, components=sim, **t)
+    tax = TaxEngine(db, ledger, tax_config, audit, founders, engine, components=sim, **t)
     engine.add_gate(tax)
     protected = ProtectedMode(db, ledger, registry, permissions, limits, engine, audit, founders, kill_switch=kill,
-                              incidents=incidents)
+                              incidents=incidents, **t)
     engine.add_gate(protected)
-    stoploss = StopLoss(db, ledger, limits, budgets, audit, founders, incidents=incidents)
-    budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax)
+    stoploss = StopLoss(db, ledger, limits, budgets, audit, founders, incidents=incidents, **t)
+    now = {} if clock is None else {"clock": clock.now}  # budgetmotorn vill ha ett datetime
+    budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
-    forecasts = ForecastLog(db, registry, permissions, audit, founders, ledger)
-    lessons = LessonRegistry(db, registry, permissions, audit, founders, incidents, forecasts)
-    strategies = StrategyRegistry(db, registry, permissions, audit, founders, lessons)
+    forecasts = ForecastLog(db, registry, permissions, audit, founders, ledger, **t)
+    lessons = LessonRegistry(db, registry, permissions, audit, founders, incidents, forecasts, **t)
+    strategies = StrategyRegistry(db, registry, permissions, audit, founders, lessons, **t)
     performance = PerformanceReview(db, registry, permissions, audit, founders, incidents, forecasts, tasks, ledger,
-                                    currency=limits.currency)
-    removal = RemovalReview(db, registry, permissions, audit, founders, incidents, performance, ledger)
+                                    currency=limits.currency, **t)
+    removal = RemovalReview(db, registry, permissions, audit, founders, incidents, performance, ledger, **t)
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
-                    forecasts, lessons, strategies, performance, removal, limits.currency)
+                    forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
+                    permissions=permissions)
     return system

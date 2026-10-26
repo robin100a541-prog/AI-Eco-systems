@@ -8,6 +8,21 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-042 Simulering: startkapital från START_CAPITAL, seedad marknad, scenarier som filer, bara i sim
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-024, D-027, D-032, D-041 · **Ändrar:** D-032 punkt 3 (`system:simulation` får märka skattespår i sim) och `build_system` (ny parameter `clock`) · **Gäller:** FR-20, §54, SR-11, SR-12
+- **Beslut:**
+  1. **Bara simulerade pengar.** En körning startas bara i miljön `sim` med valutan `SIM`, av en grundare. Komponenten `system:simulation` får skriva i ledgern och märka skattespår **bara i sim**. En databas har en körning, så en ny körning kräver en ny datamapp.
+  2. **Startkapital.** `START_CAPITAL` registreras som en godkänd `capital_in` med underlaget `decision:D-042`, och bara i en tom ledger (D-027 punkt 1).
+  3. **Scenarier.** Scenarierna ligger i `config/scenarios/*.toml`. Alla värden är simulerade, och belopp är heltal (D-006). Sju scenarier följer med: normal, förlust, budgetöverskridande, konflikt, moms, intrång och nödstopp. Scenariot sparas i körningen, så att en omstart använder samma definition även om filen ändras.
+  4. **Marknaden.** Antalet köp är ett binomialutfall med en seed per scenario, dag och initiativ. Samma scenario ger alltid samma marknad. Varje order bokförs som fakta (D-024): intäkt, avgift (ER-23), styckkostnad och återbetalning. Varje post har ett eget externt ID, så att en dag som körs om aldrig bokförs två gånger (SR-12).
+  5. **Spärrarna gäller.**
+     - All försäljning pausas vid nödstopp, i skyddat driftläge och när momsgränsen blockerar.
+     - Ett initiativ pausas också när en aktiv stop-loss gäller det, dess departement eller hela företaget (§26).
+     - Aktörshändelser (intrång och nödstopp) utförs av en aktiv agent i angiven roll, aldrig i en grundares namn.
+  6. **Simulerad tid.** `SimClock` driver ledgern, skatten, stoppen, budgetmotorn och utvärderingen. Revisionsloggen, registret och uppgifterna har riktig tid.
+  7. **Dagarna** sparas append-only (migration 26) och kan återupptas efter omstart.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-041 `python -m aie start` bygger hela systemet med spärrar; utan spärrar ingen start
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-029–D-040 · **Ändrar:** startordningen i `runtime.py` (FR-01) · **Gäller:** Fas 6, §38, §59, SR-07, SR-08, SR-17, ER-13, ER-19, ER-20
 - **Beslut:**

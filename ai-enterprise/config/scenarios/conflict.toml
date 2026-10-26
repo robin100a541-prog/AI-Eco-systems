@@ -1,0 +1,35 @@
+# Motstridiga agentbedömningar: CFO och CRO är oense om ett nytt initiativ (tolkas av arbetscykeln, 6b-2).
+config_version = 1
+name = "conflict"
+description = "Ett nytt initiativ dag 4 där finans och risk gör olika bedömningar; efterfrågan faller dag 10."
+seed = "conflict-1"
+days = 20
+start_date = "2027-01-01"
+
+[[initiatives]]
+key = "fiverr-texter"
+department = "research"
+track = "self_employment"
+owner = "yorgo"
+price = 7_500
+unit_cost = 0
+fee_fixed = 0
+fee_bp = 2_000
+visitors = 15
+conversion_bp = 600
+refund_bp = 400
+listed_from = 4
+
+[[events]]
+day = 4
+kind = "conflicting_assessment"
+initiative = "fiverr-texter"
+note = "CFO tror på lönsamhet, CRO ser kundrisk"
+
+[[events]]
+day = 10
+kind = "demand_shock"
+initiative = "fiverr-texter"
+factor_bp = 3_000
+until = 20
+note = "efterfrågan faller till 30 %"

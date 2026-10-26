@@ -1086,6 +1086,54 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=26,
+        name="simulation",
+        statements=(
+            # Fas 6b-1 (FR-20, §54, D-042): simuleringskörningar och simulerade dagar (Yorgo). En körning per
+            # databas. Dagarna är append-only, så att en körning kan återupptas efter omstart utan att något
+            # skrivs om.
+            """
+            CREATE TABLE simulation_runs (
+                run_id     INTEGER PRIMARY KEY,
+                scenario   TEXT NOT NULL,
+                seed       TEXT NOT NULL,
+                days       INTEGER NOT NULL CHECK (days >= 1),
+                start_date TEXT NOT NULL,
+                definition TEXT NOT NULL CHECK (json_valid(definition)),
+                created_by TEXT NOT NULL,
+                at         TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER simulation_runs_no_update BEFORE UPDATE ON simulation_runs
+            BEGIN SELECT RAISE(ABORT, 'en simuleringskörning skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER simulation_runs_no_delete BEFORE DELETE ON simulation_runs
+            BEGIN SELECT RAISE(ABORT, 'simuleringskörningar raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE simulation_days (
+                id       INTEGER PRIMARY KEY,
+                run_id   INTEGER NOT NULL REFERENCES simulation_runs (run_id),
+                day      INTEGER NOT NULL CHECK (day >= 1),
+                date     TEXT NOT NULL,
+                summary  TEXT NOT NULL CHECK (json_valid(summary)),
+                at       TEXT NOT NULL,
+                UNIQUE (run_id, day)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER simulation_days_no_update BEFORE UPDATE ON simulation_days
+            BEGIN SELECT RAISE(ABORT, 'en simulerad dag skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER simulation_days_no_delete BEFORE DELETE ON simulation_days
+            BEGIN SELECT RAISE(ABORT, 'simulerade dagar raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

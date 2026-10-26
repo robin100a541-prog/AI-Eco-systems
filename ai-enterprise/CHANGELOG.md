@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 6b-1: simulerat startkapital, marknad och scenarier (FR-20)
+### Tillagt
+- Migration 26 `simulation_runs` och `simulation_days`, append-only.
+- `src/aie/simulation/`:
+  - `SimClock`: simulerad affärstid.
+  - `Market`: seedad, deterministisk marknad med heltalsbelopp.
+  - `load_scenario` och `parse_scenario`: validering av scenarier.
+  - `Simulation.start`, `resume`, `advance` och `run`: startkapital, order som ledgerposter, skattespår, pauser från spärrarna, omstart.
+- `config/scenarios/`: normal, loss, budget_overrun, conflict, vat, intrusion och kill.
+- `build_system(clock=)`. I sim får `system:simulation` skriva i ledgern och märka skattespår. `TaxEngine(components=)`.
+- D-042 (föreslaget).
+- `tests/unit/test_simulation.py`: 13 tester. Hela sviten ger 532 OK på Windows 11, Python 3.12.0.
+- Provat på riktigt: process 1 startar `normal` och kör dag 1–3, process 2 återupptar och kör dag 4–5. Det gav 34 poster utan dubbletter, och `aie status` visar revisionsloggen OK med schemaversion 26.
+
 ## [Unreleased] — 2026-10-26 — Fas 6a: hela systemet kopplat i `python -m aie start`
 ### Tillagt
 - `src/aie/system.py`: `build_system()` och `System.tick()`. Alla spärrar, Tax Engine och Fas 5-komponenterna kopplas ihop på ett ställe.
