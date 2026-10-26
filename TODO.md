@@ -3,12 +3,15 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [ ] ai-enterprise Fas 4e-1: stop-loss (ER-13, §26), migration 15, D-029 — @yorgo-jarjous (yorgo/fas4e-stoploss)
+- [ ] ai-enterprise Fas 4e-2: nödstopp/kill switch (SR-07, §38), migration 16, D-030 — @yorgo-jarjous (yorgo/fas4e-nodstopp)
+- [ ] ai-enterprise Fas 4e-3: skyddat driftläge (SR-08, §59), migration 17, D-031 — @yorgo-jarjous (yorgo/fas4e-skyddat-lage)
 - [ ] Fill in Goal + Tech stack in CLAUDE.md — @robin
 - [ ] Add friend as collaborator, fill in Team table — @robin
 
 
 ## Next
-- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Robin: migration 13 (ledgern), D-024, D-026, D-027 och D-028** (D-021–D-024 var slut; D-025 är Yorgos). **Yorgo: migration 11 och 14 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Ändrat 2026-10-25 (Robin): ledgern blev klar medan FR-25 (#32) fortfarande var ett utkast med nummer 12 som ändå måste bytas, så ledgern tog 13 och FR-25 får 14. Övriga Fas 4-delar (budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp, skyddat driftläge, Tax Engine) är inte tagna. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
+- **Nummerfördelning (för att undvika krockar):** migration 7–8 och D-020 är använda av Yorgo (PR #26, #27). **Robin: migration 9–10 och 12 (använda), samt D-021–D-024** (beslutslogg, oenighet, eskalering; D-021 använd). **Robin: migration 13 (ledgern), D-024, D-026, D-027 och D-028** (D-021–D-024 var slut; D-025 är Yorgos). **Yorgo: migration 11 och 14 samt D-025** (SR-16, FR-25). Ändrat 2026-10-23: migrationer måste vara 1..N utan luckor, och eskaleringen (13) var inte påbörjad, så Yorgo tog 11–12. Ändrat igen 2026-10-23 (Robin): eskaleringen blev klar före FR-25, som inte var påbörjad, så eskaleringen tog 12 och FR-25 får 13. Ändrat 2026-10-25 (Robin): ledgern blev klar medan FR-25 (#32) fortfarande var ett utkast med nummer 12 som ändå måste bytas, så ledgern tog 13 och FR-25 får 14. Övriga Fas 4-delar (budgetmotor, reserv, uppdelningsdetektering, stop-loss, nödstopp, skyddat driftläge, Tax Engine) är inte tagna. Reserverat 2026-10-26 (Yorgo): **migration 15–17 och D-029–D-031** för Fas 4e (stop-loss, nödstopp, skyddat driftläge). **Tax Engine (ER-18–21) lämnas åt Robin**, som tar migration 18 och D-032 och uppåt. Den som behöver fler tar nästa nummer efter den andres block och skriver det här först.
 
 ## Done
 - [x] ai-enterprise Fas 3i: Utred möjlighet (FR-25, D-011), migration 14, D-025 — @yorgo-jarjous (PR #32)
