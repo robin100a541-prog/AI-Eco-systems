@@ -75,7 +75,7 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 | 3h Juridisk konflikt ⇒ stopp och Compliance (SR-16), migration 11 | Yorgo | ✅ PR #31 |
 | 3j `manual`-provider (D-005, D-022): `python -m aie manual`, ingen migration | Robin | ✅ PR #35 |
 | 3k Tilldelning nedåt i befälskedjan (§51 "rätt ansvarig roll", D-023) | Robin | ✅ gren `robin/fas3-delegering` |
-| 3i Utred möjlighet (FR-25, D-011), migration 14, D-025 | Yorgo | ☐ |
+| 3i Utred möjlighet (FR-25, D-011), migration 14, D-025 | Yorgo | ✅ PR #32 |
 
 **Acceptanskriterier Fas 3 (§51)**, i `tests/acceptance/test_fas3.py` (12 tester, hela kedjan med de riktiga konfigurationsfilerna, ingen språkmodell):
 - [x] Uppgifter går till rätt ansvarig roll (`TestRightRole`, D-023).
@@ -83,7 +83,8 @@ Nyckeltest: CEO försöker höja sin egen gräns → nekas. CFO och CRO oense �
 - [x] Konflikter dokumenteras (`TestConflictsDocumented`).
 - [x] Eskalering fungerar (`TestEscalation`, med nyckeltestet "CFO och CRO oense").
 - [x] Det finns spårbarhet från uppgift till beslut (`TestTraceability`).
-- [ ] 3i (Yorgo) och godkännande av D-020–D-023 återstår innan Fas 3 stängs.
+- [x] 3i (Yorgo) är klar (PR #32).
+- [ ] Yorgos godkännande av D-020–D-023 och bådas godkännande av D-025 återstår innan Fas 3 stängs.
 
 ## Fas 4 — Ekonomisk kontroll (ER-01…17, SR-07, SR-08, SR-11, SR-12)
 Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nödstopp, skyddat driftläge, idempotens, Tax Engine (ER-18…21), spärrad `API_SPEND` (ER-22).

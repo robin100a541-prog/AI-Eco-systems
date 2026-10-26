@@ -8,6 +8,18 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-025 "Utred möjlighet": fast ordning, osäkert räknas som risk, skatt kräver Skatteverket
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
+- **Beslut:**
+  1. Ett utredningsärende (kanal, verktyg, gratis-API, intäktsväg, skatt, villkor, licens eller marknad) går alltid i ordningen **Research → Compliance → CFO → grundarna**. Inget steg kan hoppas över (migration 14, `collaboration/opportunities.py`).
+  2. Ärendet öppnas av grundarna eller nivå 1–3. Fynden lämnas av Research (departementet research med `research.search`) med minst en källa (`url:` eller `file:`). De är alltid en **obekräftad hypotes** (§29).
+  3. Compliance svarar `ok`, `not_ok` eller `uncertain`. **`uncertain` skickar ärendet tillbaka till Research** (§17: osäkerhet är risk, inte OK). `not_ok` avslutar ärendet som avvisat.
+  4. CFO räknar fram förväntat netto efter avgifter och skatt, i heltal i minsta enhet. Det kan vara negativt.
+  5. Grundarna godkänner eller avvisar. En **skattefråga** kan bara godkännas om någon källa är Skatteverket (`skatteverket.se`) eller en rådgivares underlag (`file:`). Godkända skatte-, villkors- och licensfrågor får status `approved_rule`, övriga `approved`.
+  6. Ärendet kan valfritt hänvisa till en fråga i `research/QUESTIONS.md` (`R-01` …). Varje fråga utreds i högst ett ärende.
+  7. Stegen är append-only, ett avslutat ärende ändras aldrig och allt loggas i revisionsloggen. Agenterna föreslår bara. De skapar inga konton, godkänner inga villkor och väljer inget skattespår (D-011).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-028 Uppdelade köp: samma initiativ, sju dagar, grundarna avgör
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Robin), 2026-10-25 · **Bygger på:** D-019, D-026
 - **Beslut:**

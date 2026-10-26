@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-26 — Fas 3i: Utred möjlighet (FR-25)
+### Tillagt
+- Migration 14: `opportunities` och `opportunity_steps`. Bara stage och status får ändras, ett avslutat ärende ändras aldrig och stegen är append-only.
+- `src/aie/collaboration/opportunities.py`: `OpportunityRegister` med `open`, `submit_findings`, `compliance_review`, `cfo_estimate`, `founder_decision` och `waiting_for`.
+  - Fast ordning: Research → Compliance → CFO → grundare (D-011).
+  - Compliance `uncertain` skickar ärendet tillbaka till Research (§17).
+  - Fynd är obekräftade hypoteser (§29).
+  - En skattefråga godkänns bara med underlag från Skatteverket eller en rådgivare.
+  - Allt loggas i revisionsloggen.
+- D-025 (föreslaget).
+- `tests/unit/test_opportunities.py`: 11 tester. Hela sviten ger 406 OK på Windows 11, Python 3.12.0 (2 SIGINT-tester överhoppade).
+### Ändrat
+- Migrationsnummer 14 i stället för 12, enligt fördelningen i `TODO.md`. Robins godkännandekö tog 12 och ledgern 13.
+
 ## [Unreleased] — 2026-10-25 — Fas 4d: uppdelningsdetektering
 ### Tillagt
 - Budgetmotorn flaggar möjliga uppdelade köp (ER-04, §5, D-028): utgifter i samma initiativ inom sju dagar, som inte behövde godkännande, och som tillsammans med den nya passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION`. En flaggad utgift kräver båda grundarna. Flaggan står i `BudgetCheck.flags` och i revisionsloggen.

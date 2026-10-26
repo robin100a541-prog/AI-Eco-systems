@@ -12,3 +12,8 @@ Deltagare: Yorgo, Claude (Opus 5.5) i Claude Code.
 - **3g, SR-06:** `security/external.py` och kopplingen i `AgentWorker`. Behörighet kan aldrig komma från extern text. Den avgörs bara av registret, mandaten och stoppen. `Ran 261 tests ... OK (skipped=2)`.
 - **Migrationsordning:** migrationer måste vara 1..N utan luckor, och eskaleringen var inte påbörjad. Därför tog Yorgo 11–12 och Robins eskalering får 13 (TODO.md, PR #30).
 - **3h, SR-16:** `orchestration/legal.py` (`LegalDesk`) och migration 11. `TaskBoard` läser hållningen ur databasen, och Compliance kan inte köras över, inte ens av grundarna (§6). `Ran 298 tests ... OK (skipped=2)`.
+- **3i, FR-25 (2026-10-26):** `collaboration/opportunities.py` och migration 14 (Robins godkännandekö och ledger tog 12–13 under tiden). D-025 föreslaget. `Ran 406 tests ... OK (skipped=2)`.
+
+## 2. Yorgo (2026-10-26)
+
+> fortsätt med det. prio 1 bli klar så snart som möjligt. jobba snabbt och effektivt. va säker på att du gör allt rätt. jobba klart sen fråga frågor.
