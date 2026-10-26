@@ -8,6 +8,22 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-029 Stop-loss: fyra gränser mäts från ledgern, nya åtaganden stoppas, två grundare återupptar
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-019, D-024, D-026, D-027 · **Gäller:** ER-13, §26
+- **Beslut:**
+  1. `StopLoss.evaluate()` mäter fyra gränser från ledgern:
+     - `MAX_SINGLE_EXPERIMENT_LOSS` per initiativ: realiserad nettoförlust ≥ gränsen.
+     - `MAX_TOTAL_DRAWDOWN` för företaget: (START_CAPITAL − likvida medel) / START_CAPITAL ≥ gränsen.
+     - Departementets `budget` i `budgets.toml`: utgifter, väntade och genomförda, ≥ budgeten.
+     - `MINIMUM_RESERVE` för företaget: likvida medel − åtaganden ≤ reserven.
+     En saknad gräns räknas som nådd (ER-02).
+  2. En utlösning sparas (migration 15) med exponering (väntade utbetalningar i området), förpliktelser (deras poster) och vilka som informerats: CRO, CFO och, för ett departement, departementschefen. Utlösningen loggas i revisionsloggen.
+  3. Medan utlösningen är aktiv blockerar `BudgetEngine` (spärr via `gates=`) **nya åtaganden** i området. Befintliga förpliktelser **avbryts eller raderas inte**. De hanteras som vanligt via ledgern (§26).
+  4. Verksamheten återupptas först när **två olika grundare** har godkänt en återhämtningsplan (D-019 punkt 3, riskgränser). Det går inte medan gränsen fortfarande är nådd. Då måste läget åtgärdas först, eller gränsen ändras via PR.
+  5. `evaluate()` utlöser inte samma gräns två gånger. Utlösningar och godkännanden är append-only.
+  6. Kan en spärr inte avgöra blir svaret nej (§59).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-025 "Utred möjlighet": fast ordning, osäkert räknas som risk, skatt kräver Skatteverket
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-011, D-019 · **Gäller:** FR-25
 - **Beslut:**

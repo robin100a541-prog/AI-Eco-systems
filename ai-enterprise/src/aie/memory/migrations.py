@@ -677,6 +677,54 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=15,
+        name="stop_loss",
+        statements=(
+            # Fas 4e-1 (ER-13, §26, D-029): stop-loss (Yorgo). En utlösning raderas aldrig och ändras aldrig.
+            # Den är aktiv tills två olika grundare har godkänt en återhämtningsplan (stop_loss_votes).
+            """
+            CREATE TABLE stop_loss_trips (
+                trip_id     INTEGER PRIMARY KEY,
+                scope_kind  TEXT NOT NULL CHECK (scope_kind IN ('company', 'department', 'initiative')),
+                scope_value TEXT NOT NULL,
+                limit_name  TEXT NOT NULL,
+                measured    TEXT NOT NULL,
+                limit_value TEXT NOT NULL,
+                currency    TEXT NOT NULL,
+                exposure    TEXT NOT NULL CHECK (json_valid(exposure)),
+                notified    TEXT NOT NULL CHECK (json_valid(notified)),
+                tripped_at  TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER stop_loss_trips_no_update BEFORE UPDATE ON stop_loss_trips
+            BEGIN SELECT RAISE(ABORT, 'en stop-loss-utlösning ändras aldrig'); END
+            """,
+            """
+            CREATE TRIGGER stop_loss_trips_no_delete BEFORE DELETE ON stop_loss_trips
+            BEGIN SELECT RAISE(ABORT, 'en stop-loss-utlösning raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE stop_loss_votes (
+                id      INTEGER PRIMARY KEY,
+                trip_id INTEGER NOT NULL REFERENCES stop_loss_trips (trip_id),
+                founder TEXT NOT NULL,
+                plan    TEXT NOT NULL CHECK (length(trim(plan)) > 0),
+                at      TEXT NOT NULL,
+                UNIQUE (trip_id, founder)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER stop_loss_votes_no_update BEFORE UPDATE ON stop_loss_votes
+            BEGIN SELECT RAISE(ABORT, 'stop_loss_votes är append-only'); END
+            """,
+            """
+            CREATE TRIGGER stop_loss_votes_no_delete BEFORE DELETE ON stop_loss_votes
+            BEGIN SELECT RAISE(ABORT, 'stop_loss_votes är append-only'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

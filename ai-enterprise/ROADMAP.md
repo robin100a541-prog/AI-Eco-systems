@@ -95,8 +95,10 @@ Ledger, budgetmotor, reserv, uppdelningsdetektering, nettovinst, stop-loss, nöd
 | 4b Budgetmotor och kontroll före transaktion (ER-03, ER-17, ER-22), `config/budgets.toml`, D-026 | Robin | ✅ gren `robin/fas4-budget` |
 | 4c Reserv och kapitalbegrepp (ER-05, ER-10, D-027): `src/aie/budget/capital.py` | Robin | ✅ gren `robin/fas4-reserv` |
 | 4d Uppdelningsdetektering (ER-04, D-028) i budgetmotorn | Robin | ✅ gren `robin/fas4-uppdelning` |
-| 4e Stop-loss, nödstopp, skyddat driftläge (ER-13, SR-07, SR-08) | – | ☐ ledig |
-| 4f Tax Engine (ER-18…21) | – | ☐ ledig |
+| 4e-1 Stop-loss (ER-13, §26), migration 15, D-029 | Yorgo | ✅ gren `yorgo/fas4e-stoploss` |
+| 4e-2 Nödstopp / kill switch (SR-07, §38), migration 16, D-030 | Yorgo | ☐ |
+| 4e-3 Skyddat driftläge (SR-08, §59), migration 17, D-031 | Yorgo | ☐ |
+| 4f Tax Engine (ER-18…21) | Robin (lämnad åt Robin, migration 18 och D-032 och uppåt) | ☐ |
 
 **Acceptanskriterier Fas 4 (§52):**
 - [x] Budgetöverskridanden blockeras (`test_budget.py::test_budget_overrun_is_blocked`).
