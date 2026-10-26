@@ -8,7 +8,8 @@ Default deny. Svaret är ja bara om **alla** villkor stämmer, i den här ordnin
 5. Inget aktivt stopp från en kontrollfunktion träffar agenten, dess departement eller verktyget (SR-05).
 6. Agentens roll har verktyget i sitt mandat.
 
-Styrverktyg (`governance.*`) nekas alltid för agenter (SR-04).
+Styrverktyg (`governance.*`) nekas alltid för agenter (SR-04). Spärrar (`gates=`), som nödstoppet
+(SR-07) och det skyddade driftläget (SR-08), kontrolleras före stoppen och mandatet.
 
 Varje beslut, ja eller nej, skrivs till audit-loggen när en sådan finns. Om loggningen
 misslyckas blir svaret nej. Systemet ska inte göra något det inte kan bevisa i efterhand (§59).
@@ -48,7 +49,9 @@ class AuthorizationEngine:
         environment: str,
         audit: AuditLog | None = None,
         stops: ControlStops | None = None,
+        gates: tuple = (),
     ) -> None:
+        """`gates`: spärrar med `tool_block_reason(agent, tool) -> str | None`, t.ex. nödstopp (SR-07)."""
         if environment not in ENVIRONMENTS:
             raise ValueError(f"okänd miljö {environment!r}")
         self._permissions = permissions
@@ -56,6 +59,7 @@ class AuthorizationEngine:
         self._environment = environment
         self._audit = audit
         self._stops = stops
+        self._gates = tuple(gates)
 
     def check(self, agent_id: str, tool: str) -> Decision:
         try:
@@ -95,6 +99,10 @@ class AuthorizationEngine:
             return deny(f"agenten är {agent.state.value} och får inte agera")
         if agent.state is AgentState.TESTING and self._environment != "sim":
             return deny("agenten testas och får bara agera i sim (SR-13)")
+        for gate in self._gates:  # nödstopp och skyddat driftläge (Fas 4e); ett fel här ger nej via check()
+            reason = gate.tool_block_reason(agent, tool)
+            if reason:
+                return deny(reason)
         if self._stops is not None:
             blocking = self._stops.blocking(agent.agent_id, agent.department, tool)
             if blocking:

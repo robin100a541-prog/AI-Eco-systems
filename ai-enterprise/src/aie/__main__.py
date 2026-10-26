@@ -110,7 +110,20 @@ def build_parser() -> argparse.ArgumentParser:
     manual.add_argument("request_id", nargs="?", help="förfrågans id (för show och answer)")
     manual.add_argument("--as", dest="founder", help="vilken grundare som svarar (en av founders i system.toml)")
     manual.add_argument("--file", dest="answer_file", help="fil med svaret, eller - för stdin")
+    kill = add("kill", "nödstopp: status, engage eller release (SR-07, §38, D-030)")
+    kill.add_argument("action", choices=("status", "engage", "release"))
+    kill.add_argument("--as", dest="founder", help="vilken grundare som agerar (en av founders i system.toml)")
+    kill.add_argument("--reason", default="", help="varför; krävs vid engage och release")
     return parser
+
+
+def _kill(args: argparse.Namespace) -> int:
+    from .risk.cli import kill  # importeras bara när kommandot används
+
+    if args.action != "status" and (not args.founder or not args.reason.strip()):
+        print("FEL: engage och release kräver --as <grundare> och --reason", file=sys.stderr)
+        return 1
+    return kill(args.config_dir, args.action, args.founder, args.reason)
 
 
 def _manual(args: argparse.Namespace) -> int:
@@ -141,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": lambda: runtime.status(args.config_dir),
         "approvals": lambda: _approvals(args),
         "manual": lambda: _manual(args),
+        "kill": lambda: _kill(args),
     }
     try:
         return commands[args.command]()
