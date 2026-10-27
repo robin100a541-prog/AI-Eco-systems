@@ -8,6 +8,35 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-048 Från simulering till riktiga pengar: bevisad lönsamhet först, sedan 500 kr, bara med grundarnas godkännande
+- **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-27 · **Bygger på:** D-019, D-042, D-043, D-047 · **Gäller:** §54, §55, ER-15, SR-11
+- **Bakgrund:** Yorgo vill att systemet först arbetar helt i simulering. Det ska visa en faktisk, hållbar vinst efter alla kostnader (även Etsy- och Gumroad-avgifter) och bygga på många tester, inte enstaka lyckade utfall. Först då ska det kunna rekommendera en första riktig investering på 500 kr, och senare eventuellt 1 000 kr. Inga riktiga pengar får användas utan uttryckligt godkännande.
+- **Beslut:**
+  1. `python -m aie simulate evaluate --scenario X` kör scenariot i minst `min_runs` (5) oberoende körningar med olika seed, var och en minst `min_days` (90) dagar. Varje körning sker i en egen tillfällig databas med samma agenter och spärrar som vanligt.
+  2. **Redo** betyder att alla dessa krav är uppfyllda (`config/simulation.toml`):
+     - varje körning har vinst efter alla kostnader, plattformsavgifter och reserverad skatt
+     - varje körning har vinst även de sista `recent_days` (30) dagarna
+     - medianmarginalen efter skatt är minst `min_margin_percent` (10 %)
+     - ingen körning löser ut stop-loss för hela företaget, skyddat driftläge eller nödstopp
+     - de likvida medlen faller aldrig mer än `max_drawdown_percent` (20 %) från startkapitalet
+
+     Färre än 3 körningar godtas aldrig som underlag (§29).
+  3. Resultatet är en **rekommendation, aldrig en handling.** Är allt uppfyllt rekommenderas en första riktig investering på `first_real_investment` (500 kr). Den kräver grundarnas uttryckliga godkännande (D-019: båda om beloppet är över `HUMAN_APPROVAL_THRESHOLD`) och Fas 7:s villkor (§55, Q-03–Q-05, Q-07). Inget i simuleringen kan sätta in eller flytta riktiga pengar, och ledgern avvisar `SIM` i prod och tvärtom (ER-15).
+  4. Att öka till `next_real_investment` (1 000 kr) bedöms först på resultat från riktiga pengar, inte på simuleringen. Ytterligare insättningar är alltid frivilliga och kräver godkännande.
+  5. Rapporten sparas som JSON i `<data_dir>/reports/` med SHA-256 (§30).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-047 Budgetar räknas från tillgängligt kapital; plattformsavgifter är försäljningskostnader
+- **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-27 · **Bygger på:** D-026, D-027, D-032 · **Ersätter:** D-026 punkt 4 när `mode = "capital"` används · **Ändrar:** `config/budgets.toml` och `config/risk_limits.toml` (värdena aktiveras i en egen PR som kräver båda grundarna, D-019 punkt 3) · **Gäller:** ER-03, ER-05, ER-13, ER-17, ER-19
+- **Bakgrund:** I simuleringen (6b-1) räknades plattformsavgifterna mot research-budgeten på 50 000 SIM, och budgeten saknade period. En lönsam verksamhet stoppades därför av stop-loss när avgifterna nådde budgeten. Yorgo vill att systemet utgår från ett startkapital på 500 kr och sedan från tillgängligt kapital och återinvesterad vinst, utan fast månadsbudget.
+- **Beslut:**
+  1. `budgets.toml` får läget `mode = "capital"`. Varje departement har då en **andel** (`share`, procent) av det **disponibla kapitalet** i stället för en fast budget. Disponibelt kapital är likvida medel minus reserv, åtaganden och reserverad skatt (D-027, D-032). Andelarna summerar till högst 100 %, och ingen andel ger mer än `MAX_DEPARTMENT_BUDGET`.
+  2. **Ingen budgetperiod.** Budgeten växer när verksamheten går med vinst och krymper vid förlust. Vinst återinvesteras alltså automatiskt, men aldrig reserven eller skatten. Nya insättningar är frivilliga och kräver grundarnas godkännande.
+  3. **Plattformsavgifter** (Etsy, Gumroad, Fiverr) är försäljningskostnader. De dras från intäkterna i resultatet (ER-09) men räknas inte som departementets utgifter, varken i budgeten, i uppdelningsdetekteringen (ER-04) eller i stop-lossens departementsgräns. All lönsamhet bedöms på nettovinst efter alla kostnader.
+  4. I kapitalläget mäter stop-loss inte departementsbudgeten. Företaget skyddas av förlustgränsen per initiativ, `MAX_TOTAL_DRAWDOWN` och reserven (ER-13).
+  5. `mode = "fixed"` (D-026) är fortfarande standard. Byte till kapitalläget och nya värden för ett startkapital på 500 kr görs i `budgets.toml` och `risk_limits.toml` i en egen PR. Den kräver båda grundarna (D-019 punkt 3).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-044 Behörighetsändring: agenternas verktyg i simuleringen
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-27 · **Bygger på:** D-017, D-043 · **Ändrar:** `config/permissions.toml` (**behörighetsändring**) · **Gäller:** SR-02, Fas 6
 - **Beslut:**

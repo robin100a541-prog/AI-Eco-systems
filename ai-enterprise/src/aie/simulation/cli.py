@@ -1,8 +1,13 @@
-"""`python -m aie simulate start|resume|status` (Fas 6b-2, D-043).
+"""`python -m aie simulate start|resume|status|evaluate` (Fas 6b-2, D-043, D-048).
 
     python -m aie simulate start --scenario normal --as yorgo [--days 10] [--agents scripted|local]
     python -m aie simulate resume [--days 10] [--agents scripted|local]
     python -m aie simulate status
+    python -m aie simulate evaluate --scenario normal [--runs 5] [--days 90] [--agents scripted|local]
+
+`evaluate` kör scenariot många gånger med olika seed, i tillfälliga databaser, och bedömer om
+affärsmodellen är lönsam nog för en första riktig investering (D-048). Det är en rekommendation,
+aldrig en handling. Rapporten sparas i `<data_dir>/reports/`.
 
 `start` kräver en tom datamapp (en körning per databas, D-042) och registrerar simuleringens
 organisation om registret är tomt. `resume` fortsätter där körningen slutade, även efter en krasch eller
@@ -26,11 +31,13 @@ from .scenario import load_scenario
 
 
 def simulate(config_dir: Path, action: str, scenario: str | None = None, founder: str | None = None,
-             days: int | None = None, agents: str = "scripted") -> int:
+             days: int | None = None, agents: str = "scripted", runs: int | None = None) -> int:
     from ..system import build_system
 
     try:
         config = runtime._load(config_dir, console=False)
+        if action == "evaluate":
+            return _evaluate(config, config_dir, scenario, runs, days, agents)
         with runtime._open(config) as db:
             run = stored_run(db)
             if action == "status":
@@ -66,6 +73,30 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
     except runtime.StartupError as exc:
         print(exc, file=sys.stderr)
         return 1
+
+
+def _evaluate(config, config_dir: Path, scenario: str, runs: int | None, days: int | None, agents: str) -> int:
+    from .readiness import evaluate, save_report
+
+    try:
+        departments = {m.department for m in load_permissions(config_dir).roles.values()}
+        sc = load_scenario(config_dir, scenario, departments, frozenset(config.system.founders))
+        result = evaluate(config, config_dir, sc, runs, days, agents)
+    except (ConfigError, SimulationError, ValueError) as exc:
+        raise runtime.StartupError(f"FEL: {exc}") from exc
+    print(f"Bedömning av {sc.name}: {len(result.runs)} körningar à {result.runs[0].days if result.runs else 0} dagar "
+          f"(agenter: {agents}, bara SIM)")
+    for r in result.runs:
+        margin = "-" if r.margin_percent is None else f"{r.margin_percent:.1f} %"
+        print(f"  {r.seed}: intäkter {r.revenue_minor}, avgifter {r.fees_minor}, kostnader {r.costs_minor}, "
+              f"efter skatt {r.after_tax_minor}, sista {result.rules.recent_days} dagarna {r.recent_net_minor}, "
+              f"marginal {margin}, fall {r.drawdown_percent:.1f} %")
+    for reason in result.reasons:
+        print(f"  - {reason}")
+    print(("REKOMMENDATION: " if result.ready else "RESULTAT: ") + result.recommendation)
+    path, digest = save_report(result, config.system.data_dir)
+    print(f"Rapport: {path} (SHA-256 {digest})")
+    return 0
 
 
 def _line(d: dict) -> str:

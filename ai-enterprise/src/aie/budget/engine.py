@@ -11,6 +11,8 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
    eller `critical` blockeras (§24, §25).
 5. **Budget:** departementets utgifter i ledgern (kostnader och avgifter, väntade och genomförda,
    med korrigeringar) plus beloppet får inte överstiga budgeten (§52: budgetöverskridanden blockeras).
+   I kapitalläget (D-047) får beloppet inte överstiga departementets andel av det disponibla kapitalet
+   (högst `MAX_DEPARTMENT_BUDGET`), och plattformsavgifter räknas inte som departementets utgifter.
 6. **Åtaganden:** väntade utgifter plus beloppet får inte överstiga departementets `max_commitment`
    eller hela företagets `MAX_COMMITTED_CAPITAL` (§23).
 7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs båda grundarna
@@ -110,6 +112,9 @@ class BudgetEngine:
         self._limits = limits
         self._budgets = dict(budgets)
         self._audit = audit
+        self._capital_mode = any(b.capital_based for b in self._budgets.values())
+        # D-047: i kapitalläget är plattformsavgifter försäljningskostnader, inte departementets utgifter
+        self._spend_types = frozenset({EntryType.COST}) if self._capital_mode else _SPEND_TYPES
 
     def check(self, actor: str, request: SpendRequest) -> BudgetCheck:
         blocked: list[str] = []
@@ -148,7 +153,14 @@ class BudgetEngine:
                 blocked.append(
                     f"riskklass {r.risk_class.value} är över departementets riskutrymme {budget.risk_room.value}"
                 )
-            if spent + amount > budget.budget_minor:
+            if budget.capital_based:
+                available = self._available(budget)
+                if amount > available:
+                    blocked.append(
+                        f"budgeten överskrids: {amount} > departementets andel {available} {limits.currency} "
+                        f"({budget.share_percent} % av disponibelt kapital, D-047, §52)"
+                    )
+            elif spent + amount > budget.budget_minor:
                 blocked.append(
                     f"budgeten överskrids: {spent} + {amount} > {budget.budget_minor} {limits.currency} (§52)"
                 )
@@ -183,7 +195,7 @@ class BudgetEngine:
             required,
             spent,
             committed,
-            budget.budget_minor if budget else None,
+            (self._available(budget) if budget.capital_based else budget.budget_minor) if budget else None,
             tuple(flags),
         )
         self._audit.append(
@@ -244,7 +256,7 @@ class BudgetEngine:
         earlier = [
             e for e in self._ledger.entries(self._limits.currency)
             if e.initiative == r.initiative
-            and e.entry_type in _SPEND_TYPES
+            and e.entry_type in self._spend_types
             and e.status in (Status.PENDING, Status.SETTLED)
             and e.approval is Approval.NOT_REQUIRED
             and datetime.fromisoformat(e.recorded_at) >= since
@@ -272,15 +284,32 @@ class BudgetEngine:
         return {e.department for e in self._ledger.entries()}
 
     def usage(self, department: str) -> tuple[int, int | None]:
-        """(utgifter hittills, budget) för departementet. Budget None = saknas. Ren läsning."""
+        """(utgifter hittills, vad som återstår att använda nu) för departementet. None = ingen budget.
+
+        Fast läge: budget minus utgifter. Kapitalläge (D-047): andelen av det disponibla kapitalet just nu.
+        Ren läsning; inget revideras.
+        """
         budget = self._budgets.get(department)
-        return self._usage(department, self._limits.currency)[0], budget.budget_minor if budget else None
+        spent = self._usage(department, self._limits.currency)[0]
+        if budget is None:
+            return spent, None
+        if budget.capital_based:
+            return spent, self._available(budget)
+        return spent, max(0, budget.budget_minor - spent)
+
+    def _available(self, budget) -> int:
+        """D-047: departementets andel av det disponibla kapitalet nu, högst MAX_DEPARTMENT_BUDGET."""
+        tax = self._tax.reserved_minor(self._limits.currency) if self._tax is not None else None
+        position = capital_position(self._ledger.entries(self._limits.currency), self._limits, tax)
+        available = position.disposable_minor * budget.share_percent // 100
+        cap = self._limits.max_department_budget
+        return min(available, cap.amount_minor) if cap is not None else 0
 
     def _usage(self, department: str, currency: str) -> tuple[int, int]:
         """(utgifter, väntade utgifter) för departementet. Korrigeringar räknas med sitt tecken."""
         spent = committed = 0
         for e in self._ledger.entries(currency):
-            if e.department != department or e.entry_type not in _SPEND_TYPES:
+            if e.department != department or e.entry_type not in self._spend_types:
                 continue
             if e.status in (Status.PENDING, Status.SETTLED):
                 spent += e.amount_minor

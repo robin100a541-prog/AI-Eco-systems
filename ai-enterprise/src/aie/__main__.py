@@ -9,7 +9,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
-- `simulate`      affärssimulering med SIM: start, resume, status (Fas 6, D-042, D-043)
+- `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
 gäller relativt mappen kommandot körs från.
@@ -116,9 +116,10 @@ def build_parser() -> argparse.ArgumentParser:
     kill.add_argument("action", choices=("status", "engage", "release"))
     kill.add_argument("--as", dest="founder", help="vilken grundare som agerar (en av founders i system.toml)")
     kill.add_argument("--reason", default="", help="varför; krävs vid engage och release")
-    sim = add("simulate", "affärssimulering med SIM: start, resume eller status (Fas 6, D-042, D-043)")
-    sim.add_argument("action", choices=("start", "resume", "status"))
-    sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start)")
+    sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
+    sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
+    sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
+    sim.add_argument("--runs", type=int, help="evaluate: antal körningar (standard: min_runs i simulation.toml)")
     sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
     sim.add_argument("--days", type=int, help="hur många dagar som körs nu (standard: resten av scenariot)")
     sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
@@ -132,10 +133,16 @@ def _simulate(args: argparse.Namespace) -> int:
     if args.action == "start" and (not args.scenario or not args.founder):
         print("FEL: start kräver --scenario <namn> och --as <grundare>", file=sys.stderr)
         return 1
+    if args.action == "evaluate" and not args.scenario:
+        print("FEL: evaluate kräver --scenario <namn>", file=sys.stderr)
+        return 1
+    if args.runs is not None and args.runs < 1:
+        print("FEL: --runs måste vara minst 1", file=sys.stderr)
+        return 1
     if args.days is not None and args.days < 1:
         print("FEL: --days måste vara minst 1", file=sys.stderr)
         return 1
-    return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents)
+    return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
 
 
 def _kill(args: argparse.Namespace) -> int:

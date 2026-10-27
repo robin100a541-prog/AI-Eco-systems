@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-27 — Kapitalbaserade budgetar och bedömning av lönsamhet (D-047, D-048)
+### Tillagt
+- `budgets.toml` `mode = "capital"` (D-047): andel av det disponibla kapitalet i stället för fast budget, utan period. Plattformsavgifter räknas inte mot departementet, och stop-loss mäter inte departementsbudgeten i det läget. `fixed` är fortfarande standard.
+- `BudgetEngine.usage()` ger vad som återstår, i båda lägena.
+- `src/aie/simulation/readiness.py` och `python -m aie simulate evaluate` (D-048): många oberoende körningar bedöms mot `config/simulation.toml`. Resultatet är en rekommendation, aldrig en handling, och rapporten har SHA-256.
+- Scenarierna har realistiska avgifter: Etsy 10,5 % + 5,70 kr per order, Gumroad 10 % + 5,50 kr, Fiverr 20 % (D-010, simulerat).
+- D-047 och D-048 (föreslagna).
+- `tests/unit/test_budget_capital.py` (7) och `tests/unit/test_readiness.py` (7). Hela sviten ger 561 OK på Windows 11, Python 3.12.0.
+- Provat på riktigt: `simulate evaluate --scenario normal` med nuvarande fasta budget gav 5 × 90 dagar och svaret "inte redo". Plattformsavgifterna förbrukade research-budgeten, och stop-loss stoppade departementet, så de sista 30 dagarna gav 0. Det är precis det D-047 åtgärdar.
+
 ## [Unreleased] — 2026-10-27 — Fas 6b-2: åtgärdsprotokoll, arbetscykel och `python -m aie simulate`
 ### Tillagt
 - `src/aie/simulation/`:
