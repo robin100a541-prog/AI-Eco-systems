@@ -20,8 +20,8 @@ alltså att koden ändras eller kopplas ur, inte att något försvinner av sig s
 | D-042 | Simulering: startkapital, seedad marknad, scenarier, bara i sim (tillagt 2026-10-27) | Godkänn |
 | D-043 | Arbetscykeln: agenterna föreslår, spärrarna avgör (tillagt 2026-10-27) | Godkänn |
 | D-044 | Agenternas verktyg i simuleringen. **Behörighetsändring** (tillagt 2026-10-27) | Godkänn |
-| D-047 | Budget som andel av tillgängligt kapital; avgifter är försäljningskostnader. **Ändrar riskgränserna** (värdena i en egen PR) | Godkänn |
-| D-048 | Vägen till riktiga pengar: bevisad lönsamhet i många körningar, sedan 500 kr, bara med ert godkännande | Godkänn |
+| D-047 | Budget som andel av tillgängligt kapital; avgifter är försäljningskostnader. **Ändrar riskgränserna** (värdena i en egen PR) | ✅ Godkänd av båda 2026-10-27 |
+| D-048 | Vägen till riktiga pengar: bevisad lönsamhet i många körningar, sedan 500 kr, bara med ert godkännande | ✅ Godkänd av båda 2026-10-27 |
 
 ---
 

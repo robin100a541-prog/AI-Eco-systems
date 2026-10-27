@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## [Unreleased] — 2026-10-27 — Värden för 500 kr och kapitalbudget (D-047). Kräver båda grundarna (D-019 punkt 3)
+## [Unreleased] — 2026-10-27 — Värden för 500 kr och kapitalbudget (D-047), godkända av båda grundarna
 ### Ändrat
 - `config/risk_limits.toml` för ett simulerat startkapital på 500 kr:
 
