@@ -13,6 +13,7 @@ from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.risk import StopLoss
 from aie.tax import TaxEngine, load_tax_config
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDERS = frozenset({"robin", "yorgo"})
@@ -38,13 +39,13 @@ class CapitalCase(unittest.TestCase):
         self.dir = Path(tmp.name)
         self.db = Database.open(self.dir / "data", "sim")
         self.addCleanup(self.db.close)
-        permissions = load_permissions(ROOT / "config")
+        permissions = load_permissions(TEST_CONFIG)
         self.departments = {m.department for m in permissions.roles.values()}
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         self.audit = AuditLog(self.db)
         auth = AuthorizationEngine(permissions, AgentRegistry(permissions, self.db), "sim", self.audit)
         self.ledger = Ledger(self.db, auth, self.departments, FOUNDERS, self.audit, approval_threshold=10_000)
-        self.tax = TaxEngine(self.db, self.ledger, load_tax_config(ROOT / "config", FOUNDERS), self.audit, FOUNDERS)
+        self.tax = TaxEngine(self.db, self.ledger, load_tax_config(TEST_CONFIG, FOUNDERS), self.audit, FOUNDERS)
         self.budgets = self.load(CAPITAL)
         self.engine = BudgetEngine(self.ledger, self.limits, self.budgets, self.audit, tax=self.tax)
         self.n = 0
@@ -78,8 +79,18 @@ class TestConfig(CapitalCase):
 
     def test_fixed_mode_is_still_the_default(self):
         """Verifies D-026 och D-047: utan mode gäller fasta budgetar som förut."""
-        budgets = load_budgets(ROOT / "config", self.departments, self.limits)
+        budgets = load_budgets(TEST_CONFIG, self.departments, self.limits)
         self.assertFalse(any(b.capital_based for b in budgets.values()))
+
+    def test_repo_config_starts_with_500_kr_and_capital_budgets(self):
+        """Verifies D-047: repots värden ger 500 kr i startkapital och budgetar som andel av kapitalet."""
+        repo = ROOT / "config"
+        limits = load_config(repo).risk
+        budgets = load_budgets(repo, self.departments, limits)
+        self.assertEqual((limits.start_capital.amount_minor, limits.currency), (50_000, "SIM"))
+        self.assertLess(limits.minimum_reserve.amount_minor, limits.start_capital.amount_minor)
+        self.assertTrue(all(b.capital_based for b in budgets.values()))
+        self.assertLessEqual(sum(b.share_percent for b in budgets.values()), 100)
 
 
 class TestBudgetFromCapital(CapitalCase):
@@ -115,7 +126,7 @@ class TestFeesAreCostOfSales(CapitalCase):
         self.book("research", EntryType.COST, 1_000)
         spent, _ = self.engine.usage("research")
         self.assertEqual(spent, 1_000)
-        fixed = BudgetEngine(self.ledger, self.limits, load_budgets(ROOT / "config", self.departments, self.limits),
+        fixed = BudgetEngine(self.ledger, self.limits, load_budgets(TEST_CONFIG, self.departments, self.limits),
                              self.audit)
         self.assertEqual(fixed.usage("research")[0], 61_000)  # fast läge: avgifterna räknas som förut
 

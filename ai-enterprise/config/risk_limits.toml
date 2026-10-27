@@ -6,20 +6,21 @@
 # handlingar som behöver gränsen blockeras. I prod vägrar systemet starta.
 #
 # SIMULERADE VÄRDEN. De riktiga värdena sätts av grundarna efter Fas 6 (Q-04).
+# D-047 (2026-10-27): skalat till ett simulerat startkapital på 500 kr (50 000 öre i SIM).
 
 currency = "SIM"
 
 # --- §25 -----------------------------------------------------------------------------
-START_CAPITAL = 1_000_000                # belopp: kapital som ställs till förfogande
-MINIMUM_RESERVE = 300_000                # belopp: skyddad reserv, får aldrig disponeras (§5)
+START_CAPITAL = 50_000                   # belopp: kapital som ställs till förfogande (500 kr)
+MINIMUM_RESERVE = 10_000                 # belopp: skyddad reserv, får aldrig disponeras (§5) (100 kr)
 MAX_TOTAL_DRAWDOWN = 20                  # procent av START_CAPITAL som högst får förloras
-MAX_SINGLE_EXPERIMENT_LOSS = 50_000      # belopp: största tillåtna förlust per experiment
-MAX_DEPARTMENT_BUDGET = 200_000          # belopp: största budget för ett departement
-MAX_SINGLE_TRANSACTION = 20_000          # belopp: största enskilda transaktion
-MAX_COMMITTED_CAPITAL = 400_000          # belopp: högsta summa samtidiga åtaganden
-MAX_ALLOWED_UNVERIFIED_SPEND = 10_000    # belopp: utgifter som ännu saknar underlag
-HUMAN_APPROVAL_THRESHOLD = 10_000        # belopp: över detta krävs grundarnas godkännande
-REINVESTMENT_POLICY = 50                 # procent av realiserad nettovinst som får återinvesteras
+MAX_SINGLE_EXPERIMENT_LOSS = 5_000       # belopp: största tillåtna förlust per experiment (50 kr)
+MAX_DEPARTMENT_BUDGET = 20_000           # belopp: största budget för ett departement (200 kr)
+MAX_SINGLE_TRANSACTION = 5_000           # belopp: största enskilda transaktion (50 kr)
+MAX_COMMITTED_CAPITAL = 15_000           # belopp: högsta summa samtidiga åtaganden (150 kr)
+MAX_ALLOWED_UNVERIFIED_SPEND = 1_000     # belopp: utgifter som ännu saknar underlag (10 kr)
+HUMAN_APPROVAL_THRESHOLD = 2_500         # belopp: över detta krävs grundarnas godkännande (25 kr)
+REINVESTMENT_POLICY = 80                 # procent av realiserad nettovinst efter skatt som får återinvesteras
 
 # --- D-009: betalda API:er -----------------------------------------------------------------
 API_REINVEST_SHARE = 20                  # procent av realiserad nettovinst (förslag i D-009)

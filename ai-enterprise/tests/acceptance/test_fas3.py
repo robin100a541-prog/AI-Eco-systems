@@ -38,6 +38,7 @@ from aie.governance import (
 from aie.governance.cli import build
 from aie.memory import Database
 from aie.orchestration import TaskError, TaskStatus
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 ORG = (  # §8: grundare → CEO → Research-chef → forskare; kontrollfunktionerna direkt under grundarna
@@ -74,7 +75,7 @@ class Fas3Acceptance(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
-        self.config = load_config(ROOT / "config")
+        self.config = load_config(TEST_CONFIG)
         self.start_system()
         for agent_id, role, manager in ORG:
             self.gov.registry.register(agent_id, role, manager, "yorgo", "MVP")
@@ -92,7 +93,7 @@ class Fas3Acceptance(unittest.TestCase):
     def start_system(self):
         self.db = Database.open(self.dir / "data", "sim")
         self.addCleanup(self.db.close)
-        self.gov = build(self.config, self.db, ROOT / "config")
+        self.gov = build(self.config, self.db, TEST_CONFIG)
         self.founders = frozenset(self.config.system.founders)
 
     @property

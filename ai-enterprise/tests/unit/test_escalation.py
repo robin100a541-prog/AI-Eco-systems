@@ -49,6 +49,7 @@ from aie.llm import (
 )
 from aie.memory import Database
 from aie.orchestration import TaskBoard
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
@@ -72,7 +73,7 @@ class EscalationCase(unittest.TestCase):
         self.dir = Path(tmp.name)
         self.db = Database.open(self.dir / "data", "sim")
         self.addCleanup(self.db.close)
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         self.build(self.db)
         for agent_id, role, manager in (
             ("ceo-1", "ceo", None),
@@ -90,7 +91,7 @@ class EscalationCase(unittest.TestCase):
         self.board.assign("lead-1", self.small.task_id, "res-1")
 
     def build(self, db):
-        permissions = load_permissions(ROOT / "config")
+        permissions = load_permissions(TEST_CONFIG)
         self.audit = AuditLog(db)
         self.registry = AgentRegistry(permissions, db)
         self.engine = AuthorizationEngine(permissions, self.registry, "sim", self.audit)
@@ -357,7 +358,7 @@ class TestCli(EscalationCase):
 
     def setUp(self):
         super().setUp()
-        system = (ROOT / "config" / "system.toml").read_text(encoding="utf-8")
+        system = (TEST_CONFIG / "system.toml").read_text(encoding="utf-8")
         system = system.replace(
             'data_dir = "data"', f"data_dir = {json.dumps(str(self.dir / 'data'))}"
         )
@@ -369,7 +370,7 @@ class TestCli(EscalationCase):
         (config_dir / "system.toml").write_text(system, encoding="utf-8")
         for name in ("risk_limits.toml", "permissions.toml"):
             (config_dir / name).write_text(
-                (ROOT / "config" / name).read_text(encoding="utf-8"), encoding="utf-8"
+                (TEST_CONFIG / name).read_text(encoding="utf-8"), encoding="utf-8"
             )
         self.config_dir = config_dir
         self.request = self.queue.submit_decision(

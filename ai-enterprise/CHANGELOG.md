@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-27 — Värden för 500 kr och kapitalbudget (D-047), godkända av båda grundarna
+### Ändrat
+- `config/risk_limits.toml` för ett simulerat startkapital på 500 kr:
+
+  | Gräns | Värde |
+  |---|---|
+  | `START_CAPITAL` | 50 000 (500 kr) |
+  | `MINIMUM_RESERVE` | 10 000 (100 kr) |
+  | `MAX_SINGLE_EXPERIMENT_LOSS` | 5 000 |
+  | `MAX_DEPARTMENT_BUDGET` | 20 000 |
+  | `MAX_SINGLE_TRANSACTION` | 5 000 |
+  | `MAX_COMMITTED_CAPITAL` | 15 000 |
+  | `MAX_ALLOWED_UNVERIFIED_SPEND` | 1 000 |
+  | `HUMAN_APPROVAL_THRESHOLD` | 2 500 (25 kr) |
+  | `REINVESTMENT_POLICY` | 80 % |
+  | `MAX_TOTAL_DRAWDOWN` | 20 % (oförändrad) |
+
+- `config/budgets.toml` använder `mode = "capital"`. Andelarna av det disponibla kapitalet är: research 40 %, executive 5 %, finance 5 %, risk, compliance och audit 2 % vardera, och 44 % buffert.
+- Testerna använder en låst kopia av de tidigare värdena (`tests/fixtures/limits/`, `fixture_config.py`), så att grundarnas värden kan ändras utan att testerna går sönder. Två tester kontrollerar repots egna filer.
+- Provat på riktigt med `simulate evaluate`:
+  - `normal` gav 5 × 90 dagar med vinst i alla körningar, även de sista 30 dagarna, och en marginal runt 40 %. Resultatet var "redo för 500 kr" med grundarnas godkännande.
+  - `loss` blev "inte redo". En av fem körningar stoppade hela företaget och föll 22,8 %.
+- Hela sviten ger 562 OK.
+
 ## [Unreleased] — 2026-10-27 — Kapitalbaserade budgetar och bedömning av lönsamhet (D-047, D-048)
 ### Tillagt
 - `budgets.toml` `mode = "capital"` (D-047): andel av det disponibla kapitalet i stället för fast budget, utan period. Plattformsavgifter räknas inte mot departementet, och stop-loss mäter inte departementsbudgeten i det läget. `fixed` är fortfarande standard.

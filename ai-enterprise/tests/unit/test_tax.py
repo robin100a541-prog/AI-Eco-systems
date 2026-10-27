@@ -13,6 +13,7 @@ from aie.config import ConfigError, load_config
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.tax import TaxEngine, TaxError, load_tax_config
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
@@ -28,9 +29,9 @@ class TaxCase(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
-        self.permissions = load_permissions(ROOT / "config")
-        self.config = load_tax_config(ROOT / "config", FOUNDERS)
-        self.limits = load_config(ROOT / "config").risk
+        self.permissions = load_permissions(TEST_CONFIG)
+        self.config = load_tax_config(TEST_CONFIG, FOUNDERS)
+        self.limits = load_config(TEST_CONFIG).risk
         self.start()
         for agent_id, role in (("cfo-1", "cfo"), ("cro-1", "cro")):
             self.registry.register(agent_id, role, None, "yorgo", "test")
@@ -57,7 +58,7 @@ class TaxCase(unittest.TestCase):
 class TestConfig(TaxCase):
     def test_config_is_validated(self):
         """Verifies ER-18 och D-032: tax.toml kräver alla spår, giltiga satser och andelar som summerar till 100 %."""
-        text = (ROOT / "config" / "tax.toml").read_text(encoding="utf-8")
+        text = (TEST_CONFIG / "tax.toml").read_text(encoding="utf-8")
         for broken in (text.replace("hobby = 3_500", ""), text.replace("yorgo = 5_000", "yorgo = 4_000"),
                        text.replace("untracked_rate = 5_000", "untracked_rate = 1_000"),
                        text.replace("vat_warning_percent = 80", "vat_warning_percent = 100")):
@@ -124,7 +125,7 @@ class TestReservedTax(TaxCase):
                                                Approval.APPROVED, ("decision:start",), status=Status.SETTLED))
         sale = self.book("s1", EntryType.REVENUE, 15_000)
         self.tax.assign("robin", sale.entry_id, "partnership")  # likvida 315 000, reserv 300 000, skatt 6 000
-        budgets = load_budgets(ROOT / "config", self.departments, self.limits)
+        budgets = load_budgets(TEST_CONFIG, self.departments, self.limits)
         request = SpendRequest("research", 9_500, "SIM", "etsy", Risk.LOW)
         self.assertTrue(BudgetEngine(self.ledger, self.limits, budgets, self.audit).check("robin", request).allowed)
         check = BudgetEngine(self.ledger, self.limits, budgets, self.audit, tax=self.tax).check("robin", request)

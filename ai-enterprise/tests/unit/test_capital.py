@@ -16,6 +16,7 @@ from aie.config import load_config
 from aie.config.models import Money
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDERS = frozenset({"robin", "yorgo"})
@@ -28,10 +29,10 @@ class CapitalCase(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.db = Database.open(Path(tmp.name) / "data", "sim")
         self.addCleanup(self.db.close)
-        permissions = load_permissions(ROOT / "config")
+        permissions = load_permissions(TEST_CONFIG)
         self.registry = AgentRegistry(permissions, self.db)
         self.departments = {m.department for m in permissions.roles.values()}
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         self.audit = AuditLog(self.db)
         self.authz = AuthorizationEngine(permissions, self.registry, "sim", self.audit)
         self.ledger = Ledger(
@@ -42,7 +43,7 @@ class CapitalCase(unittest.TestCase):
             self.audit,
             approval_threshold=10_000,
         )
-        self.budgets = load_budgets(ROOT / "config", self.departments, self.limits)
+        self.budgets = load_budgets(TEST_CONFIG, self.departments, self.limits)
         self.n = 0
 
     def book(self, amount, kind, status=Status.SETTLED, department="research"):

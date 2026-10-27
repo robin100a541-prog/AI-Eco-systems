@@ -29,6 +29,7 @@ from aie.ledger import Approval, DuplicateEntry, EntryDraft, EntryType, Ledger, 
 from aie.memory import Database
 from aie.risk import KillSwitch, ProtectedMode, StopLoss
 from aie.tax import TaxEngine, load_tax_config
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDERS = frozenset({"robin", "yorgo"})
@@ -45,8 +46,8 @@ class Fas4Case(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         self.db = Database.open(Path(tmp.name) / "data", "sim")
         self.addCleanup(self.db.close)
-        config = load_config(ROOT / "config")
-        permissions = load_permissions(ROOT / "config")
+        config = load_config(TEST_CONFIG)
+        permissions = load_permissions(TEST_CONFIG)
         departments = {m.department for m in permissions.roles.values()}
         self.audit = AuditLog(self.db)
         self.registry = AgentRegistry(permissions, self.db)
@@ -62,9 +63,9 @@ class Fas4Case(unittest.TestCase):
         clock = lambda: NOW.isoformat(timespec="seconds")  # noqa: E731
         self.ledger = Ledger(self.db, self.auth, departments, FOUNDERS, self.audit,
                              self.limits.human_approval_threshold.amount_minor, clock=clock)
-        self.tax = TaxEngine(self.db, self.ledger, load_tax_config(ROOT / "config", FOUNDERS), self.audit, FOUNDERS,
+        self.tax = TaxEngine(self.db, self.ledger, load_tax_config(TEST_CONFIG, FOUNDERS), self.audit, FOUNDERS,
                              self.auth, clock=clock)
-        budgets = load_budgets(ROOT / "config", departments, config.risk)
+        budgets = load_budgets(TEST_CONFIG, departments, config.risk)
         stoploss = StopLoss(self.db, self.ledger, self.limits, budgets, self.audit, FOUNDERS)
         mode = ProtectedMode(self.db, self.ledger, self.registry, permissions, self.limits, self.auth, self.audit,
                              FOUNDERS, kill_switch=self.kill)
