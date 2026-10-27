@@ -271,6 +271,11 @@ class BudgetEngine:
     def _departments_in_ledger(self) -> set[str]:
         return {e.department for e in self._ledger.entries()}
 
+    def usage(self, department: str) -> tuple[int, int | None]:
+        """(utgifter hittills, budget) för departementet. Budget None = saknas. Ren läsning."""
+        budget = self._budgets.get(department)
+        return self._usage(department, self._limits.currency)[0], budget.budget_minor if budget else None
+
     def _usage(self, department: str, currency: str) -> tuple[int, int]:
         """(utgifter, väntade utgifter) för departementet. Korrigeringar räknas med sitt tecken."""
         spent = committed = 0

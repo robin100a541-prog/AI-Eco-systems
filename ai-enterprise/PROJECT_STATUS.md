@@ -134,6 +134,14 @@
   - Det finns ännu inga agenter som fattar beslut. De kommer i 6b-2.
 - **Fynd:** med `budgets.toml` (research 50 000, utan period) räknas plattformsavgifter och styckkostnader mot departementets budget. Därför stoppar stop-loss en lönsam verksamhet när avgifterna har nått 50 000, och förlustgränsen per initiativ (50 000) nås aldrig före departementsbudgeten. Det kräver ett beslut av er båda: budgetperiod, och om avgifter som dras vid försäljning ska räknas som utgift mot budgeten. Momsscenariot säljer därför utan plattformsavgifter.
 
+## Ändrat 2026-10-27 (Fas 6b-2)
+- **Arbetscykeln:** `python -m aie simulate start|resume|status`.
+  - Agenterna (skriptade i CI, lokala via Ollama om man vill) föreslår åtgärder i JSON.
+  - Varje åtgärd går genom Authorization Engine, och utgifter också genom budgetmotorn.
+  - Affärsförslag kräver de 11 fälten i §12. Motstridiga bedömningar hålls tills CEO har avgjort (§21).
+  - D-043 och D-044. **D-044 är en behörighetsändring:** fyra nya verktyg för research-cheferna, forskarna, CEO och CFO.
+- **Inte modellerat än:** annonser påverkar inte efterfrågan i marknadsmodellen. En utgift är bara en kostnad. Utgifter som kräver grundarnas godkännande genomförs inte i simuleringen.
+
 ## Vad som INTE är gjort / inte verifierat
 - `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
 - Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
@@ -147,8 +155,8 @@
 | # | Vad | Vem |
 |---|---|---|
 | 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
-| 2 | Godkänna D-041 och D-042 (spärrar vid start, simulering) | Båda |
-| 3 | Fas 6b-2–6b-5: arbetscykel, rapporter, övervakning och acceptanstester (plan godkänd av båda) | Yorgo |
+| 2 | Godkänna D-041–D-044 (spärrar vid start, simulering, arbetscykel och **behörighetsändringen** D-044) | Båda |
+| 3 | Fas 6b-3–6b-5: rapporter, övervakning och acceptanstester (plan godkänd av båda) | Yorgo |
 | 4 | Besluta om budgetperiod och om plattformsavgifter ska räknas mot departementsbudgeten (fynd i 6b-1) | Båda |
 | 5 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 

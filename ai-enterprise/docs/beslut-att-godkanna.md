@@ -17,6 +17,9 @@ alltså att koden ändras eller kopplas ur, inte att något försvinner av sig s
 | D-039 | Versionerade strategier: återställning utan att historiken försvinner | Godkänn |
 | D-040 | SR-17: avstängning bara med dokumenterade skäl | Godkänn |
 | D-041 | `aie start` startar inte utan spärrarna | Godkänn |
+| D-042 | Simulering: startkapital, seedad marknad, scenarier, bara i sim (tillagt 2026-10-27) | Godkänn |
+| D-043 | Arbetscykeln: agenterna föreslår, spärrarna avgör (tillagt 2026-10-27) | Godkänn |
+| D-044 | Agenternas verktyg i simuleringen. **Behörighetsändring** (tillagt 2026-10-27) | Godkänn |
 
 ---
 
@@ -121,6 +124,53 @@ kontrollerna regelbundet. Stop-loss börjar mätas först när kapital finns i l
 - Att stop-loss ska mätas även utan kapital: en liten kodändring. Då löser stop-loss ut direkt på ett tomt system.
 
 **Rekommendation: godkänn.** Det är förutsättningen för Fas 6b, eftersom agentkörningar ska ske med alla spärrar på.
+
+---
+
+## D-042 Simulering (tillagt 2026-10-27)
+
+**Vad det innebär.** En simulering startas bara i `sim` med `SIM`, av en grundare och i en tom datamapp.
+Startkapitalet blir `START_CAPITAL`. Marknaden har en fast seed, så samma scenario ger samma resultat.
+Varje order bokförs som en vanlig ledgerpost, och spärrarna pausar försäljningen. Simuleringen får
+märka skattespår i sim, vilket ändrar D-032 punkt 3.
+
+**Om ni säger nej eller vill ändra.**
+- Andra scenarier eller värden: ändra filerna i `config/scenarios/`.
+- Att simuleringen inte ska få märka skattespår: intäkterna blir utan spår och reserveras med den högsta satsen.
+
+**Rekommendation: godkänn.**
+
+## D-043 Arbetscykeln (tillagt 2026-10-27)
+
+**Vad det innebär.** Varje simulerad dag får agenterna läget och svarar med förslag i ett fast format.
+Varje förslag kontrolleras av samma spärrar som i riktig drift, och bara det som får ja genomförs.
+Ett affärsförslag måste ha alla 11 fält i §12. När CFO och CRO är oense hålls initiativet tills CEO har
+avgjort. I CI är agenterna skriptade. Lokala modeller kan användas manuellt, och externa modeller
+används aldrig.
+
+**Om ni säger nej eller vill ändra.**
+- Andra åtgärdstyper eller roller: ett nytt beslut, plus en kodändring.
+- Nej till hela beslutet: då finns ingen arbetscykel, och Fas 6 kan inte testas mot agenter.
+
+**Rekommendation: godkänn.**
+
+## D-044 Agenternas verktyg i simuleringen (tillagt 2026-10-27)
+
+> ⚠️ **BEHÖRIGHETSÄNDRING** i `config/permissions.toml`: fyra nya verktyg, `sim.spend`, `sales.list`,
+> `forecast.make` och `proposal.submit`.
+> - Research-chefen får alla fyra.
+> - Forskaren får `forecast.make` och `proposal.submit`.
+> - CEO och CFO får `forecast.make`.
+> - Kontrollfunktionerna får inga nya verktyg.
+
+**Vad det innebär.** Utan verktygen kan agenterna inte göra något i simuleringen. Verktygen flyttar
+inga riktiga pengar. Varje utgift går genom budgetmotorn och bokförs i `SIM`.
+
+**Om ni säger nej eller vill ändra.**
+- Färre roller: ta bort verktyget från rollen i `permissions.toml`. Då nekas rollens åtgärder.
+- Nej till hela beslutet: verktygen tas bort, och arbetscykeln kan bara skriva rapporter.
+
+**Rekommendation: godkänn.**
 
 ---
 

@@ -71,6 +71,7 @@ class System:
     currency: str = "SIM"
     db: Database | None = None
     permissions: object = None
+    budgets: dict = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -143,5 +144,5 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     removal = RemovalReview(db, registry, permissions, audit, founders, incidents, performance, ledger, **t)
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
-                    permissions=permissions)
+                    permissions=permissions, budgets=budgets)
     return system
