@@ -8,6 +8,49 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-044 Behörighetsändring: agenternas verktyg i simuleringen
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-27 · **Bygger på:** D-017, D-043 · **Ändrar:** `config/permissions.toml` (**behörighetsändring**) · **Gäller:** SR-02, Fas 6
+- **Beslut:**
+  1. Fyra nya verktyg läggs i katalogen:
+     - `sim.spend`: föreslå en utgift. Budgetmotorn och spärrarna avgör.
+     - `sales.list`: lista eller pausa ett initiativ. Momsgränsen gäller (ER-20).
+     - `forecast.make`: logga en prognos (FR-16).
+     - `proposal.submit`: lämna ett affärsförslag (FR-23).
+  2. Rollerna får verktygen så här:
+
+     | Roll | Nya verktyg |
+     |---|---|
+     | `research_lead` | `sim.spend`, `sales.list`, `forecast.make`, `proposal.submit` |
+     | `researcher` | `forecast.make`, `proposal.submit` |
+     | `ceo`, `cfo` | `forecast.make` |
+
+     Kontrollfunktionerna får inga nya verktyg.
+  3. Inget av verktygen flyttar riktiga pengar eller kontaktar omvärlden. Utgifter bokförs i `SIM` av `system:simulation`, och bara i sim (D-042).
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
+### D-043 Åtgärdsprotokoll och arbetscykel: agenterna föreslår, spärrarna avgör
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-27 · **Bygger på:** D-042, D-044, D-036, D-041 · **Gäller:** FR-20, FR-23, §12, §20, §21, §29, DR-13
+- **Beslut:**
+  1. **Ett varv är en dag** och följer §20:
+     - Dagen börjar med scenariots aktörshändelser.
+     - Läget skickas till agenterna som `internal`-data via `LLMGateway`, så bara lokala leverantörer kan ta emot det.
+     - Agenterna svarar med åtgärder, och varje åtgärd kontrolleras och genomförs bara vid ja.
+     - Marknaden säljer det som är listat och inte stoppat, kontrollerna körs och dagen sparas.
+  2. **Åtgärderna** är `forecast`, `spend`, `list_for_sale`, `pause_sale`, `proposal`, `assessment`, `decide` och `report`.
+     - Varje roll har en egen lista, och en åtgärd utanför listan avvisas.
+     - Högst 10 åtgärder per agent och dag.
+     - Ett svar som inte är giltig JSON, en okänd typ eller ett fel fält avvisas och loggas.
+     - Ett modellsvar är alltid en hypotes (§29).
+  3. **Spärrarna:**
+     - Varje åtgärd passerar `AuthorizationEngine`: rätt verktyg, nödstopp, skyddat läge och momsgräns.
+     - En utgift passerar också `BudgetEngine`: budget, reserv, skattereserv, stop-loss och uppdelade köp.
+     - Kräver en utgift grundarnas godkännande genomförs den inte i simuleringen.
+  4. **Affärsförslag** måste ha alla 11 fält i §12 (FR-23).
+  5. **Motstridiga bedömningar** (§21): när CFO och CRO bedömer ett initiativ hålls det, och ingen kan lista det förrän CEO har avgjort. Båda bedömningarna och beslutet sparas i dagen.
+  6. **Agenterna i CI** är skriptade och deterministiska (`ScriptedPolicy` via `RuleProvider`). `--agents local` använder bara lokala leverantörer (Ollama). Svarar ingen modell blir turen tom och noteras.
+  7. **Kommandot** är `python -m aie simulate start|resume|status`. `start` registrerar en minsta organisation enligt §8 om registret är tomt.
+- **Godkänd av:** Yorgo ☐ · Robin ☐
+
 ### D-042 Simulering: startkapital från START_CAPITAL, seedad marknad, scenarier som filer, bara i sim
 - **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-10-26 · **Bygger på:** D-024, D-027, D-032, D-041 · **Ändrar:** D-032 punkt 3 (`system:simulation` får märka skattespår i sim) och `build_system` (ny parameter `clock`) · **Gäller:** FR-20, §54, SR-11, SR-12
 - **Beslut:**

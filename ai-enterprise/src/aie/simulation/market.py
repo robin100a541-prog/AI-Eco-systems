@@ -76,12 +76,16 @@ class Market:
     def __init__(self, scenario: Scenario) -> None:
         self._scenario = scenario
 
-    def day(self, day: int, paused: frozenset[str] = frozenset()) -> tuple[InitiativeDay, ...]:
-        """Dagens order per initiativ. `paused` är initiativ som inte får sälja i dag (spärrar)."""
-        return tuple(self._initiative_day(day, i, i.key in paused) for i in self._scenario.initiatives)
+    def day(self, day: int, paused: frozenset[str] = frozenset(),
+            unlisted: frozenset[str] = frozenset()) -> tuple[InitiativeDay, ...]:
+        """Dagens order per initiativ. `paused`: stoppade av en spärr. `unlisted`: inte listade av agenterna."""
+        return tuple(self._initiative_day(day, i, i.key in paused, i.key in unlisted)
+                     for i in self._scenario.initiatives)
 
-    def _initiative_day(self, day: int, initiative: Initiative, paused: bool) -> InitiativeDay:
+    def _initiative_day(self, day: int, initiative: Initiative, paused: bool, unlisted: bool = False) -> InitiativeDay:
         notes: list[str] = []
+        if unlisted:
+            return InitiativeDay(initiative.key, (), ("inte listat till försäljning",))
         if day < initiative.listed_from:
             return InitiativeDay(initiative.key, (), (f"säljer från dag {initiative.listed_from}",))
         if paused:

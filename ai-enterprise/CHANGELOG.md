@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-27 — Fas 6b-2: åtgärdsprotokoll, arbetscykel och `python -m aie simulate`
+### Tillagt
+- `src/aie/simulation/`:
+  - `actions.py`: åtgärdsprotokollet och kontrollen av de 11 fälten i §12 (FR-23).
+  - `agents.py`: organisationen, `ScriptedPolicy` och `build_gateway`.
+  - `cycle.py`: `WorkCycle`, där en dag följer §20 och varje åtgärd går genom spärrarna.
+  - `cli.py`: kommandot `python -m aie simulate start|resume|status`.
+- `Simulation.begin_day` och `finish_day`, så att agenterna agerar mellan dagens händelser och marknaden. Initiativ som inte är listade säljer inte.
+- `BudgetEngine.usage()`, `System.budgets`.
+- `config/permissions.toml`: `sim.spend`, `sales.list`, `forecast.make` och `proposal.submit` (D-044, **behörighetsändring**).
+- D-043 och D-044 (föreslagna).
+- `tests/unit/test_cycle.py`: 15 tester. Hela sviten ger 547 OK på Windows 11, Python 3.12.0.
+- Provat på riktigt:
+  - `simulate start --scenario budget_overrun --days 4`, och sedan `resume --days 6` i en ny process. Budgetförsöken dag 3 och 8 nekades, och revisionsloggen var OK.
+  - `--agents local` utan Ollama: agenternas tur blev tom och nekandet noterades. Inget skickades ut.
+
 ## [Unreleased] — 2026-10-26 — Fas 6b-1: simulerat startkapital, marknad och scenarier (FR-20)
 ### Tillagt
 - Migration 26 `simulation_runs` och `simulation_days`, append-only.

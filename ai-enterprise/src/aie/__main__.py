@@ -8,6 +8,8 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `status`        visa driftläget och kontrollera revisionsloggen (Fas 1.6)
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
+- `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `simulate`      affärssimulering med SIM: start, resume, status (Fas 6, D-042, D-043)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
 gäller relativt mappen kommandot körs från.
@@ -114,7 +116,26 @@ def build_parser() -> argparse.ArgumentParser:
     kill.add_argument("action", choices=("status", "engage", "release"))
     kill.add_argument("--as", dest="founder", help="vilken grundare som agerar (en av founders i system.toml)")
     kill.add_argument("--reason", default="", help="varför; krävs vid engage och release")
+    sim = add("simulate", "affärssimulering med SIM: start, resume eller status (Fas 6, D-042, D-043)")
+    sim.add_argument("action", choices=("start", "resume", "status"))
+    sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start)")
+    sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
+    sim.add_argument("--days", type=int, help="hur många dagar som körs nu (standard: resten av scenariot)")
+    sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
+                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
     return parser
+
+
+def _simulate(args: argparse.Namespace) -> int:
+    from .simulation.cli import simulate  # importeras bara när kommandot används
+
+    if args.action == "start" and (not args.scenario or not args.founder):
+        print("FEL: start kräver --scenario <namn> och --as <grundare>", file=sys.stderr)
+        return 1
+    if args.days is not None and args.days < 1:
+        print("FEL: --days måste vara minst 1", file=sys.stderr)
+        return 1
+    return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents)
 
 
 def _kill(args: argparse.Namespace) -> int:
@@ -155,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
         "approvals": lambda: _approvals(args),
         "manual": lambda: _manual(args),
         "kill": lambda: _kill(args),
+        "simulate": lambda: _simulate(args),
     }
     try:
         return commands[args.command]()

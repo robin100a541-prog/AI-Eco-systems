@@ -142,17 +142,32 @@ class Simulation:
         return out
 
     def advance(self) -> dict:
+        """En hel dag utan agenter: händelser, marknad, kontroller. Arbetscykeln (6b-2) delar upp den."""
+        return self.finish_day(self.begin_day())
+
+    def begin_day(self) -> dict:
+        """Steg 1: nästa dag börjar och scenariots aktörshändelser utförs."""
         day = self.last_day + 1
         if day > self.scenario.days:
             raise SimulationError(f"scenariot har bara {self.scenario.days} dagar")
         self.clock.day = day
-        s = self._system
         events = [e for e in self.scenario.events if e.day == day]
         notes = [self._act(e) for e in events if e.kind in ACTOR_EVENTS]
+        return {"day": day, "events": events, "event_notes": notes}
+
+    def finish_day(self, ctx: dict, listed: frozenset[str] | None = None, extra: dict | None = None) -> dict:
+        """Steg 2–6: spärrar, marknad, bokföring, kontroller och sparad dag.
+
+        `listed`: initiativ som agenterna har listat. None betyder att alla säljer enligt scenariot (6b-1).
+        `extra`: arbetscykelns del av sammanfattningen (agenternas åtgärder och resultat).
+        """
+        day, events, notes = ctx["day"], ctx["events"], ctx["event_notes"]
+        s = self._system
         paused_reason = self._pause_reason()
         stopped = {} if paused_reason else self._stopped_initiatives()
         paused = frozenset(i.key for i in self.scenario.initiatives) if paused_reason else frozenset(stopped)
-        results = self._market.day(day, paused)
+        unlisted = frozenset() if listed is None else frozenset(i.key for i in self.scenario.initiatives) - listed
+        results = self._market.day(day, paused, unlisted)
         for result in results:
             self._book(day, self.scenario.initiative(result.initiative), result)
         tick_errors = s.tick()
@@ -163,6 +178,8 @@ class Simulation:
                                            "notes": list(r.notes)} for r in results},
             "paused": paused_reason, "stopped": stopped, "events": [asdict(e) for e in events], "event_notes": notes,
             "tick_errors": tick_errors,
+            "listed": None if listed is None else sorted(listed),
+            **(extra or {}),
         }
         with s.db.transaction() as tx:
             tx.execute("INSERT INTO simulation_days (run_id, day, date, summary, at) VALUES (?, ?, ?, ?, ?)",

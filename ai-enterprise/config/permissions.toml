@@ -26,6 +26,11 @@ config_version = 1
 "decision.record" = "fatta och logga ett beslut om en uppgift enligt §20 steg 7 (FR-10)"
 "dispute.resolve" = "avgöra en tvist mellan andra agenter inom hårda gränser (§21, FR-12)"
 "tax.assign"      = "märka en intäkt med skattespår (ER-18, D-032); avgör inte vilket spår Skatteverket godtar"
+# Fas 6b (D-044): agenternas åtgärder i affärssimuleringen. Bara SIM i sim; varje utgift går genom budgetmotorn.
+"sim.spend"       = "föreslå en utgift i simuleringen; budgetmotorn och spärrarna avgör (ER-03, D-043)"
+"sales.list"      = "lista eller pausa ett initiativ till försäljning; momsgränsen och spärrarna gäller (ER-20)"
+"forecast.make"   = "logga en prognos före utfallet (FR-16)"
+"proposal.submit" = "lämna ett affärsförslag med de 11 fälten i §12 (FR-23)"
 # Styrverktyg (SR-04). Står här bara för att försök ska kunna loggas med rätt namn.
 # Ingen roll kan få dem, och Authorization Engine nekar dem alltid.
 "governance.change_constitution" = "ändra konstitutionen; bara grundarna (D-001)"
@@ -36,13 +41,13 @@ config_version = 1
 department = "executive"
 level = 1
 description = "samordnar, prioriterar, tilldelar uppgifter (§8 nivå 1)"
-tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete", "decision.record", "dispute.resolve"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "llm.complete", "decision.record", "dispute.resolve", "forecast.make"]
 
 [roles.cfo]
 department = "finance"
 level = 2
 description = "ekonomisk styrning (§11)"
-tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block", "llm.complete", "decision.record", "tax.assign"]
+tools = ["report.read", "report.write", "ledger.read", "budget.check", "action.block", "llm.complete", "decision.record", "tax.assign", "forecast.make"]
 
 [roles.cro]
 department = "risk"
@@ -66,10 +71,10 @@ tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.b
 department = "research"
 level = 3
 description = "leder Research (§12)"
-tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record", "sim.spend", "sales.list", "forecast.make", "proposal.submit"]
 
 [roles.researcher]
 department = "research"
 level = 4
 description = "utreder möjligheter (D-011)"
-tools = ["report.write", "research.search", "llm.complete"]
+tools = ["report.write", "research.search", "llm.complete", "forecast.make", "proposal.submit"]
