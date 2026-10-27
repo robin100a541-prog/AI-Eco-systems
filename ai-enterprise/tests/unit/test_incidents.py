@@ -13,6 +13,7 @@ from aie.evaluation import FIELDS, IncidentError, IncidentLog
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.risk import KillSwitch, ProtectedMode, StopLoss
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
@@ -39,7 +40,7 @@ class IncidentCase(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
-        self.permissions = load_permissions(ROOT / "config")
+        self.permissions = load_permissions(TEST_CONFIG)
         self.start()
         self.add("ceo-1", "ceo")
         for agent_id, role in (("cfo-1", "cfo"), ("cro-1", "cro"), ("comp-1", "compliance"), ("audit-1", "auditor")):
@@ -158,12 +159,12 @@ class TestFromStops(IncidentCase):
     def setUp(self):
         super().setUp()
         departments = {m.department for m in self.permissions.roles.values()}
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         engine = AuthorizationEngine(self.permissions, self.registry, "sim", self.audit)
         self.ledger = Ledger(self.db, engine, departments, FOUNDERS, self.audit, approval_threshold=10_000)
         self.ledger.record("robin", EntryDraft("start", "finance", 1_000_000, "SIM", EntryType.CAPITAL_IN, "start",
                                                Approval.APPROVED, ("decision:start",), status=Status.SETTLED))
-        self.budgets = load_budgets(ROOT / "config", departments, self.limits)
+        self.budgets = load_budgets(TEST_CONFIG, departments, self.limits)
         self.engine = engine
 
     def test_stop_loss_trip_creates_prefilled_incident(self):

@@ -27,6 +27,7 @@ from aie.governance import (
 )
 from aie.memory import Database
 from aie.orchestration import TaskBoard
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
@@ -48,8 +49,8 @@ class DisputeCase(unittest.TestCase):
         self.dir = Path(tmp.name)
         self.db = Database.open(self.dir / "data", "sim")
         self.addCleanup(self.db.close)
-        self.permissions = load_permissions(ROOT / "config")
-        self.limits = load_config(ROOT / "config").risk
+        self.permissions = load_permissions(TEST_CONFIG)
+        self.limits = load_config(TEST_CONFIG).risk
         self.registry = AgentRegistry(self.permissions, self.db)
         self.audit = AuditLog(self.db)
         self.engine = AuthorizationEngine(

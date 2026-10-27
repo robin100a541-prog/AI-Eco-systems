@@ -24,6 +24,7 @@ from aie.config import ConfigError, load_config
 from aie.config.models import Money
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDERS = frozenset({"robin", "yorgo"})
@@ -42,9 +43,9 @@ class BudgetCase(unittest.TestCase):
         self.dir = Path(tmp.name)
         self.db = Database.open(self.dir / "data", "sim")
         self.addCleanup(self.db.close)
-        self.permissions = load_permissions(ROOT / "config")
+        self.permissions = load_permissions(TEST_CONFIG)
         self.departments = {m.department for m in self.permissions.roles.values()}
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         self.audit = AuditLog(self.db)
         engine = AuthorizationEngine(
             self.permissions,
@@ -60,7 +61,7 @@ class BudgetCase(unittest.TestCase):
             self.audit,
             approval_threshold=10_000,
         )
-        self.budgets = load_budgets(ROOT / "config", self.departments, self.limits)
+        self.budgets = load_budgets(TEST_CONFIG, self.departments, self.limits)
         self.engine = BudgetEngine(self.ledger, self.limits, self.budgets, self.audit)
         self.n = 0
         # Startkapitalet sätts in som en riktig ledgerpost (§23: kapital räknas bara från ledgern).
@@ -237,7 +238,7 @@ class TestBudgetConfig(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
-        self.limits = load_config(ROOT / "config").risk
+        self.limits = load_config(TEST_CONFIG).risk
         self.departments = {"research", "finance"}
 
     def load(self, body):
@@ -247,15 +248,17 @@ class TestBudgetConfig(unittest.TestCase):
         return load_budgets(self.dir, self.departments, self.limits)
 
     def test_repo_budgets_are_valid_and_cover_every_department(self):
-        """ER-17: varje departement i permissions.toml har budget, maxåtagande, riskutrymme och användningsområde."""
-        permissions = load_permissions(ROOT / "config")
-        departments = {m.department for m in permissions.roles.values()}
-        budgets = load_budgets(ROOT / "config", departments, self.limits)
+        """ER-17: varje departement i permissions.toml har budget (eller andel, D-047), maxåtagande, riskutrymme och användningsområde."""
+        repo = ROOT / "config"  # repots egna filer, inte de låsta testvärdena
+        limits = load_config(repo).risk
+        departments = {m.department for m in load_permissions(repo).roles.values()}
+        budgets = load_budgets(repo, departments, limits)
         self.assertEqual(set(budgets), departments)
         for b in budgets.values():
-            self.assertLessEqual(
-                b.budget_minor, self.limits.max_department_budget.amount_minor
-            )
+            if b.capital_based:
+                self.assertTrue(1 <= b.share_percent <= 100)
+            else:
+                self.assertLessEqual(b.budget_minor, limits.max_department_budget.amount_minor)
             self.assertTrue(b.purpose)
 
     def test_invalid_budgets_are_refused(self):

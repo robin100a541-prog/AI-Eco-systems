@@ -13,8 +13,10 @@ from aie.simulation import (EVENT_KINDS, Market, SimClock, Simulation, Simulatio
                             parse_scenario)
 from aie.system import build_system
 
+from .fixture_config import TEST_CONFIG
+
 ROOT = Path(__file__).resolve().parents[2]
-CONFIG = ROOT / "config"
+CONFIG = TEST_CONFIG  # låsta gränsvärden (D-047); scenarierna är repots egna
 FOUNDERS = frozenset({"robin", "yorgo"})
 DEPARTMENTS = {m.department for m in load_permissions(CONFIG).roles.values()}
 ORG = (("ceo-1", "ceo", None), ("cfo-1", "cfo", None), ("cro-1", "cro", None), ("comp-1", "compliance", None),

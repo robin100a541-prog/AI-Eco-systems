@@ -146,6 +146,7 @@
 - **D-047 (koden finns, inte aktiverad):** budgeten räknas som en andel av det disponibla kapitalet, utan period. Plattformsavgifter är försäljningskostnader och belastar inte departementet. Det aktiveras med `mode = "capital"` i `budgets.toml` och nya värden i `risk_limits.toml` för ett startkapital på 500 kr. Den PR:en kräver båda grundarna (D-019 punkt 3) och slås inte ihop förrän Robin har godkänt.
 - **D-048:** `python -m aie simulate evaluate` bedömer om affärsmodellen är lönsam nog för en första riktig investering på 500 kr. Det kräver minst 5 körningar à 90 dagar, vinst efter allt i varje körning och även de sista 30 dagarna, och ingen nödbroms. Resultatet är bara en rekommendation. Riktiga pengar kräver ert uttryckliga godkännande och Fas 7.
 - **Mätt med dagens fasta budget:** "inte redo", eftersom avgifterna stoppar departementet efter cirka 50 000 SIM.
+- **Med värdena för 500 kr** (PR:en väntar på Robin): `normal` gav "redo för 500 kr" i 5 av 5 körningar, och `loss` gav "inte redo". Marknadsparametrarna i scenarierna (besökare och konvertering) är antaganden, inte uppmätt efterfrågan. En rekommendation är bara så bra som scenariot.
 
 ## Vad som INTE är gjort / inte verifierat
 - `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.

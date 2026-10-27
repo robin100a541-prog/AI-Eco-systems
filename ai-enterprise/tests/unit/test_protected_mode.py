@@ -16,6 +16,7 @@ from aie.config import load_config
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.risk import KillSwitch, ProtectedMode, ProtectedModeError
+from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]
 S, T = AgentState, EntryType
@@ -27,10 +28,10 @@ class ModeCase(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.dir = Path(tmp.name)
-        self.permissions = load_permissions(ROOT / "config")
+        self.permissions = load_permissions(TEST_CONFIG)
         self.departments = {m.department for m in self.permissions.roles.values()}
-        self.limits = load_config(ROOT / "config").risk
-        self.budgets = load_budgets(ROOT / "config", self.departments, self.limits)
+        self.limits = load_config(TEST_CONFIG).risk
+        self.budgets = load_budgets(TEST_CONFIG, self.departments, self.limits)
         self.n = 0
         self.start()
         self.add("ceo-1", "ceo")
