@@ -1,4 +1,14 @@
-"""Läser `config/budgets.toml` (ER-17, D-026). Alla fel samlas och kastas som `ConfigError`."""
+"""Läser `config/budgets.toml` (ER-17, D-026, D-047). Alla fel samlas och kastas som `ConfigError`.
+
+Två lägen (`mode`):
+- `fixed` (D-026, standard): varje departement har en fast `budget` för miljöns livstid. Kostnader
+  och plattformsavgifter räknas mot budgeten.
+- `capital` (D-047): varje departement har en andel (`share`, procent) av det **disponibla kapitalet**
+  i stället för ett fast belopp. Disponibelt kapital är likvida medel minus reserv, åtaganden och
+  reserverad skatt. Budgeten växer när verksamheten går med vinst och krymper vid förlust, och den har
+  ingen period. Plattformsavgifter är försäljningskostnader: de dras från intäkterna i resultatet men
+  belastar inte departementets budget.
+"""
 
 from __future__ import annotations
 
@@ -23,15 +33,22 @@ class Risk(str, Enum):
     CRITICAL = "critical"
 
 _KEYS = ("budget", "max_commitment", "risk_room", "purpose")
+_CAPITAL_KEYS = ("share", "max_commitment", "risk_room", "purpose")
+MODES = ("fixed", "capital")
 
 
 @dataclass(frozen=True, slots=True)
 class Budget:
     department: str
-    budget_minor: int
+    budget_minor: int | None  # None i kapitalläget: budgeten räknas från det disponibla kapitalet
     max_commitment_minor: int
     risk_room: Risk
     purpose: str
+    share_percent: int | None = None  # kapitalläget (D-047): andel av det disponibla kapitalet
+
+    @property
+    def capital_based(self) -> bool:
+        return self.share_percent is not None
 
 
 def load_budgets(
@@ -53,8 +70,13 @@ def load_budgets(
         errors.append(f"{BUDGETS_FILE}: {message}")
 
     for key in data:
-        if key not in ("config_version", "departments"):
+        if key not in ("config_version", "mode", "departments"):
             error(f"okänd nyckel {key!r}")
+    mode = data.get("mode", "fixed")
+    if mode not in MODES:
+        error(f"mode = {mode!r} stöds inte (fixed eller capital)")
+        mode = "fixed"
+    keys = _CAPITAL_KEYS if mode == "capital" else _KEYS
     if data.get("config_version") != 1 or isinstance(data.get("config_version"), bool):
         error(
             f"config_version = {data.get('config_version')!r} stöds inte (förväntat 1)"
@@ -75,10 +97,16 @@ def load_budgets(
             error(f"{where} måste vara en tabell")
             continue
         for key in entry:
-            if key not in _KEYS:
-                error(f"{where}: okänd nyckel {key!r} (tillåtna: {', '.join(_KEYS)})")
-        values = {}
-        for key in ("budget", "max_commitment"):
+            if key not in keys:
+                error(f"{where}: okänd nyckel {key!r} (tillåtna i läget {mode}: {', '.join(keys)})")
+        values = {"budget": None, "share": None}
+        if mode == "capital":
+            share = entry.get("share")
+            if not isinstance(share, int) or isinstance(share, bool) or not 1 <= share <= 100:
+                error(f"{where}.share måste vara en procentsats 1–100 av det disponibla kapitalet (D-047)")
+                share = None
+            values["share"] = share
+        for key in (("max_commitment",) if mode == "capital" else ("budget", "max_commitment")):
             value = entry.get(key)
             if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
                 error(
@@ -86,7 +114,7 @@ def load_budgets(
                 )
                 value = None
             values[key] = value
-        if values["budget"] is not None:
+        if mode == "fixed" and values["budget"] is not None:
             if cap is None:
                 error(
                     f"{where}: MAX_DEPARTMENT_BUDGET saknas i risk_limits.toml (ER-02)"
@@ -111,12 +139,16 @@ def load_budgets(
             error(f"{where}.purpose saknas (ER-17: användningsområde)")
         if not errors:
             budgets[name] = Budget(
-                name, values["budget"], values["max_commitment"], room, purpose.strip()
+                name, values["budget"], values["max_commitment"], room, purpose.strip(), values["share"]
             )
     if limits.start_capital is None or limits.minimum_reserve is None:
         error(
             "START_CAPITAL och MINIMUM_RESERVE måste finnas för att reserven ska kunna skyddas (ER-02, ER-05)"
         )
+    elif mode == "capital":
+        total_share = sum(b.share_percent for b in budgets.values())
+        if total_share > 100:
+            error(f"andelarna summerar till {total_share} %; högst 100 % av det disponibla kapitalet (D-047)")
     else:
         free = limits.start_capital.amount_minor - limits.minimum_reserve.amount_minor
         total = sum(b.budget_minor for b in budgets.values())

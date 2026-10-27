@@ -172,7 +172,7 @@ class WorkCycle:
         entries = s.ledger.entries("SIM")
         history = self.sim.days()[-7:]
         stopped = self.sim._stopped_initiatives()
-        spent, budget = s.budget.usage(agent.department)
+        spent, remaining = s.budget.usage(agent.department)
         initiatives = []
         for i in self.sim.scenario.initiatives:
             last7 = [d["initiatives"].get(i.key, {}) for d in history]
@@ -186,7 +186,7 @@ class WorkCycle:
             })
         return {
             "role": agent.role, "agent": agent.agent_id, "day": day, "date": self.sim.clock.date,
-            "initiatives": initiatives, "budget": {"department": agent.department, "spent": spent, "budget": budget},
+            "initiatives": initiatives, "budget": {"department": agent.department, "spent": spent, "remaining": remaining},
             "kill_switch": s.kill.state().engaged, "protected_mode": s.protected.state().protected,
             "events": [{"kind": e.kind, "initiative": e.initiative, "note": e.note} for e in events],
             "assessments": record["assessments"], "allowed_actions": list(ROLE_ACTIONS.get(agent.role, ())),

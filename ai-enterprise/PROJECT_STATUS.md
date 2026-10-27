@@ -142,6 +142,11 @@
   - D-043 och D-044. **D-044 är en behörighetsändring:** fyra nya verktyg för research-cheferna, forskarna, CEO och CFO.
 - **Inte modellerat än:** annonser påverkar inte efterfrågan i marknadsmodellen. En utgift är bara en kostnad. Utgifter som kräver grundarnas godkännande genomförs inte i simuleringen.
 
+## Ändrat 2026-10-27 (budgetmodell enligt Yorgo)
+- **D-047 (koden finns, inte aktiverad):** budgeten räknas som en andel av det disponibla kapitalet, utan period. Plattformsavgifter är försäljningskostnader och belastar inte departementet. Det aktiveras med `mode = "capital"` i `budgets.toml` och nya värden i `risk_limits.toml` för ett startkapital på 500 kr. Den PR:en kräver båda grundarna (D-019 punkt 3) och slås inte ihop förrän Robin har godkänt.
+- **D-048:** `python -m aie simulate evaluate` bedömer om affärsmodellen är lönsam nog för en första riktig investering på 500 kr. Det kräver minst 5 körningar à 90 dagar, vinst efter allt i varje körning och även de sista 30 dagarna, och ingen nödbroms. Resultatet är bara en rekommendation. Riktiga pengar kräver ert uttryckliga godkännande och Fas 7.
+- **Mätt med dagens fasta budget:** "inte redo", eftersom avgifterna stoppar departementet efter cirka 50 000 SIM.
+
 ## Vad som INTE är gjort / inte verifierat
 - `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
 - Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
@@ -157,7 +162,7 @@
 | 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
 | 2 | Godkänna D-041–D-044 (spärrar vid start, simulering, arbetscykel och **behörighetsändringen** D-044) | Båda |
 | 3 | Fas 6b-3–6b-5: rapporter, övervakning och acceptanstester (plan godkänd av båda) | Yorgo |
-| 4 | Besluta om budgetperiod och om plattformsavgifter ska räknas mot departementsbudgeten (fynd i 6b-1) | Båda |
+| 4 | Godkänna D-047 och D-048 (kapitalbaserad budget, avgifter som försäljningskostnad, vägen till riktiga pengar) och PR:en med värden för 500 kr | Båda |
 | 5 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
 
 ## Blockerare

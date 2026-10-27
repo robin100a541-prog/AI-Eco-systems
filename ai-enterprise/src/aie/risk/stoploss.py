@@ -156,6 +156,8 @@ class StopLoss:
                               str(position.liquid_minor - position.committed_minor), str(position.reserve_minor)))
 
         for department, budget in sorted(self._budgets.items()):
+            if budget.capital_based:  # D-047: andelen krymper med kapitalet; reserv och drawdown skyddar i stället
+                continue
             spent = sum(e.amount_minor for e in entries if e.department == department
                         and e.entry_type in _SPEND and e.status in (Status.PENDING, Status.SETTLED))
             if spent >= budget.budget_minor:

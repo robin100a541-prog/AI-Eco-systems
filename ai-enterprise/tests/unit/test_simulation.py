@@ -90,7 +90,7 @@ class TestMarket(unittest.TestCase):
         self.assertEqual(forward, backward)
         self.assertTrue(any(r.orders for day in forward for r in day))
         order = next(o for day in forward for r in day for o in r.orders)
-        self.assertEqual(order.fee, 20 + -(-4_900 * 650 // 10_000))  # 339, avrundat uppåt
+        self.assertEqual(order.fee, 570 + -(-4_900 * 1_050 // 10_000))  # 1 085, avrundat uppåt
         self.assertTrue(all(isinstance(o.price, int) for day in forward for r in day for o in r.orders))
 
     def test_events_change_the_market(self):

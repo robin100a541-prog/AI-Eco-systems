@@ -20,6 +20,8 @@ alltså att koden ändras eller kopplas ur, inte att något försvinner av sig s
 | D-042 | Simulering: startkapital, seedad marknad, scenarier, bara i sim (tillagt 2026-10-27) | Godkänn |
 | D-043 | Arbetscykeln: agenterna föreslår, spärrarna avgör (tillagt 2026-10-27) | Godkänn |
 | D-044 | Agenternas verktyg i simuleringen. **Behörighetsändring** (tillagt 2026-10-27) | Godkänn |
+| D-047 | Budget som andel av tillgängligt kapital; avgifter är försäljningskostnader. **Ändrar riskgränserna** (värdena i en egen PR) | Godkänn |
+| D-048 | Vägen till riktiga pengar: bevisad lönsamhet i många körningar, sedan 500 kr, bara med ert godkännande | Godkänn |
 
 ---
 
@@ -169,6 +171,36 @@ inga riktiga pengar. Varje utgift går genom budgetmotorn och bokförs i `SIM`.
 **Om ni säger nej eller vill ändra.**
 - Färre roller: ta bort verktyget från rollen i `permissions.toml`. Då nekas rollens åtgärder.
 - Nej till hela beslutet: verktygen tas bort, och arbetscykeln kan bara skriva rapporter.
+
+**Rekommendation: godkänn.**
+
+## D-047 Budget från tillgängligt kapital (tillagt 2026-10-27, Yorgos önskemål)
+
+> ⚠️ **ÄNDRAR RISKGRÄNSERNA OCH BUDGETARNA.** Koden finns i `main`, men den aktiveras först när
+> `budgets.toml` och `risk_limits.toml` ändras. Det görs i en egen PR som kräver er båda (D-019 punkt 3).
+
+**Vad det innebär.** I stället för en fast budget per departement får varje departement en andel av
+det kapital som är fritt att använda: kassan minus reserven, åtagandena och skatten. Går det bra växer
+budgeten, och går det dåligt krymper den. Det finns ingen månadsbudget. Etsy- och Gumroad-avgifter
+dras från intäkterna och belastar inte departementets budget.
+
+**Om ni säger nej eller vill ändra.**
+- Andra andelar, eller en annan reserv eller startsumma: ändra värdena i PR:en.
+- Nej: allt stannar i det fasta läget (D-026), och en lönsam verksamhet stoppas när avgifterna når budgeten.
+
+**Rekommendation: godkänn.**
+
+## D-048 Vägen till riktiga pengar (tillagt 2026-10-27, Yorgos önskemål)
+
+**Vad det innebär.** Systemet får bara *rekommendera* en första riktig investering på 500 kr när
+samma scenario har gått med vinst i minst 5 oberoende körningar à 90 dagar. Vinsten räknas efter alla
+kostnader, avgifter och skatt, och den ska finnas även de sista 30 dagarna. Ingen nödbroms får ha
+utlösts, och kapitalet får inte ha fallit mer än 20 %. Även då händer ingenting förrän ni har godkänt
+och Fas 7:s villkor är uppfyllda. En ökning till 1 000 kr bedöms på riktiga resultat.
+
+**Om ni säger nej eller vill ändra.**
+- Strängare eller mildare krav: ändra `config/simulation.toml`.
+- Nej: då finns inget automatiskt underlag för när en pilot är försvarbar.
 
 **Rekommendation: godkänn.**
 

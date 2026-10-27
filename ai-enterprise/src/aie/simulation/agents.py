@@ -66,9 +66,9 @@ class ScriptedPolicy:
                             "purpose": "annonser", "risk": "low"})
         budget = state["budget"]
         for event in state["events"]:
-            if event["kind"] == "overspend_attempt" and budget["budget"] is not None:
+            if event["kind"] == "overspend_attempt" and budget["remaining"] is not None:
                 actions.append({"type": "spend", "initiative": event["initiative"],
-                                "amount": budget["budget"] - budget["spent"] + 1,
+                                "amount": budget["remaining"] + 1,
                                 "purpose": event.get("note") or "stor annonskampanj", "risk": "medium"})
         return actions
 

@@ -1,0 +1,13 @@
+# Krav för att simuleringen ska kunna rekommendera riktiga pengar (D-048, §54, §55).
+# Rekommendationen är aldrig en handling: riktiga pengar kräver grundarnas uttryckliga godkännande (D-019).
+
+config_version = 1
+
+[readiness]
+min_runs = 5                 # oberoende körningar med olika seed; en enstaka körning bevisar inget (§29)
+min_days = 90                # simulerade dagar per körning
+recent_days = 30             # varje körning ska gå med vinst även de sista 30 dagarna (hållbart)
+min_margin_percent = 10      # medianmarginal efter alla kostnader, avgifter och reserverad skatt
+max_drawdown_percent = 20    # likvida medel får aldrig falla mer än så från startkapitalet
+first_real_investment = 50_000   # 500 kr: första riktiga investeringen, om allt ovan är uppfyllt
+next_real_investment = 100_000   # 1 000 kr: bedöms först på resultat från riktiga pengar
