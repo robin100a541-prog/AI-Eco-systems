@@ -19,6 +19,11 @@ vara C (Q-05 är öppen). Rapporten säger uttryckligen att resultatet bara gäl
 **Känslighetsanalys:** ett överslag av väntat netto per dag när pris, konvertering, besökare, returer,
 procentavgift och styckkostnad ändras ±20 % var för sig. Parametrarna sorteras efter hur mycket de påverkar.
 
+**Utfall från verkligheten används före antaganden** (PR 10, D-062). Har initiativet minst `MIN_DAYS` dagar
+med importerade utfall (`results import`) ersätter de uppmätta värdena besökare, konvertering och
+återbetalningar. Är plattformens avgift okänd ersätts även den, med avgiften per order. Varje sådant
+värde märks "verifierat i verkligheten" med källorna.
+
 Bedömningen sparas (`AssessmentStore`) med exakt de parametrar den gällde. Den blir giltig först när en
 grundare godkänner den, och bara om den är redo (D-058).
 """
@@ -113,6 +118,37 @@ def scenario_inputs(initiative_key: str, initiative: dict, platform: dict, rules
     return market, fixed, assumptions
 
 
+def apply_observed(market: Initiative, observed, platform_fees: dict, rules: AssessmentRules):
+    """Uppmätta värden ersätter antaganden (D-062). Returnerar (marknad, märkningar)."""
+    from ..results import MIN_DAYS, VERIFIED
+
+    if observed is None or observed.days < MIN_DAYS:
+        return market, []
+    fx = rules.usd_cent_in_sim_minor if observed.currency == "USD" else 1
+    where = f"{observed.days} dagar {observed.first_day}–{observed.last_day}, källor: {', '.join(observed.sources)}"
+    changes, notes = {"visitors": observed.visitors_per_day}, [f"besökare per dag {observed.visitors_per_day}"]
+    if observed.conversion_bp is not None:
+        changes["conversion_bp"] = observed.conversion_bp
+        notes.append(f"konvertering {observed.conversion_bp} bp")
+    if observed.refund_bp is not None:
+        changes["refund_bp"] = min(10_000, observed.refund_bp)
+        notes.append(f"återbetalningar {observed.refund_bp} bp")
+    fee = observed.fee_per_order_minor
+    if fee is not None and (platform_fees.get("percent_bp") is None or platform_fees.get("per_order_minor") is None):
+        changes["fee_fixed"], changes["fee_bp"] = fee * fx, 0
+        notes.append(f"avgift per order {fee} {observed.currency}-minsta enhet")
+    return replace(market, **changes), [f"{VERIFIED}: {n} ({where})" for n in notes]
+
+
+def drop_replaced(assumptions: list[str], verified: list[str]) -> list[str]:
+    """Ett uppmätt värde är inte längre ett antagande (D-062)."""
+    if not verified:
+        return assumptions
+    replaced = ("efterfrågan",) + (("procentavgiften", "avgiften per order")
+                                    if any("avgift per order" in v for v in verified) else ())
+    return [a for a in assumptions if not a.startswith(replaced)]
+
+
 def _scenario(name: str, market: Initiative, days: int) -> Scenario:
     return Scenario(name, f"bedömning före start: {name}", f"bedömning-{market.key}-{name}", days, "2027-01-01",
                     (market,), ())
@@ -162,7 +198,7 @@ def sensitivity(market: Initiative, fixed: dict) -> list[dict]:
 
 
 def assess_initiative(config, config_dir: Path | str, register, initiative_key: str, actor: str,
-                      runs: int | None = None, days: int | None = None, agents: str = "scripted"):
+                      runs: int | None = None, days: int | None = None, agents: str = "scripted", results=None):
     """Kör bedömningen och sparar den. Returnerar den sparade `Assessment`. Godkänns separat av en grundare."""
     require_sim(config)
     if agents == "groq":  # en körning som pausas av kvoten skulle ge en halv bedömning (PR 8)
@@ -178,6 +214,11 @@ def assess_initiative(config, config_dir: Path | str, register, initiative_key: 
     runs = runs or readiness_rules.min_runs
     days = days or readiness_rules.min_days
     market, fixed, assumptions = scenario_inputs(initiative_key, entry.data, platform.data, rules)
+    verified: list[str] = []
+    if results is not None:  # D-062: utfall från verkligheten före antaganden
+        observed = sorted(results.observed(initiative_key), key=lambda o: -o.days)
+        market, verified = apply_observed(market, observed[0] if observed else None, platform.data["fees"], rules)
+        assumptions = drop_replaced(assumptions, verified)
     pessimistic = replace(market, conversion_bp=market.conversion_bp * rules.pessimistic_demand_bp // 10_000,
                           refund_bp=min(10_000, market.refund_bp * rules.pessimistic_refund_factor))
     zero = replace(market, conversion_bp=0)
@@ -209,6 +250,7 @@ def assess_initiative(config, config_dir: Path | str, register, initiative_key: 
         scenarios[name] = entry_
     ready = not reasons
     result = {"ready": ready, "reasons": reasons, "scenarios": scenarios, "assumptions": assumptions,
+              "verified": verified,
               "fixed_costs": fixed, "sensitivity": sensitivity(market, fixed), "disclaimer": DISCLAIMER,
               "runs": runs, "days": days, "agents": agents}
     return register.assessments.record(actor, initiative_key, platform.key, entry.data, platform.data, result, ready)
