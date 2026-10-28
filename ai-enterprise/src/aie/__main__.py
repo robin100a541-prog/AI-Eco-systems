@@ -155,8 +155,9 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--runs", type=int, help="evaluate: antal körningar (standard: min_runs i simulation.toml)")
     sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
     sim.add_argument("--days", type=int, help="hur många dagar som körs nu (standard: resten av scenariot)")
-    sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
-                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
+    sim.add_argument("--agents", choices=("scripted", "local", "groq"), default="scripted",
+                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
+                          "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
     return parser
 
 

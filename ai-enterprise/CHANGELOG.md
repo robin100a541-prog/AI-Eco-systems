@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 8: simulering med Groq-agenter (D-060, föreslaget)
+### Tillagt
+- `python -m aie simulate start|resume --agents groq`:
+  - Använder bara leverantörer av typen `groq` ur `providers.toml`, utan reserv.
+  - Förfrågningarna märks `public`, och det är tillåtet bara i sim med SIM.
+  - Saknas `GROQ_API_KEY` vägrar kommandot att starta.
+- `ProviderRouter.calls_left()` och `LLMGateway.calls_left()`.
+- `WorkCycle` pausar före en dag som kvoten inte räcker till och loggar `simulation.paused_quota`. `resume` fortsätter senare.
+- Bedömningar (`evaluate`, `assess`) vägrar `groq`.
+- `docs/setup.md` 2g: så kör Yorgo detta själv med sin gratisnyckel.
+- Förslaget D-060 finns i `docs/proposals/2026-10-28-D-060-groq-agenter.md`.
+- `tests/unit/test_groq_agents.py`: 4 tester. Nätverket är mockat.
+
 ## [Unreleased] — 2026-10-28 — PR 7: skydd mot plattformsberoende och scenariot platform_ban (D-059, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Nya gränser i `config/loader.py` och `RiskLimits`: `MAX_PLATFORM_REVENUE_SHARE` (procent) och `MIN_ACTIVE_PLATFORMS` (antal, ny typ). Värdena läggs i `risk_limits.toml` i PR 7b, som en grundare godkänner.

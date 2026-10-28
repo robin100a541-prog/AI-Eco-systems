@@ -1,7 +1,7 @@
 """`python -m aie simulate start|resume|status|evaluate` (Fas 6b-2, D-043, D-048).
 
-    python -m aie simulate start --scenario normal --as yorgo [--days 10] [--agents scripted|local]
-    python -m aie simulate resume [--days 10] [--agents scripted|local]
+    python -m aie simulate start --scenario normal --as yorgo [--days 10] [--agents scripted|local|groq]
+    python -m aie simulate resume [--days 10] [--agents scripted|local|groq]
     python -m aie simulate status
     python -m aie simulate evaluate --scenario normal [--runs 5] [--days 90] [--agents scripted|local]
 
@@ -12,7 +12,9 @@ aldrig en handling. Rapporten sparas i `<data_dir>/reports/`.
 `start` kräver en tom datamapp (en körning per databas, D-042) och registrerar simuleringens
 organisation om registret är tomt. `resume` fortsätter där körningen slutade, även efter en krasch eller
 ett stopp. `--agents scripted` (standard) kör de deterministiska agenterna. `--agents local` använder
-en lokal modell (Ollama) ur `providers.toml`. Varje dag skrivs ut med order, åtgärder och pauser.
+en lokal modell (Ollama) ur `providers.toml`. `--agents groq` använder Groqs gratisnivå med nyckeln i
+`GROQ_API_KEY` (se `docs/setup.md`). Den får bara simulerade data. När kvoten är slut pausas körningen, och
+`resume` fortsätter senare. Varje dag skrivs ut med order, åtgärder och pauser.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ from .. import runtime
 from ..authorization import load_permissions
 from ..config import ConfigError
 from ..ledger import compute_result
-from .agents import build_gateway, ensure_org
+from .agents import agent_data_class, build_gateway, ensure_org
 from .cycle import WorkCycle
 from .market import SimClock
 from .run import Simulation, SimulationError, stored_run
@@ -58,13 +60,15 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
                     clock = SimClock(run["start_date"])
                     system = build_system(config, db, config_dir, clock=clock)
                     sim = Simulation.resume(system, config, clock)
-                cycle = WorkCycle(sim, system, build_gateway(system, agents, config_dir))
+                cycle = WorkCycle(sim, system, build_gateway(system, agents, config_dir), agent_data_class(agents))
             except (ConfigError, SimulationError, ValueError) as exc:
                 raise runtime.StartupError(f"FEL: {exc}") from exc
             print(f"Körning {sim.run_id}: scenario {sim.scenario.name}, dag {sim.last_day} av {sim.scenario.days} "
                   f"(agenter: {agents}, bara SIM)")
             for summary in cycle.run(days):
                 print(_line(summary))
+            if cycle.paused:
+                print(f"PAUSAD: {cycle.paused}")
             net = compute_result(system.ledger.entries("SIM"), "SIM").net_minor
             check = system.audit.verify()
             print(f"Klar till dag {sim.last_day} av {sim.scenario.days}. Nettoresultat {net} SIM, "

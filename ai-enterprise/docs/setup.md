@@ -115,6 +115,41 @@ python3 -m aie manual answer 3f2a9c0d1b4e5a67 --as robin --file svar.txt
 
 Bara data som är klassad `public` hamnar här. Klistra aldrig in nycklar eller lösenord i svaret; det avvisas.
 
+## 2g. Simulera med Groq-agenter (arbetsorder 02, PR 8, D-060)
+Agenterna i simuleringen kan svara med Groqs gratismodell i stället för de skriptade svaren. **Yorgo kör detta själv med sin egen gratisnyckel (Fas 0.10).** Claude skapar inget konto, godkänner inga villkor och hanterar inte nyckeln.
+
+1. Skapa en nyckel enligt 2b. Lägg inte in något betalkort.
+2. Sätt nyckeln bara i terminalfönstret. Skriv den aldrig i en fil i projektet, och klistra aldrig in den i en chatt eller ett ärende.
+3. Kör en simulering i en egen datamapp:
+```bash
+# macOS / Linux
+export GROQ_API_KEY="din-nyckel"
+python3 -m aie simulate start --scenario normal --as yorgo --days 5 --agents groq
+
+# Windows (PowerShell)
+$env:GROQ_API_KEY="din-nyckel"
+py -3 -m aie simulate start --scenario normal --as yorgo --days 5 --agents groq
+```
+
+**Vad som skickas till Groq:** bara simulerade uppgifter, alltså scenariot, SIM-belopp och agentens roll. Förfrågan märks `public`, och det är bara tillåtet i miljön `sim` med valutan `SIM`. Riktiga uppgifter finns inte i en simulering, och i prod kan läget inte startas.
+
+**Kvoten:**
+- Gränserna står i `config/providers.toml`. De ligger under Groqs gratisgränser.
+- Räcker dagens kvot inte till en hel simulerad dag, pausas körningen före dagen med `PAUSAD: kvoten ...`. Inget halvt dygn sparas.
+- Fortsätt efter nästa UTC-dygn:
+```bash
+python3 -m aie simulate resume --agents groq
+```
+
+**Inget byts tyst:**
+- Bara leverantörer av typen `groq` används. `rule`, `openrouter` och betalda API:er tar aldrig över.
+- Saknas `GROQ_API_KEY` vägrar kommandot att starta.
+- Kostnaden loggas som 0 i revisionsloggen (`llm.call`).
+
+**Bedömningar** (`simulate evaluate`, `assess run`) körs bara med `scripted` eller `local`. En körning som pausas halvvägs skulle ge en halv bedömning.
+
+**Förväntat:** en rad per dag med order, åtgärder och nekade åtgärder. Svarar modellen med något som inte är giltig JSON nekas åtgärden och noteras (D-043). Det är ett väntat utfall och inget fel i systemet.
+
 ## 3. Skapa det gemensamma repot (en av er)
 ```bash
 cd ai-enterprise
