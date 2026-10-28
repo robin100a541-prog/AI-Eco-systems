@@ -7,7 +7,7 @@ from .agent import (
     run_test_suite,
     write_report,
 )
-from .patch import MAX_CHANGED_LINES, PROTECTED_FILES, check_patch, extract_diff
+from .patch import MAX_CHANGED_LINES, PROTECTED_FILES, check_patch
 
 __all__ = [
     "MAX_ATTEMPTS",
@@ -17,7 +17,6 @@ __all__ = [
     "RunResult",
     "TestRun",
     "check_patch",
-    "extract_diff",
     "run_test_suite",
     "write_report",
 ]
