@@ -33,7 +33,7 @@ from pathlib import Path
 from .agents import AgentRegistry
 from .audit import AuditLog
 from .authorization import AuthorizationEngine, ControlStops, load_permissions
-from .budget import BudgetEngine, load_budgets
+from .budget import BudgetEngine, SpendApprovals, load_budgets
 from .config import Config
 from .evaluation import (ForecastLog, IncidentLog, LessonRegistry, PerformanceReview, RemovalReview,
                          StrategyRegistry)
@@ -72,6 +72,7 @@ class System:
     db: Database | None = None
     permissions: object = None
     budgets: dict = field(default_factory=dict)
+    spend_approvals: object = None
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -134,7 +135,9 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     engine.add_gate(protected)
     stoploss = StopLoss(db, ledger, limits, budgets, audit, founders, incidents=incidents, **t)
     now = {} if clock is None else {"clock": clock.now}  # budgetmotorn vill ha ett datetime
-    budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax, **now)
+    spend_approvals = SpendApprovals(db, audit, founders, **t)
+    budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax,
+                          approvals=spend_approvals, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
     forecasts = ForecastLog(db, registry, permissions, audit, founders, ledger, **t)
     lessons = LessonRegistry(db, registry, permissions, audit, founders, incidents, forecasts, **t)
@@ -144,5 +147,5 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     removal = RemovalReview(db, registry, permissions, audit, founders, incidents, performance, ledger, **t)
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
-                    permissions=permissions, budgets=budgets)
+                    permissions=permissions, budgets=budgets, spend_approvals=spend_approvals)
     return system

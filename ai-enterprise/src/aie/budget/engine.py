@@ -113,11 +113,13 @@ class BudgetEngine:
         clock: Callable[[], datetime] = _utc_now,
         gates: tuple = (),
         tax=None,
+        approvals=None,
     ) -> None:
         """`gates`: spärrar med `spend_block_reasons(request) -> list[str]`, t.ex. stop-loss (ER-13).
         `tax`: en `TaxEngine`; den reserverade skatten räknas då som åtagande (ER-19, D-032)."""
         self._clock = clock
         self._tax = tax
+        self._approvals = approvals  # SpendApprovals (F5, D-053): godkända utgifter över tröskeln
         self._gates = tuple(gates)
         self._ledger = ledger
         self._limits = limits
@@ -127,7 +129,9 @@ class BudgetEngine:
         # D-047: i kapitalläget är plattformsavgifter försäljningskostnader, inte departementets utgifter
         self._spend_types = frozenset({EntryType.COST}) if self._capital_mode else _SPEND_TYPES
 
-    def check(self, actor: str, request: SpendRequest) -> BudgetCheck:
+    def check(self, actor: str, request: SpendRequest, approval_id: int | None = None) -> BudgetCheck:
+        """`approval_id`: ett godkännande från en grundare (F5, D-053). Det ersätter bara kravet på en
+        grundare; alla andra gränser gäller. Blir svaret ja förbrukas godkännandet, exakt en gång."""
         blocked: list[str] = []
         r, limits = request, self._limits
         amount_ok = (
@@ -200,6 +204,17 @@ class BudgetEngine:
         flags = self._split_flags(r, amount) if amount_ok else []
         if flags:
             required = 1  # behandlas som hela summan: över tröskeln ⇒ en grundare (D-049, ER-04)
+        if approval_id is not None:
+            if self._approvals is None:
+                blocked.append("godkännanden för utgifter är inte kopplade till budgetmotorn (D-053)")
+            else:
+                problems = self._approvals.problems(approval_id, r, self._clock())
+                blocked += problems
+                if not problems:
+                    required = 0  # en grundare har godkänt just den här utgiften (D-049)
+        if approval_id is not None and not blocked and required == 0:
+            if not self._approvals.consume(approval_id, actor, f"{r.department}/{r.initiative} {amount} {r.currency}"):
+                blocked.append(f"godkännande {approval_id} är redan förbrukat (D-053)")
         result = BudgetCheck(
             not blocked and required == 0,
             tuple(blocked),
@@ -221,6 +236,7 @@ class BudgetEngine:
                 "reasons": list(result.blocked),
                 "flags": list(result.flags),
                 "required_approvals": required,
+                "approval_id": approval_id,
             },
         )
         return result

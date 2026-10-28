@@ -1204,6 +1204,58 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=28,
+        name="spend_approvals",
+        statements=(
+            # F5 (arbetsorder 02, D-053): godkännanden för enskilda utgifter. En förfrågan gäller ett
+            # departement, ett initiativ och ett högsta belopp. Händelserna är append-only, och de unika
+            # indexen gör att en förfrågan får högst ett beslut och förbrukas högst en gång, även vid
+            # samtidiga försök.
+            """
+            CREATE TABLE spend_approvals (
+                approval_id  INTEGER PRIMARY KEY,
+                department   TEXT NOT NULL,
+                initiative   TEXT NOT NULL CHECK (length(trim(initiative)) > 0),
+                amount_minor INTEGER NOT NULL CHECK (amount_minor > 0),
+                currency     TEXT NOT NULL CHECK (length(currency) = 3),
+                requested_by TEXT NOT NULL,
+                reason       TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                at           TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER spend_approvals_no_update BEFORE UPDATE ON spend_approvals
+            BEGIN SELECT RAISE(ABORT, 'en förfrågan skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER spend_approvals_no_delete BEFORE DELETE ON spend_approvals
+            BEGIN SELECT RAISE(ABORT, 'förfrågningar raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE spend_approval_events (
+                id          INTEGER PRIMARY KEY,
+                approval_id INTEGER NOT NULL REFERENCES spend_approvals (approval_id),
+                event       TEXT NOT NULL CHECK (event IN ('approved', 'rejected', 'consumed')),
+                decided     INTEGER GENERATED ALWAYS AS (CASE WHEN event IN ('approved', 'rejected') THEN 1 END) STORED,
+                actor       TEXT NOT NULL,
+                note        TEXT NOT NULL,
+                entry_ref   TEXT,
+                at          TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE UNIQUE INDEX spend_approval_one_decision ON spend_approval_events (approval_id) WHERE decided = 1",
+            "CREATE UNIQUE INDEX spend_approval_used_once ON spend_approval_events (approval_id) WHERE event = 'consumed'",
+            """
+            CREATE TRIGGER spend_approval_events_no_update BEFORE UPDATE ON spend_approval_events
+            BEGIN SELECT RAISE(ABORT, 'godkännandehändelser är append-only'); END
+            """,
+            """
+            CREATE TRIGGER spend_approval_events_no_delete BEFORE DELETE ON spend_approval_events
+            BEGIN SELECT RAISE(ABORT, 'godkännandehändelser raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

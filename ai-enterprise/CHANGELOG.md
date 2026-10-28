@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — F5: godkända utgifter kan genomföras, en gång (D-053, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 28 `spend_approvals` och `spend_approval_events`, append-only. Unika index ger högst ett beslut och högst en förbrukning per godkännande.
+- `src/aie/budget/approvals.py` (`SpendApprovals`): förfrågan, godkännande och avslag av en grundare (D-049). Ett godkännande gäller i 7 dagar och för samma departement, initiativ och valuta, med högst det godkända beloppet.
+- `BudgetEngine.check(..., approval_id=)`: godkännandet ersätter bara kravet på en grundare, och alla andra gränser gäller ändå. Vid ja förbrukas det atomiskt.
+- `python -m aie spend list|approve|reject`.
+- I simuleringen blir en utgift över tröskeln en förfrågan, och den genomförs dagen efter att en grundare har godkänt den.
+- Förslaget D-053 finns i `docs/proposals/2026-10-28-D-053-godkanda-utgifter.md`.
+- `tests/unit/test_spend_approvals.py`: 7 tester, varav ett med två samtidiga anslutningar.
+
 ## [Unreleased] — 2026-10-28 — F3+F4: betald skatt och skatteunderlag (D-052, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Migration 27 `tax_payment`: ledgern får posttypen `tax_payment`. Tabellen byggs om i en transaktion, och alla poster, id:n, statusar och spärrar finns kvar. Den nya tabellen `tax_payments` kopplar en betalning till spår och år. Migration 27 var reserverad för 6b-4, som nu får migration 36 (TODO.md).
