@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 9: nattlig körning i GitHub Actions (D-061, föreslaget)
+### Tillagt
+- `.github/workflows/nightly.yml`:
+  - Körs varje natt och med knappen "Run workflow".
+  - Kör stegen kontroll av sim, tester, hälsokontroll och bedömning med skriptade agenter av `normal` och `platform_ban`.
+  - Kör en valfri kort Groq-simulering. Den körs bara i huvudrepot med repository secret, och får misslyckas.
+  - Laddar upp en artefakt och öppnar eller kommenterar ett ärende vid fel.
+  - Jobbet har bara läsrätt.
+- Förslaget D-061 finns i `docs/proposals/2026-10-28-D-061-nattlig-korning.md`.
+- `tests/unit/test_nightly_workflow.py`: 5 tester av arbetsflödets säkerhetsregler.
+### Rättat
+- `simulate start --agents groq` utan `GROQ_API_KEY` skapade körningen innan felet upptäcktes, så datamappen kunde inte användas igen. Nu byggs gatewayn före start. Det testas i `test_cycle.py`.
+
 ## [Unreleased] — 2026-10-28 — PR 8: simulering med Groq-agenter (D-060, föreslaget)
 ### Tillagt
 - `python -m aie simulate start|resume --agents groq`:
