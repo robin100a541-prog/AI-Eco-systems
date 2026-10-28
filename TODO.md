@@ -13,7 +13,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [x] ai-enterprise Fas 6a: koppla in spärrar, incidentlogg, prognoslogg och prestationsmätning i `python -m aie start` — @yorgo-jarjous (yorgo/fas6a-koppling)
 - [x] ai-enterprise Fas 6b-1: simulerat startkapital, marknad och scenarier (FR-20), migration 26, D-042 — @yorgo-jarjous (yorgo/fas6b1-marknad)
 - [x] ai-enterprise Fas 6b-2: åtgärdsprotokoll och arbetscykel, `python -m aie simulate` (FR-20, FR-23), D-043, D-044 (behörighetsändring) — @yorgo-jarjous
-- [ ] ai-enterprise Fas 6b-3: daglig rapport och affärsförslag (FR-21, FR-23), D-045 — @yorgo-jarjous
+- [ ] ai-enterprise Fas 6b-3: daglig rapport och affärsförslag (FR-21, FR-23), D-045 — övertagen av Codex 2026-10-28 (codex/fas6-daily-report; tidigare anspråk 2026-10-26, ingen aktiv PR). Ingen migration; D-045 används bara som förslag.
 - [ ] ai-enterprise Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22), migration 36 (27 användes av F3), D-046 — @yorgo-jarjous
 - [ ] ai-enterprise Fas 6b-5: acceptanstester för §54, Fas 6 stängs — @yorgo-jarjous
 - [ ] ai-enterprise Arbetsorder 02 (`docs/prompts/02-fixar-och-plattformar.md`) — @yorgo-jarjous, en session åt gången. **Reserverat 2026-10-28: migration 28–35 och D-051–D-064.** Nattboten och andra sessioner: rör inte punkterna nedan.
