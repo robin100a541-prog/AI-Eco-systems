@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 7: skydd mot plattformsberoende och scenariot platform_ban (D-059, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Nya gränser i `config/loader.py` och `RiskLimits`: `MAX_PLATFORM_REVENUE_SHARE` (procent) och `MIN_ACTIVE_PLATFORMS` (antal, ny typ). Värdena läggs i `risk_limits.toml` i PR 7b, som en grundare godkänner.
+- `src/aie/registry/dependency.py` (`DependencyGuard`):
+  - Plattformar med gemensamma beroenden räknas som en grupp.
+  - Andelen av intäkterna räknas de senaste 90 dagarna.
+  - Ger varning, rapport, och en spärr mot nya initiativ i en grupp på eller över gränsen. När det finns intäkter och en gräns saknas, stoppas nya initiativ (ER-02).
+- `System.tick()` skriver `dependency.warning` i revisionsloggen.
+- `python -m aie registry dependency`.
+- Scenarier kan ha `[[platforms]]` med `dependencies`, och initiativ kan ha `platform`.
+- Ny händelse `platform_ban`, och scenariot `config/scenarios/platform_ban.toml`, där plattform A stänger kontot dag 30.
+- Förslaget D-059 finns i `docs/proposals/2026-10-28-D-059-plattformsberoende.md`.
+- `tests/unit/test_dependency.py`: 10 tester.
+### Ändrat
+- `python -m aie registry` bygger registret med hela systemet, så att D-058 och D-059 gäller även där.
+- `tests/fixtures/limits/risk_limits.toml` har fått de två föreslagna gränserna, så att testerna kör med gränserna satta. Saknade gränser testas separat.
+
 ## [Unreleased] — 2026-10-28 — PR 6: simulera före start, hård spärr (D-058, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Migration 31 `assessments` och `assessment_events`: bedömningar med exakt de parametrar de gäller (SHA-256), och ett beslut per bedömning.

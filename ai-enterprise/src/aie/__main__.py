@@ -11,7 +11,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
 - `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
-- `registry`      plattforms- och initiativregistret: list, show, import, status (PR 4, D-056)
+- `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
@@ -136,8 +136,9 @@ def build_parser() -> argparse.ArgumentParser:
     res.add_argument("action", choices=("fetch", "history"))
     res.add_argument("url", nargs="?")
     res.add_argument("--agent", help="agenten som hämtar (måste ha research.search)")
-    reg = add("registry", "plattforms- och initiativregistret: list, show, import eller status (PR 4, D-056)")
-    reg.add_argument("action", choices=("list", "show", "import", "status"))
+    reg = add("registry", "plattforms- och initiativregistret: list, show, import, status eller dependency "
+                          "(PR 4, D-056, D-059)")
+    reg.add_argument("action", choices=("list", "show", "import", "status", "dependency"))
     reg.add_argument("kind", nargs="?", choices=("platform", "initiative"))
     reg.add_argument("key", nargs="?")
     reg.add_argument("status", nargs="?", help="ny status (för status)")

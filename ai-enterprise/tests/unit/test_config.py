@@ -41,6 +41,8 @@ VALID_RISK = {
     "REINVESTMENT_POLICY": 50,
     "API_REINVEST_SHARE": 20,
     "API_MONTHLY_CAP": 0,
+    "MAX_PLATFORM_REVENUE_SHARE": 60,  # D-059
+    "MIN_ACTIVE_PLATFORMS": 2,  # D-059
 }
 PROD = {"environment": "prod", "base_currency": "SEK"}
 
@@ -96,8 +98,11 @@ class TestValidConfig(ConfigTestCase):
         self.assertEqual(config.system.environment, "sim")
         self.assertTrue(config.system.is_simulation)
         self.assertEqual(config.risk.currency, "SIM")
-        self.assertEqual(config.risk.missing, ())
-        self.assertEqual(config.warnings, ())
+        # D-059: de två gränserna för plattformsberoende läggs in av en grundare i en egen PR (skyddad fil).
+        # Tills dess får bara de saknas, och de ger varningar i sim (ER-02). Inget annat får saknas.
+        pending = {"MAX_PLATFORM_REVENUE_SHARE", "MIN_ACTIVE_PLATFORMS"}
+        self.assertLessEqual(set(config.risk.missing), pending)
+        self.assertTrue(all(any(name in w for name in pending) for w in config.warnings))
 
     def test_config_is_frozen(self):
         """Verifies FR-02: konfigurationen kan inte ändras efter att den validerats."""
@@ -120,9 +125,9 @@ class TestValidConfig(ConfigTestCase):
         self.assertEqual(config.risk.human_approval_threshold, Money(10_000, "SEK"))
 
     def test_limit_table_has_section_25_and_d009(self):
-        """Verifies ER-02: alla tio §25-parametrar och båda D-009-parametrarna valideras."""
+        """Verifies ER-02: alla tio §25-parametrar, båda D-009-parametrarna och båda D-059-parametrarna valideras."""
         self.assertEqual(set(LIMITS), set(VALID_RISK) - {"currency"})
-        self.assertEqual(len(LIMITS), 12)
+        self.assertEqual(len(LIMITS), 14)
 
     def test_pyproject_version_matches_package(self):
         """Verifies DR-05: versionsnumret är detsamma i pyproject.toml och i paketet."""

@@ -107,11 +107,12 @@ class TestTick(SystemCase):
     def test_reserved_tax_is_part_of_the_budget_check(self):
         """Verifies D-041 och ER-19: budgetmotorn i det byggda systemet räknar med den reserverade skatten."""
         self.book("cap", "finance", EntryType.CAPITAL_IN, 1_000_000, approval=Approval.APPROVED)
-        sale = self.book("s1", "research", EntryType.REVENUE, 10_000)
-        self.system.tax.assign("robin", sale.entry_id, "partnership")
         unknown = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))
         self.assertFalse(unknown.allowed)  # D-054: initiativet finns inte i registret än
+        # godkänns före första intäkten: med intäkter och utan D-059-gränserna i repots config stoppas nya initiativ (ER-02)
         self.approve_initiative("etsy")
+        sale = self.book("s1", "research", EntryType.REVENUE, 10_000)
+        self.system.tax.assign("robin", sale.entry_id, "partnership")
         check = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))
         self.assertTrue(check.allowed, check.describe())
         self.assertEqual(self.system.tax.reserved_minor(), 4_000)
