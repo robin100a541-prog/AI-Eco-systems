@@ -45,7 +45,7 @@ from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
 from .collaboration import OpportunityRegister
-from .registry import Register
+from .registry import AssessmentStore, Register
 
 SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
 
@@ -76,6 +76,8 @@ class System:
     budgets: dict = field(default_factory=dict)
     spend_approvals: object = None
     register: object = None  # plattforms- och initiativregistret (PR 4, D-056)
+    clock: object = None  # affärstid (simulering) eller None = riktig tid
+    pause_after_days: int = 14  # D-058
     opportunities: object = None
     errors: list[str] = field(default_factory=list)
 
@@ -88,7 +90,8 @@ class System:
         """Kör de återkommande kontrollerna. Returnerar felen, som också loggas."""
         errors: list[str] = []
         checks = (("stoploss", self._stoploss), ("incidents", self.incidents.sync),
-                  ("vat", self.tax.check_vat), ("forecasts", self.forecasts.evaluate))
+                  ("vat", self.tax.check_vat), ("forecasts", self.forecasts.evaluate),
+                  ("autopause", self._autopause))
         for name, check in checks:
             try:
                 check()
@@ -98,6 +101,17 @@ class System:
                 errors.append(message)
         self.errors = errors
         return errors
+
+    def _autopause(self) -> None:
+        """D-058: aktiva initiativ under den pessimistiska prognosen pausas och får en incident."""
+        if self.register is None:
+            return
+        from datetime import UTC, datetime
+
+        from .registry import check_active
+
+        today = (self.clock() if self.clock is not None else datetime.now(UTC).isoformat())[:10]
+        check_active(self.register, self.ledger, self.incidents, today, self.pause_after_days, self.currency)
 
     def _stoploss(self) -> None:
         capitalised = any(e.entry_type is EntryType.CAPITAL_IN and e.status is Status.SETTLED
@@ -141,7 +155,8 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     now = {} if clock is None else {"clock": clock.now}  # budgetmotorn vill ha ett datetime
     spend_approvals = SpendApprovals(db, audit, founders, **t)
     opportunities = OpportunityRegister(db, registry, permissions, audit, founders)
-    register = Register(db, registry, permissions, audit, founders, opportunities)
+    assessments = AssessmentStore(db, audit, founders, environment=config.system.environment)
+    register = Register(db, registry, permissions, audit, founders, opportunities, assessments=assessments)
     budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax,
                           approvals=spend_approvals, initiatives=register, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
@@ -154,5 +169,5 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
                     permissions=permissions, budgets=budgets, spend_approvals=spend_approvals,
-                    register=register, opportunities=opportunities)
+                    register=register, opportunities=opportunities, clock=clock)
     return system
