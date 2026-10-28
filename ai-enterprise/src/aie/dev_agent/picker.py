@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 MAX_FAILURES = 3
-MAX_CONTEXT_CHARS = 14_000
+MAX_CONTEXT_CHARS = 10_000
 _BACKLOG_ITEM = re.compile(r"^- \[ \] (BL-\d+) (.*?)— öppen\s*$")
 _PATH = re.compile(r"`([\w./-]+\.(?:py|md|toml))`")
 _FAILED_TEST = re.compile(

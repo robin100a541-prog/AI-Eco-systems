@@ -22,6 +22,7 @@ from aie.llm import (
     Slot,
     load_providers,
 )
+from aie.llm.providers import USER_AGENT, _error_code
 from aie.memory import Database
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -36,14 +37,14 @@ def ask(text="Vilken färg har himlen?", data_class=D.PUBLIC):
 class FakeTransport:
     """Spelar in anrop och svarar som en OpenAI-kompatibel server, eller fallerar på begäran."""
 
-    def __init__(self, answer="Blå", tokens=10, fail=None):
+    def __init__(self, answer="Blå", tokens=10, fail=None, status=None):
         self.calls = []
-        self.answer, self.tokens, self.fail = answer, tokens, fail
+        self.answer, self.tokens, self.fail, self.status = answer, tokens, fail, status
 
     def __call__(self, url, body, headers, timeout):
         self.calls.append((url, json.loads(body), dict(headers)))
         if self.fail:
-            raise ProviderError(self.fail)
+            raise ProviderError(self.fail, self.status)
         return json.dumps({
             "choices": [{"message": {"content": self.answer}}],
             "usage": {"total_tokens": self.tokens},
@@ -159,6 +160,30 @@ class TestProviders(RouterCase):
         self.assertEqual(headers["Authorization"], f"Bearer {KEY}")
         self.assertEqual(ollama.calls[0][0], "http://localhost:11434/v1/chat/completions")
         self.assertNotIn("Authorization", ollama.calls[0][2])
+
+    def test_user_agent_and_reasoning_effort(self):
+        """Verifies DR-12: egen User-Agent (urllibs standard spärras av Groq) och låg resonemangsnivå för gpt-oss."""
+        groq = FakeTransport()
+        self.groq(groq).provider.complete(ask("hej"))
+        _url, body, headers = groq.calls[0]
+        self.assertEqual(headers["User-Agent"], USER_AGENT)
+        self.assertEqual(body["reasoning_effort"], "low")
+
+    def test_failed_call_is_audited_even_when_a_fallback_answers(self):
+        """Verifies DR-12, SR-10: Groqs HTTP-status loggas fast regelreserven svarar; nyckeln syns aldrig."""
+        groq = FakeTransport(fail=f"HTTP 403 {KEY}", status=403)
+        response = self.router(self.groq(groq), self.rule()).complete(ask(), "x")
+        self.assertEqual(response.provider, "rule")
+        failed = [e.details for e in self.audit.entries() if e.action == "llm.provider_failed"]
+        self.assertEqual([(d["provider"], d["status"]) for d in failed], [("groq", 403)])
+        self.assertNotIn(KEY, json.dumps(failed))
+
+    def test_error_code_is_only_a_short_token(self):
+        """Verifies SR-10: bara leverantörens felkod läses ur svarskroppen, aldrig fritext."""
+        self.assertEqual(_error_code(b'{"error": {"message": "nyckel gsk_x", "code": "model_not_found"}}'),
+                         "model_not_found")
+        self.assertEqual(_error_code(b'{"error": {"code": "har mellanslag gsk_x"}}'), "")
+        self.assertEqual(_error_code(b"<html>"), "")
 
     def test_key_never_leaks(self):
         """Verifies SR-10: nyckeln syns varken i felmeddelanden, repr eller audit-loggen."""

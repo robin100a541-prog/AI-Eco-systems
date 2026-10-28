@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten når Groq
+### Rättat
+- Första körningen nådde aldrig Groq och visade inte varför; bara `rule` svarade. Externa anrop skickar nu en egen `User-Agent` (urllibs standard kan spärras med 403), gpt-oss får `reasoning_effort = "low"`, och agentens anrop är mindre (kontext 10 000 tecken, `max_tokens` 3000) så att det ryms i gratisgränsen per minut.
+- Ett misslyckat anrop loggas nu som `llm.provider_failed` med HTTP-status och felkod, även när en reserv svarar. Svarskroppen i övrigt och nyckeln loggas aldrig.
+- `dev-agent run` skriver vilka leverantörer som är på (bara namn), första Groq-statusen och vem som svarade, både i loggen och i rapporten.
+- `dev-agent open-pr` misslyckas inte längre när automatisk merge inte går att slå på. PR:en finns då ändå, och en varning skrivs ut.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten (D-050)
 ### Tillagt
 - Rollen `developer` och verktyget `dev.propose_patch` i `config/permissions.toml` (skyddad fil; `founder-approved` på Robins begäran). Prestationsprofil för rollen (aldrig mätt på intäkt).

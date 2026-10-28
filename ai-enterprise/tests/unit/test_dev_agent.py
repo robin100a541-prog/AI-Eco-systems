@@ -328,6 +328,32 @@ class TestGitHub(unittest.TestCase):
         self.assertNotIn("ghp-secret", str(ctx.exception))
         self.assertNotIn("ghp-secret", repr(failing))
 
+    def test_auto_merge_failure_still_reports_the_pr(self):
+        """Verifies D-050: går automatisk merge inte att slå på finns PR:en ändå och körningen lyckas."""
+
+        def transport(method, url, headers, body):
+            if url.endswith("/pulls"):
+                return 201, b'{"number": 8, "node_id": "PR_y"}'
+            return 200, b'{"errors": [{"message": "Protected branch rules not configured"}]}'
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = Path(tmp) / "r.json"
+            result.write_text(json.dumps({"committed": True, "branch": "b", "title": "t", "body": "b"}))
+            env = {"BOT_TOKEN": "ghp-secret", "GITHUB_REPOSITORY": "o/r"}
+            self.assertEqual(cli.open_pr(result, env, transport), 0)
+
+    def test_llm_summary_names_provider_and_first_groq_status(self):
+        """Verifies D-050: körningen visar vem som svarade och första Groq-statusen, aldrig nycklar."""
+        entry = mock.Mock
+        entries = [
+            entry(action="llm.provider_failed", details={"provider": "groq", "status": 413, "reason": "groq: HTTP 413"}),
+            entry(action="llm.call", details={"provider": "rule"}),
+        ]
+        self.assertEqual(cli.llm_summary(entries), "första Groq-anropet: groq: HTTP 413; svarade: rule")
+        ok = [entry(action="llm.call", details={"provider": "groq"})]
+        self.assertEqual(cli.llm_summary(ok), "första Groq-anropet: HTTP 200; svarade: groq")
+        self.assertEqual(cli.llm_summary([]), "första Groq-anropet: inget; svarade: ingen")
+
     def test_bootstrap_uses_repo_config_and_free_providers_only(self):
         """Verifies DR-12, D-050: agenten byggs från repots konfiguration; utan nycklar finns bara lokala leverantörer."""
         with tempfile.TemporaryDirectory() as tmp:
