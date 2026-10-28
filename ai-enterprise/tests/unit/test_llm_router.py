@@ -234,14 +234,14 @@ class TestConfig(unittest.TestCase):
         """Verifies DR-12: utan nycklar i miljön hoppas groq och openrouter över; ollama och rule finns kvar."""
         slots, skipped = load_providers(ROOT / "config", environ={}, transport=FakeTransport())
         self.assertEqual([s.provider.name for s in slots], ["ollama", "rule"])
-        self.assertEqual(len(skipped), 4)
+        self.assertEqual(len(skipped), 3)
         self.assertIn("GROQ_API_KEY är inte satt", skipped[0])
 
     def test_default_config_with_keys_keeps_order(self):
         """Verifies DR-12 (D-008): ordningen är Groqs modeller, openrouter, ollama, rule."""
         env = {"GROQ_API_KEY": "a", "OPENROUTER_API_KEY": "b"}
         slots, skipped = load_providers(ROOT / "config", environ=env, transport=FakeTransport())
-        self.assertEqual([s.provider.name for s in slots], ["groq", "groq-2", "groq-3", "openrouter", "ollama", "rule"])
+        self.assertEqual([s.provider.name for s in slots], ["groq", "groq-2", "openrouter", "ollama", "rule"])
         self.assertEqual(skipped, ())
 
     def test_invalid_config_collects_all_errors(self):

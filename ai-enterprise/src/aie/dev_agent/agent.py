@@ -3,10 +3,10 @@
 En körning:
 1. Kör hela testsviten en gång (grundkörning). Fallerande tester blir kandidater.
 2. Väljer kandidater (`picker.pick`) och provar högst `MAX_ATTEMPTS` av dem, en i taget:
-   skickar koden till en gratismodell via `LLMGateway`, granskar diffen (`patch.check_patch`),
-   applicerar den med `git apply` och kör hela sviten.
-   Avvisad diff eller rött ⇒ diffen backas (`git apply -R`) och modellen får ett nytt försök med
-   exakt felet som återkoppling. Misslyckas även det noteras försöket och nästa kandidat provas.
+   skickar koden och fillistan till en gratismodell via `LLMGateway`, som svarar med sök/ersätt-block
+   (`edits.py`). Blocken görs om till en diff som granskas (`patch.check_patch`), skrivs och
+   hela sviten körs. Fel i blocken, avvisad ändring eller rött ⇒ filerna återställs och modellen
+   får ett nytt försök med exakt felet. Misslyckas även det noteras försöket och nästa kandidat provas.
 3. Första gröna försöket blir körningens ändring. Sedan stannar körningen.
 4. Är alla modeller slut (`NoProviderAvailable`), eller svarar bara regelreserven `rule`, stannar
    körningen lugnt: det räknas inte som ett misslyckat försök. Berodde det på 429 (gratisgränsen per
@@ -26,7 +26,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -37,8 +36,9 @@ from ..audit import AuditLog
 from ..authorization import AuthorizationEngine, PermissionDenied
 from ..llm import ChatRequest, DataClass, LLMGateway, Message, NoProviderAvailable
 from ..llm.gateway import SecretInPrompt
+from . import edits as edit_blocks
 from . import picker
-from .patch import check_patch, extract_diff, repair_diff
+from .patch import check_patch
 
 TOOL = "dev.propose_patch"
 MAX_ATTEMPTS = 3
@@ -59,27 +59,28 @@ Projektet:
   `PYTHONPATH=src python -m unittest discover -s tests` från `ai-enterprise/`. Följ stilen i exemplet.
 - Ett test som verifierar ett krav har en docstring som börjar med `Verifies <ID>`.
 - Bara Python-standardbiblioteket och `aie`. Inga nya beroenden. Inga nätverksanrop.
+- Använd bara filer som finns i fillistan. Hitta aldrig på moduler eller sökvägar.
 
-Svaret:
-- ENBART en giltig unified diff i git-format, inget annat (ingen förklaring).
-- Sökvägar relativa till repots rot: `--- a/ai-enterprise/...` och `+++ b/ai-enterprise/...`.
-  En ny fil har `--- /dev/null` och `+++ b/ai-enterprise/...`.
-- Varje hunk börjar med ett fullständigt huvud `@@ -start,antal +start,antal @@` (aldrig bara `@@`).
-  Sammanhangsrader börjar med ett mellanslag (även tomma rader) och är exakta kopior av filen.
-  Ta med 2–3 oförändrade rader före och efter varje ändring.
-- Exempel:
-  --- a/ai-enterprise/src/aie/exempel.py
-  +++ b/ai-enterprise/src/aie/exempel.py
-  @@ -10,3 +10,3 @@ def total(rader):
-       summa = 0
-  -    for r in rader:
-  +    for r in sorted(rader):
-           summa += r
+Svaret är ENBART ett eller flera sök/ersätt-block, ingen förklaring:
+
+FILE: ai-enterprise/src/aie/exempel.py
+<<<<<<< SEARCH
+    for r in rader:
+        summa += r
+=======
+    for r in sorted(rader):
+        summa += r
+>>>>>>> REPLACE
+
+- SEARCH är en exakt kopia av befintliga rader i filen, med samma indrag, och ska finnas exakt en
+  gång. Ta med så få rader som behövs för att den blir unik.
+- REPLACE är raderna som ersätter dem.
+- En ny testfil under `ai-enterprise/tests/` är ett block med tom SEARCH och hela filen i REPLACE.
 - Högst 200 ändrade rader. Ta aldrig bort eller försvaga tester. Rör inte `config/`, `.github/`
   eller skyddade filer."""
 FEEDBACK_PROMPT = (
-    "Din diff gick inte igenom ({outcome}). Exakt fel:\n{detail}\n\n"
-    "Rätta felet och svara med en ny, komplett unified diff och inget annat."
+    "Dina block gick inte igenom ({outcome}). Exakt fel:\n{detail}\n\n"
+    "Rätta felet och svara med nya sök/ersätt-block och inget annat."
 )
 
 
@@ -135,6 +136,12 @@ class TokenPacer:
 
     def record(self, tokens: int) -> None:
         self._spent.append((self._clock(), max(0, tokens)))
+
+
+def _file_list(project: Path) -> str:
+    """De riktiga källfilerna, relativt till ai-enterprise/ (kort, så att prompten ryms i gratisgränsen)."""
+    files = edit_blocks.source_files(project)
+    return "### Fillista: de enda filerna under ai-enterprise/src/aie/\n" + "\n".join(files) + "\n"
 
 
 def estimate_tokens(messages, max_tokens: int) -> int:
@@ -240,16 +247,14 @@ class DevAgent:
             Message(
                 "user",
                 f"Uppgift: {item.task}\n\n{picker.context(self.project, item)}\n"
-                f"{picker.example_test(self.project, item)}",
+                f"{picker.example_test(self.project, item)}\n{_file_list(self.project)}",
             ),
         ]
         for round_no in range(1 + FEEDBACK_RETRIES):
             response = self._ask(messages, item, result, state)
             if response is None:
                 return
-            diff = extract_diff(response.text)
-            diff = repair_diff(diff) if diff else diff
-            outcome, detail, check = self._try_patch(diff)
+            outcome, detail, check = self._try_edits(response.text)
             if outcome == "applied":
                 self._applied(item, result, state, check, response.provider, round_no)
                 return
@@ -267,7 +272,7 @@ class DevAgent:
                         f"Uppgift: {item.task}\n\n"
                         f"{picker.context(self.project, item, picker.RETRY_CONTEXT_CHARS)}",
                     ),
-                    Message("assistant", (diff or response.text)[:3000]),
+                    Message("assistant", response.text[:3000]),
                     Message(
                         "user", FEEDBACK_PROMPT.format(outcome=outcome, detail=detail[:1500])
                     ),
@@ -340,19 +345,20 @@ class DevAgent:
         self._sleep(RATE_LIMIT_WAIT)
         return self._call(request, estimate)
 
-    def _try_patch(self, diff: str):
-        """Granskar, applicerar och testar en diff. Returnerar (utfall, felet, granskningen)."""
-        check = check_patch(diff)
+    def _try_edits(self, text: str):
+        """Applicerar sök/ersätt-blocken, granskar och testar. Returnerar (utfall, felet, granskningen)."""
+        blocks = edit_blocks.parse_edits(text)
+        try:
+            applied = edit_blocks.apply_edits(self.repo, blocks)
+        except edit_blocks.EditError as exc:
+            return ("no_diff" if not blocks else "apply_failed"), str(exc), None
+        check = check_patch(applied.diff)
         if not check.ok:
-            outcome = "no_diff" if not diff.strip() else "rejected"
-            return outcome, "; ".join(check.problems), check
-        applied, detail = self._git_apply(diff)
-        if not applied:
-            headers = [ln for ln in diff.splitlines() if ln.startswith(("---", "+++", "@@"))][:6]
-            return "apply_failed", f"{detail}; diffens huvuden: {' | '.join(headers)}", check
+            return "rejected", "; ".join(check.problems), check
+        edit_blocks.write(self.repo, applied)
         run = self._run_tests(self.project)
         if not run.ok:
-            self._git_apply(diff, reverse=True)
+            edit_blocks.revert(self.repo, applied)
             return "tests_failed", run.output[-1500:], check
         self._last_run = run
         return "applied", "", check
@@ -395,34 +401,6 @@ class DevAgent:
             )
 
     # --- Git, tillstånd, frågor ------------------------------------------------------------------
-
-    def _git_apply(self, diff: str, reverse: bool = False) -> tuple[bool, str]:
-        with tempfile.NamedTemporaryFile(
-            "w", suffix=".diff", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(diff)
-        try:
-            # --recount: radantalen i hunk-huvudena räknas om (modellerna räknar ofta fel).
-            args = ["git", "apply", "--recount", "--whitespace=nowarn"] + (["-R"] if reverse else [])
-            check = subprocess.run(
-                args + ["--check", f.name],
-                cwd=self.repo,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if check.returncode != 0:
-                return False, check.stderr.strip()[:500]
-            done = subprocess.run(
-                args + [f.name],
-                cwd=self.repo,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            return done.returncode == 0, done.stderr.strip()[:500]
-        finally:
-            os.unlink(f.name)
 
     def _load_state(self) -> dict[str, int]:
         path = self.project / STATE_FILE

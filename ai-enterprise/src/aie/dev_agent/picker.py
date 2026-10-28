@@ -1,11 +1,13 @@
-"""Väljer små uppgifter åt utvecklaragenten (D-050), i den här ordningen:
+"""Väljer små uppgifter åt utvecklaragenten (D-050). Kandidaterna hämtas ur:
 
 1. öppna punkter i `docs/BOT-BACKLOG.md` som nämner minst en fil i repot,
 2. tester som fallerar i grundkörningen,
 3. `ruff`-varningar (om ruff finns),
 4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
 
-En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) hoppas över.
+De sorteras lättast först (`ease`): dokumentation och lint, sedan små tester, sist buggar.
+En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) eller redan är en
+fråga i `docs/QUESTIONS-FOR-FOUNDERS.md` hoppas över.
 Kontexten till modellen begränsas till `MAX_CONTEXT_CHARS` tecken (Groqs gratisgräns per minut är
 liten). Av Markdown-filer skickas bara raderna som nämner uppgiftens krav-ID:n. Ett befintligt test
 skickas med som exempel på importer och stil (`example_test`).
@@ -145,15 +147,41 @@ def requirement_items(root: Path) -> list[Item]:
     return items
 
 
+_BACKLOG_PRIORITY = re.compile(r"^\((\d)\b")
+# Lättast först: dokumentation och lint, sedan små tester, sist buggar och resten (D-050).
+_EASE = {"5": 0, "4": 1, "2": 2, "3": 3, "1": 4, "6": 5}
+
+
+def ease(item: Item) -> int:
+    if item.kind == "failing_test":
+        return -1  # en röd grundkörning lagas alltid först
+    if item.kind == "ruff":
+        return 1
+    if item.kind == "requirement":
+        return 2
+    m = _BACKLOG_PRIORITY.match(item.task)
+    return _EASE.get(m.group(1), 3) if m else 3
+
+
+def escalated(root: Path) -> set[str]:
+    """Uppgifter som redan är frågor till grundarna (`**Uppgift:** <nyckel>`); de provas inte igen."""
+    path = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+    if not path.is_file():
+        return set()
+    return set(re.findall(r"\*\*Uppgift:\*\* (\S+)", path.read_text(encoding="utf-8")))
+
+
 def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
-    """Alla kandidater i prioritetsordning, utan de som misslyckats för många gånger."""
+    """Alla kandidater, lättast först, utan de som misslyckats för många gånger eller redan är frågor."""
     candidates = (
         backlog_items(root)
         + failing_test_items(root, test_output)
         + ruff_items(root)
         + requirement_items(root)
     )
-    return [i for i in candidates if failures.get(i.key, 0) < MAX_FAILURES]
+    skip = escalated(root)
+    keep = [i for i in candidates if failures.get(i.key, 0) < MAX_FAILURES and i.key not in skip]
+    return sorted(keep, key=ease)  # stabil: samma lätthet behåller ordningen ovan
 
 
 def _relevant(rel: str, body: str, task: str) -> str:
