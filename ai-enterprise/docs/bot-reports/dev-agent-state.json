@@ -1,7 +1,7 @@
 {
   "failures": {
     "BL-002": 3,
-    "BL-005": 2,
-    "ruff:I001:src/aie/agents/__init__.py:2": 2
+    "BL-005": 3,
+    "ruff:I001:src/aie/agents/__init__.py:2": 3
   }
 }
