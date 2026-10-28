@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Nattboten har alltid arbete
+### Ändrat
+- `docs/BOT.md` (skyddad fil, ändrad på Robins uttryckliga begäran): när det inte finns någon ledig uppgift i aktuell fas arbetar boten med `docs/BOT-BACKLOG.md` i prioritetsordning (buggar, kravtäckning, säkerhet, kodkvalitet, dokumentation, förslag till nästa fas). Inga nya funktioner utanför konstitutionen och ROADMAP; idéer blir förslag till grundarna. Minst 3 nya backlogpunkter per körning.
+### Tillagt
+- `docs/BOT-BACKLOG.md` med fem första punkter (BL-001–BL-005), uppmätta 2026-10-28. `docs/proposals/` för designförslag (bara text).
+
 ## [Unreleased] — 2026-10-28 — Skyddade filer och nattboten
 ### Tillagt
 - `.github/workflows/protected-files.yml`: checken `protected-files` fäller en PR som ändrar eller tar bort `CONSTITUTION.md`, `DECISIONS.md`, `config/risk_limits.toml`, `config/permissions.toml`, själva workflow-filen eller `docs/BOT.md`, om PR:en inte har etiketten `founder-approved`. Bara grundarna sätter etiketten.

@@ -48,7 +48,41 @@ Hoppa över en uppgift om något av detta gäller:
 (§48–§54) är bevisade av tester i `tests/acceptance/test_fasN.py` och fasen är markerad stängd.
 Att skriva acceptanstesterna för den aktuella fasen är en uppgift du får ta, om den är ledig.
 
-Finns ingen ledig uppgift i den aktuella fasen: **sluta**, och skriv rapporten (avsnitt 8).
+Finns ingen ledig uppgift i den aktuella fasen: arbeta i stället med **egna förbättringsuppgifter**
+från `docs/BOT-BACKLOG.md` (avsnitt 2b). Boten har alltid något att göra.
+
+## 2b. Egna förbättringsuppgifter (`docs/BOT-BACKLOG.md`)
+
+Ta den översta öppna punkten i backloggen, i den här prioritetsordningen:
+
+1. **Buggar:** kör hela sviten flera gånger (minst 3 gånger per Python-version). Hitta tester som
+   fallerar eller ibland fallerar. Hitta orsaken och rätta den. Ta aldrig bort eller hoppa över ett test.
+2. **Kravtäckning:** hitta krav-ID:n i `REQUIREMENTS.md` (FR-, SR-, ER-, DR-) som inget test verifierar
+   (`grep -rn "<ID>" tests/`). Skriv de testerna. Hittar ett test en bugg, rätta buggen i samma PR.
+   Gäller kravet en fas som inte är byggd än: skriv inget test, notera det i backloggen.
+3. **Säkerhet:** granska koden mot säkerhetskraven (SR-*). Hitta luckor och täpp till dem, alltid med
+   ett test som fallerar före rättelsen och går igenom efter.
+4. **Kodkvalitet:** `ruff check`-varningar, duplicerad kod och otydliga namn. Bara små omskrivningar.
+   Testerna ändras inte och är gröna före och efter.
+5. **Dokumentation:** se till att `docs/setup.md`, `ARCHITECTURE.md` och `PROJECT_STATUS.md` stämmer
+   med koden: kommandon, filer, moduler och antal tester. Kör kommandona du beskriver.
+6. **Förberedelse av nästa fas:** skriv designförslag för nästa fas i `docs/proposals/`. Bara text,
+   ingen kod, tills den aktuella fasen är stängd. Fas 7 och senare: bara förslag, aldrig kod.
+
+Regler för egna uppgifter:
+- Varje uppgift är liten och får en egen PR, som mergeas automatiskt när alla checkar är gröna
+  (avsnitt 5). Är den för stor: dela den i flera punkter i backloggen.
+- **Inga nya funktioner** som inte står i `CONSTITUTION.md` eller `ROADMAP.md`. En idé blir ett
+  förslag i `docs/QUESTIONS-FOR-FOUNDERS.md` (märkt *Förslag*), aldrig kod.
+- En egen uppgift som kräver ett grundarbeslut följer avsnitt 7, precis som andra uppgifter.
+- Ta punkten genom att sätta den till `pågår (bot, claude/bot-backlog-NNN-<kort>)` i samma PR som arbetet.
+  Öppna PR:en som utkast direkt, innan du bygger.
+- När punkten är klar: flytta den till *Klart* med PR-länken.
+- **Varje körning lägger till minst 3 nya, konkreta punkter** i backloggen för nästa körning, så att
+  den aldrig tar slut. En punkt säger vad som ska göras, var och hur man vet att det är klart.
+  Skriv inga dubbletter av öppna punkter.
+
+Uppgifter i `ROADMAP.md` går alltid före backloggen. Kontrollera dem igen innan varje ny backlogpunkt.
 
 ## 3. Ta uppgiften innan du bygger
 
@@ -145,8 +179,12 @@ gren `claude/bot-rapport-ÅÅÅÅ-MM-DD`, och mergea den när checkarna är grö
 ## Hoppade över
 - <uppgift>: <varför>
 
+## Backloggen
+- Nya punkter den här körningen: BL-NNN, BL-NNN, BL-NNN (minst 3)
+- Öppna punkter totalt: N
+
 ## Nästa uppgift
-<vad nästa körning börjar med, eller "ingen ledig uppgift i Fas N">
+<vad nästa körning börjar med: en ROADMAP-uppgift eller den översta backlogpunkten>
 ```
 
 Rapporten ska vara sann. Skriv det som faktiskt hände, även när inget blev gjort.
