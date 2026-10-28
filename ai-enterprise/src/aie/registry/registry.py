@@ -108,6 +108,7 @@ class Register:
         self._opportunities = opportunities
         self._clock = clock
         self.assessments = assessments or AssessmentStore(db, audit, self._founders, environment="prod")
+        self.dependency = None  # DependencyGuard (D-059), kopplas in av build_system
 
     # --- Ändra -----------------------------------------------------------------------------
 
@@ -212,6 +213,11 @@ class Register:
             if self.assessments.valid(self._key, data, platform.data) is None:
                 raise RegistryError("initiativet saknar en godkänd bedömning med exakt de här parametrarna; "
                                     "simulera före start (D-058)")
+            current = self.get("initiative", self._key)
+            if self.dependency is not None and (current is None or current.status not in SPENDABLE):
+                reason = self.dependency.block_reason(platform.key)
+                if reason:
+                    raise RegistryError(reason)
         if kind == "platform" and status in ("approved", "active"):
             initiatives = [(e.key, e.data) for e in self.all("initiative")]
             if self.assessments.valid_for_platform(self._key, data, initiatives) is None:

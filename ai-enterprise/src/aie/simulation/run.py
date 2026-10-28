@@ -154,6 +154,7 @@ class Simulation:
         self.clock.day = day
         events = [e for e in self.scenario.events if e.day == day]
         notes = [self._act(e) for e in events if e.kind in ACTOR_EVENTS]
+        notes += [self._ban(e) for e in events if e.kind == "platform_ban"]
         return {"day": day, "events": events, "event_notes": notes}
 
     def finish_day(self, ctx: dict, listed: frozenset[str] | None = None, extra: dict | None = None) -> dict:
@@ -195,6 +196,17 @@ class Simulation:
             "SELECT summary FROM simulation_days WHERE run_id = ? ORDER BY day", (self.run_id,)))
 
     # --- Internt ---------------------------------------------------------------------------
+
+    def _ban(self, event: Event) -> str:
+        """D-059: plattformen har stängt kontot. Registret pausar den, så inga utgifter går dit."""
+        register = getattr(self._system, "register", None)
+        key = platform_key(self.scenario, event.platform)
+        if register is not None and register.get("platform", key) is not None:
+            from ..registry import SYSTEM as REGISTRY_SYSTEM
+
+            register.set_status(REGISTRY_SYSTEM, "platform", key, "paused",
+                                f"dag {event.day}: plattformen har stängt kontot (scenario, D-059)")
+        return f"{event.platform}: kontot stängt från dag {event.day}"
 
     def _act(self, event: Event) -> str:
         s = self._system
@@ -269,23 +281,31 @@ def _register_scenario(system, scenario: Scenario, founder: str) -> None:
     register = getattr(system, "register", None)
     if register is None:
         return
-    platform = f"sim-{scenario.name}"
     source = [{"url": f"file:config/scenarios/{scenario.name}.toml", "read_on": scenario.start_date}]
-    data = {
-        "name": f"Simulerad plattform ({scenario.name})", "url": f"file:config/scenarios/{scenario.name}.toml",
-        "type": "both", "currency": "SIM", "payment_terms": "simulerat", "vat_responsibility": "simulerat",
-        "dac7": "simulerat", "ai_rules": "simulerat", "automation_rules": "simulerat",
-        "account_requirements": "inget konto: simulering", "payout_terms": "simulerat", "dependencies": [],
-        "risks": ["simulerad: säger inget om en verklig plattform"], "sources": source,
-        "fees": {"per_order_minor": None, "percent_bp": None, "per_listing_minor": None, "monthly_minor": None,
-                 "setup_minor": None, "payout_minor": None, "currency": "SIM",
-                 "notes": "avgifterna står per initiativ i scenariot"},
-    }
+    deps = {p.key: list(p.dependencies) for p in scenario.platforms}
+
+    def data(name):
+        return {
+            "name": f"Simulerad plattform ({scenario.name}{'' if name is None else ', ' + name})",
+            "url": f"file:config/scenarios/{scenario.name}.toml",
+            "type": "both", "currency": "SIM", "payment_terms": "simulerat", "vat_responsibility": "simulerat",
+            "dac7": "simulerat", "ai_rules": "simulerat", "automation_rules": "simulerat",
+            "account_requirements": "inget konto: simulering", "payout_terms": "simulerat",
+            "dependencies": deps.get(name, []),
+            "risks": ["simulerad: säger inget om en verklig plattform"], "sources": source,
+            "fees": {"per_order_minor": None, "percent_bp": None, "per_listing_minor": None, "monthly_minor": None,
+                     "setup_minor": None, "payout_minor": None, "currency": "SIM",
+                     "notes": "avgifterna står per initiativ i scenariot"},
+        }
+
     note = f"simulering {scenario.name}, startad av {founder} (D-042)"
-    for status in ("investigated", "reviewed"):
-        register.record(founder, "platform", platform, status, data, note)
+    platforms = {platform_key(scenario, i.platform): data(i.platform) for i in scenario.initiatives}
+    for key, pdata in platforms.items():
+        for status in ("investigated", "reviewed"):
+            register.record(founder, "platform", key, status, pdata, note)
     items = {}
     for i in scenario.initiatives:
+        platform = platform_key(scenario, i.platform)
         items[i.key] = {"platform": platform, "department": i.department, "offering": "product",
                         "description": f"simulerat initiativ {i.key}", "price_minor": i.price,
                         "unit_cost_minor": i.unit_cost, "currency": "SIM", "founder_hours_per_week": 0,
@@ -294,12 +314,18 @@ def _register_scenario(system, scenario: Scenario, founder: str) -> None:
         for status in ("investigated", "reviewed"):
             register.record(founder, "initiative", i.key, status, items[i.key], note)
         # D-058: en scenariokörning är själv testet av scenariots antaganden (bara i simuleringens databas)
-        a = register.assessments.record(founder, i.key, platform, items[i.key], data,
+        a = register.assessments.record(founder, i.key, platform, items[i.key], platforms[platform],
                                         {"note": "scenariokörning; själva körningen är testet"}, True, kind="scenario")
         register.assessments.approve(founder, a.assessment_id, note)
-    register.record(founder, "platform", platform, "approved", data, note)
+    for key, pdata in platforms.items():
+        register.record(founder, "platform", key, "approved", pdata, note)
     for key, item in items.items():
         register.record(founder, "initiative", key, "approved", item, note)
+
+
+def platform_key(scenario: Scenario, platform: str | None) -> str:
+    """Registrets nyckel för en av scenariots plattformar. Utan plattform delar alla initiativ en."""
+    return f"sim-{scenario.name}" if platform is None else f"sim-{scenario.name}-{platform}"
 
 
 def _definition(scenario: Scenario) -> dict:
@@ -309,5 +335,8 @@ def _definition(scenario: Scenario) -> dict:
         item = {k: v for k, v in asdict(i).items() if v is not None}
         initiatives.append(item)
     events = [{k: v for k, v in asdict(e).items() if v not in (None, "")} for e in scenario.events]
-    return {"config_version": 1, "name": scenario.name, "description": scenario.description, "seed": scenario.seed,
-            "days": scenario.days, "start_date": scenario.start_date, "initiatives": initiatives, "events": events}
+    out = {"config_version": 1, "name": scenario.name, "description": scenario.description, "seed": scenario.seed,
+           "days": scenario.days, "start_date": scenario.start_date, "initiatives": initiatives, "events": events}
+    if scenario.platforms:
+        out["platforms"] = [{"key": p.key, "dependencies": list(p.dependencies)} for p in scenario.platforms]
+    return out

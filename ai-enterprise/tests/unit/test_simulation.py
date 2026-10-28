@@ -56,7 +56,7 @@ class TestScenarios(unittest.TestCase):
     def test_all_shipped_scenarios_are_valid(self):
         """Verifies FR-20 och §54: scenarierna täcker normal marknad, förlust, budget, konflikt, moms, intrång och nödstopp."""
         self.assertEqual(set(available(CONFIG)),
-                         {"normal", "loss", "budget_overrun", "conflict", "vat", "intrusion", "kill"})
+                         {"normal", "loss", "budget_overrun", "conflict", "vat", "intrusion", "kill", "platform_ban"})
         kinds = {e.kind for name in available(CONFIG) for e in scenario(name).events}
         self.assertLessEqual(kinds, EVENT_KINDS)
 

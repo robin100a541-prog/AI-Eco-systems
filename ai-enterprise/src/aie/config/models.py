@@ -53,6 +53,8 @@ class RiskLimits:
     reinvestment_policy: Decimal | None
     api_reinvest_share: Decimal | None
     api_monthly_cap: Money | None
+    max_platform_revenue_share: Decimal | None = None  # D-059
+    min_active_platforms: int | None = None  # D-059
 
     @property
     def missing(self) -> tuple[str, ...]:

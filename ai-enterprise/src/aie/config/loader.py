@@ -29,8 +29,9 @@ ENVIRONMENTS = ("sim", "prod")
 
 AMOUNT = "belopp"  # heltal i minsta enhet, >= 0
 PERCENT = "procent"  # tal 0–100
+COUNT = "antal"  # heltal >= 0
 
-# Alla tillåtna gränser och deras typ. De tio första är §25, de två sista D-009.
+# Alla tillåtna gränser och deras typ. De tio första är §25, sedan D-009 och plattformsberoende (D-059).
 LIMITS: dict[str, str] = {
     "START_CAPITAL": AMOUNT,
     "MINIMUM_RESERVE": AMOUNT,
@@ -44,6 +45,8 @@ LIMITS: dict[str, str] = {
     "REINVESTMENT_POLICY": PERCENT,
     "API_REINVEST_SHARE": PERCENT,
     "API_MONTHLY_CAP": AMOUNT,
+    "MAX_PLATFORM_REVENUE_SHARE": PERCENT,  # D-059: högsta andel av intäkterna från en plattform (eller ett beroende)
+    "MIN_ACTIVE_PLATFORMS": COUNT,  # D-059: minsta antal oberoende aktiva plattformar när det finns intäkter
 }
 SYSTEM_KEYS = ("config_version", "environment", "data_dir", "log_dir", "log_level", "base_currency", "founders")
 _FOUNDER_ID = re.compile(r"[a-z][a-z0-9_-]{1,31}")
@@ -282,6 +285,12 @@ def _parse_risk(
             values[name] = None
         elif kind == AMOUNT:
             values[name] = _parse_amount(where, name, raw, problems)
+        elif kind == COUNT:
+            if _is_int(raw) and raw >= 0:
+                values[name] = raw
+            else:
+                problems.error(where, f"{name} = {raw!r} måste vara ett heltal ≥ 0")
+                values[name] = None
         else:
             values[name] = _parse_percent(where, name, raw, problems)
 

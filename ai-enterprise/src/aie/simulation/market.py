@@ -90,6 +90,9 @@ class Market:
             return InitiativeDay(initiative.key, (), (f"säljer från dag {initiative.listed_from}",))
         if paused:
             return InitiativeDay(initiative.key, (), ("försäljningen är pausad av en spärr",))
+        if any(e.kind == "platform_ban" and e.platform == initiative.platform and e.active_on(day)
+               for e in self._scenario.events if initiative.platform is not None):
+            return InitiativeDay(initiative.key, (), ("plattformen har stängt kontot",))
         events = [e for e in self._scenario.events if e.initiative == initiative.key and e.active_on(day)]
         if any(e.kind == "platform_outage" for e in events):
             return InitiativeDay(initiative.key, (), ("plattformen ligger nere",))

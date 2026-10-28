@@ -45,7 +45,7 @@ from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
 from .collaboration import OpportunityRegister
-from .registry import AssessmentStore, Register
+from .registry import AssessmentStore, DependencyGuard, Register
 
 SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
 
@@ -91,7 +91,7 @@ class System:
         errors: list[str] = []
         checks = (("stoploss", self._stoploss), ("incidents", self.incidents.sync),
                   ("vat", self.tax.check_vat), ("forecasts", self.forecasts.evaluate),
-                  ("autopause", self._autopause))
+                  ("autopause", self._autopause), ("dependency", self._dependency))
         for name, check in checks:
             try:
                 check()
@@ -112,6 +112,15 @@ class System:
 
         today = (self.clock() if self.clock is not None else datetime.now(UTC).isoformat())[:10]
         check_active(self.register, self.ledger, self.incidents, today, self.pause_after_days, self.currency)
+
+    def _dependency(self) -> None:
+        """D-059: varna i revisionsloggen när en plattform eller ett beroende står för för stor andel."""
+        guard = getattr(self.register, "dependency", None)
+        if guard is None:
+            return
+        warnings = guard.warnings()
+        if warnings:
+            self.audit.append("system:dependency", "dependency.warning", {"warnings": warnings})
 
     def _stoploss(self) -> None:
         capitalised = any(e.entry_type is EntryType.CAPITAL_IN and e.status is Status.SETTLED
@@ -157,6 +166,7 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     opportunities = OpportunityRegister(db, registry, permissions, audit, founders)
     assessments = AssessmentStore(db, audit, founders, environment=config.system.environment)
     register = Register(db, registry, permissions, audit, founders, opportunities, assessments=assessments)
+    register.dependency = DependencyGuard(register, ledger, limits, **t)
     budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax,
                           approvals=spend_approvals, initiatives=register, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
