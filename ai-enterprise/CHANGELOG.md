@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: kontroller som faktiskt bevisar något
+### Rättat
+- En ny eller omskriven kontroll som redan går igenom innan någon ändring gjorts avvisas, eftersom den inte bevisar något. Körning 9 lade till BL-006 med `!grep ... "__repr__"`, som var sann från början.
+- `grep`/`!grep` tar bort citattecken runt texten, så att modellens `"text"` söker efter text och inte efter citattecknen.
+- Högst tre förslag tas emot per körning, räknat efter att dubbletter och redan sanna förslag sorterats bort.
+- En backloggpunkt som inte nämner någon fil tas ändå: filen tas från dess kontroll. En punkt utan kontroll skrivs om även om den inte nämner någon fil. BL-006–BL-008 hade inget filnamn och skulle aldrig ha tagits.
+- `docs/BOT-BACKLOG.md`: BL-006 och BL-007 har fått kontroller som går att misslyckas med. BL-008:s kontroll var redan sann och är borttagen, så agenten skriver en ny.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten: en uppgift är klar först när dess kontroll bevisar det
 ### Ändrat
 - `dev_agent/verify.py`: varje uppgift har en kontroll som körs efter att sviten gått grön. Lint: ruff hittar inte längre just det fyndet i filen. Fallerande test: testet går igenom, och ett instabilt (`flaky-test`) tre gånger i rad. Otestat krav: ett test vars docstring säger `Verifies <ID>` finns och går igenom. Backloggpunkt: kontrollen efter `Klart när:`. Går kontrollen inte igenom kastas ändringen, även om alla tester är gröna, och försöket räknas som misslyckat (`check_failed`).

@@ -1,6 +1,6 @@
 """Väljer små uppgifter åt utvecklaragenten (D-050). Kandidaterna hämtas ur:
 
-1. öppna punkter i `docs/BOT-BACKLOG.md` som nämner minst en fil i repot,
+1. öppna punkter i `docs/BOT-BACKLOG.md`,
 2. tester som fallerar i grundkörningen,
 3. `ruff`-varningar (om ruff finns),
 4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
@@ -67,10 +67,12 @@ def backlog_items(root: Path) -> list[Item]:
     for line in path.read_text(encoding="utf-8").splitlines():
         m = _BACKLOG_ITEM.match(line)
         if m:
-            files = _existing(root, _PATH.findall(m.group(2)))
-            if files:
-                task = m.group(2).strip()
-                items.append(Item(m.group(1), "backlog", task, files, checks_in(task, root)))
+            task = m.group(2).strip()
+            checks = checks_in(task, root)
+            # Filerna: de som nämns i texten, annars de som kontrollerna gäller (ruff/grep <fil>).
+            check_files = [c.arg.split(" ")[0] for c in checks if c.kind in ("ruff", "grep", "!grep")]
+            files = _existing(root, _PATH.findall(task) + check_files)
+            items.append(Item(m.group(1), "backlog", task, files, checks))
     return items
 
 
