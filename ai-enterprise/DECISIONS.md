@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-050 Utvecklaragenten: förbättrar koden med gratismodeller, aldrig Anthropic
+- **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-28 · **Bygger på:** D-008, D-009, D-014, D-017, D-020, D-049
+- **Beslut:**
+  1. Ny roll `developer` (nivå 3, departement executive, rapporterar till CEO) med bara verktygen `llm.complete` och `dev.propose_patch`.
+  2. `python -m aie dev-agent run` väljer en liten uppgift (backloggen, fallerande test, ruff-varning, krav utan test), frågar en gratismodell via `LLMGateway` (Groq → OpenRouter `:free` → Ollama → `rule`) och får en diff. Aldrig Anthropic; med `ANTHROPIC_API_KEY` satt körs agenten inte.
+  3. En diff avvisas om den rör en skyddad fil (samma lista som `protected-files`), `.github/`, `config/` eller agentens egen kod, är över 200 rader, lägger till en import utanför standardbiblioteket, tar bort en fil eller försvagar ett test. Godkända diffar appliceras och hela sviten körs utan nycklar i miljön. Rött ⇒ diffen backas. Högst 3 försök per körning.
+  4. Repots kod är publik (D-014), så den skickas som `public` till externa gratismodeller (DR-13). Prompter som ser ut att innehålla hemligheter stoppas av `LLMGateway`.
+  5. Kvoten slut, eller bara regelreserven kvar: körningen stannar lugnt. En uppgift som misslyckats 3 gånger blir en fråga i `docs/QUESTIONS-FOR-FOUNDERS.md`. Varje körning skriver en rapport i `docs/bot-reports/`.
+  6. `.github/workflows/dev-agent.yml` kör var tredje timme och på knapptryck, öppnar en PR med `BOT_TOKEN` och slår på automatisk merge. Den mergas bara när alla obligatoriska checkar är gröna.
+- **Godkänd av:** Robin ☑ (2026-10-28, gäller för båda enligt D-049)
+
 ### D-049 Grundarna agerar som en: en grundares godkännande räcker
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-28 · **Ersätter:** D-019 punkt 2 och 3 · **Bygger på:** D-019, D-021
 - **Beslut:**

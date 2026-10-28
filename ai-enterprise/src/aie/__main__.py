@@ -116,6 +116,11 @@ def build_parser() -> argparse.ArgumentParser:
     kill.add_argument("action", choices=("status", "engage", "release"))
     kill.add_argument("--as", dest="founder", help="vilken grundare som agerar (en av founders i system.toml)")
     kill.add_argument("--reason", default="", help="varför; krävs vid engage och release")
+    dev = add("dev-agent", "utvecklaragenten: run eller open-pr (D-050)")
+    dev.add_argument("action", choices=("run", "open-pr"))
+    dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
+    dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
+    dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -154,6 +159,14 @@ def _kill(args: argparse.Namespace) -> int:
     return kill(args.config_dir, args.action, args.founder, args.reason)
 
 
+def _dev_agent(args: argparse.Namespace) -> int:
+    from .dev_agent import cli  # importeras bara när kommandot används
+
+    if args.action == "run":
+        return cli.run(args.config_dir, args.branch, args.out)
+    return cli.open_pr(args.result)
+
+
 def _manual(args: argparse.Namespace) -> int:
     from .llm.cli import manual  # importeras bara när kommandot används
 
@@ -182,6 +195,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": lambda: runtime.status(args.config_dir),
         "approvals": lambda: _approvals(args),
         "manual": lambda: _manual(args),
+        "dev-agent": lambda: _dev_agent(args),
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
     }
