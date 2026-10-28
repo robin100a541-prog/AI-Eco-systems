@@ -114,12 +114,16 @@ class BudgetEngine:
         gates: tuple = (),
         tax=None,
         approvals=None,
+        initiatives=None,
     ) -> None:
         """`gates`: spärrar med `spend_block_reasons(request) -> list[str]`, t.ex. stop-loss (ER-13).
         `tax`: en `TaxEngine`; den reserverade skatten räknas då som åtagande (ER-19, D-032)."""
         self._clock = clock
         self._tax = tax
         self._approvals = approvals  # SpendApprovals (F5, D-053): godkända utgifter över tröskeln
+        # F6, D-054: initiativregistret (PR 4). `spend_block_reason(department, initiative) -> str | None`.
+        # Utan register (None) görs ingen initiativkontroll; när registret kopplas in gäller den direkt.
+        self._initiatives = initiatives
         self._gates = tuple(gates)
         self._ledger = ledger
         self._limits = limits
@@ -183,6 +187,13 @@ class BudgetEngine:
                 blocked.append(
                     f"departementets åtaganden överskrids: {committed} + {amount} > {budget.max_commitment_minor}"
                 )
+        if self._initiatives is not None and isinstance(r.initiative, str) and r.initiative.strip():
+            try:
+                reason = self._initiatives.spend_block_reason(r.department, r.initiative)
+            except Exception as exc:  # noqa: BLE001 — kan registret inte svara blir svaret nej (§59)
+                reason = f"initiativregistret kunde inte avgöra ({type(exc).__name__}); nekas"
+            if reason:
+                blocked.append(reason)
         if r.risk_class is Risk.CRITICAL:
             blocked.append("riskklass critical tillåts aldrig (§24)")
         blocked += self._hard_limits(amount, limits)
@@ -299,6 +310,26 @@ class BudgetEngine:
                     f"möjlig uppdelning: {len(earlier) + 1} utgifter i {r.initiative!r} på {SPLIT_WINDOW.days} dagar "
                     f"blir tillsammans {total} > {name} {limit.amount_minor} (ER-04)"
                 )
+        # F6, D-054: samma departement samma dag, oavsett initiativnamn. Annars kan en gräns kringgås
+        # genom att varje liten utgift får ett nytt initiativnamn.
+        today = self._clock().date()
+        same_day = [
+            e for e in self._ledger.entries(self._limits.currency)
+            if e.department == r.department
+            and e.entry_type in self._spend_types
+            and e.status in (Status.PENDING, Status.SETTLED)
+            and e.approval is Approval.NOT_REQUIRED
+            and datetime.fromisoformat(e.recorded_at).astimezone(UTC).date() == today
+        ]
+        day_total = sum(e.amount_minor for e in same_day) + amount
+        threshold = self._limits.human_approval_threshold
+        names = {e.initiative for e in same_day} | {r.initiative}
+        if threshold is not None and same_day and amount <= threshold.amount_minor < day_total and len(names) > 1:
+            flags.append(
+                f"möjlig uppdelning: {len(same_day) + 1} utgifter i departementet {r.department!r} i dag, i "
+                f"{len(names)} olika initiativ, blir tillsammans {day_total} > HUMAN_APPROVAL_THRESHOLD "
+                f"{threshold.amount_minor} (ER-04, D-054)"
+            )
         return flags
 
     def _required_approvals(self, amount: int) -> int:
