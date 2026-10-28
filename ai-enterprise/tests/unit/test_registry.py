@@ -15,7 +15,7 @@ from aie.collaboration import OpportunityRegister
 from aie.config import Money
 from aie.memory import Database
 from aie.monitoring import shutdown_logging
-from aie.registry import SYSTEM, Register, RegistryError, import_dir
+from aie.registry import SYSTEM, AssessmentError, Register, RegistryError, import_dir
 from aie.registry.cli import registry as registry_cli
 
 from .fixture_config import TEST_CONFIG
@@ -52,9 +52,20 @@ class RegisterCase(unittest.TestCase):
         self.opps = OpportunityRegister(self.db, self.agents, permissions, audit, FOUNDERS)
         self.register = Register(self.db, self.agents, permissions, audit, FOUNDERS, self.opps)
 
-    def approved_platform(self, key="plattform-a"):
-        for status in ("investigated", "reviewed", "approved"):
-            self.register.record("yorgo", "platform", key, status, PLATFORM, "test")
+    def assessed(self, initiative="mallar", platform="plattform-a", data=None, ready=True):
+        """En godkänd bedömning med exakt de parametrar som initiativet och plattformen har (D-058)."""
+        a = self.register.assessments.record("yorgo", initiative, platform, data or INITIATIVE,
+                                             self.register.get("platform", platform).data, {"test": True}, ready)
+        return self.register.assessments.approve("yorgo", a.assessment_id, "ok") if ready else a
+
+    def approved_pair(self, initiative="mallar", platform="plattform-a"):
+        """Plattform och initiativ granskade, en godkänd bedömning, och därefter båda godkända."""
+        for status in ("investigated", "reviewed"):
+            self.register.record("yorgo", "platform", platform, status, PLATFORM, "test")
+            self.register.record("yorgo", "initiative", initiative, status, INITIATIVE, "test")
+        self.assessed(initiative, platform)
+        self.register.set_status("yorgo", "platform", platform, "approved", "test")
+        self.register.set_status("yorgo", "initiative", initiative, "approved", "test")
 
 
 class TestSeedData(RegisterCase):
@@ -100,7 +111,7 @@ class TestVersions(RegisterCase):
                 self.register.record("yorgo", "platform", "plattform-b", "investigated", data, "test")
         with self.assertRaises(RegistryError):
             self.register.record("yorgo", "platform", "plattform-b", "approved", PLATFORM, "hoppar över steg")
-        self.approved_platform()
+        self.register.record("yorgo", "platform", "plattform-a", "investigated", PLATFORM, "test")
         for item in (INITIATIVE | {"price_minor": 49.0}, INITIATIVE | {"demand": {"visitors_per_day": 1}}):
             with self.subTest(), self.assertRaises(RegistryError):
                 self.register.record("yorgo", "initiative", "mallar", "investigated", item, "test")
@@ -123,6 +134,9 @@ class TestWhoDecides(RegisterCase):
         self.opps.cfo_estimate("cfo-1", opp.opportunity_id, "netto efter avgifter", Money(1_000, "SIM"))
         self.register.record("comp-1", "platform", "plattform-a", "reviewed", PLATFORM, "granskad",
                              opportunity_id=opp.opportunity_id)
+        for status in ("investigated", "reviewed"):
+            self.register.record("yorgo", "initiative", "mallar", status, INITIATIVE, "test")
+        self.assessed()
         for actor in ("ceo-1", "cfo-1", SYSTEM):
             with self.subTest(actor=actor), self.assertRaises(RegistryError):
                 self.register.set_status(actor, "platform", "plattform-a", "approved", "godkänner")
@@ -130,12 +144,12 @@ class TestWhoDecides(RegisterCase):
 
     def test_an_initiative_needs_an_approved_platform_and_the_system_may_only_pause(self):
         """Verifies D-056: ett initiativ godkänns bara på en godkänd plattform; systemet får bara pausa."""
-        self.register.record("yorgo", "platform", "plattform-a", "investigated", PLATFORM, "test")
         for status in ("investigated", "reviewed"):
+            self.register.record("yorgo", "platform", "plattform-a", status, PLATFORM, "test")
             self.register.record("yorgo", "initiative", "mallar", status, INITIATIVE, "test")
+        self.assessed()
         with self.assertRaises(RegistryError):
             self.register.set_status("yorgo", "initiative", "mallar", "approved", "plattformen är inte godkänd")
-        self.register.set_status("yorgo", "platform", "plattform-a", "reviewed", "test")
         self.register.set_status("yorgo", "platform", "plattform-a", "approved", "test")
         self.register.set_status("yorgo", "initiative", "mallar", "approved", "test")
         self.register.set_status("yorgo", "initiative", "mallar", "active", "test")
@@ -149,15 +163,58 @@ class TestSpendGate(RegisterCase):
     def test_spend_gate_follows_the_register(self):
         """Verifies D-054 och D-056: okänt, ej godkänt, fel departement eller ej godkänd plattform ger ett skäl."""
         self.assertIn("finns inte", self.register.spend_block_reason("research", "mallar"))
-        self.approved_platform()
+        self.register.record("yorgo", "platform", "plattform-a", "investigated", PLATFORM, "test")
         for status in ("investigated", "reviewed"):
             self.register.record("yorgo", "initiative", "mallar", status, INITIATIVE, "test")
         self.assertIn("reviewed", self.register.spend_block_reason("research", "mallar"))
+        self.register.record("yorgo", "platform", "plattform-a", "reviewed", PLATFORM, "test")
+        self.assessed()
+        self.register.set_status("yorgo", "platform", "plattform-a", "approved", "test")
         self.register.set_status("yorgo", "initiative", "mallar", "approved", "test")
         self.assertIsNone(self.register.spend_block_reason("research", "mallar"))
         self.assertIn("departementet", self.register.spend_block_reason("finance", "mallar"))
         self.register.set_status("yorgo", "platform", "plattform-a", "paused", "kontot granskas")
         self.assertIn("plattformen", self.register.spend_block_reason("research", "mallar"))
+
+
+class TestSimulateBeforeStart(RegisterCase):
+    def test_no_approval_without_an_approved_ready_assessment(self):
+        """Verifies D-058: utan en godkänd och redo bedömning godkänns varken plattform eller initiativ."""
+        for status in ("investigated", "reviewed"):
+            self.register.record("yorgo", "platform", "plattform-a", status, PLATFORM, "test")
+            self.register.record("yorgo", "initiative", "mallar", status, INITIATIVE, "test")
+        with self.assertRaises(RegistryError):
+            self.register.set_status("yorgo", "platform", "plattform-a", "approved", "ingen bedömning")
+        not_ready = self.assessed(ready=False)
+        with self.assertRaises(AssessmentError):  # en bedömning som inte är redo kan inte godkännas
+            self.register.assessments.approve("yorgo", not_ready.assessment_id, "ändå")
+        with self.assertRaises(RegistryError):
+            self.register.set_status("yorgo", "platform", "plattform-a", "approved", "fortfarande ingen")
+
+    def test_changed_parameters_invalidate_the_assessment(self):
+        """Verifies D-058: ändras priset eller plattformens avgifter efter godkännandet gäller bedömningen inte."""
+        self.approved_pair()
+        self.assertIsNone(self.register.spend_block_reason("research", "mallar"))
+        cheaper = INITIATIVE | {"price_minor": 2_900}
+        with self.assertRaises(RegistryError):  # nya parametrar kan inte godkännas med den gamla bedömningen
+            self.register.record("yorgo", "initiative", "mallar", "approved", cheaper, "sänkt pris")
+        self.register.record("yorgo", "initiative", "mallar", "reviewed", cheaper, "sänkt pris, bedöms om")
+        self.assertIn("reviewed", self.register.spend_block_reason("research", "mallar"))
+        with self.assertRaises(RegistryError):
+            self.register.set_status("yorgo", "initiative", "mallar", "approved", "utan ny bedömning")
+        self.assessed(data=cheaper)
+        self.register.set_status("yorgo", "initiative", "mallar", "approved", "ny bedömning godkänd")
+        self.assertIsNone(self.register.spend_block_reason("research", "mallar"))
+        new_fees = PLATFORM | {"fees": FEES | {"percent_bp": 1_500}}
+        with self.assertRaises(RegistryError):  # nya avgifter: ingen bedömning med de parametrarna
+            self.register.record("yorgo", "platform", "plattform-a", "approved", new_fees, "nya avgifter")
+
+    def test_scenario_assessments_only_exist_in_simulation_databases(self):
+        """Verifies D-058: en scenariobedömning kan aldrig skapas utanför simuleringen."""
+        self.register.record("yorgo", "platform", "plattform-a", "investigated", PLATFORM, "test")
+        with self.assertRaises(AssessmentError):
+            self.register.assessments.record("yorgo", "mallar", "plattform-a", INITIATIVE, PLATFORM, {}, True,
+                                             kind="scenario")
 
 
 class TestCommand(unittest.TestCase):

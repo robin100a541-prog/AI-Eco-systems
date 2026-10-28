@@ -282,16 +282,24 @@ def _register_scenario(system, scenario: Scenario, founder: str) -> None:
                  "notes": "avgifterna står per initiativ i scenariot"},
     }
     note = f"simulering {scenario.name}, startad av {founder} (D-042)"
-    for status in ("investigated", "reviewed", "approved"):
+    for status in ("investigated", "reviewed"):
         register.record(founder, "platform", platform, status, data, note)
+    items = {}
     for i in scenario.initiatives:
-        item = {"platform": platform, "department": i.department, "offering": "product",
-                "description": f"simulerat initiativ {i.key}", "price_minor": i.price, "unit_cost_minor": i.unit_cost,
-                "currency": "SIM", "founder_hours_per_week": 0,
-                "demand": {"visitors_per_day": i.visitors, "conversion_bp": i.conversion_bp,
-                           "refund_bp": i.refund_bp, "source": "antagande (scenario)"}}
-        for status in ("investigated", "reviewed", "approved"):
-            register.record(founder, "initiative", i.key, status, item, note)
+        items[i.key] = {"platform": platform, "department": i.department, "offering": "product",
+                        "description": f"simulerat initiativ {i.key}", "price_minor": i.price,
+                        "unit_cost_minor": i.unit_cost, "currency": "SIM", "founder_hours_per_week": 0,
+                        "demand": {"visitors_per_day": i.visitors, "conversion_bp": i.conversion_bp,
+                                   "refund_bp": i.refund_bp, "source": "antagande (scenario)"}}
+        for status in ("investigated", "reviewed"):
+            register.record(founder, "initiative", i.key, status, items[i.key], note)
+        # D-058: en scenariokörning är själv testet av scenariots antaganden (bara i simuleringens databas)
+        a = register.assessments.record(founder, i.key, platform, items[i.key], data,
+                                        {"note": "scenariokörning; själva körningen är testet"}, True, kind="scenario")
+        register.assessments.approve(founder, a.assessment_id, note)
+    register.record(founder, "platform", platform, "approved", data, note)
+    for key, item in items.items():
+        register.record(founder, "initiative", key, "approved", item, note)
 
 
 def _definition(scenario: Scenario) -> dict:

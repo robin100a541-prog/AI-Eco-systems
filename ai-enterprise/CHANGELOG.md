@@ -8,6 +8,21 @@
 - Uppgifterna tas lättast först: dokumentation och lint, sedan små tester, sist buggar. Uppgifter som redan är frågor i `QUESTIONS-FOR-FOUNDERS.md` hoppas över.
 - `extract_diff`, `repair_diff` och `git apply` används inte längre och är borttagna.
 
+## [Unreleased] — 2026-10-28 — PR 6: simulera före start, hård spärr (D-058, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 31 `assessments` och `assessment_events`: bedömningar med exakt de parametrar de gäller (SHA-256), och ett beslut per bedömning.
+- `src/aie/registry/assessments.py`:
+  - `AssessmentStore`.
+  - `check_active()`: automatisk paus och incident efter 14 dagar under den pessimistiska prognosen, kopplad till `System.tick()`.
+- `src/aie/simulation/assessment.py`:
+  - Scenarier byggs från registret: normalt, pessimistiskt (efterfrågan × 0,25, returer × 2) och noll försäljning, med flera körningar var.
+  - Grundarnas tid och fasta avgifter räknas som kostnad. Antagandena märks, och en känslighetsanalys ingår.
+- `python -m aie assess run|list|show|approve|reject`.
+- **Spärr:** ett initiativ eller en plattform godkänns, aktiveras eller får utgifter bara med en godkänd och redo bedömning med samma parametrar. Ändras parametrarna går initiativet tillbaka till `reviewed`.
+- `config/simulation.toml [assessment]`: antagandena, märkta som antaganden.
+- Förslaget D-058 finns i `docs/proposals/2026-10-28-D-058-simulera-fore-start.md`.
+- `tests/unit/test_assessment.py`: 6 tester. `test_registry.py` har fått 3 tester till, och registertesterna och `test_system.py` följer nu den nya ordningen.
+
 ## [Unreleased] — 2026-10-28 — PR 5: webbläsning för Research (D-057, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - `src/aie/research/web.py` (`WebReader`): läser kända offentliga sidor med `urllib` bakom `AuthorizationEngine`.

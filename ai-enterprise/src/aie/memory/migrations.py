@@ -1323,6 +1323,56 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=31,
+        name="assessments",
+        statements=(
+            # PR 6 (arbetsorder 02, D-058): sparade bedömningar före start. En bedömning gäller exakt de
+            # parametrar som står i den (params_hash). Ändras initiativet eller plattformen gäller den inte
+            # längre. Godkännandet är en egen händelse, högst ett beslut per bedömning. Append-only.
+            """
+            CREATE TABLE assessments (
+                assessment_id INTEGER PRIMARY KEY,
+                kind          TEXT NOT NULL CHECK (kind IN ('simulation', 'scenario')),
+                initiative    TEXT NOT NULL,
+                platform      TEXT NOT NULL,
+                params_hash   TEXT NOT NULL,
+                params        TEXT NOT NULL CHECK (json_valid(params)),
+                result        TEXT NOT NULL CHECK (json_valid(result)),
+                ready         INTEGER NOT NULL CHECK (ready IN (0, 1)),
+                actor         TEXT NOT NULL,
+                at            TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER assessments_no_update BEFORE UPDATE ON assessments
+            BEGIN SELECT RAISE(ABORT, 'en bedömning skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER assessments_no_delete BEFORE DELETE ON assessments
+            BEGIN SELECT RAISE(ABORT, 'bedömningar raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE assessment_events (
+                id            INTEGER PRIMARY KEY,
+                assessment_id INTEGER NOT NULL REFERENCES assessments (assessment_id),
+                event         TEXT NOT NULL CHECK (event IN ('approved', 'rejected')),
+                actor         TEXT NOT NULL,
+                note          TEXT NOT NULL,
+                at            TEXT NOT NULL,
+                UNIQUE (assessment_id)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER assessment_events_no_update BEFORE UPDATE ON assessment_events
+            BEGIN SELECT RAISE(ABORT, 'beslut om bedömningar skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER assessment_events_no_delete BEFORE DELETE ON assessment_events
+            BEGIN SELECT RAISE(ABORT, 'beslut om bedömningar raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

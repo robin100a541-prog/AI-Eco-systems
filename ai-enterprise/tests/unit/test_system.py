@@ -49,13 +49,16 @@ class SystemCase(unittest.TestCase):
                 "payment_terms": "x", "vat_responsibility": "x", "dac7": "x", "ai_rules": "x",
                 "automation_rules": "x", "account_requirements": "x", "payout_terms": "x", "dependencies": [],
                 "risks": [], "sources": source}
-        for status in ("investigated", "reviewed", "approved"):
-            register.record("robin", "platform", platform, status, data, "test")
         item = {"platform": platform, "department": "research", "offering": "product", "description": "test",
                 "price_minor": 100, "unit_cost_minor": 0, "currency": "SIM", "founder_hours_per_week": 0,
                 "demand": {"visitors_per_day": 1, "conversion_bp": 1, "refund_bp": 0, "source": "antagande"}}
-        for status in ("investigated", "reviewed", "approved"):
+        for status in ("investigated", "reviewed"):
+            register.record("robin", "platform", platform, status, data, "test")
             register.record("robin", "initiative", key, status, item, "test")
+        a = register.assessments.record("robin", key, platform, item, data, {"test": True}, True)  # D-058
+        register.assessments.approve("robin", a.assessment_id, "test")
+        register.record("robin", "platform", platform, "approved", data, "test")
+        register.record("robin", "initiative", key, "approved", item, "test")
 
     def book(self, key, department, entry_type, amount, status=Status.SETTLED, approval=Approval.NOT_REQUIRED):
         return self.system.ledger.record("robin", EntryDraft(key, department, amount, "SIM", entry_type, "etsy",

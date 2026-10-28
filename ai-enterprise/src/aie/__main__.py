@@ -9,6 +9,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `registry`      plattforms- och initiativregistret: list, show, import, status (PR 4, D-056)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
@@ -124,6 +125,13 @@ def build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
+    ass = add("assess", "bedömning före start: run, list, show, approve eller reject (PR 6, D-058)")
+    ass.add_argument("action", choices=("run", "list", "show", "approve", "reject"))
+    ass.add_argument("target", help="initiativ (run, list) eller bedömningens nummer (show, approve, reject)")
+    ass.add_argument("--as", dest="actor", help="vem som kör (agent eller grundare) eller beslutar (grundare)")
+    ass.add_argument("--note", default="", help="motivering; krävs vid reject")
+    ass.add_argument("--runs", type=int, help="körningar per scenario (standard: min_runs)")
+    ass.add_argument("--days", type=int, help="dagar per körning (standard: min_days)")
     res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
     res.add_argument("action", choices=("fetch", "history"))
     res.add_argument("url", nargs="?")
@@ -149,6 +157,15 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
     return parser
+
+
+def _assess(args: argparse.Namespace) -> int:
+    from .simulation.assess_cli import assess  # importeras bara när kommandot används
+
+    if args.action in ("run", "approve", "reject") and not args.actor:
+        print("FEL: run, approve och reject kräver --as", file=sys.stderr)
+        return 1
+    return assess(args.config_dir, args.action, args.target, args.actor, args.note, args.runs, args.days)
 
 
 def _research(args: argparse.Namespace) -> int:
@@ -253,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
         "spend": lambda: _spend(args),
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
+        "assess": lambda: _assess(args),
     }
     try:
         return commands[args.command]()
