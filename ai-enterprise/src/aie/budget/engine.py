@@ -11,8 +11,19 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
    eller `critical` blockeras (§24, §25).
 5. **Budget:** departementets utgifter i ledgern (kostnader och avgifter, väntade och genomförda,
    med korrigeringar) plus beloppet får inte överstiga budgeten (§52: budgetöverskridanden blockeras).
-   I kapitalläget (D-047) får beloppet inte överstiga departementets andel av det disponibla kapitalet
-   (högst `MAX_DEPARTMENT_BUDGET`), och plattformsavgifter räknas inte som departementets utgifter.
+   I kapitalläget (D-047, rättat enligt D-051) har varje departement ett **tak**:
+
+       bas   = insatt kapital − reserv + resultatdel
+       tak   = andel × bas (högst MAX_DEPARTMENT_BUDGET)
+       kvar  = tak − departementets egna utgifter, men aldrig mer än det disponibla kapitalet
+
+   - Insatt kapital är genomförda `capital_in` minus `capital_out`, inte en konstant.
+   - Resultatdelen är resultatet efter reserverad skatt och *före* departementens egna utgifter (de
+     räknas redan mot taken). Vid vinst räknas bara `REINVESTMENT_POLICY` procent av den, så att resten
+     aldrig kan spenderas. Vid förlust räknas hela förlusten, och basen krymper.
+   - Basen är aldrig större än det disponibla kapitalet med departementens utgifter tillagda.
+   Upprepade kontroller kan därför aldrig flytta taket: det beror inte på hur mycket som redan har
+   spenderats. Plattformsavgifter räknas inte som departementets utgifter.
 6. **Åtaganden:** väntade utgifter plus beloppet får inte överstiga departementets `max_commitment`
    eller hela företagets `MAX_COMMITTED_CAPITAL` (§23).
 7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs en grundare (D-049)
@@ -38,7 +49,7 @@ from datetime import UTC, datetime, timedelta
 
 from ..audit import AuditLog
 from ..config.models import RiskLimits
-from ..ledger import Approval, EntryType, Ledger, Status
+from ..ledger import Approval, EntryType, Ledger, Status, compute_result
 from .capital import capital_position
 from .config import Budget, Risk
 
@@ -157,8 +168,8 @@ class BudgetEngine:
                 available = self._available(budget)
                 if amount > available:
                     blocked.append(
-                        f"budgeten överskrids: {amount} > departementets andel {available} {limits.currency} "
-                        f"({budget.share_percent} % av disponibelt kapital, D-047, §52)"
+                        f"budgeten överskrids: {amount} > kvar {available} {limits.currency} av departementets tak "
+                        f"({budget.share_percent} % av basen {self.capital_base()}, D-047, D-051, §52)"
                     )
             elif spent + amount > budget.budget_minor:
                 blocked.append(
@@ -286,8 +297,8 @@ class BudgetEngine:
     def usage(self, department: str) -> tuple[int, int | None]:
         """(utgifter hittills, vad som återstår att använda nu) för departementet. None = ingen budget.
 
-        Fast läge: budget minus utgifter. Kapitalläge (D-047): andelen av det disponibla kapitalet just nu.
-        Ren läsning; inget revideras.
+        Fast läge: budget minus utgifter. Kapitalläge (D-047, D-051): taket minus egna utgifter, högst
+        det disponibla. Ren läsning; inget revideras.
         """
         budget = self._budgets.get(department)
         spent = self._usage(department, self._limits.currency)[0]
@@ -297,13 +308,42 @@ class BudgetEngine:
             return spent, self._available(budget)
         return spent, max(0, budget.budget_minor - spent)
 
-    def _available(self, budget) -> int:
-        """D-047: departementets andel av det disponibla kapitalet nu, högst MAX_DEPARTMENT_BUDGET."""
-        tax = self._tax.reserved_minor(self._limits.currency) if self._tax is not None else None
-        position = capital_position(self._ledger.entries(self._limits.currency), self._limits, tax)
-        available = position.disposable_minor * budget.share_percent // 100
+    def capital_base(self) -> int:
+        """D-051: basen som departementens tak räknas från. Se modulens docstring, punkt 5."""
+        limits, currency = self._limits, self._limits.currency
+        entries = self._ledger.entries(currency)
+        if limits.minimum_reserve is None:
+            return 0  # ER-02: utan reserv kan inget disponeras
+        deposited = sum(e.amount_minor if e.entry_type is EntryType.CAPITAL_IN else -e.amount_minor
+                        for e in entries if e.status is Status.SETTLED
+                        and e.entry_type in (EntryType.CAPITAL_IN, EntryType.CAPITAL_OUT))
+        spent_by_departments = sum(e.amount_minor for e in entries if e.entry_type in self._spend_types
+                                   and e.status in (Status.PENDING, Status.SETTLED))
+        tax = self._tax.reserved_minor(currency) if self._tax is not None else 0
+        result = compute_result(entries, currency).net_minor + spent_by_departments - tax
+        if result > 0:
+            policy = limits.reinvestment_policy
+            part = int(result * policy) // 100 if policy is not None else 0  # ER-02: saknas ⇒ inget återinvesteras
+        else:
+            part = result  # hela förlusten
+        base = deposited - limits.minimum_reserve.amount_minor + part
+        position = capital_position(entries, limits, tax if self._tax is not None else None)
+        return max(0, min(base, position.disposable_minor + spent_by_departments))
+
+    def department_cap(self, budget) -> int:
+        """D-051: departementets tak = andel × bas, högst MAX_DEPARTMENT_BUDGET."""
         cap = self._limits.max_department_budget
-        return min(available, cap.amount_minor) if cap is not None else 0
+        if cap is None:
+            return 0  # ER-02
+        return min(self.capital_base() * budget.share_percent // 100, cap.amount_minor)
+
+    def _available(self, budget) -> int:
+        """D-051: taket minus departementets egna utgifter, aldrig mer än det disponibla kapitalet."""
+        currency = self._limits.currency
+        tax = self._tax.reserved_minor(currency) if self._tax is not None else None
+        disposable = capital_position(self._ledger.entries(currency), self._limits, tax).disposable_minor
+        own = self._usage(budget.department, currency)[0]
+        return max(0, min(self.department_cap(budget) - own, disposable))
 
     def _usage(self, department: str, currency: str) -> tuple[int, int]:
         """(utgifter, väntade utgifter) för departementet. Korrigeringar räknas med sitt tecken."""
