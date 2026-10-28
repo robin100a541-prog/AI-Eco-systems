@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — F1+F2: riktiga budgettak per departement (D-051, föreslaget) · kräver-oberoende-granskning
+### Rättat
+- `BudgetEngine` i kapitalläget: taket räknas nu från en fast bas (insatt kapital − reserv + resultatdel). Förut räknades det från det kapital som var kvar, så upprepade utgifter kunde låta research använda 95 % av basen trots andelen 40 % (verifierat före rättelsen). Nu är det högst 40 %, och bufferten på 44 % skyddas.
+- Resultatdelen är 80 % av vinsten efter skatt (`REINVESTMENT_POLICY`) och räknas före departementens egna utgifter, så att inget räknas två gånger. En förlust krymper basen fullt ut. Insatt kapital är `capital_in` minus `capital_out`.
+- `BudgetEngine.capital_base()` och `department_cap()`.
+- Förslaget D-051 finns i `docs/proposals/2026-10-28-D-051-budgettak.md`. `DECISIONS.md` är skyddad och uppdateras i en egen PR.
+- `tests/unit/test_budget_cap.py`: 8 tester. Tre tester i `test_budget_capital.py` har fått de förväntade värden som den rättade formeln ger, med uträkningen i kommentarer.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten lagar modellernas hunk-huvuden
 ### Rättat
 - Körning 4 nådde Groq utan 429, men varje diff stoppades av `git apply` med "No valid patches in input". Modellen skrev `@@` utan radnummer, vilket gick att återskapa lokalt. `repair_diff` bygger nu om varje hunk-huvud från raderna som följer och lagar tomma sammanhangsrader, och `git apply --recount` räknar om antalen. Innehållet i diffen ändras inte.

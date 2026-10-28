@@ -98,14 +98,15 @@ class TestBudgetFromCapital(CapitalCase):
         """Verifies D-047 och ER-05: departementet får använda sin andel av det disponibla, aldrig reserven."""
         self.assertEqual(self.engine.usage("research"), (0, 40_000))  # 40 % av 100 000 över reserven
         self.assertTrue(self.ask(9_000).allowed)
-        self.assertTrue(any("40 % av disponibelt kapital" in r for r in self.ask(40_001).blocked))
+        self.assertTrue(any("40 % av basen" in r for r in self.ask(40_001).blocked))
 
     def test_budget_grows_with_profit_and_shrinks_with_loss(self):
         """Verifies D-047: vinster återinvesteras automatiskt genom att andelen växer; förluster krymper den."""
         self.book("research", EntryType.REVENUE, 50_000)
         grown = self.engine.usage("research")[1]
-        # 150 000 över reserven, minus skatt på intäkten utan spår (50 %, högsta satsen) = 125 000; 40 % av det
-        self.assertEqual(grown, 50_000)
+        # D-051: bas = 400 000 − 300 000 + (50 000 − 25 000 skatt utan spår) × REINVESTMENT_POLICY 50 % = 112 500;
+        # 40 % av det = 45 000
+        self.assertEqual(grown, 45_000)
         self.book("research", EntryType.COST, 50_000)
         self.assertLess(self.engine.usage("research")[1], grown)
 
@@ -114,7 +115,8 @@ class TestBudgetFromCapital(CapitalCase):
         sale = self.book("research", EntryType.REVENUE, 50_000)
         self.tax.assign("robin", sale.entry_id, "partnership")  # 40 % av 50 000 = 20 000 reserveras
         untaxed = BudgetEngine(self.ledger, self.limits, self.budgets, self.audit)
-        self.assertEqual(untaxed.usage("research")[1] - self.engine.usage("research")[1], 20_000 * 40 // 100)
+        # 20 000 i skatt minskar resultatdelen med 20 000 × 50 % = 10 000, och taket med 40 % av det
+        self.assertEqual(untaxed.usage("research")[1] - self.engine.usage("research")[1], 10_000 * 40 // 100)
 
 
 class TestFeesAreCostOfSales(CapitalCase):
