@@ -171,7 +171,7 @@ class DevAgent:
                 ),
             ),
             DataClass.PUBLIC,
-            max_tokens=4000,
+            max_tokens=3000,  # prompt + max_tokens ska rymmas i Groqs gratisgräns per minut
         )
         try:
             response = self._gateway.complete(self.agent_id, request)

@@ -10,6 +10,7 @@ Ordning för varje anrop:
 4. **Allt slut:** `NoProviderAvailable` kastas. Den som anropar köar arbetet. Ingen betald
    reserv finns (D-008, D-009).
 
+Ett misslyckat anrop loggas som `llm.provider_failed` med HTTP-status och kort skäl (aldrig nyckeln).
 Varje lyckat anrop loggas i audit-loggen med leverantör, modell, tokens, dataklass och kostnad 0,
 men aldrig med prompten eller svaret, eftersom de kan vara interna.
 """
@@ -118,6 +119,9 @@ class ProviderRouter:
                 response = p.complete(request)
             except ProviderError as exc:
                 reasons.append(str(exc))
+                # Felet loggas även när en senare leverantör svarar; annars syns det aldrig.
+                self._log("llm.provider_failed", caller, request, provider=p.name, status=exc.status,
+                          reason=str(exc))
                 continue
             self._quotas.add_tokens(p.name, response.tokens)
             self._log("llm.call", caller, request, provider=p.name, model=response.model, tokens=response.tokens)

@@ -7,6 +7,7 @@ API-nycklar läses från miljövariabler och skrivs aldrig ut eller loggas (SR-1
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -49,7 +50,29 @@ class ChatResponse:
 
 
 class ProviderError(RuntimeError):
-    """Anropet misslyckades. Meddelandet innehåller aldrig nyckeln."""
+    """Anropet misslyckades. Meddelandet innehåller aldrig nyckeln.
+
+    `status` är HTTP-statusen (0 = servern nåddes inte, None = okänt).
+    """
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+# Utan egen User-Agent skickar urllib "Python-urllib/3.x", som Groqs Cloudflare kan spärra (403).
+USER_AGENT = "aie-llm/1.0"
+_ERROR_CODE = re.compile(r"[A-Za-z0-9_.-]{1,60}")
+
+
+def _error_code(body: bytes) -> str:
+    """Leverantörens felkod (t.ex. `model_not_found`), aldrig fritext som kan eka nyckeln."""
+    try:
+        error = json.loads(body).get("error") or {}
+        code = str(error.get("code") or error.get("type") or "")
+    except (ValueError, AttributeError):
+        return ""
+    return code if _ERROR_CODE.fullmatch(code) else ""
 
 
 # (url, body, headers, timeout) -> svarets bytes. Kastar ProviderError vid fel.
@@ -62,9 +85,14 @@ def urllib_transport(url: str, body: bytes, headers: Mapping[str, str], timeout:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return response.read()
     except urllib.error.HTTPError as exc:
-        raise ProviderError(f"HTTP {exc.code}") from None  # svarskroppen kan eka nyckeln
+        try:
+            code = _error_code(exc.read(4096))
+        except OSError:
+            code = ""
+        # Bara statusen och felkoden; resten av svarskroppen kan eka nyckeln.
+        raise ProviderError(f"HTTP {exc.code}" + (f" ({code})" if code else ""), exc.code) from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise ProviderError(f"kunde inte nås: {getattr(exc, 'reason', exc)}") from None
+        raise ProviderError(f"kunde inte nås: {getattr(exc, 'reason', exc)}", 0) from None
 
 
 class Provider:
@@ -129,25 +157,29 @@ class OpenAICompatibleProvider(Provider):
         self._timeout = timeout
 
     def complete(self, request: ChatRequest) -> ChatResponse:
-        body = json.dumps({
+        payload = {
             "model": self.model,
             "messages": [{"role": m.role, "content": m.content} for m in request.messages],
             "max_tokens": request.max_tokens,
             "temperature": 0,
-        }).encode("utf-8")
-        headers = {"Content-Type": "application/json"}
+        }
+        if self.kind == "groq" and self.model.startswith("openai/gpt-oss"):
+            # Resonemangstokens räknas mot max_tokens; låg nivå lämnar plats åt själva svaret.
+            payload["reasoning_effort"] = "low"
+        body = json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         try:
             raw = self._transport(self._url, body, headers, self._timeout)
         except ProviderError as exc:
-            raise ProviderError(self._redact(f"{self.name}: {exc}")) from None
+            raise ProviderError(self._redact(f"{self.name}: {exc}"), exc.status) from None
         try:
             data = json.loads(raw)
             text = data["choices"][0]["message"].get("content") or ""
             tokens = int((data.get("usage") or {}).get("total_tokens") or 0)
         except (ValueError, KeyError, IndexError, TypeError):
-            raise ProviderError(f"{self.name}: oväntat svarsformat") from None
+            raise ProviderError(f"{self.name}: oväntat svarsformat", 200) from None
         return ChatResponse(self.name, self.model, text.strip(), tokens)
 
     def __repr__(self) -> str:  # aldrig nyckeln i en repr

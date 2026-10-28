@@ -57,7 +57,14 @@ def bootstrap(
                 )
     engine = AuthorizationEngine(permissions, registry, "sim", audit)
     kwargs = {"transport": transport} if transport else {}
-    slots, _ = load_providers(config_dir, environ, **kwargs)
+    slots, skipped = load_providers(config_dir, environ, **kwargs)
+    # Bara namn, aldrig nycklar.
+    print(
+        "dev-agent: leverantörer på: "
+        + (", ".join(slot.provider.name for slot in slots) or "inga")
+        + "; avstängda: "
+        + (", ".join(reason.split(":", 1)[0] for reason in skipped) or "inga")
+    )
     gateway = LLMGateway(ProviderRouter(slots, QuotaLedger(db), audit), engine, audit)
     return DevAgent(project, AGENT_ID, gateway, engine, audit), audit
 
@@ -65,6 +72,23 @@ def bootstrap(
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         ["git", *args], cwd=repo, capture_output=True, text=True, check=False
+    )
+
+
+def llm_summary(entries) -> str:
+    """Vilken leverantör som svarade och HTTP-statusen för första Groq-anropet (ur audit-loggen)."""
+    first_groq, used = None, []
+    for entry in entries:
+        provider = entry.details.get("provider")
+        if entry.action == "llm.call":
+            used.append(provider)
+            if provider == "groq" and first_groq is None:
+                first_groq = "HTTP 200"
+        elif entry.action == "llm.provider_failed" and provider == "groq" and first_groq is None:
+            first_groq = entry.details.get("reason") or f"HTTP {entry.details.get('status')}"
+    return (
+        f"första Groq-anropet: {first_groq or 'inget'}; svarade: "
+        + (", ".join(dict.fromkeys(used)) or "ingen")
     )
 
 
@@ -76,7 +100,12 @@ def run(config_dir: Path, branch: str, out: Path) -> int:
         print(f"FEL: {exc}", file=sys.stderr)
         return 1
     result = agent.run()
-    report = write_report(project, result, [e.action for e in audit.entries()])
+    entries = list(audit.entries())
+    report = write_report(project, result, [e.action for e in entries])
+    llm = llm_summary(entries)
+    print(f"dev-agent: {llm}")
+    with report.open("a", encoding="utf-8") as fh:
+        fh.write(f"\n## Språkmodell\n{llm}\n")
     repo = project.parent
     paths = [
         f"ai-enterprise/{p.removeprefix('ai-enterprise/')}"
@@ -135,9 +164,14 @@ def open_pr(result_file: Path, environ=os.environ, transport=None) -> int:
             environ.get("BOT_TOKEN", ""), environ.get("GITHUB_REPOSITORY", ""), **kwargs
         )
         pr = gh.open_pr(data["branch"], data["title"], data["body"])
-        gh.enable_auto_merge(pr["node_id"])
     except (GitHubError, KeyError) as exc:
         print(f"FEL: {exc}", file=sys.stderr)
         return 1
+    try:
+        gh.enable_auto_merge(pr["node_id"])
+    except (GitHubError, KeyError) as exc:
+        # PR:en finns; den väntar då på en grundare i stället för att mergas automatiskt.
+        print(f"VARNING: PR #{pr['number']} öppnad men automatisk merge gick inte att slå på: {exc}")
+        return 0
     print(f"PR #{pr['number']} öppnad med automatisk merge: {pr.get('html_url', '')}")
     return 0
