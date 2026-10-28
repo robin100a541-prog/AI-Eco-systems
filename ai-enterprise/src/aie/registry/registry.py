@@ -28,6 +28,11 @@ historiken finns kvar (§30).
 
 `spend_block_reason(department, initiative)` är initiativspärren i budgetmotorn (F6, D-054). Ett
 initiativ som inte finns, inte är godkänt eller aktivt, eller hör till ett annat departement ger nej.
+
+**Simulera före start (PR 6, D-058).** Ett initiativ blir `approved` eller `active`, och får utgifter,
+bara med en godkänd bedömning som är redo och har exakt samma parametrar som initiativet och plattformen
+har nu (`assessments.py`). En plattform blir `approved` eller `active` bara med minst en sådan bedömning
+för ett initiativ på den. Spärren gäller alltid och kan inte stängas av.
 """
 from __future__ import annotations
 
@@ -40,6 +45,7 @@ from typing import Any
 from ..agents import ACTING_STATES, LEVEL_HEAD, AgentRegistry
 from ..audit import AuditLog
 from ..memory import Database
+from .assessments import AssessmentStore
 
 SYSTEM = "system:registry"
 KINDS = ("platform", "initiative")
@@ -59,9 +65,9 @@ _NEXT = {
     "idea": {"investigated", "retired"},
     "investigated": {"reviewed", "investigated", "retired"},
     "reviewed": {"approved", "investigated", "retired"},
-    "approved": {"active", "paused", "retired", "approved"},
-    "active": {"paused", "retired"},
-    "paused": {"active", "retired", "approved"},
+    "approved": {"active", "paused", "retired", "approved", "reviewed"},  # reviewed: nya parametrar (D-058)
+    "active": {"paused", "retired", "reviewed"},
+    "paused": {"active", "retired", "approved", "reviewed"},
     "retired": set(),
 }
 _OPPORTUNITY_KINDS = {"platform": ("channel",), "initiative": ("revenue", "market", "channel")}
@@ -90,8 +96,10 @@ class Entry:
 
 class Register:
     def __init__(self, db: Database, registry: AgentRegistry, permissions, audit: AuditLog,
-                 founders: frozenset[str], opportunities=None, clock: Callable[[], str] = _now) -> None:
-        """`opportunities`: `OpportunityRegister`, för agenternas utredningar enligt D-011."""
+                 founders: frozenset[str], opportunities=None, clock: Callable[[], str] = _now,
+                 assessments: AssessmentStore | None = None) -> None:
+        """`opportunities`: `OpportunityRegister`, för agenternas utredningar enligt D-011.
+        `assessments`: bedömningarna (D-058). Utan angiven används en som aldrig godtar scenariobedömningar."""
         self._db = db
         self._registry = registry
         self._permissions = permissions
@@ -99,6 +107,7 @@ class Register:
         self._founders = frozenset(founders)
         self._opportunities = opportunities
         self._clock = clock
+        self.assessments = assessments or AssessmentStore(db, audit, self._founders, environment="prod")
 
     # --- Ändra -----------------------------------------------------------------------------
 
@@ -120,6 +129,7 @@ class Register:
         problems = (self._validate_platform if kind == "platform" else self._validate_initiative)(data)
         if problems:
             raise RegistryError("; ".join(problems))
+        self._key = key  # spärren (D-058) behöver nyckeln
         self._require(actor, kind, status, opportunity_id, data)
         version = current.version + 1 if current else 1
         with self._db.transaction() as tx:
@@ -181,6 +191,9 @@ class Register:
         platform = self.get("platform", entry.data.get("platform", ""))
         if platform is None or platform.status not in SPENDABLE:
             return f"plattformen för {initiative!r} är inte godkänd eller aktiv (D-054)"
+        if self.assessments.valid(initiative, entry.data, platform.data) is None:
+            return (f"initiativet {initiative!r} saknar en godkänd bedömning med nuvarande parametrar; "
+                    "simulera före start (D-058)")
         return None
 
     # --- Internt ---------------------------------------------------------------------------
@@ -196,6 +209,14 @@ class Register:
             platform = self.get("platform", data.get("platform", ""))
             if platform is None or platform.status not in SPENDABLE:
                 raise RegistryError("ett initiativ godkänns bara på en godkänd eller aktiv plattform")
+            if self.assessments.valid(self._key, data, platform.data) is None:
+                raise RegistryError("initiativet saknar en godkänd bedömning med exakt de här parametrarna; "
+                                    "simulera före start (D-058)")
+        if kind == "platform" and status in ("approved", "active"):
+            initiatives = [(e.key, e.data) for e in self.all("initiative")]
+            if self.assessments.valid_for_platform(self._key, data, initiatives) is None:
+                raise RegistryError("plattformen saknar en godkänd bedömning av något initiativ på den med exakt "
+                                    "de här parametrarna; simulera före start (D-058)")
         if founder:
             if opportunity_id is not None:
                 self._opportunity(kind, opportunity_id)
