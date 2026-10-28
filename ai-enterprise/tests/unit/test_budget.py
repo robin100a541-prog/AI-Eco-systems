@@ -144,14 +144,14 @@ class TestBudget(BudgetCase):
         self.assertEqual(self.engine.check("cfo-1", spend()).spent_minor, 6_500)
 
     def test_single_transaction_limit_and_approval(self):
-        """§25, ER-14, D-019: över MAX_SINGLE_TRANSACTION blockeras; över tröskeln krävs båda grundarna."""
+        """§25, ER-14, D-019: över MAX_SINGLE_TRANSACTION blockeras; över tröskeln krävs en grundare (D-049)."""
         over = self.engine.check("cfo-1", spend(20_001))
         self.assertIn("över MAX_SINGLE_TRANSACTION (20001 > 20000)", over.blocked)
         needs = self.engine.check("cfo-1", spend(10_001))
         self.assertEqual(
-            (needs.allowed, needs.blocked, needs.required_approvals), (False, (), 2)
+            (needs.allowed, needs.blocked, needs.required_approvals), (False, (), 1)
         )
-        self.assertIn("kräver 2 grundare", needs.describe())
+        self.assertIn("kräver 1 grundare", needs.describe())
         self.assertEqual(
             self.engine.check("cfo-1", spend(10_000)).required_approvals, 0
         )
@@ -217,7 +217,7 @@ class TestBudget(BudgetCase):
             self.budgets,
             self.audit,
         )
-        self.assertEqual(engine.check("cfo-1", spend(1)).required_approvals, 2)
+        self.assertEqual(engine.check("cfo-1", spend(1)).required_approvals, 1)
         engine = BudgetEngine(self.ledger, self.limits, {}, self.audit)
         self.assertIn("ingen budget", engine.check("cfo-1", spend()).blocked[0])
 

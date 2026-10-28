@@ -74,12 +74,13 @@ class TestOnlyThroughACase(RemovalCase):
         self.assertEqual(case.response, "jag trodde att jag fick")
         self.assertIn(f"ärende {case.case_id}", self.registry.history("res-1")[-1].reason)
 
-    def test_retirement_needs_both_founders(self):
-        """Verifies §33: permanent avveckling kräver en granskning av båda grundarna."""
+    def test_retirement_needs_a_founder(self):
+        """Verifies §33, D-049: permanent avveckling kräver en grundares granskning; en grundare räcker."""
         evidence = (self.verified_incident("res-1"), self.verified_incident("res-1"))
         case = self.review.open("robin", "res-1", "RETIRED", {"repeated_rule_breaches": evidence}, "två fel")
-        case = self.review.vote("robin", case.case_id, "ja")
-        self.assertEqual((case.status, self.registry.get("res-1").state), ("open", S.ACTIVE))
+        with self.assertRaises(RemovalError):
+            self.review.vote("ceo-1", case.case_id, "ja")
+        self.assertEqual(self.registry.get("res-1").state, S.ACTIVE)
         case = self.review.vote("yorgo", case.case_id, "ja")
         self.assertEqual(self.registry.get("res-1").state, S.RETIRED)
 
@@ -126,8 +127,6 @@ class TestProcess(RemovalCase):
         case = self.review.open("robin", "res-1", "SUSPENDED", {"exceeded_authority": (self.denied("res-1"),)}, "x")
         with self.assertRaises(RemovalError):
             self.review.vote("ceo-1", case.case_id, "ja")
-        with self.assertRaises(RemovalError):
-            self.review.vote("robin", case.case_id, "ja")  # öppnade själv
         self.assertEqual(self.review.dismiss("yorgo", case.case_id, "ett misstag i början").status, "dismissed")
         self.assertEqual(self.registry.get("res-1").state, S.ACTIVE)
         for sql in ("DELETE FROM removal_cases", "UPDATE removal_events SET note = 'x'"):

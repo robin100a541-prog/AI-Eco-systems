@@ -140,8 +140,8 @@ class TestResume(StopLossCase):
         self.book(50_000, T.REFUND, initiative="etsy")
         (self.trip,) = self.stoploss.evaluate()
 
-    def test_resume_needs_two_founders_a_plan_and_a_fixed_situation(self):
-        """Verifies ER-13 (D-029): nytt godkännande krävs: plan, läget åtgärdat och två olika grundare."""
+    def test_resume_needs_a_founder_a_plan_and_a_fixed_situation(self):
+        """Verifies ER-13 (D-029, D-049): nytt godkännande krävs: plan, läget åtgärdat och en grundare."""
         with self.assertRaises(StopLossError) as ctx:
             self.stoploss.approve_resume("yorgo", self.trip.trip_id, "sälj mer")
         self.assertIn("fortfarande nådd", str(ctx.exception))
@@ -149,12 +149,8 @@ class TestResume(StopLossCase):
         for actor, plan in (("cfo-1", "plan"), ("yorgo", " ")):
             with self.subTest(actor=actor), self.assertRaises(StopLossError):
                 self.stoploss.approve_resume(actor, self.trip.trip_id, plan)
-        trip = self.stoploss.approve_resume("yorgo", self.trip.trip_id, "halvera annonsbudgeten, ny prisnivå")
-        self.assertTrue(trip.active)
         self.assertFalse(self.budget.check("x", spend(initiative="etsy")).allowed)
-        with self.assertRaises(StopLossError):
-            self.stoploss.approve_resume("yorgo", self.trip.trip_id, "igen")
-        trip = self.stoploss.approve_resume("robin", self.trip.trip_id, "instämmer")
+        trip = self.stoploss.approve_resume("yorgo", self.trip.trip_id, "halvera annonsbudgeten, ny prisnivå")
         self.assertFalse(trip.active)
         self.assertTrue(self.budget.check("x", spend(initiative="etsy")).allowed)
 

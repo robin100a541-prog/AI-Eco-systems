@@ -165,7 +165,9 @@ class DecisionLog:
         return self._insert("+".join(sorted(set(approvers))), task_id, draft)
 
     def check_authority(self, actor: str, task_id: int, budget_minor: int) -> None:
-        """D-019: över HUMAN_APPROVAL_THRESHOLD får varken en agent eller en ensam grundare besluta."""
+        """D-019, D-049: över HUMAN_APPROVAL_THRESHOLD beslutar en grundare, aldrig en agent."""
+        if actor in self._founders:
+            return  # D-049: grundarna agerar som en; en grundares beslut räcker
         threshold = self._limits.human_approval_threshold
         currency = self._limits.currency
         if threshold is None:  # ER-02: en saknad gräns betyder blockera
@@ -184,7 +186,7 @@ class DecisionLog:
                 task_id,
                 budget_minor,
                 currency,
-                f"budgeten {budget_minor} är över HUMAN_APPROVAL_THRESHOLD {threshold.amount_minor}; båda grundarna krävs (D-019)",
+                f"budgeten {budget_minor} är över HUMAN_APPROVAL_THRESHOLD {threshold.amount_minor}; en grundare krävs (D-019, D-049)",
             )
 
     def validate(self, draft: DecisionDraft, task_id: int) -> None:

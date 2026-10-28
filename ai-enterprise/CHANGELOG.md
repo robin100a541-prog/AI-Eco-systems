@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — D-049: grundarna agerar som en
+### Ändrat
+- **D-049** (godkänt av Robin, gäller för båda): en grundares godkännande räcker överallt. D-019 punkt 2 och 3 är ersatta.
+- Koden följer: godkännandekön kräver alltid 1 grundare (även styrändringar); en grundare beslutar direkt över `HUMAN_APPROVAL_THRESHOLD` i beslutsloggen och tvister; budgetmotorn anger 1 grundare (även vid uppdelade köp); nödstopp, stop-loss, momsgränsen, operativa regler och avveckling avgörs av en grundares röst.
+- 26 tester uppdaterade till den nya regeln. Agenter beslutar fortfarande aldrig över gränsen, och hårda gränser kan fortfarande inte godkännas bort.
+- `docs/BOT.md`: anspråk finns bara för att undvika dubbelarbete. Ett anspråk utan commit på 6 timmar är inaktuellt och får tas över från befintlig gren, även Fas 6b-3–6b-5. Boten sätter fortfarande aldrig `founder-approved`.
+
 ## [Unreleased] — 2026-10-28 — Skyddade filer och nattboten
 ### Tillagt
 - `.github/workflows/protected-files.yml`: checken `protected-files` fäller en PR som ändrar eller tar bort `CONSTITUTION.md`, `DECISIONS.md`, `config/risk_limits.toml`, `config/permissions.toml`, själva workflow-filen eller `docs/BOT.md`, om PR:en inte har etiketten `founder-approved`. Bara grundarna sätter etiketten.

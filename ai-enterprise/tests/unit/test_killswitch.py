@@ -119,18 +119,16 @@ class TestRelease(KillCase):
         super().setUp()
         self.switch.engage("cro-1", "okända transaktioner")
 
-    def test_restart_needs_two_different_founders(self):
-        """Verifies SR-07 och D-030: en grundare räcker inte; samma grundare två gånger räcker inte."""
+    def test_restart_needs_a_founder(self):
+        """Verifies SR-07, D-030, D-049: bara en grundare startar om; en grundares röst räcker."""
         for actor in ("cro-1", "ceo-1"):
             with self.subTest(actor=actor), self.assertRaises(KillSwitchError):
                 self.switch.vote_release(actor, "OK")
-        state = self.switch.vote_release("yorgo", "utrett: felaktig import")
-        self.assertTrue(state.engaged)
         self.assertFalse(self.spend_allowed())
-        with self.assertRaises(KillSwitchError):
-            self.switch.vote_release("yorgo", "igen")
-        state = self.switch.vote_release("robin", "instämmer")
+        state = self.switch.vote_release("yorgo", "utrett: felaktig import")
         self.assertFalse(state.engaged)
+        with self.assertRaises(KillSwitchError):  # inte aktivt längre
+            self.switch.vote_release("robin", "igen")
         self.assertTrue(self.spend_allowed())
         self.assertTrue(self.engine.check("lead-1", "llm.complete").allowed)
 
@@ -147,7 +145,6 @@ class TestRelease(KillCase):
     def test_votes_reset_on_new_engage(self):
         """Verifies D-030: röster från en tidigare återstart räknas inte för nästa nödstopp."""
         self.switch.vote_release("yorgo", "a")
-        self.switch.vote_release("robin", "b")
         self.switch.engage("cro-1", "nytt problem")
         self.assertEqual(self.switch.state().release_votes, ())
 
@@ -174,7 +171,7 @@ class TestCli(unittest.TestCase):
         return subprocess.run([sys.executable, "-m", "aie", *args], cwd=self.dir, env=env,
                               capture_output=True, encoding="utf-8", timeout=60, check=False)
 
-    def test_cli_engage_status_and_two_founder_release(self):
+    def test_cli_engage_status_and_founder_release(self):
         """Verifies SR-07 och D-030: `python -m aie kill` aktiverar, visar och släpper enligt processen."""
         founders = load_config(self.dir / "config").system.founders
         self.assertEqual(self.aie("init").returncode, 0)
@@ -184,14 +181,14 @@ class TestCli(unittest.TestCase):
         result = self.aie("kill", "engage", "--as", founders[0], "--reason", "test av nödstopp")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("AKTIVT", self.aie("kill", "status").stdout)
-        self.aie("kill", "release", "--as", founders[0], "--reason", "utrett")
-        self.assertEqual(self.aie("kill", "release", "--as", founders[0], "--reason", "igen").returncode, 1)
-        done = self.aie("kill", "release", "--as", founders[1], "--reason", "instämmer")
+        self.assertEqual(self.aie("kill", "release", "--as", "mallory", "--reason", "x").returncode, 1)
+        done = self.aie("kill", "release", "--as", founders[1], "--reason", "utrett")  # D-049: en räcker
         self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.aie("kill", "release", "--as", founders[0], "--reason", "igen").returncode, 1)
         self.assertIn("av", self.aie("kill", "status").stdout)
         with closing(sqlite3.connect(self.dir / "data" / "sim.db")) as conn:
             events = [r[0] for r in conn.execute("SELECT event FROM kill_switch_events ORDER BY id")]
-        self.assertEqual(events, ["engaged", "release_vote", "release_vote", "released"])
+        self.assertEqual(events, ["engaged", "release_vote", "released"])
 
 
 if __name__ == "__main__":

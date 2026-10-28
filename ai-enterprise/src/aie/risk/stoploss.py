@@ -86,7 +86,7 @@ class Trip:
 
     @property
     def active(self) -> bool:
-        return len(set(self.approvals)) < 2
+        return not self.approvals  # D-049: en grundares godkännande räcker
 
     def describe(self) -> str:
         return (f"stop-loss #{self.trip_id}: {self.limit_name} nådd för {self.scope_kind} {self.scope_value} "
@@ -231,7 +231,7 @@ class StopLoss:
                    or (trip.scope_kind == "department" and trip.scope_value == request.department)
                    or (trip.scope_kind == "initiative" and trip.scope_value == request.initiative))
             if hit:
-                reasons.append(trip.describe() + "; nya åtaganden blockeras tills två grundare godkänt en plan")
+                reasons.append(trip.describe() + "; nya åtaganden blockeras tills en grundare godkänt en plan (D-049)")
         return reasons
 
     # --- Frågor --------------------------------------------------------------------------

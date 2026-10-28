@@ -169,12 +169,9 @@ class RemovalReview:
             raise RemovalError(f"{founder} har redan röstat")
         if not note.strip():
             raise RemovalError("motivera beslutet")
-        if case.target == "SUSPENDED" and founder == case.opened_by:
-            raise RemovalError("den som öppnade ärendet beslutar inte ensam om det; den andra grundaren beslutar")
         self._event(case, "vote", founder, note)
         votes = set(self.get(case_id).votes)
-        needed = {founder} if case.target == "SUSPENDED" else self._founders
-        if votes >= needed:
+        if votes:  # D-049: grundarna agerar som en; en grundares beslut räcker
             self._event(case, "approved", founder, f"beslutat av {', '.join(sorted(votes))}")
             self._execute(self.get(case_id))
         return self.get(case_id)

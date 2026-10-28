@@ -106,7 +106,7 @@ class KillSwitch:
             )
         self._event("release_vote", founder, reason)
         votes = (*state.release_votes, founder)
-        if len(set(votes)) >= 2:
+        if votes:  # D-049: en grundares röst räcker för återstart
             self._event("released", founder, f"återstart godkänd av {', '.join(votes)}")
             self._audit.append(founder, "kill.released", {"votes": list(votes), "reason": reason})
         else:

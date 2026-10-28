@@ -8,6 +8,17 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-049 Grundarna agerar som en: en grundares godkännande räcker
+- **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-28 · **Ersätter:** D-019 punkt 2 och 3 · **Bygger på:** D-019, D-021
+- **Beslut:**
+  1. Robin och Yorgo arbetar tillsammans och agerar som en grundare. Ett godkännande från Robin **eller** Yorgo räknas som godkännande från båda.
+  2. Inget i systemet kräver längre att båda grundarna godkänner: inte beslut över `HUMAN_APPROVAL_THRESHOLD`, tvister, ändringar i konstitution, gränser eller mandat (godkännandekön), återstart efter nödstopp, återupptagning efter stop-loss, momsgränsen, operativa regler från lärdomar eller avveckling av agenter. En grundares röst räcker överallt.
+  3. Agenter beslutar fortfarande aldrig över `HUMAN_APPROVAL_THRESHOLD` eller utanför sitt mandat; det kräver en grundare. Hårda gränser kan fortfarande inte godkännas bort, bara ändras via en PR.
+  4. Inget arbete hoppas över eller utesluts för att det är "Robins" eller "Yorgos". Alla uppgifter tillhör grundarna. Anspråk i `TODO.md` finns bara för att två Claude-sessioner inte ska bygga samma sak samtidigt (se `docs/BOT.md`).
+  5. En ändring i en skyddad fil kräver fortfarande etiketten `founder-approved`, satt av en grundare (eller på en grundares uttryckliga begäran). Nattboten sätter den aldrig själv.
+- **Följd i koden:** `ApprovalQueue` kräver alltid 1 grundare; `DecisionLog` och `DisputeBoard` låter en grundare besluta direkt över tröskeln; `BudgetEngine` anger 1 grundare; nödstopp, stop-loss, momsbeslut, lärdomsregler och avveckling avgörs av en grundares röst.
+- **Godkänd av:** Robin ☑ (2026-10-28, gäller för båda enligt punkt 1)
+
 ### D-048 Från simulering till riktiga pengar: bevisad lönsamhet först, sedan 500 kr, bara med grundarnas godkännande
 - **Status:** Godkänd · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-27 · **Bygger på:** D-019, D-042, D-043, D-047 · **Gäller:** §54, §55, ER-15, SR-11
 - **Bakgrund:** Yorgo vill att systemet först arbetar helt i simulering. Det ska visa en faktisk, hållbar vinst efter alla kostnader (även Etsy- och Gumroad-avgifter) och bygga på många tester, inte enstaka lyckade utfall. Först då ska det kunna rekommendera en första riktig investering på 500 kr, och senare eventuellt 1 000 kr. Inga riktiga pengar får användas utan uttryckligt godkännande.
@@ -362,7 +373,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☑ (2026-10-26) · Robin ☑ (2026-10-25)
 
 ### D-019 Grundarnas beslutsrätt (besvarar Q-01)
-- **Status:** Godkänd · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016
+- **Status:** Godkänd, punkt 2 och 3 ersatta av D-049 (2026-10-28) · **Föreslagen av:** Robin och Yorgo, 2026-10-23 · **Besvarar:** Q-01 · **Bygger på:** D-016
 - **Beslut:**
   1. **En grundare räcker** för att godkänna en åtgärd vars belopp är högst `HUMAN_APPROVAL_THRESHOLD` i `config/risk_limits.toml`, och för en åtgärd utan belopp.
   2. **Båda grundarna krävs** för en åtgärd vars belopp är högre än `HUMAN_APPROVAL_THRESHOLD`.
