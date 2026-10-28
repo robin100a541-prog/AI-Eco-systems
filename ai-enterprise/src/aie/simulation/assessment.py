@@ -32,7 +32,7 @@ from pathlib import Path
 
 from ..config import ConfigError
 from ..memory import Database
-from .agents import build_gateway, ensure_org
+from .agents import agent_data_class, build_gateway, ensure_org
 from .cycle import WorkCycle
 from .market import SimClock
 from .readiness import _judge, _measure, load_readiness_rules
@@ -131,7 +131,7 @@ def _run(config, config_dir, scenario: Scenario, runs: int, agents: str, rules) 
                 system = build_system(config, db, config_dir, clock=clock)
                 ensure_org(system.registry, founder)
                 sim = Simulation.start(system, config, sc, founder, clock)
-                WorkCycle(sim, system, build_gateway(system, agents, config_dir)).run()
+                WorkCycle(sim, system, build_gateway(system, agents, config_dir), agent_data_class(agents)).run()
                 results.append(_measure(system, config, sc, rules))
     return results
 
@@ -165,6 +165,8 @@ def assess_initiative(config, config_dir: Path | str, register, initiative_key: 
                       runs: int | None = None, days: int | None = None, agents: str = "scripted"):
     """Kör bedömningen och sparar den. Returnerar den sparade `Assessment`. Godkänns separat av en grundare."""
     require_sim(config)
+    if agents == "groq":  # en körning som pausas av kvoten skulle ge en halv bedömning (PR 8)
+        raise ValueError("bedömningar körs med scripted eller local; groq bara i simulate start och resume")
     entry = register.get("initiative", initiative_key)
     if entry is None:
         raise ValueError(f"initiativet {initiative_key!r} finns inte i registret")

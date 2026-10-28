@@ -105,6 +105,15 @@ class ProviderRouter:
         self._quotas = quotas
         self._audit = audit
 
+    def calls_left(self) -> int:
+        """Hur många anrop som finns kvar i dag, summerat över leverantörerna (0 när token-kvoten är slut)."""
+        left = 0
+        for slot in self._slots:
+            calls, tokens = self._quotas.usage(slot.provider.name)
+            if tokens < slot.daily_tokens:
+                left += max(0, slot.daily_calls - calls)
+        return left
+
     def complete(self, request: ChatRequest, caller: str) -> ChatResponse:
         reasons: list[str] = []
         for slot in self._slots:

@@ -38,7 +38,7 @@ from pathlib import Path
 from ..config import ConfigError
 from ..ledger import EntryType, Status, compute_result
 from ..memory import Database
-from .agents import build_gateway, ensure_org
+from .agents import agent_data_class, build_gateway, ensure_org
 from .cycle import WorkCycle
 from .market import SimClock
 from .run import Simulation, require_sim
@@ -133,6 +133,8 @@ def evaluate(config, config_dir: Path | str, scenario: Scenario, runs: int | Non
     from ..system import build_system
 
     require_sim(config)
+    if agents == "groq":  # en körning som pausas av kvoten skulle ge en halv bedömning (PR 8)
+        raise ValueError("bedömningar körs med scripted eller local; groq bara i simulate start och resume")
     rules = load_readiness_rules(config_dir)
     runs = runs or rules.min_runs
     days = days or max(rules.min_days, scenario.days)
@@ -146,7 +148,7 @@ def evaluate(config, config_dir: Path | str, scenario: Scenario, runs: int | Non
                 system = build_system(config, db, config_dir, clock=clock)
                 ensure_org(system.registry, founder)
                 sim = Simulation.start(system, config, sc, founder, clock)
-                WorkCycle(sim, system, build_gateway(system, agents, config_dir)).run()
+                WorkCycle(sim, system, build_gateway(system, agents, config_dir), agent_data_class(agents)).run()
                 results.append(_measure(system, config, sc, rules))
     return _judge(scenario.name, agents, tuple(results), rules, runs, days)
 

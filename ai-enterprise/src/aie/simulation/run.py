@@ -68,6 +68,7 @@ class Simulation:
     def __init__(self, system, config, scenario: Scenario, run_id: int, clock: SimClock) -> None:
         self._system = system
         self._config = config
+        self.config = config
         self.scenario = scenario
         self.run_id = run_id
         self.clock = clock
