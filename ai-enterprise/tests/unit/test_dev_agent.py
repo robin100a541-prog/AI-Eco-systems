@@ -21,9 +21,11 @@ from aie.dev_agent import (
     check_patch,
     cli,
     extract_diff,
+    picker,
     write_report,
 )
 from aie.dev_agent import agent as agent_module
+from aie.dev_agent.agent import RunResult
 from aie.dev_agent.github import GitHub, GitHubError
 from aie.llm import (
     LLMGateway,
@@ -290,6 +292,101 @@ class TestPatchCheck(unittest.TestCase):
         self.assertEqual(extract_diff("ingen diff här"), "")
 
 
+class TestFeedback(DevCase):
+    def test_failed_diff_is_retried_once_with_the_exact_error(self):
+        """Verifies D-050: rött eller avvisat ⇒ ett nytt försök där modellen får exakt felet tillbaka."""
+        model = FakeModel(BAD, GOOD)
+        result = self.agent(model).run()
+        self.assertTrue(result.success)
+        self.assertEqual(len(result.attempts), 1)
+        self.assertIn("efter återkoppling", result.attempts[0].detail)
+        retry = model.calls[1]["messages"]
+        self.assertEqual([m["role"] for m in retry], ["system", "user", "assistant", "user"])
+        self.assertIn("return a * b", retry[2]["content"])
+        self.assertIn("tests_failed", retry[3]["content"])
+        self.assertIn("FAILED (failures=1)", retry[3]["content"])
+        self.assertIn("dev.retry_with_feedback", self.actions())
+
+    def test_rejected_import_is_fed_back_and_counted_once(self):
+        """Verifies D-050: en otillåten import avvisas, återkopplas en gång, och räknas sedan som ett försök."""
+        bad_import = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@ -0,0 +1 @@\n+import ai_enterprise\n"
+        model = FakeModel(bad_import)
+        self.backlog(["BL-001 uppgift i `src/calc.py`"])
+        result = self.agent(model).run()
+        self.assertEqual(len(model.calls), 2)
+        self.assertIn("ai_enterprise", model.calls[1]["messages"][3]["content"])
+        self.assertEqual([a.outcome for a in result.attempts], ["rejected"])
+
+    def test_prompt_names_the_package_and_demands_only_a_diff(self):
+        """Verifies D-050: prompten anger paketet `aie`, importstilen och att svaret bara är en diff."""
+        self.assertIn("from aie.x import Y", agent_module.SYSTEM_PROMPT)
+        self.assertIn("ai_enterprise", agent_module.SYSTEM_PROMPT)  # uttryckligen förbjudet
+        self.assertIn("ENBART en giltig unified diff", agent_module.SYSTEM_PROMPT)
+        self.assertIn("standardbiblioteket", agent_module.SYSTEM_PROMPT)
+
+
+class TestContext(unittest.TestCase):
+    def test_example_test_matches_the_module_and_shows_imports(self):
+        """Verifies D-050: ett befintligt test som importerar samma modul skickas med som exempel."""
+        item = picker.Item("x", "backlog", "t", ("src/aie/audit/log.py",))
+        example = picker.example_test(ROOT, item)
+        self.assertIn("tests/unit/test_audit.py", example)
+        self.assertIn("from aie.audit", example)
+        self.assertLessEqual(len(example), picker.EXAMPLE_CHARS + 200)
+
+    def test_markdown_context_keeps_only_the_requirement_rows(self):
+        """Verifies D-050: av REQUIREMENTS.md skickas bara raderna med uppgiftens krav-ID:n."""
+        item = picker.Item("BL-002", "backlog", "ER-12 och SR-15 saknar test", ("REQUIREMENTS.md",))
+        text = picker.context(ROOT, item)
+        self.assertIn("| ER-12 |", text)
+        self.assertIn("| SR-15 |", text)
+        self.assertNotIn("| SR-01 |", text)
+        self.assertLess(len(text), 1500)
+
+
+class TestReportsWithoutPR(unittest.TestCase):
+    def test_report_only_run_opens_no_pr_and_rides_with_the_next_change(self):
+        """Verifies D-050: en körning utan ändring öppnar ingen PR; rapporten följer med nästa ändring."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "repo"
+            project = repo / "ai-enterprise"
+            (project / "docs" / "bot-reports").mkdir(parents=True)
+            (project / "README.md").write_text("x\n", encoding="utf-8")
+            for cmd in (["init", "-q"], ["add", "."], ["-c", "user.name=t", "-c", "user.email=t@t",
+                                                        "commit", "-qm", "init"]):
+                subprocess.run(["git", *cmd], cwd=repo, check=True, capture_output=True)
+            summary, out = Path(tmp) / "summary.md", Path(tmp) / "out.json"
+            env = {"GITHUB_STEP_SUMMARY": str(summary)}
+            agent = mock.Mock()
+            audit = mock.Mock()
+            audit.entries.return_value = []
+            cwd = os.getcwd()
+            os.chdir(project)
+            self.addCleanup(os.chdir, cwd)
+            with mock.patch.object(cli, "bootstrap", return_value=(agent, audit)):
+                agent.run.return_value = RunResult("2026-10-28T10:00:00+00:00", stopped="kvot")
+                self.assertEqual(cli.run(Path("config"), "claude/dev-agent-1", out, env), 0)
+                self.assertFalse(json.loads(out.read_text())["committed"])
+                self.assertTrue((project / cli.PENDING_DIR / "dev-agent-2026-10-28-1000.md").is_file())
+                self.assertIn("kvot", summary.read_text(encoding="utf-8"))
+
+                (project / "README.md").write_text("y\n", encoding="utf-8")
+                agent.run.return_value = RunResult(
+                    "2026-10-28T13:00:00+00:00", success=True,
+                    item=picker.Item("BL-001", "backlog", "t", ("README.md",)),
+                    changed_files=("README.md",),
+                )
+                cli.run(Path("config"), "claude/dev-agent-2", out, env)
+            data = json.loads(out.read_text())
+            self.assertTrue(data["committed"])
+            files = subprocess.run(["git", "show", "--name-only", "--format=", "HEAD"], cwd=repo,
+                                   capture_output=True, text=True, check=True).stdout.split()
+            self.assertIn("ai-enterprise/docs/bot-reports/dev-agent-2026-10-28-1000.md", files)
+            self.assertIn("ai-enterprise/docs/bot-reports/dev-agent-2026-10-28-1300.md", files)
+            self.assertIn("ai-enterprise/README.md", files)
+            self.assertEqual(list((project / cli.PENDING_DIR).iterdir()), [])
+
+
 class TestGitHub(unittest.TestCase):
     def test_opens_pr_and_enables_auto_merge_without_leaking_the_token(self):
         """Verifies D-050, SR-10: PR öppnas med automatisk merge; token syns aldrig i fel."""
@@ -349,7 +446,9 @@ class TestGitHub(unittest.TestCase):
             entry(action="llm.provider_failed", details={"provider": "groq", "status": 413, "reason": "groq: HTTP 413"}),
             entry(action="llm.call", details={"provider": "rule"}),
         ]
-        self.assertEqual(cli.llm_summary(entries), "första Groq-anropet: groq: HTTP 413; svarade: rule")
+        self.assertEqual(
+            cli.llm_summary(entries), "första Groq-anropet: groq: HTTP 413; svarade: rule; fel: groq: HTTP 413"
+        )
         ok = [entry(action="llm.call", details={"provider": "groq"})]
         self.assertEqual(cli.llm_summary(ok), "första Groq-anropet: HTTP 200; svarade: groq")
         self.assertEqual(cli.llm_summary([]), "första Groq-anropet: inget; svarade: ingen")

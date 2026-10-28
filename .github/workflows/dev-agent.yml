@@ -38,6 +38,16 @@ jobs:
           python-version: "3.12"
       - name: Install ruff (optional, used only to find lint tasks)
         run: pip install "ruff==0.16.9" || echo "ruff kunde inte installeras; agenten hoppar över lint-uppgifter"
+      # Rapporter utan ändring och tillståndet (misslyckade uppgifter) sparas mellan körningar,
+      # så att en körning utan ändring inte behöver en egen PR.
+      - name: Restore pending reports and state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ai-enterprise/.dev-agent-pending
+            ai-enterprise/docs/bot-reports/dev-agent-state.json
+          key: dev-agent-${{ github.run_id }}
+          restore-keys: dev-agent-
       - name: Run the dev agent
         id: agent
         env:
@@ -48,6 +58,14 @@ jobs:
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           python -c "import json,sys; d=json.load(open(sys.argv[1])); print('committed=' + str(d['committed']).lower())" \
             "$RUNNER_TEMP/dev-agent.json" >> "$GITHUB_OUTPUT"
+      - name: Save pending reports and state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ai-enterprise/.dev-agent-pending
+            ai-enterprise/docs/bot-reports/dev-agent-state.json
+          key: dev-agent-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Push the branch
         if: steps.agent.outputs.committed == 'true'
         env:

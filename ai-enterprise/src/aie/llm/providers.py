@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -52,12 +53,15 @@ class ChatResponse:
 class ProviderError(RuntimeError):
     """Anropet misslyckades. Meddelandet innehåller aldrig nyckeln.
 
-    `status` är HTTP-statusen (0 = servern nåddes inte, None = okänt).
+    `status` är HTTP-statusen (0 = servern nåddes inte, None = okänt), `code` leverantörens korta
+    felkod (t.ex. `rate_limit_exceeded`) och `retry_after` sekunderna i svarshuvudet `Retry-After`.
     """
 
-    def __init__(self, message: str, status: int | None = None) -> None:
+    def __init__(
+        self, message: str, status: int | None = None, code: str = "", retry_after: float | None = None
+    ) -> None:
         super().__init__(message)
-        self.status = status
+        self.status, self.code, self.retry_after = status, code, retry_after
 
 
 # Utan egen User-Agent skickar urllib "Python-urllib/3.x", som Groqs Cloudflare kan spärra (403).
@@ -89,8 +93,14 @@ def urllib_transport(url: str, body: bytes, headers: Mapping[str, str], timeout:
             code = _error_code(exc.read(4096))
         except OSError:
             code = ""
+        try:
+            retry_after = float(exc.headers.get("Retry-After", "")) if exc.headers else None
+        except ValueError:
+            retry_after = None
         # Bara statusen och felkoden; resten av svarskroppen kan eka nyckeln.
-        raise ProviderError(f"HTTP {exc.code}" + (f" ({code})" if code else ""), exc.code) from None
+        raise ProviderError(
+            f"HTTP {exc.code}" + (f" ({code})" if code else ""), exc.code, code, retry_after
+        ) from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise ProviderError(f"kunde inte nås: {getattr(exc, 'reason', exc)}", 0) from None
 
@@ -130,6 +140,10 @@ KINDS = {
 }
 
 
+RATE_LIMIT_WAIT = 20.0  # sekunder om leverantören inte anger Retry-After
+MAX_RATE_LIMIT_WAIT = 60.0
+
+
 class OpenAICompatibleProvider(Provider):
     def __init__(
         self,
@@ -140,6 +154,7 @@ class OpenAICompatibleProvider(Provider):
         transport: Transport = urllib_transport,
         base_url: str | None = None,
         timeout: float = 60,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if kind not in KINDS:
             raise ValueError(f"okänd leverantörstyp {kind!r}")
@@ -155,6 +170,7 @@ class OpenAICompatibleProvider(Provider):
         self._transport = transport
         self._url = f"{base_url or default_url}/chat/completions"
         self._timeout = timeout
+        self._sleep = sleep
 
     def complete(self, request: ChatRequest) -> ChatResponse:
         payload = {
@@ -171,16 +187,28 @@ class OpenAICompatibleProvider(Provider):
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         try:
-            raw = self._transport(self._url, body, headers, self._timeout)
+            raw = self._send(body, headers)
         except ProviderError as exc:
-            raise ProviderError(self._redact(f"{self.name}: {exc}"), exc.status) from None
+            raise ProviderError(
+                self._redact(f"{self.name}: {exc}"), exc.status, exc.code, exc.retry_after
+            ) from None
         try:
             data = json.loads(raw)
             text = data["choices"][0]["message"].get("content") or ""
             tokens = int((data.get("usage") or {}).get("total_tokens") or 0)
         except (ValueError, KeyError, IndexError, TypeError):
-            raise ProviderError(f"{self.name}: oväntat svarsformat", 200) from None
+            raise ProviderError(f"{self.name}: oväntat svarsformat", 200, "invalid_response") from None
         return ChatResponse(self.name, self.model, text.strip(), tokens)
+
+    def _send(self, body: bytes, headers: Mapping[str, str]) -> bytes:
+        """Ett anrop. Vid 429 (gratisgränsen per minut) väntas en gång och anropet görs om (§41)."""
+        try:
+            return self._transport(self._url, body, headers, self._timeout)
+        except ProviderError as exc:
+            if exc.status != 429:
+                raise
+            self._sleep(min(exc.retry_after or RATE_LIMIT_WAIT, MAX_RATE_LIMIT_WAIT))
+        return self._transport(self._url, body, headers, self._timeout)
 
     def __repr__(self) -> str:  # aldrig nyckeln i en repr
         return f"OpenAICompatibleProvider(name={self.name!r}, kind={self.kind!r}, model={self.model!r})"

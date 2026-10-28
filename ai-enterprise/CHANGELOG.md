@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: bättre prompt, återkoppling och färre PR:er
+### Ändrat
+- Prompten anger paketet `aie` under `src/`, importstilen `from aie.x import Y`, hur tester körs och att svaret bara får vara en giltig unified diff med standardbiblioteket. Ett befintligt test skickas med som exempel.
+- Avvisad diff, diff som inte går att applicera eller röda tester ger ett nytt försök, där modellen får exakt felet som återkoppling.
+- Mindre prompter: av Markdown-filer skickas bara raderna med uppgiftens krav-ID:n, och kontexten är högst 8 000 tecken. Vid HTTP 429 väntar leverantören (`Retry-After`, högst 60 s) och försöker en gång till.
+- `llm.provider_failed` loggar även leverantörens felkod. Körningen skriver ut varje misslyckat anrop, aldrig nyckel eller prompt.
+- En körning utan ändring och utan nya grundarfrågor öppnar ingen PR. Rapporten sparas med `actions/cache` och committas i nästa PR som ändrar kod; den syns också i Actions-sammanfattningen.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten når Groq
 ### Rättat
 - Första körningen nådde aldrig Groq och visade inte varför; bara `rule` svarade. Externa anrop skickar nu en egen `User-Agent` (urllibs standard kan spärras med 403), gpt-oss får `reasoning_effort = "low"`, och agentens anrop är mindre (kontext 10 000 tecken, `max_tokens` 3000) så att det ryms i gratisgränsen per minut.

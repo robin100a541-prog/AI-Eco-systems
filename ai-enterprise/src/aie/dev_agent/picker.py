@@ -6,7 +6,9 @@
 4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
 
 En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) hoppas över.
-Kontexten till modellen begränsas till `MAX_CONTEXT_CHARS` tecken.
+Kontexten till modellen begränsas till `MAX_CONTEXT_CHARS` tecken (Groqs gratisgräns per minut är
+liten). Av Markdown-filer skickas bara raderna som nämner uppgiftens krav-ID:n. Ett befintligt test
+skickas med som exempel på importer och stil (`example_test`).
 """
 
 from __future__ import annotations
@@ -19,7 +21,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 MAX_FAILURES = 3
-MAX_CONTEXT_CHARS = 10_000
+MAX_CONTEXT_CHARS = 8_000
+EXAMPLE_CHARS = 1_500
+_REQ_ID = re.compile(r"\b(?:FR|SR|ER|DR)-\d+\b")
 _BACKLOG_ITEM = re.compile(r"^- \[ \] (BL-\d+) (.*?)— öppen\s*$")
 _PATH = re.compile(r"`([\w./-]+\.(?:py|md|toml))`")
 _FAILED_TEST = re.compile(
@@ -151,10 +155,42 @@ def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
     return [i for i in candidates if failures.get(i.key, 0) < MAX_FAILURES]
 
 
+def _relevant(rel: str, body: str, task: str) -> str:
+    """Av en Markdown-fil bara rubrikraden i tabeller och raderna med uppgiftens krav-ID:n."""
+    ids = set(_REQ_ID.findall(task))
+    if not rel.endswith(".md") or not ids:
+        return body
+    lines = body.splitlines()
+    keep = [ln for ln in lines if set(_REQ_ID.findall(ln)) & ids]
+    header = next((ln for ln in lines if ln.startswith("| ID")), "")
+    return "\n".join(([header] if header and keep else []) + keep) or body
+
+
+def example_test(root: Path, item: Item) -> str:
+    """Början av ett befintligt test, helst ett som importerar samma modul som uppgiften rör."""
+    tests = sorted((root / "tests" / "unit").glob("test_*.py"))
+    modules = [
+        "aie." + Path(f).with_suffix("").as_posix().removeprefix("src/aie/").replace("/", ".")
+        for f in item.files
+        if f.startswith("src/aie/")
+    ]
+    chosen = next(
+        (t for t in tests for m in modules if f"from {m} import" in t.read_text(encoding="utf-8")),
+        None,
+    )
+    if chosen is None:
+        chosen = next((t for t in tests if t.stat().st_size > 2_000), tests[0] if tests else None)
+    if chosen is None:
+        return ""
+    body = chosen.read_text(encoding="utf-8")[:EXAMPLE_CHARS]
+    rel = chosen.relative_to(root).as_posix()
+    return f"### Exempel på ett befintligt test: ai-enterprise/{rel} (början)\n```python\n{body}\n```\n"
+
+
 def context(root: Path, item: Item) -> str:
     parts, used = [], 0
     for rel in item.files:
-        body = (root / rel).read_text(encoding="utf-8")
+        body = _relevant(rel, (root / rel).read_text(encoding="utf-8"), item.task)
         chunk = f"### Fil: ai-enterprise/{rel}\n```\n{body}\n```\n"
         if used + len(chunk) > MAX_CONTEXT_CHARS:
             chunk = (

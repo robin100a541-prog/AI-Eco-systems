@@ -121,7 +121,7 @@ class ProviderRouter:
                 reasons.append(str(exc))
                 # Felet loggas även när en senare leverantör svarar; annars syns det aldrig.
                 self._log("llm.provider_failed", caller, request, provider=p.name, status=exc.status,
-                          reason=str(exc))
+                          code=exc.code, reason=str(exc))
                 continue
             self._quotas.add_tokens(p.name, response.tokens)
             self._log("llm.call", caller, request, provider=p.name, model=response.model, tokens=response.tokens)

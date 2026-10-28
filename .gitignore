@@ -19,3 +19,6 @@ __pycache__/
 .venv/
 dist/
 build/
+
+# Utvecklaragentens väntande rapporter (sparas med actions/cache, committas med nästa PR)
+ai-enterprise/.dev-agent-pending/

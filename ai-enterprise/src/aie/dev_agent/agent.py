@@ -5,7 +5,8 @@ En körning:
 2. Väljer kandidater (`picker.pick`) och provar högst `MAX_ATTEMPTS` av dem, en i taget:
    skickar koden till en gratismodell via `LLMGateway`, granskar diffen (`patch.check_patch`),
    applicerar den med `git apply` och kör hela sviten.
-   Rött ⇒ diffen backas (`git apply -R`), försöket noteras och nästa kandidat provas.
+   Avvisad diff eller rött ⇒ diffen backas (`git apply -R`) och modellen får ett nytt försök med
+   exakt felet som återkoppling. Misslyckas även det noteras försöket och nästa kandidat provas.
 3. Första gröna försöket blir körningens ändring. Sedan stannar körningen.
 4. Är alla modeller slut (`NoProviderAvailable`), eller svarar bara regelreserven `rule`, stannar
    körningen direkt och lugnt: det räknas inte som ett misslyckat försök.
@@ -42,11 +43,28 @@ STATE_FILE = "docs/bot-reports/dev-agent-state.json"
 QUESTIONS_FILE = "docs/QUESTIONS-FOR-FOUNDERS.md"
 _SAFE_ENV = ("PATH", "HOME", "LANG", "LC_ALL", "SYSTEMROOT", "TMPDIR", "TEMP", "TMP")
 
-SYSTEM_PROMPT = (
-    "Du är utvecklaragenten i ett Python-projekt (bara standardbiblioteket, unittest). "
-    "Gör EN liten ändring som löser uppgiften. Svara ENBART med en unified diff i git-format, "
-    "med sökvägar relativa till repots rot (de börjar med ai-enterprise/), och inget annat. "
-    "Högst 200 ändrade rader. Inga nya beroenden. Ta aldrig bort eller försvaga tester."
+FEEDBACK_RETRIES = 1  # ett nytt försök med felet som återkoppling
+SYSTEM_PROMPT = """Du är utvecklaragenten i Python-projektet ai-enterprise. Gör EN liten ändring som löser uppgiften.
+
+Projektet:
+- Paketet heter `aie` och ligger i `ai-enterprise/src/aie/`. Importera alltid som `from aie.x import Y`
+  (aldrig `ai_enterprise`, `src.aie` eller relativa importer i tester).
+- Tester ligger i `ai-enterprise/tests/unit/test_*.py`, använder `unittest` och körs med
+  `PYTHONPATH=src python -m unittest discover -s tests` från `ai-enterprise/`. Följ stilen i exemplet.
+- Ett test som verifierar ett krav har en docstring som börjar med `Verifies <ID>`.
+- Bara Python-standardbiblioteket och `aie`. Inga nya beroenden. Inga nätverksanrop.
+
+Svaret:
+- ENBART en giltig unified diff i git-format, inget annat (ingen förklaring).
+- Sökvägar relativa till repots rot: `--- a/ai-enterprise/...` och `+++ b/ai-enterprise/...`.
+  En ny fil har `--- /dev/null` och `+++ b/ai-enterprise/...`.
+- Varje hunk-huvud `@@ -a,b +c,d @@` ska stämma exakt med raderna; sammanhangsrader ska vara
+  oförändrade kopior av filen.
+- Högst 200 ändrade rader. Ta aldrig bort eller försvaga tester. Rör inte `config/`, `.github/`
+  eller skyddade filer."""
+FEEDBACK_PROMPT = (
+    "Din diff gick inte igenom ({outcome}). Exakt fel:\n{detail}\n\n"
+    "Rätta felet och svara med en ny, komplett unified diff och inget annat."
 )
 
 
@@ -118,6 +136,7 @@ class DevAgent:
         self._audit = audit
         self._run_tests = run_tests
         self._clock = clock
+        self._last_run: TestRun | None = None
 
     # --- Körningen -----------------------------------------------------------------------------
 
@@ -162,14 +181,44 @@ class DevAgent:
         self, item: picker.Item, result: RunResult, state: dict[str, int]
     ) -> None:
         self._log("dev.item_picked", {"item": item.key, "kind": item.kind})
-        request = ChatRequest(
-            (
-                Message("system", SYSTEM_PROMPT),
-                Message(
-                    "user",
-                    f"Uppgift: {item.task}\n\n{picker.context(self.project, item)}",
-                ),
+        messages = [
+            Message("system", SYSTEM_PROMPT),
+            Message(
+                "user",
+                f"Uppgift: {item.task}\n\n{picker.context(self.project, item)}\n"
+                f"{picker.example_test(self.project, item)}",
             ),
+        ]
+        for round_no in range(1 + FEEDBACK_RETRIES):
+            response = self._ask(messages, item, result, state)
+            if response is None:
+                return
+            diff = extract_diff(response.text)
+            outcome, detail, check = self._try_patch(diff)
+            if outcome == "applied":
+                self._applied(item, result, state, check, response.provider, round_no)
+                return
+            if round_no < FEEDBACK_RETRIES:
+                # Ett nytt försök med exakt felet som återkoppling (D-050).
+                self._log("dev.retry_with_feedback", {"item": item.key, "outcome": outcome})
+                messages += [
+                    Message("assistant", (diff or response.text)[:4000]),
+                    Message("user", FEEDBACK_PROMPT.format(outcome=outcome, detail=detail)),
+                ]
+                continue
+            prefix = "efter återkoppling: " if round_no else ""
+            self._fail(item, result, state, outcome, prefix + detail)
+            if check is not None and check.touches_protected:
+                self._question(
+                    result,
+                    item,
+                    "Modellen ville ändra en skyddad fil: " + ", ".join(check.files),
+                )
+
+    def _ask(self, messages: list[Message], item, result: RunResult, state) -> object | None:
+        """Frågar modellen. None betyder att försöket redan är avslutat (stopp eller fel)."""
+        request = ChatRequest(
+            tuple(messages),
             DataClass.PUBLIC,
             max_tokens=3000,  # prompt + max_tokens ska rymmas i Groqs gratisgräns per minut
         )
@@ -180,7 +229,7 @@ class DevAgent:
                 "alla gratismodeller är slut (kvot eller fel); körningen stannar"
             )
             self._log("dev.quota_exhausted", {"item": item.key})
-            return
+            return None
         except SecretInPrompt:
             self._fail(
                 item,
@@ -189,39 +238,38 @@ class DevAgent:
                 "no_diff",
                 "koden ser ut att innehålla en hemlighet; skickas inte",
             )
-            return
+            return None
         if response.provider == "rule":
             result.stopped = (
                 "bara regelreserven svarade; ingen riktig modell finns just nu"
             )
             self._log("dev.quota_exhausted", {"item": item.key, "provider": "rule"})
-            return
-        diff = extract_diff(response.text)
+            return None
+        return response
+
+    def _try_patch(self, diff: str):
+        """Granskar, applicerar och testar en diff. Returnerar (utfall, felet, granskningen)."""
         check = check_patch(diff)
         if not check.ok:
-            self._fail(item, result, state, "rejected", "; ".join(check.problems))
-            if check.touches_protected:
-                self._question(
-                    result,
-                    item,
-                    "Modellen ville ändra en skyddad fil: " + ", ".join(check.files),
-                )
-            return
+            outcome = "no_diff" if not diff.strip() else "rejected"
+            return outcome, "; ".join(check.problems), check
         applied, detail = self._git_apply(diff)
         if not applied:
-            self._fail(item, result, state, "apply_failed", detail)
-            return
+            return "apply_failed", detail, check
         run = self._run_tests(self.project)
         if not run.ok:
             self._git_apply(diff, reverse=True)
-            self._fail(item, result, state, "tests_failed", run.output[-1500:])
-            return
+            return "tests_failed", run.output[-1500:], check
+        self._last_run = run
+        return "applied", "", check
+
+    def _applied(self, item, result: RunResult, state, check, provider: str, round_no: int) -> None:
+        run = self._last_run
         result.success, result.item, result.tests_ran = True, item, run.ran
         result.changed_files = check.files
+        note = ", efter återkoppling" if round_no else ""
         result.attempts.append(
-            Attempt(
-                item.key, "applied", f"{check.changed_lines} rader, {response.provider}"
-            )
+            Attempt(item.key, "applied", f"{check.changed_lines} rader, {provider}{note}")
         )
         state.pop(item.key, None)
         self._log(
@@ -230,7 +278,7 @@ class DevAgent:
                 "item": item.key,
                 "files": list(check.files),
                 "lines": check.changed_lines,
-                "provider": response.provider,
+                "provider": provider,
                 "tests": run.ran,
             },
         )
