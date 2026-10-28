@@ -54,13 +54,15 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
                     sc = load_scenario(config_dir, scenario, departments, frozenset(config.system.founders))
                     clock = SimClock(sc.start_date)
                     system = build_system(config, db, config_dir, clock=clock)
+                    gateway = build_gateway(system, agents, config_dir)  # före start: ett fel lämnar ingen körning
                     ensure_org(system.registry, founder)
                     sim = Simulation.start(system, config, sc, founder, clock)
                 else:
                     clock = SimClock(run["start_date"])
                     system = build_system(config, db, config_dir, clock=clock)
+                    gateway = build_gateway(system, agents, config_dir)
                     sim = Simulation.resume(system, config, clock)
-                cycle = WorkCycle(sim, system, build_gateway(system, agents, config_dir), agent_data_class(agents))
+                cycle = WorkCycle(sim, system, gateway, agent_data_class(agents))
             except (ConfigError, SimulationError, ValueError) as exc:
                 raise runtime.StartupError(f"FEL: {exc}") from exc
             print(f"Körning {sim.run_id}: scenario {sim.scenario.name}, dag {sim.last_day} av {sim.scenario.days} "

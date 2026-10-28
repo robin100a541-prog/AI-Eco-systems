@@ -222,6 +222,18 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("scenariot finns inte", err)
 
+    def test_groq_without_key_leaves_no_run_behind(self):
+        """Verifies D-060: utan GROQ_API_KEY startar ingen körning, så datamappen kan användas direkt igen."""
+        from unittest import mock
+
+        with mock.patch.dict("os.environ", {}, clear=False) as env:
+            env.pop("GROQ_API_KEY", None)
+            code, _, err = self.run_cli("start", "normal", "yorgo", 1, agents="groq")
+        self.assertEqual(code, 1)
+        self.assertIn("GROQ_API_KEY", err)
+        code, out, _ = self.run_cli("start", "normal", "yorgo", 1)
+        self.assertEqual(code, 0, out)
+
 
 if __name__ == "__main__":
     unittest.main()
