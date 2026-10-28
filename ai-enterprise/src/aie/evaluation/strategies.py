@@ -1,6 +1,6 @@
 """Versionerade strategier och agentversioner (Fas 5e, FR-18, konstitutionen §30 och §53, D-039).
 
-En strategi (till exempel `etsy-prissättning`) eller en agentversion (`agent:<id>`: roll, modell,
+En strategi (till exempel `mallar-prissättning`) eller en agentversion (`agent:<id>`: roll, modell,
 instruktioner) sparas som numrerade versioner med innehåll (JSON-objekt), motivering och vilka
 lärdomar ändringen bygger på. Den senaste versionen gäller.
 

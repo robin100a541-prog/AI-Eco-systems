@@ -1256,6 +1256,38 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=29,
+        name="registry",
+        statements=(
+            # PR 4 (arbetsorder 02, D-056): plattforms- och initiativregistret. Varje ändring är en ny
+            # version; den senaste gäller. Inget skrivs om eller raderas.
+            """
+            CREATE TABLE registry_versions (
+                id             INTEGER PRIMARY KEY,
+                kind           TEXT NOT NULL CHECK (kind IN ('platform', 'initiative')),
+                key            TEXT NOT NULL CHECK (length(trim(key)) > 0),
+                version        INTEGER NOT NULL CHECK (version >= 1),
+                status         TEXT NOT NULL CHECK (status IN
+                               ('idea', 'investigated', 'reviewed', 'approved', 'active', 'paused', 'retired')),
+                data           TEXT NOT NULL CHECK (json_valid(data)),
+                actor          TEXT NOT NULL,
+                note           TEXT NOT NULL,
+                opportunity_id INTEGER REFERENCES opportunities (opportunity_id),
+                at             TEXT NOT NULL,
+                UNIQUE (kind, key, version)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER registry_versions_no_update BEFORE UPDATE ON registry_versions
+            BEGIN SELECT RAISE(ABORT, 'en version skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER registry_versions_no_delete BEFORE DELETE ON registry_versions
+            BEGIN SELECT RAISE(ABORT, 'registerversioner raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

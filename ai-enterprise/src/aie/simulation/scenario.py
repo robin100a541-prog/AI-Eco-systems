@@ -12,7 +12,7 @@ days = 30
 start_date = "2027-01-01"
 
 [[initiatives]]
-key = "etsy-mallar"        # ledgerns affärsinitiativ
+key = "mallar"              # ledgerns affärsinitiativ
 department = "research"
 track = "partnership"      # skattespår (D-010, simulerat); isk/self_employment/hobby kräver owner
 price = 4_900              # pris per order
@@ -27,7 +27,7 @@ listed_from = 1            # första dagen initiativet säljer
 [[events]]
 day = 10
 kind = "demand_shock"      # se EVENT_KINDS
-initiative = "etsy-mallar"
+initiative = "mallar"
 factor_bp = 0              # 0 = ingen efterfrågan, 10 000 = oförändrad
 until = 15                 # sista dagen; utan until gäller händelsen en dag
 note = "..."

@@ -9,6 +9,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `registry`      plattforms- och initiativregistret: list, show, import, status (PR 4, D-056)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
@@ -122,6 +123,13 @@ def build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
+    reg = add("registry", "plattforms- och initiativregistret: list, show, import eller status (PR 4, D-056)")
+    reg.add_argument("action", choices=("list", "show", "import", "status"))
+    reg.add_argument("kind", nargs="?", choices=("platform", "initiative"))
+    reg.add_argument("key", nargs="?")
+    reg.add_argument("status", nargs="?", help="ny status (för status)")
+    reg.add_argument("--as", dest="founder", help="vilken grundare som agerar (för import och status)")
+    reg.add_argument("--note", default="", help="motivering (för status)")
     sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
     sp.add_argument("action", choices=("list", "approve", "reject"))
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
@@ -136,6 +144,21 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
     return parser
+
+
+def _registry(args: argparse.Namespace) -> int:
+    from .registry.cli import registry  # importeras bara när kommandot används
+
+    if args.action in ("show", "status") and (not args.kind or not args.key):
+        print("FEL: show och status kräver typ och nyckel, till exempel platform plattform-a", file=sys.stderr)
+        return 1
+    if args.action in ("import", "status") and not args.founder:
+        print("FEL: import och status kräver --as <grundare>", file=sys.stderr)
+        return 1
+    if args.action == "status" and (not args.status or not args.note.strip()):
+        print("FEL: status kräver ny status och --note", file=sys.stderr)
+        return 1
+    return registry(args.config_dir, args.action, args.kind, args.key, args.status, args.founder, args.note)
 
 
 def _spend(args: argparse.Namespace) -> int:
@@ -214,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
         "spend": lambda: _spend(args),
+        "registry": lambda: _registry(args),
     }
     try:
         return commands[args.command]()

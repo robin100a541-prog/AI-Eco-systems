@@ -44,6 +44,8 @@ from .orchestration import TaskBoard
 from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
+from .collaboration import OpportunityRegister
+from .registry import Register
 
 SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
 
@@ -73,6 +75,8 @@ class System:
     permissions: object = None
     budgets: dict = field(default_factory=dict)
     spend_approvals: object = None
+    register: object = None  # plattforms- och initiativregistret (PR 4, D-056)
+    opportunities: object = None
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -136,8 +140,10 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     stoploss = StopLoss(db, ledger, limits, budgets, audit, founders, incidents=incidents, **t)
     now = {} if clock is None else {"clock": clock.now}  # budgetmotorn vill ha ett datetime
     spend_approvals = SpendApprovals(db, audit, founders, **t)
+    opportunities = OpportunityRegister(db, registry, permissions, audit, founders)
+    register = Register(db, registry, permissions, audit, founders, opportunities)
     budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax,
-                          approvals=spend_approvals, **now)
+                          approvals=spend_approvals, initiatives=register, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
     forecasts = ForecastLog(db, registry, permissions, audit, founders, ledger, **t)
     lessons = LessonRegistry(db, registry, permissions, audit, founders, incidents, forecasts, **t)
@@ -147,5 +153,6 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     removal = RemovalReview(db, registry, permissions, audit, founders, incidents, performance, ledger, **t)
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
-                    permissions=permissions, budgets=budgets, spend_approvals=spend_approvals)
+                    permissions=permissions, budgets=budgets, spend_approvals=spend_approvals,
+                    register=register, opportunities=opportunities)
     return system
