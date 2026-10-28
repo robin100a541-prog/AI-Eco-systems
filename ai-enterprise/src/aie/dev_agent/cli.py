@@ -22,6 +22,7 @@ from ..audit import AuditLog
 from ..authorization import AuthorizationEngine, load_permissions
 from ..config import ConfigError, load_config
 from ..llm import LLMGateway, ProviderRouter, QuotaLedger, load_providers
+from ..llm.providers import ProviderError, fetch_model_ids
 from ..memory import Database
 from .agent import DevAgent, write_report
 from .github import GitHub, GitHubError
@@ -37,8 +38,25 @@ _AUTHOR = [
 ]
 
 
+def verify_groq_models(slots, environ, lister=fetch_model_ids):
+    """Behåller bara Groq-modeller som finns i Groqs aktuella modellista. Returnerar (slots, bortplockade)."""
+    groq = [s for s in slots if getattr(s.provider, "kind", None) == "groq"]
+    if not groq:
+        return tuple(slots), []
+    try:
+        offered = lister("groq", environ.get("GROQ_API_KEY"))
+    except ProviderError as exc:
+        print(f"dev-agent: VARNING {exc}; Groq-modellerna används utan kontroll")
+        return tuple(slots), []
+    keep = tuple(s for s in slots if s not in groq or s.provider.model in offered)
+    dropped = [
+        f"{s.provider.name} ({s.provider.model} finns inte hos Groq)" for s in groq if s not in keep
+    ]
+    return keep, dropped
+
+
 def bootstrap(
-    config_dir: Path, project: Path, environ=os.environ, transport=None
+    config_dir: Path, project: Path, environ=os.environ, transport=None, lister=fetch_model_ids
 ) -> tuple[DevAgent, AuditLog]:
     """Bygger agenten i en egen databas (`<data_dir>/dev-agent/`), med gratisleverantörerna."""
     config = load_config(config_dir)
@@ -62,12 +80,13 @@ def bootstrap(
     engine = AuthorizationEngine(permissions, registry, "sim", audit)
     kwargs = {"transport": transport} if transport else {}
     slots, skipped = load_providers(config_dir, environ, **kwargs)
+    slots, dropped = verify_groq_models(slots, environ, lister)
     # Bara namn, aldrig nycklar.
     print(
         "dev-agent: leverantörer på: "
         + (", ".join(slot.provider.name for slot in slots) or "inga")
         + "; avstängda: "
-        + (", ".join(reason.split(":", 1)[0] for reason in skipped) or "inga")
+        + (", ".join([reason.split(":", 1)[0] for reason in skipped] + dropped) or "inga")
     )
     gateway = LLMGateway(ProviderRouter(slots, QuotaLedger(db), audit), engine, audit)
     return DevAgent(project, AGENT_ID, gateway, engine, audit), audit
@@ -121,6 +140,15 @@ def run(config_dir: Path, branch: str, out: Path, environ=os.environ) -> int:
     report = write_report(project, result, [e.action for e in entries])
     llm = llm_summary(entries)
     print(f"dev-agent: {llm}")
+    # Varför varje försök misslyckades syns direkt i jobbloggen (aldrig nycklar eller prompter).
+    for entry in entries:
+        if entry.action == "dev.retry_with_feedback":
+            print(
+                f"dev-agent: {entry.details.get('item')} första svaret: {entry.details.get('outcome')}: "
+                f"{entry.details.get('detail', '')}"
+            )
+    for attempt in result.attempts:
+        print(f"dev-agent: {attempt.item} slutligt: {attempt.outcome}: {attempt.detail[:300]}")
     with report.open("a", encoding="utf-8") as fh:
         fh.write(f"\n## Språkmodell\n{llm}\n")
     repo = project.parent

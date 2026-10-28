@@ -21,7 +21,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 MAX_FAILURES = 3
-MAX_CONTEXT_CHARS = 8_000
+MAX_CONTEXT_CHARS = 6_000
+RETRY_CONTEXT_CHARS = 3_000  # återkopplingsanropet skickar mindre kontext
 EXAMPLE_CHARS = 1_500
 _REQ_ID = re.compile(r"\b(?:FR|SR|ER|DR)-\d+\b")
 _BACKLOG_ITEM = re.compile(r"^- \[ \] (BL-\d+) (.*?)— öppen\s*$")
@@ -187,17 +188,17 @@ def example_test(root: Path, item: Item) -> str:
     return f"### Exempel på ett befintligt test: ai-enterprise/{rel} (början)\n```python\n{body}\n```\n"
 
 
-def context(root: Path, item: Item) -> str:
+def context(root: Path, item: Item, limit: int = MAX_CONTEXT_CHARS) -> str:
     parts, used = [], 0
     for rel in item.files:
         body = _relevant(rel, (root / rel).read_text(encoding="utf-8"), item.task)
         chunk = f"### Fil: ai-enterprise/{rel}\n```\n{body}\n```\n"
-        if used + len(chunk) > MAX_CONTEXT_CHARS:
+        if used + len(chunk) > limit:
             chunk = (
-                chunk[: max(0, MAX_CONTEXT_CHARS - used)] + "\n[... avkortad]\n```\n"
+                chunk[: max(0, limit - used)] + "\n[... avkortad]\n```\n"
             )
         parts.append(chunk)
         used += len(chunk)
-        if used >= MAX_CONTEXT_CHARS:
+        if used >= limit:
             break
     return "".join(parts)

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import re
-import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -140,10 +139,6 @@ KINDS = {
 }
 
 
-RATE_LIMIT_WAIT = 20.0  # sekunder om leverantören inte anger Retry-After
-MAX_RATE_LIMIT_WAIT = 60.0
-
-
 class OpenAICompatibleProvider(Provider):
     def __init__(
         self,
@@ -154,7 +149,6 @@ class OpenAICompatibleProvider(Provider):
         transport: Transport = urllib_transport,
         base_url: str | None = None,
         timeout: float = 60,
-        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if kind not in KINDS:
             raise ValueError(f"okänd leverantörstyp {kind!r}")
@@ -170,7 +164,6 @@ class OpenAICompatibleProvider(Provider):
         self._transport = transport
         self._url = f"{base_url or default_url}/chat/completions"
         self._timeout = timeout
-        self._sleep = sleep
 
     def complete(self, request: ChatRequest) -> ChatResponse:
         payload = {
@@ -187,7 +180,7 @@ class OpenAICompatibleProvider(Provider):
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         try:
-            raw = self._send(body, headers)
+            raw = self._transport(self._url, body, headers, self._timeout)
         except ProviderError as exc:
             raise ProviderError(
                 self._redact(f"{self.name}: {exc}"), exc.status, exc.code, exc.retry_after
@@ -200,18 +193,31 @@ class OpenAICompatibleProvider(Provider):
             raise ProviderError(f"{self.name}: oväntat svarsformat", 200, "invalid_response") from None
         return ChatResponse(self.name, self.model, text.strip(), tokens)
 
-    def _send(self, body: bytes, headers: Mapping[str, str]) -> bytes:
-        """Ett anrop. Vid 429 (gratisgränsen per minut) väntas en gång och anropet görs om (§41)."""
-        try:
-            return self._transport(self._url, body, headers, self._timeout)
-        except ProviderError as exc:
-            if exc.status != 429:
-                raise
-            self._sleep(min(exc.retry_after or RATE_LIMIT_WAIT, MAX_RATE_LIMIT_WAIT))
-        return self._transport(self._url, body, headers, self._timeout)
-
     def __repr__(self) -> str:  # aldrig nyckeln i en repr
         return f"OpenAICompatibleProvider(name={self.name!r}, kind={self.kind!r}, model={self.model!r})"
 
     def _redact(self, text: str) -> str:
         return text.replace(self._api_key, "***") if self._api_key else text
+
+
+def fetch_model_ids(
+    kind: str, api_key: str | None, timeout: float = 15, base_url: str | None = None
+) -> frozenset[str]:
+    """Modellerna leverantören erbjuder just nu (`GET /models`). Kastar ProviderError vid fel.
+
+    Gränserna på Groqs gratisplan gäller per modell, så en andra Groq-modell används som reserv
+    vid 429. Den används bara om den finns i den här listan.
+    """
+    default_url, _key_env, _external = KINDS[kind]
+    headers = {"User-Agent": USER_AGENT}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(f"{base_url or default_url}/models", headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            data = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        raise ProviderError(f"{kind}: modellistan gav HTTP {exc.code}", exc.code) from None
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+        raise ProviderError(f"{kind}: modellistan kunde inte hämtas: {type(exc).__name__}", 0) from None
+    return frozenset(str(m.get("id")) for m in data.get("data", []) if isinstance(m, dict))

@@ -9,7 +9,9 @@ En körning:
    exakt felet som återkoppling. Misslyckas även det noteras försöket och nästa kandidat provas.
 3. Första gröna försöket blir körningens ändring. Sedan stannar körningen.
 4. Är alla modeller slut (`NoProviderAvailable`), eller svarar bara regelreserven `rule`, stannar
-   körningen direkt och lugnt: det räknas inte som ett misslyckat försök.
+   körningen lugnt: det räknas inte som ett misslyckat försök. Berodde det på 429 (gratisgränsen per
+   minut) väntar körningen först ut minuten en gång och frågar igen.
+5. `TokenPacer` sprider anropen så att körningen håller sig under `TOKENS_PER_MINUTE`.
 
 Agenten använder bara gratisleverantörerna i `providers.toml` (Groq, OpenRouter `:free`, Ollama,
 `rule`), aldrig Anthropic. Den skickar bara repots kod, som är publik (D-014), som `public`-data.
@@ -25,6 +27,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -44,6 +47,9 @@ QUESTIONS_FILE = "docs/QUESTIONS-FOR-FOUNDERS.md"
 _SAFE_ENV = ("PATH", "HOME", "LANG", "LC_ALL", "SYSTEMROOT", "TMPDIR", "TEMP", "TMP")
 
 FEEDBACK_RETRIES = 1  # ett nytt försök med felet som återkoppling
+MAX_TOKENS = 2_500  # svarets längd; prompt + svar ska rymmas i Groqs gratisgräns per minut
+TOKENS_PER_MINUTE = 6_000  # körningens egen gräns, under Groqs gratisgräns per modell
+RATE_LIMIT_WAIT = 60.0  # vid 429 på alla modeller: vänta ut minuten en gång och fråga igen
 SYSTEM_PROMPT = """Du är utvecklaragenten i Python-projektet ai-enterprise. Gör EN liten ändring som löser uppgiften.
 
 Projektet:
@@ -94,6 +100,39 @@ class RunResult:
     questions: list[str] = field(default_factory=list)
 
 
+class TokenPacer:
+    """Sprider anropen så att en körning håller sig under `budget` tokens per rullande minut."""
+
+    def __init__(
+        self,
+        budget: int = TOKENS_PER_MINUTE,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        self.budget, self._clock, self._sleep = budget, clock, sleep
+        self._spent: list[tuple[float, int]] = []
+
+    def wait(self, estimate: int) -> float:
+        """Väntar tills `estimate` tokens ryms i minuten. Returnerar hur länge den väntade."""
+        waited = 0.0
+        while True:
+            now = self._clock()
+            self._spent = [(t, n) for t, n in self._spent if now - t < 60]
+            if not self._spent or sum(n for _, n in self._spent) + estimate <= self.budget:
+                return waited
+            pause = 60 - (now - self._spent[0][0]) + 0.5
+            self._sleep(pause)
+            waited += pause
+
+    def record(self, tokens: int) -> None:
+        self._spent.append((self._clock(), max(0, tokens)))
+
+
+def estimate_tokens(messages, max_tokens: int) -> int:
+    """Grov uppskattning: ungefär 3 tecken per token för kod, plus svarets längd."""
+    return sum(len(m.content) for m in messages) // 3 + max_tokens
+
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -127,6 +166,8 @@ class DevAgent:
         audit: AuditLog,
         run_tests: Callable[[Path], TestRun] = run_test_suite,
         clock: Callable[[], datetime] = _now,
+        pacer: TokenPacer | None = None,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.project = Path(project)
         self.repo = self.project.parent
@@ -137,6 +178,10 @@ class DevAgent:
         self._run_tests = run_tests
         self._clock = clock
         self._last_run: TestRun | None = None
+        self._pacer = pacer or TokenPacer()
+        self._sleep = sleep
+        self._waited_for_rate_limit = False
+        self._mark = 0
 
     # --- Körningen -----------------------------------------------------------------------------
 
@@ -199,11 +244,23 @@ class DevAgent:
                 self._applied(item, result, state, check, response.provider, round_no)
                 return
             if round_no < FEEDBACK_RETRIES:
-                # Ett nytt försök med exakt felet som återkoppling (D-050).
-                self._log("dev.retry_with_feedback", {"item": item.key, "outcome": outcome})
-                messages += [
-                    Message("assistant", (diff or response.text)[:4000]),
-                    Message("user", FEEDBACK_PROMPT.format(outcome=outcome, detail=detail)),
+                # Ett nytt försök med exakt felet som återkoppling (D-050). Mindre kontext än första
+                # gången, så att anropet ryms i gratisgränsen per minut.
+                self._log(
+                    "dev.retry_with_feedback",
+                    {"item": item.key, "outcome": outcome, "detail": detail[:300]},
+                )
+                messages = [
+                    Message("system", SYSTEM_PROMPT),
+                    Message(
+                        "user",
+                        f"Uppgift: {item.task}\n\n"
+                        f"{picker.context(self.project, item, picker.RETRY_CONTEXT_CHARS)}",
+                    ),
+                    Message("assistant", (diff or response.text)[:3000]),
+                    Message(
+                        "user", FEEDBACK_PROMPT.format(outcome=outcome, detail=detail[:1500])
+                    ),
                 ]
                 continue
             prefix = "efter återkoppling: " if round_no else ""
@@ -217,19 +274,12 @@ class DevAgent:
 
     def _ask(self, messages: list[Message], item, result: RunResult, state) -> object | None:
         """Frågar modellen. None betyder att försöket redan är avslutat (stopp eller fel)."""
-        request = ChatRequest(
-            tuple(messages),
-            DataClass.PUBLIC,
-            max_tokens=3000,  # prompt + max_tokens ska rymmas i Groqs gratisgräns per minut
-        )
+        request = ChatRequest(tuple(messages), DataClass.PUBLIC, max_tokens=MAX_TOKENS)
+        estimate = estimate_tokens(messages, MAX_TOKENS)
         try:
-            response = self._gateway.complete(self.agent_id, request)
-        except NoProviderAvailable:
-            result.stopped = (
-                "alla gratismodeller är slut (kvot eller fel); körningen stannar"
-            )
-            self._log("dev.quota_exhausted", {"item": item.key})
-            return None
+            response = self._call(request, estimate)
+            if self._needs_rate_limit_wait(response):
+                response = self._wait_and_call_again(request, estimate)
         except SecretInPrompt:
             self._fail(
                 item,
@@ -239,6 +289,12 @@ class DevAgent:
                 "koden ser ut att innehålla en hemlighet; skickas inte",
             )
             return None
+        if response is None:
+            result.stopped = (
+                "alla gratismodeller är slut (kvot eller fel); körningen stannar"
+            )
+            self._log("dev.quota_exhausted", {"item": item.key})
+            return None
         if response.provider == "rule":
             result.stopped = (
                 "bara regelreserven svarade; ingen riktig modell finns just nu"
@@ -246,6 +302,33 @@ class DevAgent:
             self._log("dev.quota_exhausted", {"item": item.key, "provider": "rule"})
             return None
         return response
+
+    def _call(self, request: ChatRequest, estimate: int):
+        """Ett anrop via LLMGateway i takt med `TokenPacer`. None om alla modeller är slut."""
+        self._pacer.wait(estimate)
+        self._mark = sum(1 for _ in self._audit.entries())
+        try:
+            response = self._gateway.complete(self.agent_id, request)
+        except NoProviderAvailable:
+            self._pacer.record(estimate)
+            return None
+        self._pacer.record(response.tokens or estimate)
+        return response
+
+    def _needs_rate_limit_wait(self, response) -> bool:
+        """Svarade ingen riktig modell för att alla gav 429? Då väntar körningen ut minuten en gång."""
+        if self._waited_for_rate_limit or (response is not None and response.provider != "rule"):
+            return False
+        return any(
+            e.action == "llm.provider_failed" and e.details.get("status") == 429
+            for e in list(self._audit.entries())[self._mark :]
+        )
+
+    def _wait_and_call_again(self, request: ChatRequest, estimate: int):
+        self._waited_for_rate_limit = True
+        self._log("dev.rate_limit_wait", {"seconds": RATE_LIMIT_WAIT})
+        self._sleep(RATE_LIMIT_WAIT)
+        return self._call(request, estimate)
 
     def _try_patch(self, diff: str):
         """Granskar, applicerar och testar en diff. Returnerar (utfall, felet, granskningen)."""

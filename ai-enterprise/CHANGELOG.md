@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: Groqs gränser per modell
+### Ändrat
+- `config/providers.toml`: två Groq-reservmodeller, `groq-2` (`openai/gpt-oss-120b`) och `groq-3` (`llama-3.3-70b-versatile`). Groqs gratisgränser gäller per modell, så vid 429 provas nästa Groq-modell direkt. Utvecklaragenten använder en Groq-modell bara om den finns i Groqs aktuella modellista (`GET /models`).
+- Leverantören väntar inte längre själv vid 429. Svarar ingen riktig modell på grund av 429, väntar utvecklaragenten ut minuten en gång (60 s) och frågar igen.
+- `TokenPacer` håller en körning under 6 000 tokens per rullande minut. Kontexten är högst 6 000 tecken och svaret högst 2 500 tokens. Återkopplingsanropet skickar bara 3 000 tecken kontext.
+- Jobbloggen visar varför varje försök misslyckades, både första svaret och det slutliga.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten: bättre prompt, återkoppling och färre PR:er
 ### Ändrat
 - Prompten anger paketet `aie` under `src/`, importstilen `from aie.x import Y`, hur tester körs och att svaret bara får vara en giltig unified diff med standardbiblioteket. Ett befintligt test skickas med som exempel.
