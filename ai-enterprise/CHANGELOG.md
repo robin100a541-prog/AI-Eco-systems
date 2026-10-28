@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — D-049: grundarna agerar som en
+### Ändrat
+- **D-049** (godkänt av Robin, gäller för båda): en grundares godkännande räcker överallt. D-019 punkt 2 och 3 är ersatta.
+- Koden följer: godkännandekön kräver alltid 1 grundare (även styrändringar); en grundare beslutar direkt över `HUMAN_APPROVAL_THRESHOLD` i beslutsloggen och tvister; budgetmotorn anger 1 grundare (även vid uppdelade köp); nödstopp, stop-loss, momsgränsen, operativa regler och avveckling avgörs av en grundares röst.
+- 26 tester uppdaterade till den nya regeln. Agenter beslutar fortfarande aldrig över gränsen, och hårda gränser kan fortfarande inte godkännas bort.
+- `docs/BOT.md`: anspråk finns bara för att undvika dubbelarbete. Ett anspråk utan commit på 6 timmar är inaktuellt och får tas över från befintlig gren, även Fas 6b-3–6b-5. Boten sätter fortfarande aldrig `founder-approved`.
 ## [Unreleased] — 2026-10-28 — Nattboten har alltid arbete
 ### Ändrat
 - `docs/BOT.md` (skyddad fil, ändrad på Robins uttryckliga begäran): när det inte finns någon ledig uppgift i aktuell fas arbetar boten med `docs/BOT-BACKLOG.md` i prioritetsordning (buggar, kravtäckning, säkerhet, kodkvalitet, dokumentation, förslag till nästa fas). Inga nya funktioner utanför konstitutionen och ROADMAP; idéer blir förslag till grundarna. Minst 3 nya backlogpunkter per körning.

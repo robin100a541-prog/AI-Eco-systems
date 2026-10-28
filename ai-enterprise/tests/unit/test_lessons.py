@@ -85,11 +85,11 @@ class TestStatuses(LessonCase):
         self.assertEqual(self.lessons.promote("audit-1", lid, "två test").status, "reproducible")
         with self.assertRaises(LessonError):
             self.lessons.promote("ceo-1", lid, "gör den till regel")  # kräver grundarna
-        lesson = self.lessons.vote_rule("robin", lid, "ok")
-        self.assertEqual(lesson.status, "reproducible")
         with self.assertRaises(LessonError):
-            self.lessons.vote_rule("robin", lid, "igen")
-        self.assertEqual(self.lessons.vote_rule("yorgo", lid, "ok").status, "operational_rule")
+            self.lessons.vote_rule("ceo-1", lid, "ok")  # bara grundare
+        self.assertEqual(self.lessons.vote_rule("robin", lid, "ok").status, "operational_rule")  # D-049
+        with self.assertRaises(LessonError):
+            self.lessons.vote_rule("yorgo", lid, "igen")  # redan en regel
         self.assertEqual([x.lesson_id for x in self.lessons.rules()], [lid])
 
     def test_unconfirmed_hypothesis_never_becomes_a_rule(self):

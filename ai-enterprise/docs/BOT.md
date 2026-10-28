@@ -39,8 +39,8 @@ repots rot.
 Ta nästa lediga uppgift i den aktuella fasen, uppifrån och ned i fasens tabell i `ROADMAP.md`.
 
 Hoppa över en uppgift om något av detta gäller:
-- Den är tagen av Robin, Yorgo eller någon annan i `TODO.md` eller `ROADMAP.md`.
-- Den har en öppen PR, din egen eller någon annans.
+- Den har ett **aktivt** anspråk (avsnitt 3b): någon har committat på uppgiften de senaste 6 timmarna,
+  eller den har en öppen PR med en commit de senaste 6 timmarna.
 - Den väntar på en öppen fråga i `docs/QUESTIONS-FOR-FOUNDERS.md`.
 - Den kräver något under "Grundarfrågor" eller "Aldrig" nedan.
 
@@ -83,6 +83,24 @@ Regler för egna uppgifter:
   Skriv inga dubbletter av öppna punkter.
 
 Uppgifter i `ROADMAP.md` går alltid före backloggen. Kontrollera dem igen innan varje ny backlogpunkt.
+
+## 3b. Anspråk: bara för att undvika dubbelarbete
+
+Alla uppgifter tillhör grundarna (D-049). Hoppa aldrig över en uppgift för att den är "Robins" eller
+"Yorgos". Ett anspråk i `TODO.md` eller `ROADMAP.md`, av Robin, Yorgo eller boten, finns **bara** för att
+två Claude-sessioner inte ska bygga samma sak samtidigt.
+
+- Ett anspråk är **aktivt** om dess gren (eller PR) har en commit de senaste **6 timmarna**.
+- Ett anspråk utan commit på 6 timmar är **inaktuellt**. Har ingen gren skapats, räkna från tiden då
+  anspråket committades i `TODO.md` (`git log -1 --format=%cI -S "<uppgift>" -- TODO.md`).
+- Ett inaktuellt anspråk får boten ta över:
+  1. Skriv i `TODO.md` på uppgiftens rad: `övertagen av @bot ÅÅÅÅ-MM-DD (inaktuell sedan <tid>)`.
+  2. Finns en gren: fortsätt **från den grenen**. Mergea in `main`, bygg vidare och behåll allt som redan
+     är gjort. Börja aldrig om från början. Pusha till den befintliga grenen bara om den har en öppen PR
+     som du tar över; annars skapa `claude/bot-<uppgift>` från den grenens senaste commit.
+  3. Ange i PR:en vems arbete du byggde vidare på.
+- Det gäller också Fas 6b-3, 6b-4 och 6b-5 när de är inaktuella.
+- Boten sätter fortfarande aldrig etiketten `founder-approved` (avsnitt 8).
 
 ## 3. Ta uppgiften innan du bygger
 
@@ -157,7 +175,7 @@ Numrera frågorna `Q-BOT-001`, `Q-BOT-002` och så vidare, och lägg nya överst
   ska inte vara satt.
 - Godkänna beslut åt grundarna, kryssa i *Godkänd av* eller sätta etiketten `founder-approved`.
 - Ändra `CONSTITUTION.md` eller texten i ett beslut.
-- Ta en uppgift som någon annan har tagit, eller pusha till någon annans gren.
+- Ta en uppgift med ett aktivt anspråk (avsnitt 3b), eller pusha till en annans gren som inte har en övertagen PR.
 
 ## 9. Slutet av varje körning
 

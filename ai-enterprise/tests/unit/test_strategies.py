@@ -48,8 +48,7 @@ class StrategyCase(unittest.TestCase):
         self.lessons.promote("lead-1", lid, "ett test")
         self.lessons.add_evidence("res-1", lid, ("test:b",), "igen")
         self.lessons.promote("lead-1", lid, "två test")
-        self.lessons.vote_rule("robin", lid, "ok")
-        self.lessons.vote_rule("yorgo", lid, "ok")
+        self.lessons.vote_rule("robin", lid, "ok")  # D-049: en grundares röst räcker
         return lid
 
 

@@ -133,25 +133,22 @@ class TestDecisionsEscalate(EscalationCase):
         self.assertIsInstance(result, Decision)
         self.assertEqual(self.queue.pending(), ())
 
-    def test_above_threshold_needs_both_founders(self):
-        """Verifies D-019 p. 2, FR-13: över gränsen köas beslutet och kräver båda grundarna; först då loggas det."""
+    def test_above_threshold_needs_one_founder(self):
+        """Verifies D-019, D-049, FR-13: över gränsen köas agentens beslut; en grundares godkännande räcker."""
         request = self.queue.submit_decision(
             "lead-1", self.task.task_id, replace(DRAFT, budget_minor=self.threshold + 1)
         )
         self.assertEqual(
             (request.kind, request.required_approvals, request.status),
-            (RequestKind.DECISION, 2, RequestStatus.PENDING),
+            (RequestKind.DECISION, 1, RequestStatus.PENDING),
         )
-        self.assertEqual(self.decisions.for_task(self.task.task_id), ())
-        after_one = self.queue.approve("robin", request.request_id, "OK")
-        self.assertEqual(after_one.status, RequestStatus.PENDING)
         self.assertEqual(self.decisions.for_task(self.task.task_id), ())
         done = self.queue.approve("yorgo", request.request_id, "OK")
         self.assertEqual(done.status, RequestStatus.APPROVED)
         decision = self.decisions.get(done.outcome_decision)
         self.assertEqual(
             (decision.decided_by, decision.budget_minor),
-            ("robin+yorgo", self.threshold + 1),
+            ("yorgo", self.threshold + 1),
         )
         for action in (
             "approval.requested",
@@ -161,16 +158,15 @@ class TestDecisionsEscalate(EscalationCase):
         ):
             self.assertIn(action, self.actions())
 
-    def test_single_founder_above_threshold_is_also_queued(self):
-        """Verifies D-019 p. 2: en ensam grundare kan inte heller besluta över gränsen."""
-        request = self.queue.submit_decision(
+    def test_single_founder_decides_above_threshold_directly(self):
+        """Verifies D-049: grundarna agerar som en; en grundare beslutar över gränsen utan kö."""
+        decision = self.queue.submit_decision(
             "robin", self.task.task_id, replace(DRAFT, budget_minor=self.threshold + 1)
         )
-        self.assertEqual(request.required_approvals, 2)
-        self.queue.approve("robin", request.request_id)
         self.assertEqual(
-            self.queue.get(request.request_id).status, RequestStatus.PENDING
+            (decision.decided_by, decision.budget_minor), ("robin", self.threshold + 1)
         )
+        self.assertEqual(self.queue.pending(), ())
 
     def test_outside_mandate_goes_to_one_founder(self):
         """Verifies FR-13, D-019 p. 1: en researcher utan decision.record köas; under gränsen räcker en grundare."""
@@ -187,7 +183,6 @@ class TestDecisionsEscalate(EscalationCase):
         request = self.queue.submit_decision(
             "lead-1", self.task.task_id, replace(DRAFT, budget_minor=self.threshold + 1)
         )
-        self.queue.approve("robin", request.request_id)
         rejected = self.queue.reject("yorgo", request.request_id, "För dyrt just nu")
         self.assertEqual(rejected.status, RequestStatus.REJECTED)
         self.assertEqual(self.decisions.for_task(self.task.task_id), ())
@@ -237,15 +232,14 @@ class TestDisputesAndGovernance(EscalationCase):
         )
 
     def test_escalated_dispute_approved_by_founders(self):
-        """Verifies FR-13, §21: en tvist över gränsen men inom hårda gränser avgörs av båda grundarna."""
+        """Verifies FR-13, §21, D-049: en tvist över gränsen men inom hårda gränser avgörs av en grundare."""
         d = self.open_dispute(self.threshold + 1)
         with self.assertRaises(NeedsApproval):
             self.disputes.resolve("ceo-1", d.dispute_id, True, "ja")
         request = self.queue.submit_dispute("ceo-1", d.dispute_id)
         self.assertEqual(
-            (request.kind, request.required_approvals), (RequestKind.DISPUTE, 2)
+            (request.kind, request.required_approvals), (RequestKind.DISPUTE, 1)
         )
-        self.queue.approve("robin", request.request_id)
         self.queue.approve("yorgo", request.request_id, "Godkänt")
         self.assertEqual(self.disputes.get(d.dispute_id).status, DisputeStatus.RESOLVED)
 
@@ -278,16 +272,12 @@ class TestDisputesAndGovernance(EscalationCase):
         with self.assertRaises(ApprovalError):
             self.queue.submit_dispute("cfo-1", d.dispute_id)
 
-    def test_governance_change_always_needs_both(self):
-        """Verifies D-019 p. 3: ändring i konstitution, gränser eller mandat kräver båda, även utan belopp."""
+    def test_governance_change_needs_one_founder(self):
+        """Verifies D-049: ändring i konstitution, gränser eller mandat kräver en grundare, även utan belopp."""
         request = self.queue.submit_governance(
             "robin", self.task.task_id, "Höj MAX_SINGLE_TRANSACTION till 30 000"
         )
-        self.assertEqual((request.required_approvals, request.amount_minor), (2, 0))
-        self.assertEqual(
-            self.queue.approve("robin", request.request_id).status,
-            RequestStatus.PENDING,
-        )
+        self.assertEqual((request.required_approvals, request.amount_minor), (1, 0))
         self.assertEqual(
             self.queue.approve("yorgo", request.request_id).status,
             RequestStatus.APPROVED,
@@ -316,11 +306,8 @@ class TestDurability(EscalationCase):
         db = Database.open(self.dir / "data", "sim")
         self.addCleanup(db.close)
         self.build(db)
-        self.assertEqual(self.queue.get(request.request_id).approvals, ("robin",))
-        self.assertEqual(
-            self.queue.approve("yorgo", request.request_id).status,
-            RequestStatus.APPROVED,
-        )
+        after = self.queue.get(request.request_id)
+        self.assertEqual((after.approvals, after.status), (("robin",), RequestStatus.APPROVED))
         self.assertTrue(AuditLog(db).verify().ok)
 
     def test_works_when_all_model_quotas_are_exhausted(self):
@@ -339,7 +326,6 @@ class TestDurability(EscalationCase):
         request = self.queue.submit_decision(
             "lead-1", self.task.task_id, replace(DRAFT, budget_minor=self.threshold + 1)
         )
-        self.queue.approve("robin", request.request_id)
         self.assertEqual(
             self.queue.approve("yorgo", request.request_id).status,
             RequestStatus.APPROVED,
@@ -402,21 +388,18 @@ class TestCli(EscalationCase):
         )
 
     def test_list_approve_and_audit_via_cli(self):
-        """Verifies FR-13: CLI:t listar väntande förfrågningar och båda grundarna godkänner; allt revideras."""
+        """Verifies FR-13, D-049: CLI:t listar väntande förfrågningar och en grundare godkänner; allt revideras."""
         listed = self.cli("list")
         self.assertEqual(listed.returncode, 0, listed.stderr)
         self.assertIn(f"#{self.request.request_id} [pending] decision", listed.stdout)
-        self.assertIn("kräver 2 grundare", listed.stdout)
-        first = self.cli(
+        self.assertIn("kräver 1 grundare", listed.stdout)
+        done = self.cli(
             "approve", str(self.request.request_id), "--as", "robin", "--note", "ok"
         )
-        self.assertEqual(first.returncode, 0, first.stderr)
-        self.assertIn("[pending]", first.stdout)
-        second = self.cli("approve", str(self.request.request_id), "--as", "yorgo")
-        self.assertEqual(second.returncode, 0, second.stderr)
-        self.assertIn("[approved]", second.stdout)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("[approved]", done.stdout)
         self.assertIn("Inga förfrågningar", self.cli("list").stdout)
-        self.assertGreaterEqual(self.actions().count("approval.vote"), 2)
+        self.assertGreaterEqual(self.actions().count("approval.vote"), 1)
         self.assertIn("approval.approved", self.actions())
 
     def test_cli_reject_needs_note_and_non_founder_is_refused(self):

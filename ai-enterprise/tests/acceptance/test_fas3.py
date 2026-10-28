@@ -163,17 +163,14 @@ class TestAuthority(Fas3Acceptance):
                 self.task.task_id,
                 replace(DRAFT, budget_minor=self.threshold + 1),
             )
-        with self.assertRaises(
-            NeedsApproval
-        ):  # inte ens en ensam grundare över gränsen (D-019)
-            log.record(
-                "robin",
-                self.task.task_id,
-                replace(DRAFT, budget_minor=self.threshold + 1),
-            )
+        founder_decision = log.record(  # D-049: en grundare beslutar över gränsen
+            "robin",
+            self.task.task_id,
+            replace(DRAFT, budget_minor=self.threshold + 1),
+        )
         self.assertEqual(
             [d.decision_id for d in log.for_task(self.task.task_id)],
-            [decision.decision_id],
+            [decision.decision_id, founder_decision.decision_id],
         )
 
     def test_control_function_stop_removes_the_mandate(self):
@@ -281,19 +278,15 @@ class TestEscalation(Fas3Acceptance):
             ["opened", "escalated", "resolved"],
         )
 
-    def test_above_threshold_goes_to_both_founders(self):
-        """§51 kriterium 4 (FR-13, D-019): över gränsen eskaleras till grundarnas kö och kräver båda."""
+    def test_above_threshold_goes_to_the_founders(self):
+        """§51 kriterium 4 (FR-13, D-019): över gränsen eskaleras till grundarnas kö; en grundare räcker (D-049)."""
         d = self.open_dispute(self.threshold + 1)
         self.assertEqual(
             self.gov.disputes.escalate("cfo-1", d.dispute_id, "Över gränsen"),
             Level.FOUNDERS,
         )
         request = self.gov.queue.submit_dispute("cfo-1", d.dispute_id)
-        self.assertEqual(request.required_approvals, 2)
-        self.assertEqual(
-            self.gov.queue.approve("robin", request.request_id).status,
-            RequestStatus.PENDING,
-        )
+        self.assertEqual(request.required_approvals, 1)  # D-049
         self.assertEqual(
             self.gov.queue.approve("yorgo", request.request_id).status,
             RequestStatus.APPROVED,
@@ -341,7 +334,6 @@ class TestTraceability(Fas3Acceptance):
         request = self.gov.queue.submit_decision(
             "lead-1", self.task.task_id, replace(DRAFT, budget_minor=self.threshold + 1)
         )
-        self.gov.queue.approve("robin", request.request_id, "OK")
         approved = self.gov.queue.approve("yorgo", request.request_id, "OK")
         self.db.close()
         self.start_system()  # spårbarheten överlever en omstart
@@ -350,7 +342,7 @@ class TestTraceability(Fas3Acceptance):
         self.assertEqual(
             [e.event for e in trace.task_events], ["created", "assigned", "reassigned"]
         )
-        self.assertEqual(trace.decisions[-1].decided_by, "robin+yorgo")
+        self.assertEqual(trace.decisions[-1].decided_by, "yorgo")
         self.assertEqual(
             self.gov.queue.get(request.request_id).outcome_decision,
             trace.decisions[-1].decision_id,

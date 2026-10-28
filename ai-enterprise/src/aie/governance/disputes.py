@@ -16,7 +16,7 @@ rösta igenom ett riskfyllt beslut"): ett förslag som bryter mot `MAX_SINGLE_TR
 `MAX_DEPARTMENT_BUDGET` eller `MAX_SINGLE_EXPERIMENT_LOSS`, saknar en av gränserna (ER-02) eller
 har riskklass `critical` kan aldrig godtas genom `resolve()`, oavsett röster och oavsett vem som
 avgör. Tvisten eskaleras då till grundarna. Gränserna ändras bara via `risk_limits.toml`, vilket
-kräver båda grundarna (D-019). Ett förslag över `HUMAN_APPROVAL_THRESHOLD` kräver grundarna (D-019).
+kräver en grundare (D-019, D-049). Ett förslag över `HUMAN_APPROVAL_THRESHOLD` kräver grundarna (D-019).
 """
 
 from __future__ import annotations
@@ -337,7 +337,9 @@ class DisputeBoard:
                 )
                 raise HardLimitViolation(dispute_id, violations)
             threshold = self._limits.human_approval_threshold
-            if threshold is None or dispute.proposal_budget > threshold.amount_minor:
+            if actor not in self._founders and (
+                threshold is None or dispute.proposal_budget > threshold.amount_minor
+            ):
                 self.escalate(
                     actor,
                     dispute_id,
@@ -349,7 +351,7 @@ class DisputeBoard:
                     dispute.task_id,
                     dispute.proposal_budget,
                     self._limits.currency,
-                    "förslaget är över HUMAN_APPROVAL_THRESHOLD; båda grundarna krävs (D-019)",
+                    "förslaget är över HUMAN_APPROVAL_THRESHOLD; en grundare krävs (D-019, D-049)",
                 )
 
         with self._db.transaction() as tx:

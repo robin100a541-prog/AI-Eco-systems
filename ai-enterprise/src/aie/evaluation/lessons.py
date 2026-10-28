@@ -14,7 +14,7 @@ steg i taget:
 
 Regler:
 - **En obekräftad hypotes blir aldrig automatiskt en regel** (§53). Inget steg kan hoppas över, och
-  sista steget kräver båda grundarna.
+  sista steget kräver en grundare (D-049).
 - **Bara godkända operativa regler får ändra gemensamma regler.** `require_rule()` kastar för allt annat.
   Strategiversionerna (FR-18) använder den när en ändring sägs vara obligatorisk.
 - En lärdom kan sänkas (`demote`) eller avvisas (`reject`) med motivering, till exempel när nytt
@@ -175,7 +175,7 @@ class LessonRegistry:
         return self.get(lesson_id)
 
     def promote(self, actor: str, lesson_id: int, note: str) -> Lesson:
-        """Höjer statusen ett steg. Sista steget kräver båda grundarna (`vote_rule`)."""
+        """Höjer statusen ett steg. Sista steget kräver en grundare (`vote_rule`, D-049)."""
         lesson = self._require(lesson_id)
         self._require_reviewer(actor, lesson)
         if not note.strip():
@@ -184,7 +184,7 @@ class LessonRegistry:
             raise LessonError("en avvisad lärdom höjs inte; föreslå en ny")
         target = self._next(lesson)
         if target == "operational_rule":
-            raise LessonError("en operativ regel kräver att båda grundarna röstar (vote_rule, §29)")
+            raise LessonError("en operativ regel kräver en grundares röst (vote_rule, §29, D-049)")
         if target == "tested" and not lesson.tests:
             raise LessonError("en testad lärdom kräver ett test: en prognos med utfall eller ett test:-underlag")
         if target == "reproducible" and len(lesson.tests) < 2:
@@ -204,8 +204,8 @@ class LessonRegistry:
         if not note.strip():
             raise LessonError("motivera rösten")
         self._event(lesson, "rule_vote", None, founder, note, ())
-        if set(self.get(lesson_id).rule_votes) >= self._founders:
-            self._event(lesson, "promote", "operational_rule", founder, "båda grundarna har godkänt regeln", ())
+        if self.get(lesson_id).rule_votes:  # D-049: en grundares röst räcker
+            self._event(lesson, "promote", "operational_rule", founder, "en grundare har godkänt regeln (D-049)", ())
         return self.get(lesson_id)
 
     def demote(self, actor: str, lesson_id: int, status: str, note: str, evidence: tuple[str, ...] = ()) -> Lesson:

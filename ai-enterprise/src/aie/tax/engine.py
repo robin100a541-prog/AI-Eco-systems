@@ -16,7 +16,7 @@ disponibla kapitalet, så att pengarna aldrig kan investeras (`capital_position(
 
 **ER-20 Momsgränsen.** Årets försäljning är intäkter (`settled` och `pending`) − återbetalningar.
 Vid 80 % loggas en varning, och vid gränsen blockeras ny försäljning (verktyg som börjar med `sales.`,
-`publish.` eller `payment.`) tills **båda** grundarna har röstat med `vat_vote()`. Det är till exempel
+`publish.` eller `payment.`) tills en grundare har röstat (D-049) med `vat_vote()`. Det är till exempel
 efter momsregistrering. Ledgern tar fortfarande emot fakta (D-024).
 
 **ER-21 Underlag.** Inget i ledgern eller i skattetabellerna kan raderas (triggers), så underlaget
@@ -92,7 +92,7 @@ class VatStatus:
     sales_minor: int
     threshold_minor: int
     level: str  # ok | warning | limit
-    decided: bool  # båda grundarna har beslutat om gränsen
+    decided: bool  # en grundare har beslutat om gränsen (D-049)
     votes: tuple[str, ...]
 
     @property
@@ -250,7 +250,7 @@ class TaxEngine:
         self._event("vat_vote", year, founder, {"reason": reason})
         self._audit.append(founder, "tax.vat_vote", {"year": year, "reason": reason})
         votes = (*status.votes, founder)
-        if set(votes) >= self._founders:
+        if votes:  # D-049: en grundares beslut räcker
             self._event("vat_decided", year, founder, {"votes": list(votes)})
             self._audit.append(founder, "tax.vat_decided", {"year": year, "votes": list(votes)})
         return self.vat_status(year)
@@ -263,7 +263,7 @@ class TaxEngine:
         if not status.blocks_sales:
             return None
         return (f"momsgränsen är nådd för {status.year}: {status.sales_minor} ≥ {status.threshold_minor} "
-                f"{self._config.currency}; ny försäljning blockeras tills båda grundarna har beslutat (ER-20)")
+                f"{self._config.currency}; ny försäljning blockeras tills en grundare har beslutat (ER-20, D-049)")
 
     # --- ER-21 underlag --------------------------------------------------------------------
 

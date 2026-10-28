@@ -104,9 +104,9 @@ class ApprovalQueue:
         audit: AuditLog,
         clock: Callable[[], str] = _utc_now,
     ) -> None:
-        if len(founders) < 2:
+        if not founders:
             raise ApprovalError(
-                "godkännandekön behöver båda grundarna i `founders` (D-019, D-021)"
+                "godkännandekön behöver minst en grundare i `founders` (D-021)"
             )
         self._db = db
         self._decisions = decisions
@@ -177,7 +177,7 @@ class ApprovalQueue:
     def submit_governance(
         self, actor: str, task_id: int, change: str
     ) -> ApprovalRequest:
-        """Ändring i konstitution, riskgränser eller mandat. Kräver alltid båda grundarna (D-019 p. 3)."""
+        """Ändring i konstitution, riskgränser eller mandat. Kräver en grundare (D-049)."""
         if not change.strip() or mask_secrets(change) != change:
             raise ApprovalError("beskriv ändringen utan hemligheter")
         return self._enqueue(
@@ -188,7 +188,7 @@ class ApprovalQueue:
             change.strip(),
             0,
             "{}",
-            required=2,
+            required=1,
         )
 
     # --- Grundarnas beslut --------------------------------------------------------------------
@@ -276,11 +276,8 @@ class ApprovalQueue:
         )
 
     def required_approvals(self, amount_minor: int) -> int:
-        """D-019: 1 grundare upp till HUMAN_APPROVAL_THRESHOLD, annars 2. En saknad gräns betyder 2 (ER-02)."""
-        threshold = self._limits.human_approval_threshold
-        if threshold is None:
-            return 2 if amount_minor > 0 else 1
-        return 2 if amount_minor > threshold.amount_minor else 1
+        """D-049: grundarna agerar som en, så en grundares godkännande räcker alltid."""
+        return 1
 
     # --- Internt -----------------------------------------------------------------------------
 

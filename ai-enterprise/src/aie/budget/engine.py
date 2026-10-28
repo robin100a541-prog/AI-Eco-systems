@@ -15,12 +15,12 @@ Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkän
    (högst `MAX_DEPARTMENT_BUDGET`), och plattformsavgifter räknas inte som departementets utgifter.
 6. **Åtaganden:** väntade utgifter plus beloppet får inte överstiga departementets `max_commitment`
    eller hela företagets `MAX_COMMITTED_CAPITAL` (§23).
-7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs båda grundarna
+7. **Godkännande:** över `HUMAN_APPROVAL_THRESHOLD`, eller om gränsen saknas, krävs en grundare (D-049)
    (D-019). Det blockerar inte, men svaret är nej tills godkännandet finns (ER-14).
 
 8. **Uppdelade köp** (Fas 4d, ER-04, §5): små utgifter i samma initiativ inom sju dagar som
    tillsammans passerar `HUMAN_APPROVAL_THRESHOLD` eller `MAX_SINGLE_TRANSACTION` flaggas. Utgiften
-   behandlas då som hela summan och kräver båda grundarna (D-028). Den revideras med flaggan.
+   behandlas då som hela summan och kräver en grundare (D-028, D-049). Den revideras med flaggan.
 9. **Skyddad reserv** (Fas 4c, §5, ER-05): beloppet får inte vara större än det disponibla kapitalet,
    alltså likvida medel minus `MINIMUM_RESERVE` minus redan åtagna kostnader (`capital.py`).
 
@@ -188,7 +188,7 @@ class BudgetEngine:
         required = self._required_approvals(amount)
         flags = self._split_flags(r, amount) if amount_ok else []
         if flags:
-            required = 2  # behandlas som hela summan: över tröskeln ⇒ båda grundarna (D-019, ER-04)
+            required = 1  # behandlas som hela summan: över tröskeln ⇒ en grundare (D-049, ER-04)
         result = BudgetCheck(
             not blocked and required == 0,
             tuple(blocked),
@@ -277,7 +277,7 @@ class BudgetEngine:
     def _required_approvals(self, amount: int) -> int:
         threshold = self._limits.human_approval_threshold
         if threshold is None or amount > threshold.amount_minor:
-            return 2  # D-019 p. 2; en saknad gräns räknas som över (ER-02)
+            return 1  # D-019, D-049: en grundare; en saknad gräns räknas som över (ER-02)
         return 0
 
     def _departments_in_ledger(self) -> set[str]:

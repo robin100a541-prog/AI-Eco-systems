@@ -135,7 +135,7 @@ class TestReservedTax(TaxCase):
 
 class TestVat(TaxCase):
     def test_warning_at_80_percent_and_block_at_the_limit_until_both_founders_decide(self):
-        """Verifies ER-20: varning vid 80 %, ny försäljning blockeras vid gränsen tills båda grundarna har beslutat."""
+        """Verifies ER-20: varning vid 80 %, ny försäljning blockeras vid gränsen tills en grundare har beslutat (D-049)."""
         self.book("s1", EntryType.REVENUE, 9_600_000)
         self.assertEqual(self.tax.check_vat().level, "warning")
         self.assertIsNone(self.tax.tool_block_reason(None, "sales.create_listing"))
@@ -144,12 +144,11 @@ class TestVat(TaxCase):
         self.assertIsNone(self.tax.tool_block_reason(None, "report.write"))
         actions = [e.action for e in self.audit.entries() if e.action.startswith("tax.vat_")]
         self.assertEqual(actions, ["tax.vat_warning", "tax.vat_limit"])  # en gång var
-        self.tax.vat_vote("robin", 2026, "momsregistrering inlämnad")
-        with self.assertRaises(TaxError):
-            self.tax.vat_vote("robin", 2026, "igen")
         self.assertIsNotNone(self.tax.tool_block_reason(None, "publish.listing"))
-        status = self.tax.vat_vote("yorgo", 2026, "momsregistrering inlämnad")
+        status = self.tax.vat_vote("yorgo", 2026, "momsregistrering inlämnad")  # D-049: en räcker
         self.assertTrue(status.decided)
+        with self.assertRaises(TaxError):
+            self.tax.vat_vote("robin", 2026, "igen")  # redan beslutad
         self.assertIsNone(self.tax.tool_block_reason(None, "sales.create_listing"))
 
     def test_authorization_engine_uses_the_vat_gate(self):

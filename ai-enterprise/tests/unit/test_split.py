@@ -108,7 +108,7 @@ class TestSplit(SplitCase):
         self.assertEqual(
             check.blocked, ()
         )  # ingen blockering, men grundarna måste avgöra
-        self.assertEqual(check.required_approvals, 2)
+        self.assertEqual(check.required_approvals, 1)  # D-049
         self.assertEqual(len(check.flags), 1)
         self.assertIn(
             "10 utgifter i 'etsy-mallar' på 7 dagar blir tillsammans 990 > HUMAN_APPROVAL_THRESHOLD 100",
@@ -138,7 +138,7 @@ class TestSplit(SplitCase):
         """En utgift som själv är över gränsen kräver godkännande som vanligt, utan uppdelningsflagga."""
         self.buy()
         check = self.check(101)
-        self.assertEqual((check.required_approvals, check.flags), (2, ()))
+        self.assertEqual((check.required_approvals, check.flags), (1, ()))
 
     def test_pending_purchases_count(self):
         """ER-04: ett väntande köp är också ett åtagande och räknas i summan."""

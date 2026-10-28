@@ -197,15 +197,14 @@ class TestGatesDuringRuns(SimCase):
         days = sim.run(5)
         self.assertIn("ingen fanns", days[4]["event_notes"][0])
 
-    def test_vat_limit_pauses_sales_until_both_founders_vote(self):
-        """Verifies ER-20: momsgränsen pausar ny försäljning tills båda grundarna har beslutat."""
+    def test_vat_limit_pauses_sales_until_a_founder_votes(self):
+        """Verifies ER-20, D-049: momsgränsen pausar ny försäljning tills en grundare har beslutat."""
         sim = self.start("vat")
         days = sim.run()
         paused = [d for d in days if d["paused"] and "ER-20" in d["paused"]]
         self.assertTrue(paused)
         self.assertEqual(self.system.tax.vat_status(2027).level, "limit")
         self.system.tax.vat_vote("robin", 2027, "momsregistrerad (simulerat)")
-        self.system.tax.vat_vote("yorgo", 2027, "momsregistrerad (simulerat)")
         self.assertIsNone(sim._pause_reason())
 
 

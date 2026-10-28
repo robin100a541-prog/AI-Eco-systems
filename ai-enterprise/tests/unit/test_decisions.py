@@ -166,16 +166,15 @@ class TestAuthority(DecisionCase):
             self.log.record("cfo-1", self.task.task_id, draft())
         self.assertIn("äger inte", str(ctx.exception))
 
-    def test_over_threshold_needs_approval_for_agent_and_single_founder(self):
-        """Verifies D-019 (§51): över HUMAN_APPROVAL_THRESHOLD får varken agent eller ensam grundare besluta."""
+    def test_over_threshold_needs_a_founder(self):
+        """Verifies D-019, D-049 (§51): över HUMAN_APPROVAL_THRESHOLD beslutar aldrig en agent, men en grundare räcker."""
         threshold = self.limits.human_approval_threshold.amount_minor
-        for actor in ("lead-1", "robin"):
-            with self.subTest(actor=actor), self.assertRaises(NeedsApproval) as ctx:
-                self.log.record(
-                    actor, self.task.task_id, draft(budget_minor=threshold + 1)
-                )
-            self.assertIn("båda grundarna", str(ctx.exception))
+        with self.assertRaises(NeedsApproval) as ctx:
+            self.log.record("lead-1", self.task.task_id, draft(budget_minor=threshold + 1))
+        self.assertIn("en grundare krävs", str(ctx.exception))
         self.assertEqual(self.log.for_task(self.task.task_id), ())
+        by_founder = self.log.record("robin", self.task.task_id, draft(budget_minor=threshold + 1))
+        self.assertEqual(by_founder.decided_by, "robin")
         at_limit = self.log.record(
             "lead-1", self.task.task_id, draft(budget_minor=threshold)
         )
