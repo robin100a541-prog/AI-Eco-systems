@@ -25,7 +25,7 @@ __all__ = [
     "OrgChart",
     "RegistryError",
     "StateChange",
-    "TRANSITIONS",
     "check_transition",
     "reporting_line_error",
+    "TRANSITIONS",
 ]
