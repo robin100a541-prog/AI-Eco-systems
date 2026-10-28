@@ -6,6 +6,7 @@ i ett tillfälligt git-repo. Testsviten som agenten kör är en fejk som läser 
 
 import json
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -193,8 +194,11 @@ class TestRun_(DevCase):
         questions = (self.project / "docs" / "QUESTIONS-FOR-FOUNDERS.md").read_text(
             encoding="utf-8"
         )
+        # Nästa lediga nummer efter frågorna som redan finns i repots frågefil.
+        taken = [int(n) for n in re.findall(r"Q-BOT-(\d+)", QUESTIONS)]
+        qid = f"Q-BOT-{max(taken, default=0) + 1:03d}"
         self.assertEqual(
-            questions.count("### Q-BOT-001 Utvecklaragenten behöver hjälp: BL-001"), 1
+            questions.count(f"### {qid} Utvecklaragenten behöver hjälp: BL-001"), 1
         )
         self.assertIn("dev.question", self.actions())
         result = self.agent(FakeModel(GOOD)).run()
