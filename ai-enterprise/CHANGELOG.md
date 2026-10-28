@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 10: utfall från verkligheten (D-062, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 32 `real_results`: en rad per dag och initiativ med källa, append-only och idempotent.
+- `src/aie/results/` (`ResultStore`):
+  - Import av CSV. Bara grundare importerar, en källa krävs på varje rad, och en dålig rad avvisar hela filen.
+  - Sammanställning per valuta.
+  - Rapporten prognos mot utfall.
+- `python -m aie results import|list|report`.
+- Bedömningen före start använder uppmätta värden före antaganden när initiativet har minst 7 dagar med utfall, märkta "verifierat i verkligheten" (`apply_observed`, `drop_replaced`).
+- `docs/templates/utfall.csv`, som bara har rubrikraden, och `docs/setup.md` 2h.
+- Förslaget D-062 finns i `docs/proposals/2026-10-28-D-062-utfall-fran-verkligheten.md`.
+- `tests/unit/test_results.py`: 7 tester.
+
 ## [Unreleased] — 2026-10-28 — PR 9: nattlig körning i GitHub Actions (D-061, föreslaget)
 ### Tillagt
 - `.github/workflows/nightly.yml`:

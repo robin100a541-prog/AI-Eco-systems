@@ -150,6 +150,33 @@ python3 -m aie simulate resume --agents groq
 
 **Förväntat:** en rad per dag med order, åtgärder och nekade åtgärder. Svarar modellen med något som inte är giltig JSON nekas åtgärden och noteras (D-043). Det är ett väntat utfall och inget fel i systemet.
 
+## 2h. Importera utfall från verkligheten (arbetsorder 02, PR 10, D-062)
+När ni har sålt något på riktigt, till exempel efter ett manuellt försök med en produkt i `products/`, förs siffrorna in här. Utgå från mallen `docs/templates/utfall.csv`. Den har bara rubrikraden, så att inga exempelsiffror kan importeras av misstag. Skriv en rad per dag och initiativ.
+
+| Kolumn | Innehåll |
+|---|---|
+| `day` | ÅÅÅÅ-MM-DD, aldrig i framtiden |
+| `initiative` | en nyckel som finns i registret |
+| `visitors`, `orders` | antal |
+| `revenue_minor`, `refunds_minor`, `fees_minor`, `costs_minor` | heltal i öre eller cent |
+| `currency` | SEK eller USD |
+| `source` | **krävs**: en länk till plattformens rapport, ett kvitto eller en fil som visar siffrorna |
+| `note` | fritt |
+
+```bash
+python3 -m aie results import utfall.csv --as yorgo
+python3 -m aie results list
+python3 -m aie results report mallar        # prognos (simulerat) mot utfall (verifierat i verkligheten)
+```
+
+**Om filen innehåller ett fel:** hela filen avvisas, och felen listas per rad.
+
+**Om du importerar samma rad igen:** den sparas inte en gång till.
+
+**Utfall ändras aldrig.** En rättelse är en ny rad med en egen källa.
+
+**Om initiativet har minst 7 dagar med utfall:** de uppmätta värdena ersätter antagandena i `assess run`. Det gäller besökare, konvertering, återbetalningar och avgiften när plattformens avgift är okänd. Varje sådant värde märks "verifierat i verkligheten".
+
 ## 3. Skapa det gemensamma repot (en av er)
 ```bash
 cd ai-enterprise

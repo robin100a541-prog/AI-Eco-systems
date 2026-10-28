@@ -13,6 +13,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
+- `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -144,6 +145,10 @@ def build_parser() -> argparse.ArgumentParser:
     reg.add_argument("status", nargs="?", help="ny status (för status)")
     reg.add_argument("--as", dest="founder", help="vilken grundare som agerar (för import och status)")
     reg.add_argument("--note", default="", help="motivering (för status)")
+    rs = add("results", "utfall från verkligheten: import, list eller report (PR 10, D-062)")
+    rs.add_argument("action", choices=("import", "list", "report"))
+    rs.add_argument("target", nargs="?", help="CSV-filen (för import) eller initiativet (för report)")
+    rs.add_argument("--as", dest="founder", help="vilken grundare som importerar")
     sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
     sp.add_argument("action", choices=("list", "approve", "reject"))
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
@@ -192,6 +197,18 @@ def _registry(args: argparse.Namespace) -> int:
         print("FEL: status kräver ny status och --note", file=sys.stderr)
         return 1
     return registry(args.config_dir, args.action, args.kind, args.key, args.status, args.founder, args.note)
+
+
+def _results(args: argparse.Namespace) -> int:
+    from .results.cli import results  # importeras bara när kommandot används
+
+    if args.action in ("import", "report") and not args.target:
+        print("FEL: import kräver en CSV-fil och report ett initiativ", file=sys.stderr)
+        return 1
+    if args.action == "import" and not args.founder:
+        print("FEL: import kräver --as <grundare>", file=sys.stderr)
+        return 1
+    return results(args.config_dir, args.action, args.target, args.founder)
 
 
 def _spend(args: argparse.Namespace) -> int:
@@ -270,6 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
         "spend": lambda: _spend(args),
+        "results": lambda: _results(args),
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
         "assess": lambda: _assess(args),
