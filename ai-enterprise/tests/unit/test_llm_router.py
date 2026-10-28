@@ -178,6 +178,25 @@ class TestProviders(RouterCase):
         self.assertEqual([(d["provider"], d["status"]) for d in failed], [("groq", 403)])
         self.assertNotIn(KEY, json.dumps(failed))
 
+    def test_rate_limit_waits_and_retries_once(self):
+        """Verifies DR-12, §41: vid 429 väntar leverantören (Retry-After, högst 60 s) och försöker en gång till."""
+        waits, answers = [], [ProviderError("HTTP 429", 429, "rate_limit_exceeded", 7.0), None]
+
+        def transport(url, body, headers, timeout):
+            answer = answers.pop(0)
+            if answer:
+                raise answer
+            return json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+
+        provider = OpenAICompatibleProvider("groq", "groq", "m", KEY, transport, sleep=waits.append)
+        self.assertEqual(provider.complete(ask()).text, "ok")
+        self.assertEqual(waits, [7.0])
+        always = FakeTransport(fail="HTTP 429", status=429)
+        provider = OpenAICompatibleProvider("groq", "groq", "m", KEY, always, sleep=waits.append)
+        with self.assertRaises(ProviderError) as ctx:
+            provider.complete(ask())
+        self.assertEqual((ctx.exception.status, len(always.calls), waits[-1]), (429, 2, 20.0))
+
     def test_error_code_is_only_a_short_token(self):
         """Verifies SR-10: bara leverantörens felkod läses ur svarskroppen, aldrig fritext."""
         self.assertEqual(_error_code(b'{"error": {"message": "nyckel gsk_x", "code": "model_not_found"}}'),

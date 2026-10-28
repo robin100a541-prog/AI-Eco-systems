@@ -4,6 +4,8 @@
     python -m aie dev-agent open-pr --result result.json      # kräver BOT_TOKEN och GITHUB_REPOSITORY
 
 `run` gör ändringen och committar den lokalt på grenen. Den pushar inget och har ingen GitHub-token.
+En körning utan ändring och utan nya grundarfrågor committar inget och öppnar ingen PR; rapporten
+läggs i `.dev-agent-pending/` och följer med nästa PR som ändrar något.
 `open-pr` öppnar PR:en och slår på automatisk merge. Kod 0 = lyckades, kod 1 = fel.
 """
 
@@ -25,6 +27,8 @@ from .agent import DevAgent, write_report
 from .github import GitHub, GitHubError
 
 AGENT_ID, CEO_ID = "dev-1", "dev-ceo"
+# Rapporter från körningar utan ändring väntar här (sparas mellan körningar med actions/cache).
+PENDING_DIR = ".dev-agent-pending"
 _AUTHOR = [
     "-c",
     "user.name=aie-dev-agent",
@@ -77,25 +81,38 @@ def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
 
 def llm_summary(entries) -> str:
     """Vilken leverantör som svarade och HTTP-statusen för första Groq-anropet (ur audit-loggen)."""
-    first_groq, used = None, []
+    first_groq, used, failed = None, [], []
     for entry in entries:
         provider = entry.details.get("provider")
         if entry.action == "llm.call":
             used.append(provider)
             if provider == "groq" and first_groq is None:
                 first_groq = "HTTP 200"
-        elif entry.action == "llm.provider_failed" and provider == "groq" and first_groq is None:
-            first_groq = entry.details.get("reason") or f"HTTP {entry.details.get('status')}"
+        elif entry.action == "llm.provider_failed":
+            # Skälet är redan rensat från nycklar; prompten loggas aldrig.
+            reason = entry.details.get("reason") or f"{provider}: HTTP {entry.details.get('status')}"
+            failed.append(reason)
+            if provider == "groq" and first_groq is None:
+                first_groq = reason
     return (
         f"första Groq-anropet: {first_groq or 'inget'}; svarade: "
         + (", ".join(dict.fromkeys(used)) or "ingen")
+        + (f"; fel: {', '.join(failed)}" if failed else "")
     )
 
 
-def run(config_dir: Path, branch: str, out: Path) -> int:
+def _step_summary(environ, text: str) -> None:
+    """Rapporten syns i Actions-körningens sammanfattning när ingen PR öppnas."""
+    path = environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(text + "\n")
+
+
+def run(config_dir: Path, branch: str, out: Path, environ=os.environ) -> int:
     project = Path.cwd()
     try:
-        agent, audit = bootstrap(config_dir, project)
+        agent, audit = bootstrap(config_dir, project, environ)
     except ConfigError as exc:
         print(f"FEL: {exc}", file=sys.stderr)
         return 1
@@ -107,10 +124,32 @@ def run(config_dir: Path, branch: str, out: Path) -> int:
     with report.open("a", encoding="utf-8") as fh:
         fh.write(f"\n## Språkmodell\n{llm}\n")
     repo = project.parent
+    title = (
+        f"dev-agent: {result.item.key}"
+        if result.success and result.item
+        else f"dev-agent: frågor {result.started_at[:16]}"
+    )
+    publish = result.success or bool(result.questions)
+    pending = project / PENDING_DIR
+    if not publish:
+        # Ingen PR för en ren rapport: den sparas och följer med nästa PR som ändrar något.
+        pending.mkdir(exist_ok=True)
+        report.replace(pending / report.name)
+        _step_summary(environ, (pending / report.name).read_text(encoding="utf-8"))
+        out.write_text(
+            json.dumps({"branch": branch, "committed": False, "success": False}),
+            encoding="utf-8",
+        )
+        print(f"dev-agent: ingen ändring; {len(result.attempts)} försök; rapporten väntar på nästa PR")
+        return 0
+    earlier = sorted(pending.glob("dev-agent-*.md")) if pending.is_dir() else []
+    for old in earlier:
+        old.replace(report.parent / old.name)
     paths = [
         f"ai-enterprise/{p.removeprefix('ai-enterprise/')}"
         for p in result.changed_files
     ]
+    paths += [str((report.parent / old.name).relative_to(repo)) for old in earlier]
     paths += [
         str(report.relative_to(repo)),
         "ai-enterprise/docs/bot-reports/dev-agent-state.json",
@@ -118,11 +157,6 @@ def run(config_dir: Path, branch: str, out: Path) -> int:
     ]
     _git(repo, "checkout", "-B", branch)
     _git(repo, "add", "--", *[p for p in paths if (repo / p).exists()])
-    title = (
-        f"dev-agent: {result.item.key}"
-        if result.success and result.item
-        else f"dev-agent: rapport {result.started_at[:16]}"
-    )
     commit = _git(
         repo,
         *_AUTHOR,
@@ -132,6 +166,7 @@ def run(config_dir: Path, branch: str, out: Path) -> int:
     )
     body = (
         report.read_text(encoding="utf-8")
+        + (f"\n\nTidigare rapporter utan ändring följer med: {len(earlier)} st.\n" if earlier else "")
         + "\n\n_Skapad av utvecklaragenten (D-050). Mergas automatiskt när alla checkar är gröna._\n"
     )
     out.write_text(
