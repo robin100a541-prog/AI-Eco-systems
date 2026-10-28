@@ -25,7 +25,7 @@ from aie.dev_agent import (
     write_report,
 )
 from aie.dev_agent import agent as agent_module
-from aie.dev_agent.agent import RunResult
+from aie.dev_agent.agent import RunResult, TokenPacer
 from aie.dev_agent.github import GitHub, GitHubError
 from aie.llm import (
     LLMGateway,
@@ -35,7 +35,7 @@ from aie.llm import (
     RuleProvider,
     Slot,
 )
-from aie.llm.providers import KINDS
+from aie.llm.providers import KINDS, ProviderError
 from aie.memory import Database
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -323,6 +323,60 @@ class TestFeedback(DevCase):
         self.assertIn("ai_enterprise", agent_module.SYSTEM_PROMPT)  # uttryckligen förbjudet
         self.assertIn("ENBART en giltig unified diff", agent_module.SYSTEM_PROMPT)
         self.assertIn("standardbiblioteket", agent_module.SYSTEM_PROMPT)
+
+
+class TestRateLimits(DevCase):
+    def test_all_models_rate_limited_waits_a_minute_once_and_asks_again(self):
+        """Verifies D-050: ger alla Groq-modeller 429 väntar körningen ut minuten en gång och frågar igen."""
+        calls = []
+
+        def limited_once(url, body, headers, timeout):
+            calls.append(1)
+            if len(calls) == 1:
+                raise ProviderError("HTTP 429 (rate_limit_exceeded)", 429, "rate_limit_exceeded")
+            return FakeModel(GOOD)(url, body, headers, timeout)
+
+        waits = []
+        agent = self.agent(limited_once)
+        agent._sleep = waits.append
+        result = agent.run()
+        self.assertTrue(result.success)
+        self.assertEqual(waits, [agent_module.RATE_LIMIT_WAIT])
+        self.assertIn("dev.rate_limit_wait", self.actions())
+
+    def test_pacer_keeps_a_run_under_the_per_minute_budget(self):
+        """Verifies D-050: anropen sprids så att en körning håller sig under sin tokengräns per minut."""
+        now, slept = [0.0], []
+
+        def sleep(seconds):
+            slept.append(seconds)
+            now[0] += seconds
+
+        pacer = TokenPacer(6000, clock=lambda: now[0], sleep=sleep)
+        self.assertEqual(pacer.wait(4000), 0.0)
+        pacer.record(4000)
+        now[0] = 10.0
+        self.assertAlmostEqual(pacer.wait(4000), 50.5)
+        pacer.record(4000)
+        self.assertEqual(slept, [50.5])
+
+    def test_only_groq_models_in_groqs_current_list_are_used(self):
+        """Verifies DR-12, D-050: en Groq-reservmodell används bara om Groq erbjuder den just nu."""
+        env = {"GROQ_API_KEY": "gsk-test"}
+        offered = frozenset({"openai/gpt-oss-20b", "llama-3.3-70b-versatile"})
+        with tempfile.TemporaryDirectory() as tmp:
+            agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=lambda kind, key: offered)
+            names = [s.provider.name for s in agent._gateway._router._slots]
+        self.assertEqual(names[:2], ["groq", "groq-3"])
+        self.assertNotIn("groq-2", names)
+
+        def broken(kind, key):
+            raise ProviderError("groq: modellistan gav HTTP 503", 503)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=broken)
+            names = [s.provider.name for s in agent._gateway._router._slots]
+        self.assertEqual(names[:3], ["groq", "groq-2", "groq-3"])
 
 
 class TestContext(unittest.TestCase):

@@ -16,6 +16,22 @@ model = "openai/gpt-oss-20b"
 daily_calls = 900
 daily_tokens = 180000
 
+# Groqs gratisgränser gäller per modell. Får `groq` HTTP 429 provas nästa Groq-modell.
+# Utvecklaragenten använder en modell bara om den finns i Groqs aktuella modellista (GET /models).
+[[providers]]
+name = "groq-2"
+kind = "groq"
+model = "openai/gpt-oss-120b"
+daily_calls = 900
+daily_tokens = 180000
+
+[[providers]]
+name = "groq-3"
+kind = "groq"
+model = "llama-3.3-70b-versatile"
+daily_calls = 900
+daily_tokens = 90000
+
 [[providers]]
 name = "openrouter"
 kind = "openrouter"

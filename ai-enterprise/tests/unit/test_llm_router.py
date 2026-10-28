@@ -178,24 +178,19 @@ class TestProviders(RouterCase):
         self.assertEqual([(d["provider"], d["status"]) for d in failed], [("groq", 403)])
         self.assertNotIn(KEY, json.dumps(failed))
 
-    def test_rate_limit_waits_and_retries_once(self):
-        """Verifies DR-12, §41: vid 429 väntar leverantören (Retry-After, högst 60 s) och försöker en gång till."""
-        waits, answers = [], [ProviderError("HTTP 429", 429, "rate_limit_exceeded", 7.0), None]
-
-        def transport(url, body, headers, timeout):
-            answer = answers.pop(0)
-            if answer:
-                raise answer
-            return json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
-
-        provider = OpenAICompatibleProvider("groq", "groq", "m", KEY, transport, sleep=waits.append)
-        self.assertEqual(provider.complete(ask()).text, "ok")
-        self.assertEqual(waits, [7.0])
-        always = FakeTransport(fail="HTTP 429", status=429)
-        provider = OpenAICompatibleProvider("groq", "groq", "m", KEY, always, sleep=waits.append)
-        with self.assertRaises(ProviderError) as ctx:
-            provider.complete(ask())
-        self.assertEqual((ctx.exception.status, len(always.calls), waits[-1]), (429, 2, 20.0))
+    def test_rate_limit_falls_back_to_the_next_groq_model(self):
+        """Verifies DR-12: gränserna gäller per modell; vid 429 provas nästa Groq-modell direkt."""
+        limited = FakeTransport(fail="HTTP 429 (rate_limit_exceeded)", status=429)
+        second = FakeTransport(answer="ok")
+        slots = (
+            self.groq(limited),
+            Slot(OpenAICompatibleProvider("groq-2", "groq", "openai/gpt-oss-120b", KEY, second), 100, 10_000),
+            self.rule(),
+        )
+        response = self.router(*slots).complete(ask(), "x")
+        self.assertEqual((response.provider, len(limited.calls)), ("groq-2", 1))
+        failed = [e.details for e in self.audit.entries() if e.action == "llm.provider_failed"]
+        self.assertEqual([(d["provider"], d["status"]) for d in failed], [("groq", 429)])
 
     def test_error_code_is_only_a_short_token(self):
         """Verifies SR-10: bara leverantörens felkod läses ur svarskroppen, aldrig fritext."""
@@ -239,14 +234,14 @@ class TestConfig(unittest.TestCase):
         """Verifies DR-12: utan nycklar i miljön hoppas groq och openrouter över; ollama och rule finns kvar."""
         slots, skipped = load_providers(ROOT / "config", environ={}, transport=FakeTransport())
         self.assertEqual([s.provider.name for s in slots], ["ollama", "rule"])
-        self.assertEqual(len(skipped), 2)
+        self.assertEqual(len(skipped), 4)
         self.assertIn("GROQ_API_KEY är inte satt", skipped[0])
 
     def test_default_config_with_keys_keeps_order(self):
-        """Verifies DR-12 (D-008): ordningen är groq, openrouter, ollama, rule."""
+        """Verifies DR-12 (D-008): ordningen är Groqs modeller, openrouter, ollama, rule."""
         env = {"GROQ_API_KEY": "a", "OPENROUTER_API_KEY": "b"}
         slots, skipped = load_providers(ROOT / "config", environ=env, transport=FakeTransport())
-        self.assertEqual([s.provider.name for s in slots], ["groq", "openrouter", "ollama", "rule"])
+        self.assertEqual([s.provider.name for s in slots], ["groq", "groq-2", "groq-3", "openrouter", "ollama", "rule"])
         self.assertEqual(skipped, ())
 
     def test_invalid_config_collects_all_errors(self):
