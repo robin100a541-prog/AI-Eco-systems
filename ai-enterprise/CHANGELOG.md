@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten (D-050)
+### Tillagt
+- Rollen `developer` och verktyget `dev.propose_patch` i `config/permissions.toml` (skyddad fil; `founder-approved` på Robins begäran). Prestationsprofil för rollen (aldrig mätt på intäkt).
+- `src/aie/dev_agent/`: `python -m aie dev-agent run|open-pr`. Väljer en uppgift (backlogg, fallerande test, ruff, krav utan test), frågar en gratismodell via `LLMGateway`, granskar diffen (skyddade filer, `.github/`, `config/`, egen kod, högst 200 rader, bara standardbiblioteket, inga försvagade tester), applicerar, kör hela sviten utan nycklar, backar vid rött, högst 3 försök. Kvot slut ⇒ stannar lugnt. Allt revideras; rapport i `docs/bot-reports/`, frågor efter 3 misslyckanden.
+- `.github/workflows/dev-agent.yml`: var tredje timme och manuellt; PR med `BOT_TOKEN` och automatisk merge när alla obligatoriska checkar är gröna.
+- D-050. `tests/unit/test_dev_agent.py`: 12 tester med fejkad modell och fejkad GitHub.
+
 ## [Unreleased] — 2026-10-28 — D-049: grundarna agerar som en
 ### Ändrat
 - **D-049** (godkänt av Robin, gäller för båda): en grundares godkännande räcker överallt. D-019 punkt 2 och 3 är ersatta.

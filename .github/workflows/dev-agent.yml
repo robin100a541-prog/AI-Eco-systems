@@ -1,0 +1,63 @@
+# Utvecklaragenten (D-050): förbättrar koden i små, testade steg med gratismodeller via LLMGateway.
+# Var tredje timme och med knappen "Run workflow". Aldrig Anthropic.
+#
+# Säkerhet:
+# - GROQ_API_KEY finns bara i steget som kör agenten. Testsviten (modellskriven kod) körs utan nycklar.
+# - BOT_TOKEN finns bara i stegen som pushar och öppnar PR:en. Git-hooks är avstängda vid push.
+# - PR:en mergas automatiskt först när alla obligatoriska checkar är gröna, inklusive protected-files.
+name: dev-agent
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-agent
+  cancel-in-progress: false
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ruff (optional, used only to find lint tasks)
+        run: pip install "ruff==0.16.9" || echo "ruff kunde inte installeras; agenten hoppar över lint-uppgifter"
+      - name: Run the dev agent
+        id: agent
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          branch="claude/dev-agent-$(date -u +%Y%m%d-%H%M)"
+          python -m aie dev-agent run --branch "$branch" --out "$RUNNER_TEMP/dev-agent.json"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          python -c "import json,sys; d=json.load(open(sys.argv[1])); print('committed=' + str(d['committed']).lower())" \
+            "$RUNNER_TEMP/dev-agent.json" >> "$GITHUB_OUTPUT"
+      - name: Push the branch
+        if: steps.agent.outputs.committed == 'true'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          BRANCH: ${{ steps.agent.outputs.branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          git -c core.hooksPath=/dev/null push "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${BRANCH}"
+      - name: Open the PR with auto-merge
+        if: steps.agent.outputs.committed == 'true'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: python -m aie dev-agent open-pr --result "$RUNNER_TEMP/dev-agent.json"

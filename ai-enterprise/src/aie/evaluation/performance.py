@@ -62,6 +62,8 @@ PROFILES: dict[str, tuple[str, ...]] = {
     "research_lead": ("goal_fulfillment", "economic_contribution", "forecast_precision", "compliance",
                       "error_handling", "incidents"),
     "researcher": ("goal_fulfillment", "forecast_precision", "compliance", "error_handling", "incidents"),
+    # Utvecklaragenten (D-050): mäts på genomförda uppgifter och regelefterlevnad, aldrig på intäkt.
+    "developer": ("goal_fulfillment", "compliance", "error_handling", "incidents"),
 }
 DEFAULT_PROFILE = ("goal_fulfillment", "forecast_precision", "compliance", "error_handling", "incidents")
 

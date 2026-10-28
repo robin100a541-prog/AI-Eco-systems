@@ -31,6 +31,9 @@ config_version = 1
 "sales.list"      = "lista eller pausa ett initiativ till försäljning; momsgränsen och spärrarna gäller (ER-20)"
 "forecast.make"   = "logga en prognos före utfallet (FR-16)"
 "proposal.submit" = "lämna ett affärsförslag med de 11 fälten i §12 (FR-23)"
+# Utvecklaragenten (D-050): föreslår små kodändringar som unified diff. Den skriver aldrig direkt i
+# repot; koden avvisar skyddade filer, stora diffar och importer utanför standardbiblioteket.
+"dev.propose_patch" = "föreslå en liten kodändring (diff) som testas innan den blir en PR (D-050)"
 # Styrverktyg (SR-04). Står här bara för att försök ska kunna loggas med rätt namn.
 # Ingen roll kan få dem, och Authorization Engine nekar dem alltid.
 "governance.change_constitution" = "ändra konstitutionen; bara grundarna (D-001)"
@@ -78,3 +81,9 @@ department = "research"
 level = 4
 description = "utreder möjligheter (D-011)"
 tools = ["report.write", "research.search", "llm.complete", "forecast.make", "proposal.submit"]
+
+[roles.developer]
+department = "executive"
+level = 3
+description = "utvecklaragent: förbättrar koden i små, testade steg via gratismodeller (D-050)"
+tools = ["llm.complete", "dev.propose_patch"]

@@ -79,10 +79,10 @@ class PermissionsCase(unittest.TestCase):
 
 class TestPermissionsFile(PermissionsCase):
     def test_default_permissions_in_repo_load(self):
-        """Verifies SR-02: config/permissions.toml är giltig och har MVP:ns roller plus Compliance (D-020)."""
+        """Verifies SR-02: config/permissions.toml är giltig och har MVP:ns roller plus Compliance (D-020) och utvecklaragenten (D-050)."""
         permissions = load_permissions(ROOT / "config")
         self.assertEqual(
-            set(permissions.roles), {"ceo", "cfo", "cro", "compliance", "auditor", "research_lead", "researcher"}
+            set(permissions.roles), {"ceo", "cfo", "cro", "compliance", "auditor", "research_lead", "researcher", "developer"}
         )
         for mandate in permissions.roles.values():
             self.assertTrue(mandate.tools <= set(permissions.tools))

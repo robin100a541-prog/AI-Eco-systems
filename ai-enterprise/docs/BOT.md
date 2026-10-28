@@ -84,6 +84,20 @@ Regler för egna uppgifter:
 
 Uppgifter i `ROADMAP.md` går alltid före backloggen. Kontrollera dem igen innan varje ny backlogpunkt.
 
+## 2c. Utvecklaragenten (D-050)
+
+Det finns också en utvecklaragent **i systemet**: `python -m aie dev-agent`, som körs av
+`.github/workflows/dev-agent.yml` var tredje timme. Den använder bara gratismodeller via `LLMGateway`
+(aldrig Anthropic), tar en liten uppgift i taget (samma backlogg som du), avvisar diffar mot skyddade
+filer, `.github/`, `config/` och sin egen kod, kör hela sviten och öppnar en PR med automatisk merge.
+
+- Dess PR:er heter `dev-agent: …` och grenar `claude/dev-agent-…`. Ta inte en uppgift som en öppen
+  dev-agent-PR redan arbetar med.
+- Läs dess rapporter i `docs/bot-reports/dev-agent-*.md` och dess frågor (`Q-BOT-…`) i frågefilen.
+- Uppgifter som den misslyckats med tre gånger står i `docs/bot-reports/dev-agent-state.json`. Du får ta
+  dem; lös dem ordentligt.
+- Ändra aldrig agentens kod, dess workflow eller dess roll; det kräver grundarna (`founder-approved`).
+
 ## 3b. Anspråk: bara för att undvika dubbelarbete
 
 Alla uppgifter tillhör grundarna (D-049). Hoppa aldrig över en uppgift för att den är "Robins" eller

@@ -52,6 +52,7 @@ class TestLevels(HierarchyCase):
         self.assertEqual(levels, {
             "ceo": LEVEL_CEO, "cfo": LEVEL_CONTROL, "cro": LEVEL_CONTROL, "compliance": LEVEL_CONTROL,
             "auditor": LEVEL_CONTROL, "research_lead": LEVEL_HEAD, "researcher": LEVEL_WORKER,
+            "developer": LEVEL_HEAD,  # D-050: utvecklaragenten rapporterar till CEO
         })
 
     def test_level_is_required_and_bounded(self):
