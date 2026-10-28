@@ -98,11 +98,8 @@ class TestValidConfig(ConfigTestCase):
         self.assertEqual(config.system.environment, "sim")
         self.assertTrue(config.system.is_simulation)
         self.assertEqual(config.risk.currency, "SIM")
-        # D-059: de två gränserna för plattformsberoende läggs in av en grundare i en egen PR (skyddad fil).
-        # Tills dess får bara de saknas, och de ger varningar i sim (ER-02). Inget annat får saknas.
-        pending = {"MAX_PLATFORM_REVENUE_SHARE", "MIN_ACTIVE_PLATFORMS"}
-        self.assertLessEqual(set(config.risk.missing), pending)
-        self.assertTrue(all(any(name in w for name in pending) for w in config.warnings))
+        self.assertEqual(config.risk.missing, ())
+        self.assertEqual(config.warnings, ())
 
     def test_config_is_frozen(self):
         """Verifies FR-02: konfigurationen kan inte ändras efter att den validerats."""
