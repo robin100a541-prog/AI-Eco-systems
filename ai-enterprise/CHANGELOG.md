@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — F6: uppdelade köp per departement och dag, initiativspärr (D-054, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- `BudgetEngine._split_flags`: utöver D-028 (samma initiativ, sju dagar) flaggas utgifter i samma departement samma dag, i olika initiativ, som tillsammans passerar `HUMAN_APPROVAL_THRESHOLD`. Det går alltså inte längre att kringgå tröskeln med nya initiativnamn.
+- `BudgetEngine(initiatives=)`: initiativspärren. Ett okänt eller icke godkänt initiativ ger nej, och ett register som inte svarar ger nej. Spärren aktiveras när initiativregistret (PR 4) kopplas in.
+- Förslaget D-054 finns i `docs/proposals/2026-10-28-D-054-uppdelning-och-initiativ.md`.
+- `tests/unit/test_split_department.py`: 6 tester. `test_budget.py` och `test_split.py` är anpassade till den nya regeln. Skälen står i förslaget, och inget krav har tagits bort.
+
 ## [Unreleased] — 2026-10-28 — F5: godkända utgifter kan genomföras, en gång (D-053, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Migration 28 `spend_approvals` och `spend_approval_events`, append-only. Unika index ger högst ett beslut och högst en förbrukning per godkännande.

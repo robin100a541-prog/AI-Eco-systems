@@ -73,13 +73,14 @@ class BudgetCase(unittest.TestCase):
     def book(
         self, amount, kind=EntryType.COST, status=Status.SETTLED, department="research", initiative=None
     ):
-        """Bokför en post. Varje post får ett eget initiativ, så att budgettesterna inte ser ut som
-        uppdelade köp (ER-04 testas i test_split.py)."""
+        """Bokför en post. Posterna är godkända av en grundare, så att budgettesterna inte ser ut som
+        uppdelade köp (ER-04 och D-054 testas i test_split.py och test_split_department.py). Budgeten
+        räknar godkända och icke godkända utgifter likadant."""
         self.n += 1
         approval = (
             Approval.UNAPPROVED
             if amount > 10_000 and kind is not EntryType.REVENUE
-            else Approval.NOT_REQUIRED
+            else Approval.APPROVED
         )
         return self.ledger.record(
             "robin",
@@ -91,7 +92,7 @@ class BudgetCase(unittest.TestCase):
                 kind,
                 initiative or f"initiativ-{self.n}",
                 approval,
-                ("file:kvitto.pdf",),
+                ("file:kvitto.pdf", "decision:budgettest"),
                 status=status,
             ),
         )
@@ -139,7 +140,7 @@ class TestBudget(BudgetCase):
         self.book(500, kind=EntryType.FEE)
         self.book(9_000, department="executive")
         self.ledger.correct(
-            "robin", cost.entry_id, -4_000, "fel belopp", ("file:kvitto.pdf",), "fix"
+            "robin", cost.entry_id, -4_000, "fel belopp", ("file:kvitto.pdf", "decision:budgettest"), "fix"
         )
         self.assertEqual(self.engine.check("cfo-1", spend()).spent_minor, 6_500)
 

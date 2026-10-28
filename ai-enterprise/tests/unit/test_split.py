@@ -126,8 +126,11 @@ class TestSplit(SplitCase):
         self.assertTrue(self.check(50).allowed)  # 100 är inte över 100
 
     def test_other_initiatives_old_purchases_and_approved_ones_do_not_count(self):
-        """D-028: bara samma initiativ, inom sju dagar, och bara köp som inte redan godkänts av grundarna."""
-        self.buy(99, initiative="gumroad")
+        """D-028: bara samma initiativ, inom sju dagar, och bara köp som inte redan godkänts av grundarna.
+
+        Ett köp i ett annat initiativ en tidigare dag räknas inte. Samma dag räknas det däremot per
+        departement (D-054, `test_split_department.py`)."""
+        self.buy(99, initiative="gumroad", days_ago=1)
         self.buy(99, days_ago=8)
         self.buy(5_000, approval=Approval.APPROVED)
         self.assertTrue(self.check().allowed, self.check().describe())
