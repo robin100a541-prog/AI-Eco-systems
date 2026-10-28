@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import TYPE_CHECKING
 
 from .hierarchy import reporting_line_error
@@ -29,7 +29,7 @@ _AGENT_ID = re.compile(r"[a-z][a-z0-9_-]{1,63}")
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 _SANCTIONS = frozenset({AgentState.SUSPENDED, AgentState.RETIRED})  # SR-17: kräver dokumenterade kriterier
