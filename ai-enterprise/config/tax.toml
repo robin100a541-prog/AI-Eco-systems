@@ -16,6 +16,11 @@ vat_warning_percent = 80
 # En intäkt utan spår reserveras med untracked_rate, som är högst.
 untracked_rate = 5_000
 
+# D-052: underlaget för avsättningen. "revenue" = bruttointäkt (försiktigt, standard). "profit" = intäkter
+# minus återbetalningar, avgifter och kostnader i samma initiativ. Byt först när Skatteverket har
+# bekräftat skattebehandlingen (Q-05). Systemet byter aldrig själv.
+basis = "revenue"
+
 [rates]
 isk = 100                 # A. ISK: banken tar schablonskatten; liten buffert
 self_employment = 0       # B. Egenanställning: företaget drar skatt innan utbetalning

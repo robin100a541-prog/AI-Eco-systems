@@ -15,7 +15,8 @@ TRACKS = {
     "hobby": "D. Hobby (T2)",
 }
 _KEYS = ("config_version", "currency", "vat_threshold", "vat_warning_percent", "untracked_rate", "rates",
-         "partnership_shares")
+         "partnership_shares", "basis")
+BASES = ("revenue", "profit")
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +27,7 @@ class TaxConfig:
     untracked_rate_bp: int
     rates_bp: dict[str, int]
     partnership_shares_bp: dict[str, int]
+    basis: str = "revenue"  # D-052: revenue tills Skatteverket har bekräftat skattebehandlingen
 
 
 def _int(value) -> bool:
@@ -78,6 +80,9 @@ def load_tax_config(config_dir: Path | str, founders: tuple[str, ...] | frozense
         shares = {}
     elif not all(_int(v) and v >= 0 for v in shares.values()) or sum(shares.values()) != 10_000:
         error("partnership_shares ska vara baspunkter som summerar till 10 000")
+    basis = data.get("basis", "revenue")
+    if basis not in BASES:
+        error(f"basis = {basis!r} stöds inte (revenue eller profit, D-052)")
     if errors:
         raise ConfigError(errors)
-    return TaxConfig(currency, threshold, warning, untracked, dict(rates), dict(shares))
+    return TaxConfig(currency, threshold, warning, untracked, dict(rates), dict(shares), basis)

@@ -1134,6 +1134,76 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=27,
+        name="tax_payment",
+        statements=(
+            # F3 (arbetsorder 02, D-052): posttypen tax_payment i ledgern och kopplingen till spår och år.
+            # Reserverad för 6b-4 men använd här, eftersom migrationerna måste vara 1..N utan luckor (TODO.md).
+            #
+            # SQLite kan inte ändra en CHECK. Tabellen återskapas därför enligt SQLites dokumenterade sätt
+            # för en föräldratabell, i en enda transaktion:
+            # 1. Kontrollen av främmande nycklar skjuts upp till commit (defer_foreign_keys).
+            # 2. Raderna kopieras till en arbetstabell, och den gamla tabellen tas bort.
+            # 3. En ny ledger_entries med tax_payment i listan skapas, och raderna läggs tillbaka i samma
+            #    ordning med samma entry_id. Vid commit pekar ledger_status, tax_assignments och
+            #    rättelser åter på giltiga poster. Annars rullas allt tillbaka.
+            # 4. Spärrarna mot ändring och radering återskapas (ER-08). Inget i ledgern ändras eller förloras.
+            "PRAGMA defer_foreign_keys = ON",
+            "CREATE TABLE ledger_entries_copy_27 AS SELECT * FROM ledger_entries",
+            "DROP TRIGGER ledger_entries_no_update",
+            "DROP TRIGGER ledger_entries_no_delete",
+            "DROP TABLE ledger_entries",
+            """
+            CREATE TABLE ledger_entries (
+                entry_id        INTEGER PRIMARY KEY,
+                idempotency_key TEXT NOT NULL UNIQUE CHECK (length(trim(idempotency_key)) > 0),
+                recorded_at     TEXT NOT NULL,
+                recorded_by     TEXT NOT NULL CHECK (length(trim(recorded_by)) > 0),
+                department      TEXT NOT NULL CHECK (length(trim(department)) > 0),
+                amount_minor    INTEGER NOT NULL CHECK (amount_minor != 0),
+                currency        TEXT NOT NULL CHECK (length(currency) = 3 AND currency = upper(currency)),
+                entry_type      TEXT NOT NULL CHECK (entry_type IN
+                                ('revenue', 'cost', 'fee', 'refund', 'capital_in', 'capital_out', 'tax_payment')),
+                initiative      TEXT NOT NULL CHECK (length(trim(initiative)) > 0),
+                approval_status TEXT NOT NULL CHECK (approval_status IN ('not_required', 'approved', 'unapproved')),
+                evidence        TEXT NOT NULL CHECK (json_valid(evidence) AND json_array_length(evidence) > 0),
+                external_id     TEXT UNIQUE,
+                corrects        INTEGER REFERENCES ledger_entries (entry_id),
+                note            TEXT NOT NULL,
+                CHECK (amount_minor > 0 OR corrects IS NOT NULL)
+            ) STRICT
+            """,
+            "INSERT INTO ledger_entries SELECT * FROM ledger_entries_copy_27 ORDER BY entry_id",
+            "DROP TABLE ledger_entries_copy_27",
+            """
+            CREATE TRIGGER ledger_entries_no_update BEFORE UPDATE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter ändras aldrig; gör en korrigeringspost (ER-08)'); END
+            """,
+            """
+            CREATE TRIGGER ledger_entries_no_delete BEFORE DELETE ON ledger_entries
+            BEGIN SELECT RAISE(ABORT, 'ledgerposter raderas aldrig (ER-08)'); END
+            """,
+            """
+            CREATE TABLE tax_payments (
+                id        INTEGER PRIMARY KEY,
+                entry_id  INTEGER NOT NULL UNIQUE REFERENCES ledger_entries (entry_id),
+                track     TEXT CHECK (track IS NULL OR track IN ('isk', 'self_employment', 'partnership', 'hobby')),
+                year      INTEGER NOT NULL CHECK (year BETWEEN 2000 AND 2999),
+                actor     TEXT NOT NULL,
+                at        TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER tax_payments_no_update BEFORE UPDATE ON tax_payments
+            BEGIN SELECT RAISE(ABORT, 'skattebetalningar ändras aldrig; rätta med en korrigeringspost'); END
+            """,
+            """
+            CREATE TRIGGER tax_payments_no_delete BEFORE DELETE ON tax_payments
+            BEGIN SELECT RAISE(ABORT, 'skattebetalningar raderas aldrig (ER-21)'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

@@ -27,7 +27,7 @@ from ..ledger import Entry, EntryType, Status, compute_result
 
 _IN = frozenset({EntryType.REVENUE, EntryType.CAPITAL_IN})
 _OUT = frozenset(
-    {EntryType.COST, EntryType.FEE, EntryType.REFUND, EntryType.CAPITAL_OUT}
+    {EntryType.COST, EntryType.FEE, EntryType.REFUND, EntryType.CAPITAL_OUT, EntryType.TAX_PAYMENT}
 )
 
 
