@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 5: webbläsning för Research (D-057, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- `src/aie/research/web.py` (`WebReader`): läser kända offentliga sidor med `urllib` bakom `AuthorizationEngine`.
+  - Bara GET, och bara värdar i `config/research.toml`.
+  - SSRF-skydd även efter omdirigeringar, och `robots.txt` följs.
+  - Dagskvot, storleksgräns, tidsgräns och bara textinnehåll.
+  - Blockeras vid nödstopp och i skyddat läge.
+- Migration 30 `web_fetches`: varje försök med URL, datum, utfall, SHA-256 och text, append-only. Innehållet är opålitlig data (`ExternalContent`, SR-06).
+- `python -m aie research fetch|history`.
+- `research/QUESTIONS.md`: R-11 om ett gratis sök-API. Inget är kopplat in.
+- Förslaget D-057 finns i `docs/proposals/2026-10-28-D-057-webblasning.md`.
+- `tests/unit/test_web.py`: 8 tester med ett låtsasnät, utan nätverksanrop.
+
 ## [Unreleased] — 2026-10-28 — PR 4: plattforms- och initiativregistret (D-056, föreslaget)
 ### Tillagt
 - Migration 29 `registry_versions`: plattformar och initiativ som versionerad data, append-only.

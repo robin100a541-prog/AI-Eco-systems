@@ -1288,6 +1288,41 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=30,
+        name="web_fetches",
+        statements=(
+            # PR 5 (arbetsorder 02, D-057): varje hämtning av en webbsida, med URL, datum och innehåll.
+            # Innehållet är opålitlig data (SR-06). Append-only.
+            """
+            CREATE TABLE web_fetches (
+                id           INTEGER PRIMARY KEY,
+                agent        TEXT NOT NULL,
+                url          TEXT NOT NULL,
+                final_url    TEXT,
+                outcome      TEXT NOT NULL CHECK (outcome IN ('ok', 'refused', 'error')),
+                status_code  INTEGER,
+                content_type TEXT,
+                bytes        INTEGER NOT NULL DEFAULT 0,
+                sha256       TEXT,
+                text         TEXT,
+                truncated    INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0, 1)),
+                reason       TEXT NOT NULL,
+                day          TEXT NOT NULL,
+                at           TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX web_fetches_by_day ON web_fetches (day)",
+            """
+            CREATE TRIGGER web_fetches_no_update BEFORE UPDATE ON web_fetches
+            BEGIN SELECT RAISE(ABORT, 'hämtningar skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER web_fetches_no_delete BEFORE DELETE ON web_fetches
+            BEGIN SELECT RAISE(ABORT, 'hämtningar raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

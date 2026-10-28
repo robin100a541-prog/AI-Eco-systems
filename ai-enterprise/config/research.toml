@@ -1,0 +1,27 @@
+# Webbläsning för Research (PR 5, D-057). Bara standardbiblioteket (urllib), bara läsning.
+# Inga sök-API:er, inga inloggningar, inga formulär, inga betalningar, ingen publicering.
+# Tills ett gratis sök-API med lämpliga villkor är utrett (R-11) hämtas bara sidor på värdarna nedan.
+
+config_version = 1
+
+per_day = 50                 # högst så många hämtningar per dag, för alla agenter tillsammans
+max_bytes = 500_000          # större svar kortas av och märks
+timeout_seconds = 10
+max_redirects = 3
+user_agent = "ai-enterprise-research/0.1 (+https://github.com/robin100a541-prog/AI-Eco-systems)"
+
+# Kända värdar: källorna i config/registry/platforms.toml och Skatteverket (D-011).
+# En ny värd läggs till här i en PR; villkoren för den ska vara lästa först.
+allowed_hosts = [
+  "www.etsy.com",
+  "etsy.com",
+  "help.etsy.com",
+  "gumroad.com",
+  "help.gumroad.com",
+  "www.fiverr.com",
+  "help.fiverr.com",
+  "blog.fiverr.com",
+  "checkoutpage.com",
+  "www.skatteverket.se",
+  "skatteverket.se",
+]
