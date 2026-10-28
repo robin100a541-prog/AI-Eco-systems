@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten lagar modellernas hunk-huvuden
+### Rättat
+- Körning 4 nådde Groq utan 429, men varje diff stoppades av `git apply` med "No valid patches in input". Modellen skrev `@@` utan radnummer, vilket gick att återskapa lokalt. `repair_diff` bygger nu om varje hunk-huvud från raderna som följer och lagar tomma sammanhangsrader, och `git apply --recount` räknar om antalen. Innehållet i diffen ändras inte.
+- Prompten kräver fullständiga hunk-huvuden och visar en exempeldiff. När en diff inte går att applicera visar felet nu diffens huvuden, både i loggen och i återkopplingen till modellen.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten: Groqs gränser per modell
 ### Ändrat
 - `config/providers.toml`: två Groq-reservmodeller, `groq-2` (`openai/gpt-oss-120b`) och `groq-3` (`llama-3.3-70b-versatile`). Groqs gratisgränser gäller per modell, så vid 429 provas nästa Groq-modell direkt. Utvecklaragenten använder en Groq-modell bara om den finns i Groqs aktuella modellista (`GET /models`).

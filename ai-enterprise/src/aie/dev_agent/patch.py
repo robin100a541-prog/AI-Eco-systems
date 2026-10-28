@@ -68,6 +68,51 @@ def extract_diff(text: str) -> str:
     return diff if diff.endswith("\n") else diff + "\n"
 
 
+_HUNK = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+
+
+def repair_diff(diff: str) -> str:
+    """Lagar vanliga modellfel i hunk-huvuden innan `git apply --recount` får diffen.
+
+    Gratismodellerna skriver ofta `@@` utan radnummer eller med fel antal rader, och tappar
+    mellanslaget på tomma sammanhangsrader. Då svarar git "No valid patches in input". Här byggs
+    varje hunk-huvud om från raderna som följer (startraden behålls om den finns, annars 1, och
+    0 för nya filer), och en tom rad inne i en hunk blir en tom sammanhangsrad. Innehållet ändras inte.
+    """
+    lines = diff.splitlines()
+    out: list[str] = []
+    new_file = False
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("--- "):
+            new_file = line.strip() == "--- /dev/null"
+            out.append(line)
+            i += 1
+            continue
+        if not line.startswith("@@"):
+            out.append(line)
+            i += 1
+            continue
+        body: list[str] = []
+        i += 1
+        while i < len(lines) and not lines[i].startswith(("@@", "diff --git")) and not (
+            lines[i].startswith("--- ") and i + 1 < len(lines) and lines[i + 1].startswith("+++ ")
+        ):
+            body.append(" " if lines[i] == "" else lines[i])
+            i += 1
+        while body and body[-1] == " ":
+            body.pop()  # tomma rader efter sista ändringen hör inte till hunken
+        old = sum(1 for b in body if b[:1] in (" ", "-"))
+        new = sum(1 for b in body if b[:1] in (" ", "+"))
+        m = _HUNK.match(line)
+        old_start = 0 if new_file else (int(m.group(1)) if m else 1)
+        new_start = int(m.group(2)) if m else 1
+        out.append(f"@@ -{old_start},{old} +{max(new_start, 1)},{new} @@")
+        out.extend(body)
+    return "\n".join(out) + "\n"
+
+
 def check_patch(diff: str) -> PatchCheck:
     problems: list[str] = []
     files: list[str] = []
