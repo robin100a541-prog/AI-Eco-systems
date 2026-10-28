@@ -1,0 +1,52 @@
+# Stoppar en PR som ändrar skyddade filer, om den inte har etiketten "founder-approved".
+# Etiketten sätts bara av en grundare (Robin eller Yorgo). Gäller även nattboten (docs/BOT.md).
+name: protected-files
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  protected-files:
+    name: protected-files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check protected files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'founder-approved') }}
+        run: |
+          # Själva kontrollen och botens regler är också skyddade, annars kan en PR stänga av kontrollen.
+          protected="
+          ai-enterprise/CONSTITUTION.md
+          ai-enterprise/DECISIONS.md
+          ai-enterprise/config/risk_limits.toml
+          ai-enterprise/config/permissions.toml
+          .github/workflows/protected-files.yml
+          ai-enterprise/docs/BOT.md
+          "
+          # Ändrade (M), borttagna (D) och typändrade (T) filer. En ny fil (A) kan inte bryta mot ett skydd
+          # av något som redan finns, och utan det skulle PR:en som inför kontrollen stoppa sig själv.
+          changed=$(git diff --name-only --no-renames --diff-filter=MDT "$BASE_SHA...$HEAD_SHA")
+          hits=""
+          for f in $protected; do
+            if printf '%s\n' "$changed" | grep -qxF "$f"; then hits="$hits $f"; fi
+          done
+          if [ -z "$hits" ]; then
+            echo "Inga skyddade filer ändras."
+            exit 0
+          fi
+          echo "Skyddade filer ändras:$hits"
+          if [ "$APPROVED" = "true" ]; then
+            echo "Etiketten founder-approved finns. OK."
+            exit 0
+          fi
+          echo "::error::PR:en ändrar skyddade filer ($hits ) och saknar etiketten founder-approved. Bara en grundare får sätta den."
+          exit 1

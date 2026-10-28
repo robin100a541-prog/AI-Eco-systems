@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Skyddade filer och nattboten
+### Tillagt
+- `.github/workflows/protected-files.yml`: checken `protected-files` fäller en PR som ändrar eller tar bort `CONSTITUTION.md`, `DECISIONS.md`, `config/risk_limits.toml`, `config/permissions.toml`, själva workflow-filen eller `docs/BOT.md`, om PR:en inte har etiketten `founder-approved`. Bara grundarna sätter etiketten.
+- `docs/BOT.md`: nattbotens regler (vilken uppgift, anspråk, bygga, merge, problem, grundarfrågor, aldrig, rapport).
+- `docs/QUESTIONS-FOR-FOUNDERS.md` (mall) och `docs/bot-reports/`.
+
 ## [Unreleased] — 2026-10-27 — Värden för 500 kr och kapitalbudget (D-047), godkända av båda grundarna
 ### Ändrat
 - `config/risk_limits.toml` för ett simulerat startkapital på 500 kr:
