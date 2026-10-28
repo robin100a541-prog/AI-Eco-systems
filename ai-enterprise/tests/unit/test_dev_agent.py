@@ -27,6 +27,7 @@ from aie.dev_agent import (
 from aie.dev_agent import agent as agent_module
 from aie.dev_agent.agent import RunResult, TokenPacer
 from aie.dev_agent.github import GitHub, GitHubError
+from aie.dev_agent.patch import repair_diff
 from aie.llm import (
     LLMGateway,
     OpenAICompatibleProvider,
@@ -138,6 +139,7 @@ class DevCase(unittest.TestCase):
             self.engine,
             self.audit,
             run_tests=run_tests,
+            pacer=TokenPacer(budget=10**9),  # ingen takt i testerna; TestRateLimits testar den
         )
 
     def calc(self):
@@ -306,6 +308,24 @@ class TestFeedback(DevCase):
         self.assertIn("tests_failed", retry[3]["content"])
         self.assertIn("FAILED (failures=1)", retry[3]["content"])
         self.assertIn("dev.retry_with_feedback", self.actions())
+
+    def test_bare_hunk_headers_are_repaired_before_git_apply(self):
+        """Verifies D-050: `@@` utan radnummer och tomma sammanhangsrader lagas; git apply lyckas."""
+        sloppy = (
+            "--- a/ai-enterprise/src/calc.py\n+++ b/ai-enterprise/src/calc.py\n@@\n"
+            " def add(a, b):\n-    return a - b\n+    return a + b\n\n"
+        )
+        self.assertEqual(
+            repair_diff(sloppy).splitlines()[2], "@@ -1,2 +1,2 @@"
+        )
+        result = self.agent(FakeModel(sloppy)).run()
+        self.assertTrue(result.success)
+        self.assertIn("return a + b", self.calc())
+
+    def test_new_file_hunk_starts_at_zero(self):
+        """Verifies D-050: en ny fil får huvudet `@@ -0,0 +1,N @@`."""
+        new = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@\n+import unittest\n+\n+X = 1\n"
+        self.assertIn("@@ -0,0 +1,3 @@", repair_diff(new))
 
     def test_rejected_import_is_fed_back_and_counted_once(self):
         """Verifies D-050: en otillåten import avvisas, återkopplas en gång, och räknas sedan som ett försök."""

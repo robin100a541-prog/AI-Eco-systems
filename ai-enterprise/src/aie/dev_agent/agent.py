@@ -38,7 +38,7 @@ from ..authorization import AuthorizationEngine, PermissionDenied
 from ..llm import ChatRequest, DataClass, LLMGateway, Message, NoProviderAvailable
 from ..llm.gateway import SecretInPrompt
 from . import picker
-from .patch import check_patch, extract_diff
+from .patch import check_patch, extract_diff, repair_diff
 
 TOOL = "dev.propose_patch"
 MAX_ATTEMPTS = 3
@@ -64,8 +64,17 @@ Svaret:
 - ENBART en giltig unified diff i git-format, inget annat (ingen förklaring).
 - Sökvägar relativa till repots rot: `--- a/ai-enterprise/...` och `+++ b/ai-enterprise/...`.
   En ny fil har `--- /dev/null` och `+++ b/ai-enterprise/...`.
-- Varje hunk-huvud `@@ -a,b +c,d @@` ska stämma exakt med raderna; sammanhangsrader ska vara
-  oförändrade kopior av filen.
+- Varje hunk börjar med ett fullständigt huvud `@@ -start,antal +start,antal @@` (aldrig bara `@@`).
+  Sammanhangsrader börjar med ett mellanslag (även tomma rader) och är exakta kopior av filen.
+  Ta med 2–3 oförändrade rader före och efter varje ändring.
+- Exempel:
+  --- a/ai-enterprise/src/aie/exempel.py
+  +++ b/ai-enterprise/src/aie/exempel.py
+  @@ -10,3 +10,3 @@ def total(rader):
+       summa = 0
+  -    for r in rader:
+  +    for r in sorted(rader):
+           summa += r
 - Högst 200 ändrade rader. Ta aldrig bort eller försvaga tester. Rör inte `config/`, `.github/`
   eller skyddade filer."""
 FEEDBACK_PROMPT = (
@@ -239,6 +248,7 @@ class DevAgent:
             if response is None:
                 return
             diff = extract_diff(response.text)
+            diff = repair_diff(diff) if diff else diff
             outcome, detail, check = self._try_patch(diff)
             if outcome == "applied":
                 self._applied(item, result, state, check, response.provider, round_no)
@@ -338,7 +348,8 @@ class DevAgent:
             return outcome, "; ".join(check.problems), check
         applied, detail = self._git_apply(diff)
         if not applied:
-            return "apply_failed", detail, check
+            headers = [ln for ln in diff.splitlines() if ln.startswith(("---", "+++", "@@"))][:6]
+            return "apply_failed", f"{detail}; diffens huvuden: {' | '.join(headers)}", check
         run = self._run_tests(self.project)
         if not run.ok:
             self._git_apply(diff, reverse=True)
@@ -391,7 +402,8 @@ class DevAgent:
         ) as f:
             f.write(diff)
         try:
-            args = ["git", "apply", "--whitespace=nowarn"] + (["-R"] if reverse else [])
+            # --recount: radantalen i hunk-huvudena räknas om (modellerna räknar ofta fel).
+            args = ["git", "apply", "--recount", "--whitespace=nowarn"] + (["-R"] if reverse else [])
             check = subprocess.run(
                 args + ["--check", f.name],
                 cwd=self.repo,
