@@ -59,10 +59,15 @@ def parse_check(text: str, project: Path | None = None) -> Check | None:
             return None
         if kind == "ruff" and rest and not _RUFF_CODE.fullmatch(rest.strip()):
             return None
-        if kind != "ruff" and not rest.strip():
-            return None
+        rest = rest.strip()
+        if kind != "ruff":
+            if len(rest) >= 2 and rest[0] == rest[-1] and rest[0] in "\"'":
+                rest = rest[1:-1]  # modellerna citerar ofta texten; citattecknen hör inte till den
+            if not rest.strip():
+                return None
         if project is not None and not (project / path).is_file():
             return None
+        arg = f"{path} {rest}".strip()
     return Check(kind, arg)
 
 

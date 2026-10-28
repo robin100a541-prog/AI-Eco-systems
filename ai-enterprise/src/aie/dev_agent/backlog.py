@@ -68,7 +68,7 @@ def parse_proposals(text: str, project: Path) -> list[Proposal]:
         checks = checks_in(body, project)
         if checks:
             out.append(Proposal(m.group(1), body, checks))
-    return out[:MAX_NEW_ITEMS]
+    return out
 
 
 def classify(proposal: Proposal) -> str:
@@ -137,12 +137,14 @@ def add_items(project: Path, proposals: list[Proposal]) -> list[str]:
     return keys
 
 
-def add_check(project: Path, key: str, answer: str) -> str | None:
-    """Skriver in `Klart när:` med modellens kontroll i punkten `key`. Returnerar klausulen, eller None."""
+def clause_checks(project: Path, answer: str) -> tuple[Check, ...]:
+    """Kontrollerna i modellens svar `Klart när: `...``, eller () om inga giltiga finns."""
     m = re.search(r"Klart när:.*", answer)
-    if not m:
-        return None
-    checks = checks_in(m.group(0), project)
+    return checks_in(m.group(0), project) if m else ()
+
+
+def add_check(project: Path, key: str, checks: tuple[Check, ...]) -> str | None:
+    """Skriver in `Klart när:` med kontrollerna i punkten `key`. Returnerar klausulen, eller None."""
     if not checks:
         return None
     clause = "Klart när: " + ", ".join(f"`{c}`" for c in checks)
@@ -150,9 +152,7 @@ def add_check(project: Path, key: str, answer: str) -> str | None:
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
     for i, line in enumerate(lines):
         if line.startswith(f"- [ ] {key} ") and line.rstrip().endswith("— öppen"):
-            lines[i] = (
-                line.rstrip().removesuffix("— öppen").rstrip() + f" {clause} — öppen\n"
-            )
+            lines[i] = line.rstrip().removesuffix("— öppen").rstrip() + f" {clause} — öppen\n"
             path.write_text("".join(lines), encoding="utf-8")
             return clause
     return None

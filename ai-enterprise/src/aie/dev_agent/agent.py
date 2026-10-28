@@ -445,7 +445,10 @@ class DevAgent:
             )
             if answer is None:
                 return  # ingen modell just nu
-            clause = backlog.add_check(self.project, item.key, answer)
+            checks = backlog.clause_checks(self.project, answer)
+            if checks and self._already_true(checks):
+                checks = ()  # en kontroll som redan går igenom bevisar ingenting
+            clause = backlog.add_check(self.project, item.key, checks)
             self._log("dev.backlog_checked", {"item": item.key, "clause": clause or ""})
             if clause:
                 result.backlog_checked.append(item.key)
@@ -468,11 +471,18 @@ class DevAgent:
         if answer is None:
             return
         keep, seen = [], set()
+        accepted = 0
         for proposal in backlog.parse_proposals(answer, self.project):
+            if accepted >= backlog.MAX_NEW_ITEMS:
+                break
             norm = proposal.text.split("Klart när:")[0].lower()
             if norm in seen or backlog.is_duplicate(self.project, proposal):
                 continue
+            if self._already_true(proposal.checks):
+                self._log("dev.backlog_rejected", {"text": proposal.text[:120], "why": "redan uppfylld"})
+                continue  # punkten vore "klar" utan någon ändring
             seen.add(norm)
+            accepted += 1
             if backlog.classify(proposal) == "founders":
                 item = picker.Item(f"förslag:{proposal.text[:60]}", "suggestion", proposal.text, ())
                 self._question(
@@ -486,6 +496,10 @@ class DevAgent:
                 keep.append(proposal)
         result.backlog_added = backlog.add_items(self.project, keep)
         self._log("dev.backlog_refilled", {"added": result.backlog_added})
+
+    def _already_true(self, checks) -> bool:
+        """En ny kontroll måste gå att misslyckas med: går den redan igenom bevisar den ingenting."""
+        return self._verifier.verify(tuple(checks))[0]
 
     def _ask_side(self, messages: list[Message]) -> str | None:
         """Ett anrop utanför en uppgift (backloggen). None om ingen riktig modell svarar."""

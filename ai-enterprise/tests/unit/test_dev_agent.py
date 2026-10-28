@@ -397,6 +397,14 @@ class TestChecks(DevCase):
         line = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
         self.assertIn("Klart när: `grep src/calc.py return a + b` — öppen", line)
 
+    def test_rewrite_with_an_already_true_check_is_refused(self):
+        """Verifies D-050: en kontroll som redan går igenom skrivs inte in; punkten tas inte."""
+        self.backlog(["BL-001 Rätta `src/calc.py`"], check=False)
+        result = self.agent(FakeModel("Klart när: `grep src/calc.py def add`")).run()
+        self.assertEqual((result.backlog_checked, result.attempts), ([], []))
+        text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("Klart när", text)
+
     def test_invalid_rewrite_leaves_the_item_untaken(self):
         """Verifies D-050: en kontroll som inte går att tolka skrivs inte in, och punkten tas inte."""
         self.backlog(["BL-001 Rätta `src/calc.py`"], check=False)
@@ -407,7 +415,8 @@ class TestChecks(DevCase):
     def test_refill_adds_checkable_items_skips_duplicates_and_asks_about_money(self):
         """Verifies D-050: nya punkter med kontroll läggs till; dubbletter hoppas över; pengar blir en fråga."""
         proposals = (
-            "- [ ] (4 kodkvalitet) Byt namn på a och b i `src/calc.py`. Klart när: `grep src/calc.py def add(`\n"
+            "- [ ] (4 kodkvalitet) Typa add i `src/calc.py`. Klart när: `grep src/calc.py \"def add(a: int\"`\n"
+            "- [ ] (5 dokumentation) Redan sant. Klart när: `grep src/calc.py def add(`\n"
             "- [ ] (5 dokumentation) Dubblett. Klart när: `grep src/calc.py return a + b`\n"
             "- [ ] (1 buggar) Lägg till betalning i `src/calc.py`. Klart när: `grep src/calc.py pay`\n"
             "- [ ] (4 kodkvalitet) Saknar kontroll helt\n"
@@ -417,8 +426,10 @@ class TestChecks(DevCase):
         self.assertTrue(result.success)
         self.assertEqual(result.backlog_added, ["BL-002"])
         text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
-        self.assertIn("- [ ] BL-002 (4 kodkvalitet) Byt namn", text)
+        self.assertIn("- [ ] BL-002 (4 kodkvalitet) Typa add", text)
         self.assertNotIn("Dubblett", text)
+        self.assertNotIn("Redan sant", text)  # en kontroll som redan går igenom bevisar ingenting
+        self.assertIn("dev.backlog_rejected", self.actions())
         self.assertNotIn("betalning", text)
         self.assertLess(text.index("BL-002"), text.index("## Pågår"))
         questions = (self.project / "docs" / "QUESTIONS-FOR-FOUNDERS.md").read_text(encoding="utf-8")
@@ -506,6 +517,7 @@ class TestVerifier(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.assertIsNone(parse_check(bad))
         self.assertIsNone(parse_check("grep src/saknas.py a", self.project))
+        self.assertEqual(str(parse_check('grep src/x.py "A = 1"')), "grep src/x.py A = 1")  # citat bort
         found = checks_in("Gör X. Klart när: `verifies ER-12`, `grep src/x.py A` och `skräp`", self.project)
         self.assertEqual([str(c) for c in found], ["verifies ER-12", "grep src/x.py A"])
 
@@ -529,6 +541,21 @@ class TestPicker(unittest.TestCase):
             )
             keys = [i.key for i in picker.pick(root, "", {})]
         self.assertEqual(keys, ["BL-005", "BL-004", "BL-001"])
+
+    def test_files_come_from_the_check_and_items_without_files_can_get_a_check(self):
+        """Verifies D-050: en punkt utan filnamn i texten får filen ur sin kontroll; utan kontroll skrivs den om."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (4 kodkvalitet) Lägg till en `__repr__`. Klart när: `grep a.py def __repr__` — öppen\n"
+                "- [ ] BL-002 (5 dokumentation) Skriv bättre docstrings — öppen\n",
+                encoding="utf-8",
+            )
+            picked = picker.pick(root, "", {})
+            self.assertEqual([(i.key, i.files) for i in picked], [("BL-001", ("a.py",))])
+            self.assertEqual([i.key for i in picker.uncheckable(root)], ["BL-002"])
 
 
 class TestRateLimits(DevCase):
