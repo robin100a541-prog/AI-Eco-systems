@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 11: produktutkast (utkast, inget publicerat)
+### Tillagt
+- `products/` innehåller tre kandidater med produkt eller tjänst, annonstext med AI-märkning, pris och valideringsplan. Varje kandidat har mätbara kriterier, en regel för att fortsätta, ändra eller sluta, och en checklista för det grundarna gör manuellt:
+  - `hushallsbudget-mall` på Etsy
+  - `frilans-fakturamall` på Gumroad
+  - `kalkylark-stadning` på Fiverr
+- `products/initiatives.toml`: kandidaterna som initiativ med status `idea`. Efterfrågan är märkt som antagande.
+- **Bedömningen före start (D-058) är körd:** ingen kandidat är redo. Grundarnas tid är större än nettot vid de antagna volymerna. Utskriften och en tröskelkörning med fler besökare finns i `products/README.md`.
+- `tests/unit/test_products.py`: 2 tester.
+
 ## [Unreleased] — 2026-10-28 — PR 10: utfall från verkligheten (D-062, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Migration 32 `real_results`: en rad per dag och initiativ med källa, append-only och idempotent.
