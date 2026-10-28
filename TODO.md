@@ -17,11 +17,11 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] ai-enterprise Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22), migration 36 (27 användes av F3), D-046 — @yorgo-jarjous
 - [ ] ai-enterprise Fas 6b-5: acceptanstester för §54, Fas 6 stängs — @yorgo-jarjous
 - [ ] ai-enterprise Arbetsorder 02 (`docs/prompts/02-fixar-och-plattformar.md`) — @yorgo-jarjous, en session åt gången. **Reserverat 2026-10-28: migration 28–35 och D-051–D-064.** Nattboten och andra sessioner: rör inte punkterna nedan.
-  - [ ] F1+F2 budgettak per departement och återinvestering (budget/engine.py) (yorgo/f1-budgettak)
-  - [ ] F3+F4 skattebetalning och skatteunderlag (tax/) (yorgo/f3-skatt)
-  - [ ] F5 godkända utgifter förbrukas en gång (budget, governance/escalation.py) (yorgo/f5-godkannanden)
-  - [ ] F6 uppdelade köp per departement och dag, initiativspärr (yorgo/f6-uppdelning)
-  - [ ] F7 granskningsregel och CLAUDE.md (yorgo/f7-granskning)
+  - [x] F1+F2 budgettak per departement och återinvestering (PR #82)
+  - [x] F3+F4 skattebetalning och skatteunderlag, migration 27 (PR #83)
+  - [x] F5 godkända utgifter förbrukas en gång, migration 28 (PR #84)
+  - [x] F6 uppdelade köp per departement och dag, initiativspärr (PR #85)
+  - [ ] F7 granskningsregel och CLAUDE.md — PR #86 öppen, väntar på en grundare
   - [ ] PR 4 plattforms- och initiativregister · PR 5 webbläsning · PR 6 simulering före start · PR 7 plattformsberoende · PR 8 Groq i simuleringen · PR 9 schemalagd körning · PR 10 import av verkliga resultat · PR 11 produktutkast
 
 
