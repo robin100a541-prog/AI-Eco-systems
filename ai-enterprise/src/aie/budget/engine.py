@@ -319,7 +319,9 @@ class BudgetEngine:
                         and e.entry_type in (EntryType.CAPITAL_IN, EntryType.CAPITAL_OUT))
         spent_by_departments = sum(e.amount_minor for e in entries if e.entry_type in self._spend_types
                                    and e.status in (Status.PENDING, Status.SETTLED))
-        tax = self._tax.reserved_minor(currency) if self._tax is not None else 0
+        # Hela skatteskulden räknas av, även det som redan är betalt: betalningen har minskat kassan,
+        # men den har inte gjort vinsten större (D-052). Det disponibla räknas med det som är kvar att betala.
+        tax = self._tax.liability_minor(currency) if self._tax is not None else 0
         result = compute_result(entries, currency).net_minor + spent_by_departments - tax
         if result > 0:
             policy = limits.reinvestment_policy
@@ -327,7 +329,8 @@ class BudgetEngine:
         else:
             part = result  # hela förlusten
         base = deposited - limits.minimum_reserve.amount_minor + part
-        position = capital_position(entries, limits, tax if self._tax is not None else None)
+        outstanding = self._tax.reserved_minor(currency) if self._tax is not None else None
+        position = capital_position(entries, limits, outstanding)
         return max(0, min(base, position.disposable_minor + spent_by_departments))
 
     def department_cap(self, budget) -> int:

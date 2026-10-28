@@ -14,6 +14,16 @@ bruttointäkt (intäkter − återbetalningar, bara `settled`), avrundat uppåt.
 med `untracked_rate`, som är högst. Reserven är ett åtagande: `BudgetEngine(tax=...)` drar den från det
 disponibla kapitalet, så att pengarna aldrig kan investeras (`capital_position(tax_reserved_minor=)`).
 
+**Skattebetalning (D-052).** `pay()` bokför en betald skatt som en `tax_payment`-post i ledgern
+(den minskar kassan exakt en gång) och kopplar den till spår och beskattningsår (migration 27). Avsättningen
+för just det spåret och året minskar med betalningen och blir aldrig negativ. Spår och år blandas aldrig ihop.
+`liability_minor()` är hela skatteskulden, betald eller inte; `reserved_minor()` är det som återstår att betala.
+
+**Underlag (D-052).** `basis = "revenue"` i `tax.toml` (standard): avsättningen räknas på bruttointäkten.
+`basis = "profit"`: på intäkter minus återbetalningar, avgifter och kostnader i de initiativ vars intäkter har
+spåret. Kostnader i initiativ utan spårad intäkt minskar inget underlag (försiktigt). Systemet byter aldrig
+underlag självt; det görs först när Skatteverket har bekräftat skattebehandlingen (Q-05).
+
 **ER-20 Momsgränsen.** Årets försäljning är intäkter (`settled` och `pending`) − återbetalningar.
 Vid 80 % loggas en varning, och vid gränsen blockeras ny försäljning (verktyg som börjar med `sales.`,
 `publish.` eller `payment.`) tills en grundare har röstat (D-049) med `vat_vote()`. Det är till exempel
@@ -33,7 +43,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ..audit import AuditLog
-from ..ledger import Entry, EntryType, Ledger, Status
+from ..ledger import Approval, Entry, EntryDraft, EntryType, Ledger, Status
 from ..memory import Database
 from .config import TRACKS, TaxConfig
 
@@ -71,10 +81,12 @@ class Assignment:
 class TrackYear:
     track: str | None  # None = intäkter utan spår
     year: int
-    gross_minor: int
+    gross_minor: int  # underlaget: bruttointäkt, eller vinst när basis = profit
     rate_bp: int
-    reserved_minor: int
+    reserved_minor: int  # det som återstår att betala
     entry_ids: tuple[int, ...]
+    liability_minor: int = 0  # hela skatten för spåret och året
+    paid_minor: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,15 +198,28 @@ class TaxEngine:
     def position(self, currency: str | None = None) -> TaxPosition:
         currency = currency or self._config.currency
         groups: dict[tuple[str | None, int], list[Entry]] = {}
+        initiative_track: dict[str, str | None] = {}
         for e in self._taxable(currency, statuses=(Status.SETTLED,)):
             a = self.assignment(e.entry_id)
-            groups.setdefault((a.track if a else None, int(e.recorded_at[:4])), []).append(e)
+            track = a.track if a else None
+            groups.setdefault((track, int(e.recorded_at[:4])), []).append(e)
+            initiative_track.setdefault(e.initiative, track)
+        costs: dict[tuple[str | None, int], int] = {}
+        if self._config.basis == "profit":
+            for e in self._ledger.entries(currency):
+                if (e.status is Status.SETTLED and e.entry_type in (EntryType.COST, EntryType.FEE)
+                        and e.initiative in initiative_track):
+                    key = (initiative_track[e.initiative], int(e.recorded_at[:4]))
+                    costs[key] = costs.get(key, 0) + e.amount_minor
+        paid = self.payments_by_track_year(currency)
         rows = []
         for (track, year), entries in sorted(groups.items(), key=lambda kv: (kv[0][1], kv[0][0] or "~")):
-            gross = sum(self._signed(e) for e in entries)
+            gross = sum(self._signed(e) for e in entries) - costs.get((track, year), 0)
             rate = self._config.rates_bp[track] if track else self._config.untracked_rate_bp
-            rows.append(TrackYear(track, year, gross, rate, _ceil_bp(max(0, gross), rate),
-                                  tuple(e.entry_id for e in entries)))
+            liability = _ceil_bp(max(0, gross), rate)
+            done = paid.get((track, year), 0)
+            rows.append(TrackYear(track, year, gross, rate, max(0, liability - done),
+                                  tuple(e.entry_id for e in entries), liability, done))
         untracked = tuple(i for r in rows if r.track is None for i in r.entry_ids)
         notes = ["satserna är simulerade och försiktiga; spåret bekräftas med Skatteverket före Fas 7 (Q-05)"]
         if untracked:
@@ -202,7 +227,60 @@ class TaxEngine:
         return TaxPosition(currency, sum(r.reserved_minor for r in rows), tuple(rows), untracked, tuple(notes))
 
     def reserved_minor(self, currency: str | None = None) -> int:
+        """Det som återstår att betala: avsättningen minus betald skatt, per spår och år (ER-19, D-052)."""
         return self.position(currency).reserved_minor
+
+    def liability_minor(self, currency: str | None = None) -> int:
+        """Hela den beräknade skatten, betald eller inte (D-052)."""
+        return sum(r.liability_minor for r in self.position(currency).rows)
+
+    def payments_by_track_year(self, currency: str | None = None) -> dict[tuple[str | None, int], int]:
+        currency = currency or self._config.currency
+        out: dict[tuple[str | None, int], int] = {}
+        for entry_id, track, year in self._db.connection.execute(
+            "SELECT entry_id, track, year FROM tax_payments ORDER BY id"
+        ):
+            entry = self._ledger.get(entry_id)
+            if entry is None or entry.currency != currency or entry.status is not Status.SETTLED:
+                continue
+            amounts = entry.amount_minor + sum(c.amount_minor for c in self._ledger.corrections(entry_id))
+            out[(track, year)] = out.get((track, year), 0) + amounts
+        return out
+
+    def pay(self, founder: str, track: str | None, year: int, amount_minor: int, evidence: tuple[str, ...],
+            note: str = "") -> int:
+        """Bokför betald skatt för ett spår och år (D-052). Returnerar ledgerpostens ID.
+
+        Bara grundarna betalar skatt. Posten bokförs som `tax_payment` med status `settled` och minskar
+        kassan exakt en gång. Underlaget ska peka på kvittot (till exempel `file:skattekonto-2027-05.pdf`).
+        """
+        if founder not in self._founders:
+            raise TaxError("bara grundarna bokför betald skatt (D-052)")
+        if track is not None and track not in TRACKS:
+            raise TaxError(f"okänt spår {track!r} (D-010: {', '.join(TRACKS)})")
+        if not isinstance(year, int) or isinstance(year, bool) or not 2000 <= year <= 2999:
+            raise TaxError("ange beskattningsåret, till exempel 2027")
+        if not isinstance(amount_minor, int) or isinstance(amount_minor, bool) or amount_minor <= 0:
+            raise TaxError("beloppet ska vara ett heltal > 0 i minsta enhet (D-006)")
+        if not evidence:
+            raise TaxError("ange underlag för betalningen, till exempel file:kvitto.pdf")
+        key = f"tax-payment-{track or 'untracked'}-{year}-{len(self.payments(year)) + 1}"
+        entry = self._ledger.record(founder, EntryDraft(
+            key, "finance", amount_minor, self._config.currency, EntryType.TAX_PAYMENT, f"skatt-{year}",
+            Approval.APPROVED, (*evidence, "decision:D-052"), None, Status.SETTLED,
+            note or f"betald skatt {year}, spår {track or 'utan spår'} (D-052)"))
+        with self._db.transaction() as tx:
+            tx.execute("INSERT INTO tax_payments (entry_id, track, year, actor, at) VALUES (?, ?, ?, ?, ?)",
+                       (entry.entry_id, track, year, founder, self._clock()))
+        self._audit.append(founder, "tax.paid", {"entry_id": entry.entry_id, "track": track, "year": year,
+                                                 "amount_minor": amount_minor})
+        return entry.entry_id
+
+    def payments(self, year: int | None = None) -> tuple[dict, ...]:
+        rows = self._db.connection.execute(
+            "SELECT entry_id, track, year, actor, at FROM tax_payments ORDER BY id").fetchall()
+        return tuple({"entry_id": e, "track": t, "year": y, "actor": a, "at": at} for e, t, y, a, at in rows
+                     if year is None or y == year)
 
     # --- ER-20 momsgränsen -----------------------------------------------------------------
 

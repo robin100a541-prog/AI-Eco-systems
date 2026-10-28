@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — F3+F4: betald skatt och skatteunderlag (D-052, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 27 `tax_payment`: ledgern får posttypen `tax_payment`. Tabellen byggs om i en transaktion, och alla poster, id:n, statusar och spärrar finns kvar. Den nya tabellen `tax_payments` kopplar en betalning till spår och år. Migration 27 var reserverad för 6b-4, som nu får migration 36 (TODO.md).
+- `TaxEngine.pay()`, `liability_minor()`, `payments()` och `payments_by_track_year()`. Avsättningen per spår och år minskar med betald skatt och blir aldrig negativ, och kassan minskar exakt en gång.
+- `basis = "revenue" | "profit"` i `tax.toml`. Standard är `revenue` tills Skatteverket har bekräftat skattebehandlingen.
+- Departementens bas (D-051) räknar med hela skatteskulden, så en betalning ändrar inte basen.
+- Förslaget D-052 finns i `docs/proposals/2026-10-28-D-052-skattebetalning.md`.
+- `tests/unit/test_tax_payment.py`: 8 tester, varav ett uppgraderar en ledger från schemaversion 26.
+
 ## [Unreleased] — 2026-10-28 — F1+F2: riktiga budgettak per departement (D-051, föreslaget) · kräver-oberoende-granskning
 ### Rättat
 - `BudgetEngine` i kapitalläget: taket räknas nu från en fast bas (insatt kapital − reserv + resultatdel). Förut räknades det från det kapital som var kvar, så upprepade utgifter kunde låta research använda 95 % av basen trots andelen 40 % (verifierat före rättelsen). Nu är det högst 40 %, och bufferten på 44 % skyddas.

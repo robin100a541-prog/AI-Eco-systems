@@ -57,6 +57,7 @@ class EntryType(str, Enum):
     REFUND = "refund"  # återbetalning till kund; minskar intäkten
     CAPITAL_IN = "capital_in"  # insatt kapital; ingen intäkt
     CAPITAL_OUT = "capital_out"  # uttag; ingen kostnad
+    TAX_PAYMENT = "tax_payment"  # betald skatt; minskar kassan och skatteavsättningen, ingen kostnad (D-052)
 
 
 class Approval(str, Enum):
@@ -75,7 +76,7 @@ class Status(str, Enum):
 
 
 FINAL = frozenset({Status.SETTLED, Status.FAILED, Status.CANCELLED})
-OUTGOING = frozenset({EntryType.COST, EntryType.FEE, EntryType.REFUND, EntryType.CAPITAL_OUT})
+OUTGOING = frozenset({EntryType.COST, EntryType.FEE, EntryType.REFUND, EntryType.CAPITAL_OUT, EntryType.TAX_PAYMENT})
 
 
 class LedgerError(ValueError):
