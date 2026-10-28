@@ -9,6 +9,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -121,6 +122,11 @@ def build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
+    sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
+    sp.add_argument("action", choices=("list", "approve", "reject"))
+    sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
+    sp.add_argument("--as", dest="founder", help="vilken grundare som beslutar")
+    sp.add_argument("--note", default="", help="motivering; krävs vid reject")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -130,6 +136,15 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
     return parser
+
+
+def _spend(args: argparse.Namespace) -> int:
+    from .budget.cli import spend  # importeras bara när kommandot används
+
+    if args.action != "list" and (args.approval_id is None or not args.founder):
+        print("FEL: approve och reject kräver förfrågans nummer och --as <grundare>", file=sys.stderr)
+        return 1
+    return spend(args.config_dir, args.action, args.approval_id, args.founder, args.note)
 
 
 def _simulate(args: argparse.Namespace) -> int:
@@ -198,6 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         "dev-agent": lambda: _dev_agent(args),
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
+        "spend": lambda: _spend(args),
     }
     try:
         return commands[args.command]()

@@ -61,8 +61,10 @@ class WorkCycle:
         listed = set(previous.get("listed") or ())
         held = set(previous.get("held") or ())
         ctx = self.sim.begin_day()
-        record = {"actions": [], "rejected": [], "assessments": {}, "proposals": [], "reports": []}
+        record = {"actions": [], "rejected": [], "assessments": {}, "proposals": [], "reports": [],
+                  "approved_spends": []}
         events = [e for e in ctx["events"]]
+        self._approved_spends(ctx["day"], record)
 
         for role in ORDER:
             self._turn(role, ctx["day"], events, listed, held, record)
@@ -155,12 +157,43 @@ class WorkCycle:
         request = SpendRequest(initiative.department, action.get("amount"), "SIM", initiative.key, Risk(action.get("risk")))
         check = s.budget.check(agent.agent_id, request)
         if not check.allowed:
+            if not check.blocked and check.required_approvals and s.spend_approvals is not None:
+                # F5, D-053: över tröskeln begärs en grundares godkännande; utgiften görs först efter ja
+                a = s.spend_approvals.request(agent.agent_id, initiative.department, initiative.key,
+                                              action.get("amount"), "SIM", action.get("purpose"))
+                return "pending", f"väntar på en grundares godkännande (förfrågan {a.approval_id}, D-053)"
             return "blocked", check.describe()
         ref = f"sim-{self.sim.run_id}-d{day}-{agent.agent_id}-spend{n}"
-        s.ledger.record(SYSTEM, EntryDraft(ref, initiative.department, action.get("amount"), "SIM", EntryType.COST,
-                                           initiative.key, Approval.NOT_REQUIRED, (f"external:{ref}",), ref,
-                                           Status.SETTLED, f"{action.get('purpose')} (föreslaget av {agent.agent_id})"))
+        self._book_cost(ref, initiative, action.get("amount"), Approval.NOT_REQUIRED, (f"external:{ref}",),
+                        f"{action.get('purpose')} (föreslaget av {agent.agent_id})")
         return "done", f"bokförd kostnad {action.get('amount')} SIM"
+
+    def _approved_spends(self, day: int, record: dict) -> None:
+        """F5: utgifter som en grundare har godkänt genomförs, om alla andra gränser fortfarande tillåter det."""
+        s = self._system
+        if s.spend_approvals is None:
+            return
+        keys = {i.key: i for i in self.sim.scenario.initiatives}
+        for a in s.spend_approvals.approved_unused():
+            initiative = keys.get(a.initiative)
+            if initiative is None or self._system.registry.get(a.requested_by) is None:
+                continue
+            request = SpendRequest(a.department, a.amount_minor, a.currency, a.initiative, Risk.LOW)
+            check = s.budget.check(a.requested_by, request, approval_id=a.approval_id)
+            outcome = {"approval_id": a.approval_id, "amount": a.amount_minor}
+            if check.allowed:
+                ref = f"sim-{self.sim.run_id}-d{day}-approval{a.approval_id}"
+                self._book_cost(ref, initiative, a.amount_minor, Approval.APPROVED,
+                                (f"approval:spend-{a.approval_id}", f"external:{ref}"),
+                                f"{a.reason} (godkänd av {a.decided_by}, förfrågan {a.approval_id})")
+                outcome["outcome"] = "done"
+            else:
+                outcome.update(outcome="blocked", reason=check.describe())
+            record["approved_spends"].append(outcome)
+
+    def _book_cost(self, ref, initiative, amount, approval, evidence, note) -> None:
+        self._system.ledger.record(SYSTEM, EntryDraft(ref, initiative.department, amount, "SIM", EntryType.COST,
+                                                      initiative.key, approval, evidence, ref, Status.SETTLED, note))
 
     # --- Läge och förfrågan ----------------------------------------------------------------
 
