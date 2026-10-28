@@ -5,6 +5,10 @@
 3. `ruff`-varningar (om ruff finns),
 4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
 
+Varje uppgift har en kontroll (`verify.py`) som bevisar att den är klar: ruff-fyndet är borta, testet
+går igenom, eller ett test märkt `Verifies <ID>` finns och går igenom. En backloggpunkt anger sin
+kontroll efter `Klart när:`; saknas den tas punkten inte förrän den skrivits om.
+
 De sorteras lättast först (`ease`): dokumentation och lint, sedan små tester, sist buggar.
 En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) eller redan är en
 fråga i `docs/QUESTIONS-FOR-FOUNDERS.md` hoppas över.
@@ -21,6 +25,8 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+
+from .verify import Check, checks_in
 
 MAX_FAILURES = 3
 MAX_CONTEXT_CHARS = 6_000
@@ -41,6 +47,7 @@ class Item:
     kind: str  # backlog, failing_test, ruff, requirement
     task: str  # vad modellen ska göra
     files: tuple[str, ...]  # sökvägar relativa till ai-enterprise/
+    checks: tuple[Check, ...] = ()  # det som bevisar att uppgiften är klar (verify.py)
 
 
 def _existing(root: Path, paths) -> tuple[str, ...]:
@@ -62,7 +69,8 @@ def backlog_items(root: Path) -> list[Item]:
         if m:
             files = _existing(root, _PATH.findall(m.group(2)))
             if files:
-                items.append(Item(m.group(1), "backlog", m.group(2).strip(), files))
+                task = m.group(2).strip()
+                items.append(Item(m.group(1), "backlog", task, files, checks_in(task, root)))
     return items
 
 
@@ -78,9 +86,14 @@ def failing_test_items(root: Path, test_output: str) -> list[Item]:
                     f"Testet {cls}.{test} fallerar. Hitta orsaken och rätta koden (inte testet). "
                     f"Utdata:\n{test_output[-3000:]}",
                     (rel,),
+                    (Check("test", _test_id(module, cls, test)),),
                 )
             )
     return items
+
+
+def _test_id(module: str, cls: str, test: str) -> str:
+    return f"{module if module.startswith('tests.') else 'tests.' + module}.{cls}.{test}"
 
 
 def ruff_items(root: Path) -> list[Item]:
@@ -112,6 +125,7 @@ def ruff_items(root: Path) -> list[Item]:
                 f"Rätta ruff-varningen {f['code']} på rad {row} i {rel}: {f['message']}. "
                 "Ändra inget beteende.",
                 (rel,),
+                (Check("ruff", f"{rel} {f['code']}"),),
             )
         )
     return items
@@ -142,6 +156,7 @@ def requirement_items(root: Path) -> list[Item]:
                     f"Kravet {rid} ({text.strip()}) har inget test. Skriv ett nytt test i en ny fil "
                     f"tests/unit/test_req_{rid.lower().replace('-', '_')}.py märkt 'Verifies {rid}'.",
                     tuple(mentions[:2]),
+                    (Check("verifies", rid),),
                 )
             )
     return items
@@ -171,8 +186,17 @@ def escalated(root: Path) -> set[str]:
     return set(re.findall(r"\*\*Uppgift:\*\* (\S+)", path.read_text(encoding="utf-8")))
 
 
+def uncheckable(root: Path) -> list[Item]:
+    """Öppna backloggpunkter som saknar en giltig kontroll och därför måste skrivas om."""
+    skip = escalated(root)
+    return [i for i in backlog_items(root) if not i.checks and i.key not in skip]
+
+
 def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
-    """Alla kandidater, lättast först, utan de som misslyckats för många gånger eller redan är frågor."""
+    """Kandidater med en kontroll, lättast först, utan de som misslyckats för många gånger eller är frågor.
+
+    En backloggpunkt utan kontroll (`Klart när:`) tas inte; agenten skriver först om den (`uncheckable`).
+    """
     candidates = (
         backlog_items(root)
         + failing_test_items(root, test_output)
@@ -180,7 +204,11 @@ def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
         + requirement_items(root)
     )
     skip = escalated(root)
-    keep = [i for i in candidates if failures.get(i.key, 0) < MAX_FAILURES and i.key not in skip]
+    keep = [
+        i
+        for i in candidates
+        if i.checks and failures.get(i.key, 0) < MAX_FAILURES and i.key not in skip
+    ]
     return sorted(keep, key=ease)  # stabil: samma lätthet behåller ordningen ovan
 
 

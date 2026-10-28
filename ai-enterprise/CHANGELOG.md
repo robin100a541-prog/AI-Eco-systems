@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: en uppgift är klar först när dess kontroll bevisar det
+### Ändrat
+- `dev_agent/verify.py`: varje uppgift har en kontroll som körs efter att sviten gått grön. Lint: ruff hittar inte längre just det fyndet i filen. Fallerande test: testet går igenom, och ett instabilt (`flaky-test`) tre gånger i rad. Otestat krav: ett test vars docstring säger `Verifies <ID>` finns och går igenom. Backloggpunkt: kontrollen efter `Klart när:`. Går kontrollen inte igenom kastas ändringen, även om alla tester är gröna, och försöket räknas som misslyckat (`check_failed`).
+- En backloggpunkt utan giltig kontroll tas inte. Agenten ber modellen skriva in en (`Klart när: ...`), högst två per körning.
+- Agenten fyller själv på backloggen. I slutet av varje körning föreslår modellen högst tre nya, små punkter ur koden den läste. Punkter med giltig kontroll läggs till med nästa BL-nummer. Dubbletter hoppas över, och påfyllning sker inte när det redan finns 12 öppna punkter. Förslag om skyddade filer, CI, config, pengar, konton, kunder eller nya funktioner blir frågor i `QUESTIONS-FOR-FOUNDERS.md`.
+- En körning öppnar nu också en PR när backloggen ändrats.
+
 ## [Unreleased] — 2026-10-28 — PR 11: produktutkast (utkast, inget publicerat)
 ### Tillagt
 - `products/` innehåller tre kandidater med produkt eller tjänst, annonstext med AI-märkning, pris och valideringsplan. Varje kandidat har mätbara kriterier, en regel för att fortsätta, ändra eller sluta, och en checklista för det grundarna gör manuellt:

@@ -4,7 +4,7 @@ Egna förbättringsuppgifter för nattboten när det inte finns någon ledig upp
 Reglerna står i `docs/BOT.md` avsnitt 2b. Prioritet: 1 buggar, 2 kravtäckning, 3 säkerhet,
 4 kodkvalitet, 5 dokumentation, 6 förberedelse av nästa fas (bara text).
 
-Format: `- [ ] BL-NNN (prioritet) Vad, var, och hur man vet att det är klart — status`.
+Format: `- [ ] BL-NNN (prioritet) Vad och var. Klart när: `kontroll` — status`. Kontrollen bevisar att punkten är klar (`ruff <fil> [REGEL]`, `test <test-id>`, `flaky-test <test-id>`, `verifies <KRAV-ID>`, `grep <fil> <text>`, `!grep <fil> <text>`; se `src/aie/dev_agent/verify.py`). Utvecklaragenten tar bara punkter med kontroll och skriver själv in en kontroll där den saknas.
 Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, ändra ordning eller stryka punkter.
 
 ## Öppna
