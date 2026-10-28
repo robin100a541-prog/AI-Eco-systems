@@ -9,6 +9,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `registry`      plattforms- och initiativregistret: list, show, import, status (PR 4, D-056)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
@@ -123,6 +124,10 @@ def build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
+    res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
+    res.add_argument("action", choices=("fetch", "history"))
+    res.add_argument("url", nargs="?")
+    res.add_argument("--agent", help="agenten som hämtar (måste ha research.search)")
     reg = add("registry", "plattforms- och initiativregistret: list, show, import eller status (PR 4, D-056)")
     reg.add_argument("action", choices=("list", "show", "import", "status"))
     reg.add_argument("kind", nargs="?", choices=("platform", "initiative"))
@@ -144,6 +149,15 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
     return parser
+
+
+def _research(args: argparse.Namespace) -> int:
+    from .research.cli import research  # importeras bara när kommandot används
+
+    if args.action == "fetch" and (not args.url or not args.agent):
+        print("FEL: fetch kräver en URL och --agent <agent>", file=sys.stderr)
+        return 1
+    return research(args.config_dir, args.action, args.url, args.agent)
 
 
 def _registry(args: argparse.Namespace) -> int:
@@ -238,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
         "simulate": lambda: _simulate(args),
         "spend": lambda: _spend(args),
         "registry": lambda: _registry(args),
+        "research": lambda: _research(args),
     }
     try:
         return commands[args.command]()
