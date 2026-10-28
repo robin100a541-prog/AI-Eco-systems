@@ -21,14 +21,13 @@ from aie.dev_agent import (
     TestRun,
     check_patch,
     cli,
-    extract_diff,
+    edits,
     picker,
     write_report,
 )
 from aie.dev_agent import agent as agent_module
 from aie.dev_agent.agent import RunResult, TokenPacer
 from aie.dev_agent.github import GitHub, GitHubError
-from aie.dev_agent.patch import repair_diff
 from aie.llm import (
     LLMGateway,
     OpenAICompatibleProvider,
@@ -44,12 +43,12 @@ ROOT = Path(__file__).resolve().parents[2]
 QUESTIONS = (ROOT / "docs" / "QUESTIONS-FOR-FOUNDERS.md").read_text(encoding="utf-8")
 
 
-def diff_for(path, old, new):
-    return f"--- a/{path}\n+++ b/{path}\n@@ -1,2 +1,2 @@\n def add(a, b):\n-    {old}\n+    {new}\n"
+def block(path, search, replace):
+    return f"FILE: {path}\n<<<<<<< SEARCH\n{search}=======\n{replace}>>>>>>> REPLACE\n"
 
 
-GOOD = diff_for("ai-enterprise/src/calc.py", "return a - b", "return a + b")
-BAD = diff_for("ai-enterprise/src/calc.py", "return a - b", "return a * b")
+GOOD = block("ai-enterprise/src/calc.py", "    return a - b\n", "    return a + b\n")
+BAD = block("ai-enterprise/src/calc.py", "    return a - b\n", "    return a * b\n")
 
 
 class FakeModel:
@@ -153,7 +152,7 @@ class DevCase(unittest.TestCase):
 class TestRun_(DevCase):
     def test_good_patch_is_applied_after_green_tests(self):
         """Verifies D-050: en diff från en gratismodell appliceras bara när hela sviten är grön; allt revideras."""
-        model = FakeModel(f"Här är ändringen:\n```diff\n{GOOD}```")
+        model = FakeModel(f"Här är ändringen:\n{GOOD}")
         result = self.agent(model).run()
         self.assertTrue(result.success)
         self.assertIn("return a + b", self.calc())
@@ -185,7 +184,10 @@ class TestRun_(DevCase):
         state = json.loads(
             (self.project / "docs/bot-reports/dev-agent-state.json").read_text()
         )
-        self.assertEqual(state["failures"], {"BL-001": 1, "BL-002": 1, "BL-003": 1})
+        # Uppgifter som redan är frågor i repots frågefil hoppas över (picker.escalated).
+        skipped = picker.escalated(self.project)
+        expected = [k for k in ("BL-001", "BL-002", "BL-003", "BL-004") if k not in skipped][:3]
+        self.assertEqual(state["failures"], dict.fromkeys(expected, 1))
 
     def test_three_failures_become_a_founder_question_and_the_item_is_skipped(self):
         """Verifies D-050: en uppgift som misslyckats tre gånger blir en grundarfråga och provas inte igen."""
@@ -206,10 +208,10 @@ class TestRun_(DevCase):
         self.assertIn("ingen uppgift", result.stopped)
 
     def test_protected_file_is_refused_and_asked_about(self):
-        """Verifies D-050: en diff mot en skyddad fil avvisas och blir en fråga till grundarna."""
-        evil = diff_for(
-            "ai-enterprise/config/risk_limits.toml", "return a - b", "return a + b"
-        )
+        """Verifies D-050: en ändring av en skyddad fil avvisas och blir en fråga till grundarna."""
+        (self.project / "config").mkdir()
+        (self.project / "config" / "risk_limits.toml").write_text("max = 1\n", encoding="utf-8")
+        evil = block("ai-enterprise/config/risk_limits.toml", "max = 1\n", "max = 100\n")
         result = self.agent(FakeModel(evil)).run()
         self.assertEqual(result.attempts[0].outcome, "rejected")
         self.assertIn("skyddad fil", result.attempts[0].detail)
@@ -293,10 +295,6 @@ class TestPatchCheck(unittest.TestCase):
                     any(expected in p for p in check.problems), check.problems
                 )
 
-    def test_extract_diff(self):
-        self.assertEqual(extract_diff(f"Svar:\n```diff\n{GOOD}```\nKlart."), GOOD)
-        self.assertEqual(extract_diff("ingen diff här"), "")
-
 
 class TestFeedback(DevCase):
     def test_failed_diff_is_retried_once_with_the_exact_error(self):
@@ -313,27 +311,43 @@ class TestFeedback(DevCase):
         self.assertIn("FAILED (failures=1)", retry[3]["content"])
         self.assertIn("dev.retry_with_feedback", self.actions())
 
-    def test_bare_hunk_headers_are_repaired_before_git_apply(self):
-        """Verifies D-050: `@@` utan radnummer och tomma sammanhangsrader lagas; git apply lyckas."""
-        sloppy = (
-            "--- a/ai-enterprise/src/calc.py\n+++ b/ai-enterprise/src/calc.py\n@@\n"
-            " def add(a, b):\n-    return a - b\n+    return a + b\n\n"
-        )
-        self.assertEqual(
-            repair_diff(sloppy).splitlines()[2], "@@ -1,2 +1,2 @@"
-        )
-        result = self.agent(FakeModel(sloppy)).run()
+    def test_search_must_match_exactly_once_and_the_error_is_fed_back(self):
+        """Verifies D-050: en SEARCH som inte finns exakt en gång avvisas, och felet går tillbaka till modellen."""
+        missing = block("ai-enterprise/src/calc.py", "    return a / b\n", "    return a + b\n")
+        model = FakeModel(missing, GOOD)
+        result = self.agent(model).run()
         self.assertTrue(result.success)
-        self.assertIn("return a + b", self.calc())
+        feedback = model.calls[1]["messages"][3]["content"]
+        self.assertIn("apply_failed", feedback)
+        self.assertIn("finns 0 gånger i ai-enterprise/src/calc.py", feedback)
 
-    def test_new_file_hunk_starts_at_zero(self):
-        """Verifies D-050: en ny fil får huvudet `@@ -0,0 +1,N @@`."""
-        new = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@\n+import unittest\n+\n+X = 1\n"
-        self.assertIn("@@ -0,0 +1,3 @@", repair_diff(new))
+    def test_invented_files_are_rejected_but_new_tests_are_allowed(self):
+        """Verifies D-050: en påhittad fil avvisas; en ny testfil under tests/ får skapas."""
+        repo = self.repo
+        invented = edits.parse_edits(block("ai-enterprise/src/aie/finance.py", "x = 1\n", "x = 2\n"))
+        with self.assertRaisesRegex(edits.EditError, "finns inte"):
+            edits.apply_edits(repo, invented)
+        new_src = edits.parse_edits(block("ai-enterprise/src/aie/finance.py", "", "x = 2\n"))
+        with self.assertRaisesRegex(edits.EditError, "bara skapas under ai-enterprise/tests/"):
+            edits.apply_edits(repo, new_src)
+        new_test = edits.parse_edits(block("tests/unit/test_new.py", "", "import unittest\n"))
+        applied = edits.apply_edits(repo, new_test)
+        self.assertIn("+++ b/ai-enterprise/tests/unit/test_new.py", applied.diff)
+        self.assertIn("--- /dev/null", applied.diff)
+        edits.write(repo, applied)
+        self.assertTrue((self.project / "tests/unit/test_new.py").is_file())
+        edits.revert(repo, applied)
+        self.assertFalse((self.project / "tests/unit/test_new.py").exists())
+
+    def test_red_tests_restore_the_original_file(self):
+        """Verifies D-050: rött efter skrivning ⇒ filen återställs exakt."""
+        before = self.calc()
+        self.agent(FakeModel(BAD)).run()
+        self.assertEqual(self.calc(), before)
 
     def test_rejected_import_is_fed_back_and_counted_once(self):
         """Verifies D-050: en otillåten import avvisas, återkopplas en gång, och räknas sedan som ett försök."""
-        bad_import = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@ -0,0 +1 @@\n+import ai_enterprise\n"
+        bad_import = block("ai-enterprise/tests/unit/test_x.py", "", "import ai_enterprise\n")
         model = FakeModel(bad_import)
         self.backlog(["BL-001 uppgift i `src/calc.py`"])
         result = self.agent(model).run()
@@ -341,12 +355,39 @@ class TestFeedback(DevCase):
         self.assertIn("ai_enterprise", model.calls[1]["messages"][3]["content"])
         self.assertEqual([a.outcome for a in result.attempts], ["rejected"])
 
-    def test_prompt_names_the_package_and_demands_only_a_diff(self):
-        """Verifies D-050: prompten anger paketet `aie`, importstilen och att svaret bara är en diff."""
+    def test_prompt_names_the_package_the_block_format_and_the_real_files(self):
+        """Verifies D-050: prompten anger paketet `aie`, sök/ersätt-formatet och de riktiga filerna."""
         self.assertIn("from aie.x import Y", agent_module.SYSTEM_PROMPT)
         self.assertIn("ai_enterprise", agent_module.SYSTEM_PROMPT)  # uttryckligen förbjudet
-        self.assertIn("ENBART en giltig unified diff", agent_module.SYSTEM_PROMPT)
+        self.assertIn("<<<<<<< SEARCH", agent_module.SYSTEM_PROMPT)
         self.assertIn("standardbiblioteket", agent_module.SYSTEM_PROMPT)
+        (self.project / "src" / "aie").mkdir(parents=True)
+        (self.project / "src" / "aie" / "ledger.py").write_text("X = 1\n", encoding="utf-8")
+        model = FakeModel(GOOD)
+        self.agent(model).run()
+        self.assertIn("\nsrc/aie/ledger.py\n", model.calls[0]["messages"][1]["content"])
+        self.assertIn("Fillista", model.calls[0]["messages"][1]["content"])
+
+
+class TestPicker(unittest.TestCase):
+    def test_easiest_first_and_escalated_items_are_skipped(self):
+        """Verifies D-050: dokumentation och lint före tester och buggar; frågor till grundarna hoppas över."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (1 buggar) i `a.py` — öppen\n"
+                "- [ ] BL-002 (2 kravtäckning) i `a.py` — öppen\n"
+                "- [ ] BL-004 (4 kodkvalitet) i `a.py` — öppen\n"
+                "- [ ] BL-005 (5 dokumentation) i `a.py` — öppen\n",
+                encoding="utf-8",
+            )
+            (root / "docs" / "QUESTIONS-FOR-FOUNDERS.md").write_text(
+                "### Q-BOT-001\n- **Uppgift:** BL-002\n", encoding="utf-8"
+            )
+            keys = [i.key for i in picker.pick(root, "", {})]
+        self.assertEqual(keys, ["BL-005", "BL-004", "BL-001"])
 
 
 class TestRateLimits(DevCase):
@@ -387,12 +428,12 @@ class TestRateLimits(DevCase):
     def test_only_groq_models_in_groqs_current_list_are_used(self):
         """Verifies DR-12, D-050: en Groq-reservmodell används bara om Groq erbjuder den just nu."""
         env = {"GROQ_API_KEY": "gsk-test"}
-        offered = frozenset({"openai/gpt-oss-20b", "llama-3.3-70b-versatile"})
+        offered = frozenset({"openai/gpt-oss-20b"})  # 120b saknas just nu i den här låtsaslistan
         with tempfile.TemporaryDirectory() as tmp:
             agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=lambda kind, key: offered)
             names = [s.provider.name for s in agent._gateway._router._slots]
-        self.assertEqual(names[:2], ["groq", "groq-3"])
-        self.assertNotIn("groq-2", names)
+        self.assertEqual(names[:1], ["groq-2"])
+        self.assertNotIn("groq", names)
 
         def broken(kind, key):
             raise ProviderError("groq: modellistan gav HTTP 503", 503)
@@ -400,7 +441,7 @@ class TestRateLimits(DevCase):
         with tempfile.TemporaryDirectory() as tmp:
             agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=broken)
             names = [s.provider.name for s in agent._gateway._router._slots]
-        self.assertEqual(names[:3], ["groq", "groq-2", "groq-3"])
+        self.assertEqual(names[:2], ["groq", "groq-2"])
 
 
 class TestContext(unittest.TestCase):

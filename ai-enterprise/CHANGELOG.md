@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: sök/ersätt-block och starkare modell
+### Ändrat
+- Modellen svarar med sök/ersätt-block (`FILE:` + `<<<<<<< SEARCH` / `=======` / `>>>>>>> REPLACE`), samma metod som aider bygger på, i stället för unified diffs. `dev_agent/edits.py` kräver att varje SEARCH finns exakt en gång i en befintlig fil. Nya filer får bara skapas under `tests/`. Blocken görs om till en diff som `check_patch` granskar som förut. Vid fel skickas det exakta felet tillbaka i återkopplingsförsöket. Rött ⇒ filerna återställs.
+- Prompten innehåller listan över de riktiga filerna under `src/aie/`, så att modellen inte hittar på sökvägar.
+- `groq` kör nu `openai/gpt-oss-120b` och `groq-2` `openai/gpt-oss-20b` som reserv. Båda används bara om de finns i Groqs aktuella modellista. `groq-3` (`llama-3.3-70b-versatile`) är borttagen, eftersom Groq inte längre erbjuder den.
+- Uppgifterna tas lättast först: dokumentation och lint, sedan små tester, sist buggar. Uppgifter som redan är frågor i `QUESTIONS-FOR-FOUNDERS.md` hoppas över.
+- `extract_diff`, `repair_diff` och `git apply` används inte längre och är borttagna.
+
 ## [Unreleased] — 2026-10-28 — PR 6: simulera före start, hård spärr (D-058, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - Migration 31 `assessments` och `assessment_events`: bedömningar med exakt de parametrar de gäller (SHA-256), och ett beslut per bedömning.
