@@ -102,6 +102,7 @@ class Simulation:
             f"sim-{run_id}-start-capital", "finance", start.amount_minor, "SIM", EntryType.CAPITAL_IN,
             "simulerat startkapital", Approval.APPROVED, (START_DECISION,), f"sim-{run_id}-start-capital",
             Status.SETTLED, "simulerat startkapital (D-042, D-027 punkt 1)"))
+        _register_scenario(system, scenario, founder)
         system.audit.append(founder, "simulation.started", {"run_id": run_id, "scenario": scenario.name,
                                                             "seed": scenario.seed, "days": scenario.days})
         return cls(system, config, scenario, run_id, clock)
@@ -259,6 +260,38 @@ class Simulation:
         if tax.assignment(entry_id) is None:
             tax.assign(SYSTEM, entry_id, initiative.track, owner=initiative.owner,
                        note="simulerat skattespår enligt scenariot (D-010 är öppet)")
+
+
+def _register_scenario(system, scenario: Scenario, founder: str) -> None:
+    """D-054, D-056: scenariots initiativ förs in i registret i simuleringens egen databas, godkända av
+    grundaren som startar körningen. Utan det skulle initiativspärren neka alla utgifter. Allt märks
+    som simulerat och gäller bara den här databasen."""
+    register = getattr(system, "register", None)
+    if register is None:
+        return
+    platform = f"sim-{scenario.name}"
+    source = [{"url": f"file:config/scenarios/{scenario.name}.toml", "read_on": scenario.start_date}]
+    data = {
+        "name": f"Simulerad plattform ({scenario.name})", "url": f"file:config/scenarios/{scenario.name}.toml",
+        "type": "both", "currency": "SIM", "payment_terms": "simulerat", "vat_responsibility": "simulerat",
+        "dac7": "simulerat", "ai_rules": "simulerat", "automation_rules": "simulerat",
+        "account_requirements": "inget konto: simulering", "payout_terms": "simulerat", "dependencies": [],
+        "risks": ["simulerad: säger inget om en verklig plattform"], "sources": source,
+        "fees": {"per_order_minor": None, "percent_bp": None, "per_listing_minor": None, "monthly_minor": None,
+                 "setup_minor": None, "payout_minor": None, "currency": "SIM",
+                 "notes": "avgifterna står per initiativ i scenariot"},
+    }
+    note = f"simulering {scenario.name}, startad av {founder} (D-042)"
+    for status in ("investigated", "reviewed", "approved"):
+        register.record(founder, "platform", platform, status, data, note)
+    for i in scenario.initiatives:
+        item = {"platform": platform, "department": i.department, "offering": "product",
+                "description": f"simulerat initiativ {i.key}", "price_minor": i.price, "unit_cost_minor": i.unit_cost,
+                "currency": "SIM", "founder_hours_per_week": 0,
+                "demand": {"visitors_per_day": i.visitors, "conversion_bp": i.conversion_bp,
+                           "refund_bp": i.refund_bp, "source": "antagande (scenario)"}}
+        for status in ("investigated", "reviewed", "approved"):
+            register.record(founder, "initiative", i.key, status, item, note)
 
 
 def _definition(scenario: Scenario) -> dict:

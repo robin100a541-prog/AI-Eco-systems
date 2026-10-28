@@ -39,6 +39,24 @@ class SystemCase(unittest.TestCase):
         for state in (S.CREATED, S.TESTING, S.ACTIVE):
             registry.transition(agent_id, state, "yorgo", "test")
 
+    def approve_initiative(self, key, platform="testplattform"):
+        """D-054, D-056: en godkänd plattform och ett godkänt initiativ i registret."""
+        register = self.system.register
+        source = [{"url": "file:test", "read_on": "2027-01-01"}]
+        fees = {k: None for k in ("per_order_minor", "percent_bp", "per_listing_minor", "monthly_minor",
+                                  "setup_minor", "payout_minor")} | {"currency": "SIM", "notes": "test"}
+        data = {"name": "Test", "url": "file:test", "type": "product", "fees": fees, "currency": "SIM",
+                "payment_terms": "x", "vat_responsibility": "x", "dac7": "x", "ai_rules": "x",
+                "automation_rules": "x", "account_requirements": "x", "payout_terms": "x", "dependencies": [],
+                "risks": [], "sources": source}
+        for status in ("investigated", "reviewed", "approved"):
+            register.record("robin", "platform", platform, status, data, "test")
+        item = {"platform": platform, "department": "research", "offering": "product", "description": "test",
+                "price_minor": 100, "unit_cost_minor": 0, "currency": "SIM", "founder_hours_per_week": 0,
+                "demand": {"visitors_per_day": 1, "conversion_bp": 1, "refund_bp": 0, "source": "antagande"}}
+        for status in ("investigated", "reviewed", "approved"):
+            register.record("robin", "initiative", key, status, item, "test")
+
     def book(self, key, department, entry_type, amount, status=Status.SETTLED, approval=Approval.NOT_REQUIRED):
         return self.system.ledger.record("robin", EntryDraft(key, department, amount, "SIM", entry_type, "etsy",
                                                              approval, ("decision:1",), status=status))
@@ -88,6 +106,9 @@ class TestTick(SystemCase):
         self.book("cap", "finance", EntryType.CAPITAL_IN, 1_000_000, approval=Approval.APPROVED)
         sale = self.book("s1", "research", EntryType.REVENUE, 10_000)
         self.system.tax.assign("robin", sale.entry_id, "partnership")
+        unknown = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))
+        self.assertFalse(unknown.allowed)  # D-054: initiativet finns inte i registret än
+        self.approve_initiative("etsy")
         check = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))
         self.assertTrue(check.allowed, check.describe())
         self.assertEqual(self.system.tax.reserved_minor(), 4_000)

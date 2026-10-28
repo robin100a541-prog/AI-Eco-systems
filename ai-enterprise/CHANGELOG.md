@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-28 — PR 4: plattforms- och initiativregistret (D-056, föreslaget)
+### Tillagt
+- Migration 29 `registry_versions`: plattformar och initiativ som versionerad data, append-only.
+- `src/aie/registry/`:
+  - `Register`: statusflödet idé → undersökt → granskad → godkänd → aktiv, pausad eller avvecklad. Agenter går via "Utred möjlighet" (D-011), och bara grundare godkänner.
+  - `spend_block_reason`: initiativspärren (D-054).
+  - Import från `config/registry/*.toml`, och `python -m aie registry list|show|import|status`.
+- `config/registry/platforms.toml`: Etsy, Gumroad och Fiverr från `docs/channels.md` med status `investigated`. Okända uppgifter är okända.
+- `build_system` kopplar registret till budgetmotorn. Simuleringen registrerar scenariots initiativ i sin egen databas.
+- Inga plattformsnamn i `src/`, även i exempeltexter, och ett test kontrollerar det.
+- Förslaget D-056 finns i `docs/proposals/2026-10-28-D-056-register.md`.
+- `tests/unit/test_registry.py`: 8 tester. `test_system.py` registrerar ett initiativ före utgiften.
+
 ## [Unreleased] — 2026-10-28 — F6: uppdelade köp per departement och dag, initiativspärr (D-054, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - `BudgetEngine._split_flags`: utöver D-028 (samma initiativ, sju dagar) flaggas utgifter i samma departement samma dag, i olika initiativ, som tillsammans passerar `HUMAN_APPROVAL_THRESHOLD`. Det går alltså inte längre att kringgå tröskeln med nya initiativnamn.
