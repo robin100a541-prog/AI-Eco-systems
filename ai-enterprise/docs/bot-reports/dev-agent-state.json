@@ -2,7 +2,9 @@
   "failures": {
     "BL-002": 3,
     "BL-005": 3,
+    "BL-006": 2,
     "ruff:I001:src/aie/agents/__init__.py:2": 3,
-    "ruff:RUF022:src/aie/agents/__init__.py:14": 1
+    "ruff:I001:src/aie/agents/registry.py:13": 2,
+    "ruff:RUF022:src/aie/agents/__init__.py:14": 3
   }
 }
