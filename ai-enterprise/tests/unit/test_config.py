@@ -98,11 +98,14 @@ class TestValidConfig(ConfigTestCase):
         self.assertEqual(config.system.environment, "sim")
         self.assertTrue(config.system.is_simulation)
         self.assertEqual(config.risk.currency, "SIM")
-        # D-059: de två gränserna för plattformsberoende läggs in av en grundare i en egen PR (skyddad fil).
-        # Tills dess får bara de saknas, och de ger varningar i sim (ER-02). Inget annat får saknas.
-        pending = {"MAX_PLATFORM_REVENUE_SHARE", "MIN_ACTIVE_PLATFORMS"}
-        self.assertLessEqual(set(config.risk.missing), pending)
-        self.assertTrue(all(any(name in w for name in pending) for w in config.warnings))
+        self.assertEqual(config.risk.missing, ())
+        self.assertEqual(config.warnings, ())
+
+    def test_platform_limits_are_phase7_pilot_values(self):
+        """D-059: Fas 7-piloten tillåter en plattform; 2 och 60 gäller först från Fas 8."""
+        text = (ROOT / "config" / "risk_limits.toml").read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?m)^MIN_ACTIVE_PLATFORMS = 1\b")
+        self.assertRegex(text, r"(?m)^MAX_PLATFORM_REVENUE_SHARE = 100\b")
 
     def test_config_is_frozen(self):
         """Verifies FR-02: konfigurationen kan inte ändras efter att den validerats."""

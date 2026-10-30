@@ -1,6 +1,6 @@
 # D-059 Skydd mot plattformsberoende (förslag)
 
-- **Status:** Föreslagen. Det är inget beslut förrän en grundare har godkänt det och det står i `DECISIONS.md`.
+- **Status:** Godkänd av Robin 2026-10-30 (D-049), med ändrade värden, se "Grundarnas beslut".
   Gränsvärdena läggs i `config/risk_limits.toml` i en egen PR (PR 7b), som en grundare godkänner.
 - **Föreslagen av:** Claude (session med Yorgo, arbetsorder 02, PR 7), 2026-10-28
 - **Bygger på:** D-054, D-056, D-058, ER-02
@@ -35,7 +35,12 @@ för detta, och inget scenario som provade det.
    - Scenarier kan nu ha `[[platforms]]` med beroenden, och initiativ kan ha `platform`.
 8. **Registrets CLI byggs med hela systemet.** Samma spärrar gäller där som i simuleringen.
 
-## Att avgöra
+## Grundarnas beslut (Robin, 2026-10-30)
+- **Fas 7-pilot:** `MIN_ACTIVE_PLATFORMS = 1` och `MAX_PLATFORM_REVENUE_SHARE = 100`. Piloten säljer på en plattform, så gränserna får inte stoppa den.
+- **När Fas 8 startar** blir värdena `MIN_ACTIVE_PLATFORMS = 2` och `MAX_PLATFORM_REVENUE_SHARE = 60`, via en PR med `founder-approved` (punkt i ROADMAP, Fas 8).
+- 90 dagars fönster behålls.
+
+## Att avgöra (ursprungligt)
 - Gränsvärdena 60 % och 2 plattformar (PR 7b).
 - Om 90 dagar är rätt fönster.
 - Om ett redan godkänt initiativ ska få aktiveras när gruppen är över gränsen. Förslaget är ja: att stoppa
