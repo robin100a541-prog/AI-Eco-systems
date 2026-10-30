@@ -131,6 +131,13 @@ def load_settings(config_dir: Path | str) -> Settings:
     )
 
 
+_STOP = {"with", "from", "that", "this", "your", "for", "and", "the", "pack", "guide", "course", "service"}
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-zåäö]{4,}", text.lower()) if w not in _STOP}
+
+
 def _norm(text: str) -> str:
     return " ".join(text.lower().split())
 
@@ -345,9 +352,11 @@ def score(
         100 * sum(idea.scores[k] * weights[k] for k in weights) / MAX_SCORE
     )
     idea.why_not = []
-    market = [s for s in linked if s.kind in MARKET_KINDS and (s.price_cents is not None or s.count is not None)]
+    words = _words(f"{idea.title} {idea.kind}")
+    market = [s for s in linked if s.kind in MARKET_KINDS and (s.price_cents is not None or s.count is not None)
+              and words & _words(f"{s.title} {s.quote}")]  # signalen måste handla om samma sak som idén
     if not market:
-        idea.why_not.append("ingen marknadssignal (konkurrent, pris eller försäljning med siffra)")
+        idea.why_not.append("ingen marknadssignal om samma sak (konkurrent, pris eller försäljning med siffra)")
     if len(linked) < settings.min_signals:
         idea.why_not.append(
             f"{len(linked)} belagda signaler, minst {settings.min_signals} krävs"
@@ -423,7 +432,7 @@ def report(
     out += [
         "",
         (f"Totalpoäng = viktad summa i procent av {MAX_SCORE}. Kvalificerad: minst {settings.min_signals} "
-        f"belagda signaler varav minst en marknadssignal med siffra (konkurrent, pris eller försäljning), och förväntat värde minst {settings.min_expected_value_cents / 100:.2f} USD på 90 "
+        f"belagda signaler varav minst en marknadssignal med siffra om samma sak som idén (konkurrent, pris eller försäljning), och förväntat värde minst {settings.min_expected_value_cents / 100:.2f} USD på 90 "
         "dagar. Alla belopp räknas i kod; modellen gav bara pris och uppskattad försäljning."),
         "",
     ]

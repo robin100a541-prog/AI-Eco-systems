@@ -149,3 +149,16 @@ class TestMarketSignal(unittest.TestCase):
         _, ideas, top, _ = run(FakeReader(), OnlyTalk(), settings(max_fetches=1), "regler", 500)
         self.assertEqual(top, [])
         self.assertIn("ingen marknadssignal", " ".join(ideas[0].why_not))
+
+
+class TestRelevance(unittest.TestCase):
+    def test_unrelated_price_signal_does_not_count(self):
+        from aie.pilot.discovery import Opportunity, Signal, score
+
+        sig = {"S1": Signal("S1", "u", 1, "price", "Books on options strategies", "only like $3 a piece", 300, None),
+               "S2": Signal("S2", "u", 1, "question", "real estate video", "real estate video template", None, None)}
+        idea = Opportunity("x", "Real Estate Video Course", "course", "gumroad", "english", "", 19900, 30, 0, 1, 7,
+                           ("S1", "S2"), "")
+        score(idea, sig, settings(), 500)
+        self.assertFalse(idea.qualified)
+        self.assertIn("ingen marknadssignal", " ".join(idea.why_not))
