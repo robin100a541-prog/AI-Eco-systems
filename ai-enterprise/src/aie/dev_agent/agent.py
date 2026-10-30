@@ -417,6 +417,10 @@ class DevAgent:
             Attempt(item.key, "applied", f"{check.changed_lines} rader, {provider}{note}")
         )
         state.pop(item.key, None)
+        if item.kind == "backlog" and backlog.mark_done(
+            self.project, item.key, self._clock().date().isoformat()
+        ) and item.key not in result.backlog_checked:
+            result.backlog_checked.append(item.key)  # backloggen ändrad: följer med i PR:en
         self._log(
             "dev.patch_applied",
             {
