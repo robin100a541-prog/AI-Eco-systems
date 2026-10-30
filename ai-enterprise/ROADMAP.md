@@ -127,8 +127,8 @@ Incidentrapporter, prognoslogg, utvärdering, lärdomsregister med verifieringss
 - [x] Strategiförändringar kan återställas (`test_strategies.py::test_restore_is_a_new_version_and_history_stays`).
 - [x] En obekräftad hypotes blir inte automatiskt en obligatorisk regel (`test_lessons.py::test_unconfirmed_hypothesis_never_becomes_a_rule`).
 
-## Fas 6 — Affärssimulering (FR-20…24)
-Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar.
+## Fas 6 — Affärssimulering (FR-20…24) ✅ Stängd 2026-10-30 (D-063)
+Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot transaktionsdata. Resultaten avgör om pilot är försvarbar. "Redo" är en hypotes på overifierade marknadsantaganden tills riktig försäljning finns (D-063).
 | Del | Vem | Status |
 |---|---|---|
 | 6a Hela systemet kopplat i `python -m aie start`: spärrar, Tax Engine, incidenter, prognoser, lärdomar, strategier, prestation, SR-17 (D-041) | Yorgo | ✅ PR #60 |
