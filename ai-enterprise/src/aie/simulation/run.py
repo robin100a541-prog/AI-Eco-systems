@@ -68,6 +68,7 @@ class Simulation:
     def __init__(self, system, config, scenario: Scenario, run_id: int, clock: SimClock) -> None:
         self._system = system
         self._config = config
+        self.config = config
         self.scenario = scenario
         self.run_id = run_id
         self.clock = clock
@@ -78,7 +79,7 @@ class Simulation:
     # --- Starta och återuppta --------------------------------------------------------------
 
     @classmethod
-    def start(cls, system, config, scenario: Scenario, founder: str, clock: SimClock) -> "Simulation":
+    def start(cls, system, config, scenario: Scenario, founder: str, clock: SimClock) -> Simulation:
         require_sim(config)
         if founder not in config.system.founders:
             raise SimulationError("en simulering startas av en grundare")
@@ -102,12 +103,13 @@ class Simulation:
             f"sim-{run_id}-start-capital", "finance", start.amount_minor, "SIM", EntryType.CAPITAL_IN,
             "simulerat startkapital", Approval.APPROVED, (START_DECISION,), f"sim-{run_id}-start-capital",
             Status.SETTLED, "simulerat startkapital (D-042, D-027 punkt 1)"))
+        _register_scenario(system, scenario, founder)
         system.audit.append(founder, "simulation.started", {"run_id": run_id, "scenario": scenario.name,
                                                             "seed": scenario.seed, "days": scenario.days})
         return cls(system, config, scenario, run_id, clock)
 
     @classmethod
-    def resume(cls, system, config, clock: SimClock) -> "Simulation":
+    def resume(cls, system, config, clock: SimClock) -> Simulation:
         """Fortsätter körningen i databasen med den sparade scenariodefinitionen, inte filen."""
         require_sim(config)
         run = stored_run(system.db)
@@ -153,6 +155,7 @@ class Simulation:
         self.clock.day = day
         events = [e for e in self.scenario.events if e.day == day]
         notes = [self._act(e) for e in events if e.kind in ACTOR_EVENTS]
+        notes += [self._ban(e) for e in events if e.kind == "platform_ban"]
         return {"day": day, "events": events, "event_notes": notes}
 
     def finish_day(self, ctx: dict, listed: frozenset[str] | None = None, extra: dict | None = None) -> dict:
@@ -194,6 +197,17 @@ class Simulation:
             "SELECT summary FROM simulation_days WHERE run_id = ? ORDER BY day", (self.run_id,)))
 
     # --- Internt ---------------------------------------------------------------------------
+
+    def _ban(self, event: Event) -> str:
+        """D-059: plattformen har stängt kontot. Registret pausar den, så inga utgifter går dit."""
+        register = getattr(self._system, "register", None)
+        key = platform_key(self.scenario, event.platform)
+        if register is not None and register.get("platform", key) is not None:
+            from ..registry import SYSTEM as REGISTRY_SYSTEM
+
+            register.set_status(REGISTRY_SYSTEM, "platform", key, "paused",
+                                f"dag {event.day}: plattformen har stängt kontot (scenario, D-059)")
+        return f"{event.platform}: kontot stängt från dag {event.day}"
 
     def _act(self, event: Event) -> str:
         s = self._system
@@ -261,6 +275,60 @@ class Simulation:
                        note="simulerat skattespår enligt scenariot (D-010 är öppet)")
 
 
+def _register_scenario(system, scenario: Scenario, founder: str) -> None:
+    """D-054, D-056: scenariots initiativ förs in i registret i simuleringens egen databas, godkända av
+    grundaren som startar körningen. Utan det skulle initiativspärren neka alla utgifter. Allt märks
+    som simulerat och gäller bara den här databasen."""
+    register = getattr(system, "register", None)
+    if register is None:
+        return
+    source = [{"url": f"file:config/scenarios/{scenario.name}.toml", "read_on": scenario.start_date}]
+    deps = {p.key: list(p.dependencies) for p in scenario.platforms}
+
+    def data(name):
+        return {
+            "name": f"Simulerad plattform ({scenario.name}{'' if name is None else ', ' + name})",
+            "url": f"file:config/scenarios/{scenario.name}.toml",
+            "type": "both", "currency": "SIM", "payment_terms": "simulerat", "vat_responsibility": "simulerat",
+            "dac7": "simulerat", "ai_rules": "simulerat", "automation_rules": "simulerat",
+            "account_requirements": "inget konto: simulering", "payout_terms": "simulerat",
+            "dependencies": deps.get(name, []),
+            "risks": ["simulerad: säger inget om en verklig plattform"], "sources": source,
+            "fees": {"per_order_minor": None, "percent_bp": None, "per_listing_minor": None, "monthly_minor": None,
+                     "setup_minor": None, "payout_minor": None, "currency": "SIM",
+                     "notes": "avgifterna står per initiativ i scenariot"},
+        }
+
+    note = f"simulering {scenario.name}, startad av {founder} (D-042)"
+    platforms = {platform_key(scenario, i.platform): data(i.platform) for i in scenario.initiatives}
+    for key, pdata in platforms.items():
+        for status in ("investigated", "reviewed"):
+            register.record(founder, "platform", key, status, pdata, note)
+    items = {}
+    for i in scenario.initiatives:
+        platform = platform_key(scenario, i.platform)
+        items[i.key] = {"platform": platform, "department": i.department, "offering": "product",
+                        "description": f"simulerat initiativ {i.key}", "price_minor": i.price,
+                        "unit_cost_minor": i.unit_cost, "currency": "SIM", "founder_hours_per_week": 0,
+                        "demand": {"visitors_per_day": i.visitors, "conversion_bp": i.conversion_bp,
+                                   "refund_bp": i.refund_bp, "source": "antagande (scenario)"}}
+        for status in ("investigated", "reviewed"):
+            register.record(founder, "initiative", i.key, status, items[i.key], note)
+        # D-058: en scenariokörning är själv testet av scenariots antaganden (bara i simuleringens databas)
+        a = register.assessments.record(founder, i.key, platform, items[i.key], platforms[platform],
+                                        {"note": "scenariokörning; själva körningen är testet"}, True, kind="scenario")
+        register.assessments.approve(founder, a.assessment_id, note)
+    for key, pdata in platforms.items():
+        register.record(founder, "platform", key, "approved", pdata, note)
+    for key, item in items.items():
+        register.record(founder, "initiative", key, "approved", item, note)
+
+
+def platform_key(scenario: Scenario, platform: str | None) -> str:
+    """Registrets nyckel för en av scenariots plattformar. Utan plattform delar alla initiativ en."""
+    return f"sim-{scenario.name}" if platform is None else f"sim-{scenario.name}-{platform}"
+
+
 def _definition(scenario: Scenario) -> dict:
     """Scenariot som det sparas i körningen, i samma form som TOML-filen."""
     initiatives = []
@@ -268,5 +336,8 @@ def _definition(scenario: Scenario) -> dict:
         item = {k: v for k, v in asdict(i).items() if v is not None}
         initiatives.append(item)
     events = [{k: v for k, v in asdict(e).items() if v not in (None, "")} for e in scenario.events]
-    return {"config_version": 1, "name": scenario.name, "description": scenario.description, "seed": scenario.seed,
-            "days": scenario.days, "start_date": scenario.start_date, "initiatives": initiatives, "events": events}
+    out = {"config_version": 1, "name": scenario.name, "description": scenario.description, "seed": scenario.seed,
+           "days": scenario.days, "start_date": scenario.start_date, "initiatives": initiatives, "events": events}
+    if scenario.platforms:
+        out["platforms"] = [{"key": p.key, "dependencies": list(p.dependencies)} for p in scenario.platforms]
+    return out

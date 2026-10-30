@@ -9,7 +9,12 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `approvals`     grundarnas godkännandekö (Fas 3, D-019)
 - `manual`        besvara förfrågningar till manual-providern (Fas 3, D-005)
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
+- `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
+- `research`      läs en känd offentlig webbsida (PR 5, D-057)
+- `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
+- `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
+- `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -122,20 +127,94 @@ def build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
+    ass = add("assess", "bedömning före start: run, list, show, approve eller reject (PR 6, D-058)")
+    ass.add_argument("action", choices=("run", "list", "show", "approve", "reject"))
+    ass.add_argument("target", help="initiativ (run, list) eller bedömningens nummer (show, approve, reject)")
+    ass.add_argument("--as", dest="actor", help="vem som kör (agent eller grundare) eller beslutar (grundare)")
+    ass.add_argument("--note", default="", help="motivering; krävs vid reject")
+    ass.add_argument("--runs", type=int, help="körningar per scenario (standard: min_runs)")
+    ass.add_argument("--days", type=int, help="dagar per körning (standard: min_days)")
+    res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
+    res.add_argument("action", choices=("fetch", "history"))
+    res.add_argument("url", nargs="?")
+    res.add_argument("--agent", help="agenten som hämtar (måste ha research.search)")
+    reg = add("registry", "plattforms- och initiativregistret: list, show, import, status eller dependency "
+                          "(PR 4, D-056, D-059)")
+    reg.add_argument("action", choices=("list", "show", "import", "status", "dependency"))
+    reg.add_argument("kind", nargs="?", choices=("platform", "initiative"))
+    reg.add_argument("key", nargs="?")
+    reg.add_argument("status", nargs="?", help="ny status (för status)")
+    reg.add_argument("--as", dest="founder", help="vilken grundare som agerar (för import och status)")
+    reg.add_argument("--note", default="", help="motivering (för status)")
+    rs = add("results", "utfall från verkligheten: import, list eller report (PR 10, D-062)")
+    rs.add_argument("action", choices=("import", "list", "report"))
+    rs.add_argument("target", nargs="?", help="CSV-filen (för import) eller initiativet (för report)")
+    rs.add_argument("--as", dest="founder", help="vilken grundare som importerar")
     sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
     sp.add_argument("action", choices=("list", "approve", "reject"))
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
     sp.add_argument("--as", dest="founder", help="vilken grundare som beslutar")
     sp.add_argument("--note", default="", help="motivering; krävs vid reject")
+    rep = add("report", "rapporter: daily (§57), periodic (§58) eller monitor (FR-24); läser bara")
+    rep.add_argument("kind", choices=("daily", "periodic", "monitor"))
+    rep.add_argument("--day", help="daily: dagen ÅÅÅÅ-MM-DD (standard: senaste dagen i ledgern)")
+    rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
+    rep.add_argument("--to", dest="end", help="periodic: sista dagen")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
     sim.add_argument("--runs", type=int, help="evaluate: antal körningar (standard: min_runs i simulation.toml)")
     sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
     sim.add_argument("--days", type=int, help="hur många dagar som körs nu (standard: resten av scenariot)")
-    sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
-                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
+    sim.add_argument("--agents", choices=("scripted", "local", "groq"), default="scripted",
+                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
+                          "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
     return parser
+
+
+def _assess(args: argparse.Namespace) -> int:
+    from .simulation.assess_cli import assess  # importeras bara när kommandot används
+
+    if args.action in ("run", "approve", "reject") and not args.actor:
+        print("FEL: run, approve och reject kräver --as", file=sys.stderr)
+        return 1
+    return assess(args.config_dir, args.action, args.target, args.actor, args.note, args.runs, args.days)
+
+
+def _research(args: argparse.Namespace) -> int:
+    from .research.cli import research  # importeras bara när kommandot används
+
+    if args.action == "fetch" and (not args.url or not args.agent):
+        print("FEL: fetch kräver en URL och --agent <agent>", file=sys.stderr)
+        return 1
+    return research(args.config_dir, args.action, args.url, args.agent)
+
+
+def _registry(args: argparse.Namespace) -> int:
+    from .registry.cli import registry  # importeras bara när kommandot används
+
+    if args.action in ("show", "status") and (not args.kind or not args.key):
+        print("FEL: show och status kräver typ och nyckel, till exempel platform plattform-a", file=sys.stderr)
+        return 1
+    if args.action in ("import", "status") and not args.founder:
+        print("FEL: import och status kräver --as <grundare>", file=sys.stderr)
+        return 1
+    if args.action == "status" and (not args.status or not args.note.strip()):
+        print("FEL: status kräver ny status och --note", file=sys.stderr)
+        return 1
+    return registry(args.config_dir, args.action, args.kind, args.key, args.status, args.founder, args.note)
+
+
+def _results(args: argparse.Namespace) -> int:
+    from .results.cli import results  # importeras bara när kommandot används
+
+    if args.action in ("import", "report") and not args.target:
+        print("FEL: import kräver en CSV-fil och report ett initiativ", file=sys.stderr)
+        return 1
+    if args.action == "import" and not args.founder:
+        print("FEL: import kräver --as <grundare>", file=sys.stderr)
+        return 1
+    return results(args.config_dir, args.action, args.target, args.founder)
 
 
 def _spend(args: argparse.Namespace) -> int:
@@ -163,6 +242,12 @@ def _simulate(args: argparse.Namespace) -> int:
         print("FEL: --days måste vara minst 1", file=sys.stderr)
         return 1
     return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
+
+
+def _report(args: argparse.Namespace) -> int:
+    from .reporting.cli import report  # importeras bara när kommandot används
+
+    return report(args.config_dir, args.kind, args.day, args.start, args.end)
 
 
 def _kill(args: argparse.Namespace) -> int:
@@ -213,7 +298,12 @@ def main(argv: list[str] | None = None) -> int:
         "dev-agent": lambda: _dev_agent(args),
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
+        "report": lambda: _report(args),
         "spend": lambda: _spend(args),
+        "results": lambda: _results(args),
+        "registry": lambda: _registry(args),
+        "research": lambda: _research(args),
+        "assess": lambda: _assess(args),
     }
     try:
         return commands[args.command]()

@@ -38,7 +38,7 @@ from pathlib import Path
 from ..config import ConfigError
 from ..ledger import EntryType, Status, compute_result
 from ..memory import Database
-from .agents import build_gateway, ensure_org
+from .agents import agent_data_class, build_gateway, ensure_org
 from .cycle import WorkCycle
 from .market import SimClock
 from .run import Simulation, require_sim
@@ -79,6 +79,12 @@ class RunResult:
     kill_switch: bool
 
 
+# Simuleringens marknad (besökare, konvertering, priser, avgifter) är antaganden ur scenarierna, inte
+# uppmätt verklighet. Det står i varje rapport, och "redo" är bara en hypotes tills riktig försäljning finns.
+MARKET_NOTE = ("Marknadsantagandena i simuleringen är OVERIFIERADE: de kommer ur scenariofilerna, inte från "
+               "riktig försäljning.")
+
+
 @dataclass(frozen=True, slots=True)
 class Readiness:
     scenario: str
@@ -88,9 +94,17 @@ class Readiness:
     reasons: tuple[str, ...]
     runs: tuple[RunResult, ...]
     rules: ReadinessRules
+    real_sales: bool = False  # True först när riktiga försäljningsdata finns (results import, D-062)
+
+    @property
+    def status(self) -> str:
+        if not self.ready:
+            return "inte redo"
+        return "redo (bekräftat mot riktig försäljning)" if self.real_sales else "redo som hypotes (overifierat)"
 
     def as_dict(self) -> dict:
-        return {"scenario": self.scenario, "agents": self.agents, "ready": self.ready,
+        return {"scenario": self.scenario, "agents": self.agents, "ready": self.ready, "status": self.status,
+                "market_assumptions": "verified" if self.real_sales else "unverified", "market_note": MARKET_NOTE,
                 "recommendation": self.recommendation, "reasons": list(self.reasons),
                 "rules": asdict(self.rules), "runs": [asdict(r) for r in self.runs]}
 
@@ -128,11 +142,13 @@ def load_readiness_rules(config_dir: Path | str) -> ReadinessRules:
 
 
 def evaluate(config, config_dir: Path | str, scenario: Scenario, runs: int | None = None, days: int | None = None,
-             agents: str = "scripted", workdir: Path | str | None = None) -> Readiness:
+             agents: str = "scripted", workdir: Path | str | None = None, real_sales: bool = False) -> Readiness:
     """Kör `runs` oberoende körningar och bedömer dem mot reglerna. Rör aldrig huvuddatabasen."""
     from ..system import build_system
 
     require_sim(config)
+    if agents == "groq":  # en körning som pausas av kvoten skulle ge en halv bedömning (PR 8)
+        raise ValueError("bedömningar körs med scripted eller local; groq bara i simulate start och resume")
     rules = load_readiness_rules(config_dir)
     runs = runs or rules.min_runs
     days = days or max(rules.min_days, scenario.days)
@@ -146,9 +162,9 @@ def evaluate(config, config_dir: Path | str, scenario: Scenario, runs: int | Non
                 system = build_system(config, db, config_dir, clock=clock)
                 ensure_org(system.registry, founder)
                 sim = Simulation.start(system, config, sc, founder, clock)
-                WorkCycle(sim, system, build_gateway(system, agents, config_dir)).run()
+                WorkCycle(sim, system, build_gateway(system, agents, config_dir), agent_data_class(agents)).run()
                 results.append(_measure(system, config, sc, rules))
-    return _judge(scenario.name, agents, tuple(results), rules, runs, days)
+    return _judge(scenario.name, agents, tuple(results), rules, runs, days, real_sales)
 
 
 def save_report(readiness: Readiness, data_dir: Path | str) -> tuple[Path, str]:
@@ -198,7 +214,8 @@ def _lowest_liquid(entries) -> int:
     return lowest or 0
 
 
-def _judge(name: str, agents: str, runs: tuple[RunResult, ...], rules: ReadinessRules, n: int, days: int) -> Readiness:
+def _judge(name: str, agents: str, runs: tuple[RunResult, ...], rules: ReadinessRules, n: int, days: int,
+           real_sales: bool = False) -> Readiness:
     reasons: list[str] = []
     if n < rules.min_runs:
         reasons.append(f"bara {n} körningar; minst {rules.min_runs} krävs (en enstaka körning bevisar inget, §29)")
@@ -231,6 +248,9 @@ def _judge(name: str, agents: str, runs: tuple[RunResult, ...], rules: Readiness
                           "Det kräver grundarnas uttryckliga godkännande och Fas 7:s villkor (§55). Inga riktiga "
                           f"pengar används automatiskt. Att öka till {rules.next_real_investment / 100:.0f} kr bedöms "
                           "först på resultat från riktiga pengar.")
+        if not real_sales:
+            recommendation = ("HYPOTES: " + recommendation + " " + MARKET_NOTE + " Slutsatsen gäller bara som "
+                              "hypotes tills riktiga försäljningsdata finns (python -m aie results import).")
     else:
         recommendation = "Inte redo för riktiga pengar. Fortsätt i simuleringen och förbättra strategin."
-    return Readiness(name, agents, ready, recommendation, tuple(reasons), runs, rules)
+    return Readiness(name, agents, ready, recommendation, tuple(reasons), runs, rules, real_sales)

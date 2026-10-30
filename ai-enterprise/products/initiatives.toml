@@ -1,0 +1,60 @@
+# Produktutkast som initiativ i registret (arbetsorder 02, PR 11). Status "idea": inget är granskat eller godkänt.
+# Importera till en databas med:  python -m aie registry import --as <grundare>  (efter att filen kopierats till
+# config/registry/) eller provkör bedömningen enligt products/README.md.
+#
+# Alla siffror för efterfrågan är ANTAGANDEN. Det finns ingen uppmätt efterfrågan. Den mäts först när en grundare
+# har publicerat manuellt och importerat utfallen (python -m aie results import, D-062).
+# Pris i plattformens valuta (USD-cent). Grundarnas tid räknas som kostnad (100 kr per timme, simulation.toml).
+
+config_version = 1
+
+[[initiatives]]
+key = "hushallsbudget-mall"
+status = "idea"
+platform = "etsy"
+department = "research"
+offering = "product"
+description = "Hushållsbudget i kalkylark (Google Sheets och Excel) på svenska, med månadsflikar och sparmål"
+price_minor = 500
+unit_cost_minor = 0
+currency = "USD"
+founder_hours_per_week = 1
+[initiatives.demand]
+visitors_per_day = 15
+conversion_bp = 200
+refund_bp = 100
+source = "antagande: ingen uppmätt efterfrågan; mäts med valideringsplanen i products/hushallsbudget-mall/README.md"
+
+[[initiatives]]
+key = "frilans-fakturamall"
+status = "idea"
+platform = "gumroad"
+department = "research"
+offering = "product"
+description = "Mallpaket för svenska frilansare: offert, faktura och tidrapport i kalkylark, med instruktioner"
+price_minor = 900
+unit_cost_minor = 0
+currency = "USD"
+founder_hours_per_week = 1
+[initiatives.demand]
+visitors_per_day = 8
+conversion_bp = 300
+refund_bp = 200
+source = "antagande: ingen uppmätt efterfrågan; mäts med valideringsplanen i products/frilans-fakturamall/README.md"
+
+[[initiatives]]
+key = "kalkylark-stadning"
+status = "idea"
+platform = "fiverr"
+department = "research"
+offering = "service"
+description = "Tjänst: städa och strukturera ett kalkylark (dubbletter, format, formler), anpassat för varje beställning"
+price_minor = 2500
+unit_cost_minor = 0
+currency = "USD"
+founder_hours_per_week = 4
+[initiatives.demand]
+visitors_per_day = 5
+conversion_bp = 200
+refund_bp = 300
+source = "antagande: ingen uppmätt efterfrågan; mäts med valideringsplanen i products/kalkylark-stadning/README.md"

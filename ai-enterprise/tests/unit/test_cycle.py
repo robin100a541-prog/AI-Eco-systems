@@ -16,8 +16,19 @@ from aie.llm.providers import RuleProvider
 from aie.llm.router import ProviderRouter, QuotaLedger, Slot
 from aie.memory import Database
 from aie.monitoring import shutdown_logging
-from aie.simulation import (MAX_ACTIONS, PROPOSAL_FIELDS, Action, ScriptedPolicy, SimClock, Simulation, WorkCycle,
-                            build_gateway, ensure_org, load_scenario, parse_actions)
+from aie.simulation import (
+    MAX_ACTIONS,
+    PROPOSAL_FIELDS,
+    Action,
+    ScriptedPolicy,
+    SimClock,
+    Simulation,
+    WorkCycle,
+    build_gateway,
+    ensure_org,
+    load_scenario,
+    parse_actions,
+)
 from aie.simulation.cli import simulate
 from aie.system import build_system
 
@@ -221,6 +232,18 @@ class TestCommand(unittest.TestCase):
         code, _, err = self.run_cli("start", "finns-inte", "yorgo", 1)
         self.assertEqual(code, 1)
         self.assertIn("scenariot finns inte", err)
+
+    def test_groq_without_key_leaves_no_run_behind(self):
+        """Verifies D-060: utan GROQ_API_KEY startar ingen körning, så datamappen kan användas direkt igen."""
+        from unittest import mock
+
+        with mock.patch.dict("os.environ", {}, clear=False) as env:
+            env.pop("GROQ_API_KEY", None)
+            code, _, err = self.run_cli("start", "normal", "yorgo", 1, agents="groq")
+        self.assertEqual(code, 1)
+        self.assertIn("GROQ_API_KEY", err)
+        code, out, _ = self.run_cli("start", "normal", "yorgo", 1)
+        self.assertEqual(code, 0, out)
 
 
 if __name__ == "__main__":

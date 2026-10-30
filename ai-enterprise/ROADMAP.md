@@ -134,12 +134,20 @@ Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot 
 | 6a Hela systemet kopplat i `python -m aie start`: spärrar, Tax Engine, incidenter, prognoser, lärdomar, strategier, prestation, SR-17 (D-041) | Yorgo | ✅ PR #60 |
 | 6b-1 Simulerat startkapital, marknad och scenarier (FR-20), migration 26, D-042 | Yorgo | ✅ PR #64 |
 | 6b-2 Åtgärdsprotokoll och arbetscykel, `python -m aie simulate` (FR-20, FR-23), D-043, D-044 | Yorgo | ✅ gren `yorgo/fas6b2-cykel` |
-| 6b-3 Daglig rapport och affärsförslag (FR-21, FR-23), D-045 | Yorgo | ☐ |
-| 6b-4 Övervakning och periodisk rapport (FR-24, FR-22), migration 27, D-046 | Yorgo | ☐ |
-| 6b-5 Acceptanstester för §54, Fas 6 stängs | Yorgo | ☐ |
+| 6b-3 Daglig rapport och affärsförslag (FR-21, FR-23), D-045 | Robin (övertagen, D-049) | ✅ `reporting/daily.py`; FR-23 fanns i `simulation/actions.py` |
+| 6b-4 Övervakning och periodisk rapport (FR-24, FR-22), D-046 | Robin (övertagen, D-049) | ✅ `reporting/monitor.py`, `reporting/periodic.py`, `python -m aie report`; ingen migration behövdes |
+| 6b-5 Acceptanstester för §54, Fas 6 stängs | Robin (övertagen, D-049) | ✅ `tests/acceptance/test_fas6.py` |
 
 ## Fas 7 — Kontrollerad pilot
 Kräver: Fas 1–6 godkända, Q-03…Q-05 och Q-07 besvarade, §25-parametrar satta, nödstopp testat, skattespår för pilotens intäkter bekräftat med Skatteverket.
+
+Arbetspunkter (föreslagna 2026-10-30; startas bara när grundarna startar Fas 7):
+
+| Punkt | Vad | Status |
+|---|---|---|
+| 7a | **Produktagent:** en agent tar fram EN digital produkt (en PDF-guide eller mall) som en fil i repot (`products/`), med testad struktur och utan externa beroenden. | ☐ |
+| 7b | **Manuell listning:** systemet skriver Gumroad-listningens text, pris och stop-loss. En grundare listar produkten för hand och för in försäljningen i ledgern via CLI (`python -m aie results import`). Inga konton eller betalningar sköts av systemet. | ☐ |
+| 7c | **Beslutscykel mot Groq:** ett test kör VD, CFO och risk genom ett beslut en gång via `LLMGateway` på Groq och loggar hur bra besluten är (motivering, siffror som stämmer mot ledgern, gränser som respekteras). | ☐ |
 
 ## Fas 8 — Kontinuerlig drift
 Återkommande cykel enligt §56, statusrapport per cykel.

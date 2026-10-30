@@ -1,5 +1,170 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Utvecklaragentens regler och stängda frågor
+### Ändrat
+- Q-BOT-001–004 är stängda som "släppt, lågt värde" (Robin, 2026-10-30) och flyttade till Besvarade.
+- Utvecklaragenten tar aldrig en uppgift i en fil som har en öppen grundarfråga. Uppgifter med dokumentation och tester går före lint: ordningen är dokumentation, krav och tester, kodkvalitet, lint, buggar.
+## [Unreleased] — 2026-10-30 — Simuleringens marknad är overifierad
+### Ändrat
+- Varje SIM-rapport (daglig, periodisk och bedömningen före start) anger att marknadsantagandena är OVERIFIERADE, eftersom de kommer ur scenariofilerna och inte från riktig försäljning.
+- "Redo" är bara en hypotes tills riktiga försäljningsdata finns (`real_results`, D-062). Rekommendationen börjar då med `HYPOTES:`. `simulate evaluate` skriver ut statusen, och rapportfilen har `status` och `market_assumptions: unverified|verified`.
+## [Unreleased] — 2026-10-30 — Fas 6b-5: acceptanstester för §54
+### Tillagt
+- `tests/acceptance/test_fas6.py` har ett test per kriterium i §54. Alla körs mot riktiga simuleringar av repots scenarier:
+  - SIM blandas aldrig med riktiga pengar,
+  - förlustinitiativ identifieras,
+  - riskgränser och nödstopp nekar utgifter,
+  - dagliga och periodiska rapporter stämmer med ledgern,
+  - stopp och omstart förlorar ingen historik.
+### Rättat
+- Daglig rapport: startkapital räknas inte längre som ett aktivt affärsinitiativ. En dag utan poster efter att ledgern startat visar 0 med notering i stället för `SAKNAS`, eftersom bara dagar innan ledgern fanns räknas som saknade data.
+
+## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
+### Tillagt
+- `reporting/monitor.py` (FR-24) läser revisionsloggen och ledgern och letar efter tre saker:
+  - loopar: samma agent gör samma sak 5 gånger i rad,
+  - upprepat arbete: samma åtgärd med samma underlag 3 gånger eller fler,
+  - kostnad utan värde: ett initiativ med kostnader men ingen intäkt, eller en agent som bara anropar modellen.
+- `reporting/periodic.py` (FR-22) täcker de tio punkterna i §58. Varje initiativ har samma nyckeltal, så att perioder och initiativ går att jämföra: netto, marginal, avkastning på kostnad, netto per dag och sämsta dag. Förlustinitiativ och övervakningsfynd blir rekommenderade förändringar, och saknade data står som `SAKNAS`.
+- `python -m aie report daily|periodic|monitor` läser bara. `simulate` sparar dessutom en periodisk rapport för hela körningen i `<data_dir>/reports/`.
+- Ingen migration behövdes, eftersom allt räknas om ur befintliga data. `tests/unit/test_periodic_report.py` har 5 tester.
+
+## [Unreleased] — 2026-10-30 — Fas 6b-3: daglig rapport (FR-21, §57)
+### Tillagt
+- `src/aie/reporting/daily.py`: de elva punkterna i §57 hämtas direkt ur ledgern, budgetmotorn, stop-loss, nödstoppet, skyddat läge, incidenter och godkännandeköerna. Saknade data står som `SAKNAS: <skäl>`, aldrig som en tyst nolla.
+- `python -m aie simulate start|resume` skriver en rapport per affärsdag till `<data_dir>/reports/daily-ÅÅÅÅ-MM-DD.md`.
+- FR-23 (affärsförslagets elva fält) kontrollerades redan i `simulation/actions.py` (6b-2).
+- `tests/unit/test_daily_report.py`: 4 tester.
+
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: kontroller som faktiskt bevisar något
+### Rättat
+- En ny eller omskriven kontroll som redan går igenom innan någon ändring gjorts avvisas, eftersom den inte bevisar något. Körning 9 lade till BL-006 med `!grep ... "__repr__"`, som var sann från början.
+- `grep`/`!grep` tar bort citattecken runt texten, så att modellens `"text"` söker efter text och inte efter citattecknen.
+- Högst tre förslag tas emot per körning, räknat efter att dubbletter och redan sanna förslag sorterats bort.
+- En backloggpunkt som inte nämner någon fil tas ändå: filen tas från dess kontroll. En punkt utan kontroll skrivs om även om den inte nämner någon fil. BL-006–BL-008 hade inget filnamn och skulle aldrig ha tagits.
+- `docs/BOT-BACKLOG.md`: BL-006 och BL-007 har fått kontroller som går att misslyckas med. BL-008:s kontroll var redan sann och är borttagen, så agenten skriver en ny.
+
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: en uppgift är klar först när dess kontroll bevisar det
+### Ändrat
+- `dev_agent/verify.py`: varje uppgift har en kontroll som körs efter att sviten gått grön. Lint: ruff hittar inte längre just det fyndet i filen. Fallerande test: testet går igenom, och ett instabilt (`flaky-test`) tre gånger i rad. Otestat krav: ett test vars docstring säger `Verifies <ID>` finns och går igenom. Backloggpunkt: kontrollen efter `Klart när:`. Går kontrollen inte igenom kastas ändringen, även om alla tester är gröna, och försöket räknas som misslyckat (`check_failed`).
+- En backloggpunkt utan giltig kontroll tas inte. Agenten ber modellen skriva in en (`Klart när: ...`), högst två per körning.
+- Agenten fyller själv på backloggen. I slutet av varje körning föreslår modellen högst tre nya, små punkter ur koden den läste. Punkter med giltig kontroll läggs till med nästa BL-nummer. Dubbletter hoppas över, och påfyllning sker inte när det redan finns 12 öppna punkter. Förslag om skyddade filer, CI, config, pengar, konton, kunder eller nya funktioner blir frågor i `QUESTIONS-FOR-FOUNDERS.md`.
+- En körning öppnar nu också en PR när backloggen ändrats.
+
+## [Unreleased] — 2026-10-28 — PR 11: produktutkast (utkast, inget publicerat)
+### Tillagt
+- `products/` innehåller tre kandidater med produkt eller tjänst, annonstext med AI-märkning, pris och valideringsplan. Varje kandidat har mätbara kriterier, en regel för att fortsätta, ändra eller sluta, och en checklista för det grundarna gör manuellt:
+  - `hushallsbudget-mall` på Etsy
+  - `frilans-fakturamall` på Gumroad
+  - `kalkylark-stadning` på Fiverr
+- `products/initiatives.toml`: kandidaterna som initiativ med status `idea`. Efterfrågan är märkt som antagande.
+- **Bedömningen före start (D-058) är körd:** ingen kandidat är redo. Grundarnas tid är större än nettot vid de antagna volymerna. Utskriften och en tröskelkörning med fler besökare finns i `products/README.md`.
+- `tests/unit/test_products.py`: 2 tester.
+
+## [Unreleased] — 2026-10-28 — PR 10: utfall från verkligheten (D-062, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 32 `real_results`: en rad per dag och initiativ med källa, append-only och idempotent.
+- `src/aie/results/` (`ResultStore`):
+  - Import av CSV. Bara grundare importerar, en källa krävs på varje rad, och en dålig rad avvisar hela filen.
+  - Sammanställning per valuta.
+  - Rapporten prognos mot utfall.
+- `python -m aie results import|list|report`.
+- Bedömningen före start använder uppmätta värden före antaganden när initiativet har minst 7 dagar med utfall, märkta "verifierat i verkligheten" (`apply_observed`, `drop_replaced`).
+- `docs/templates/utfall.csv`, som bara har rubrikraden, och `docs/setup.md` 2h.
+- Förslaget D-062 finns i `docs/proposals/2026-10-28-D-062-utfall-fran-verkligheten.md`.
+- `tests/unit/test_results.py`: 7 tester.
+
+## [Unreleased] — 2026-10-28 — PR 9: nattlig körning i GitHub Actions (D-061, föreslaget)
+### Tillagt
+- `.github/workflows/nightly.yml`:
+  - Körs varje natt och med knappen "Run workflow".
+  - Kör stegen kontroll av sim, tester, hälsokontroll och bedömning med skriptade agenter av `normal` och `platform_ban`.
+  - Kör en valfri kort Groq-simulering. Den körs bara i huvudrepot med repository secret, och får misslyckas.
+  - Laddar upp en artefakt och öppnar eller kommenterar ett ärende vid fel.
+  - Jobbet har bara läsrätt.
+- Förslaget D-061 finns i `docs/proposals/2026-10-28-D-061-nattlig-korning.md`.
+- `tests/unit/test_nightly_workflow.py`: 5 tester av arbetsflödets säkerhetsregler.
+### Rättat
+- `simulate start --agents groq` utan `GROQ_API_KEY` skapade körningen innan felet upptäcktes, så datamappen kunde inte användas igen. Nu byggs gatewayn före start. Det testas i `test_cycle.py`.
+
+## [Unreleased] — 2026-10-28 — PR 8: simulering med Groq-agenter (D-060, föreslaget)
+### Tillagt
+- `python -m aie simulate start|resume --agents groq`:
+  - Använder bara leverantörer av typen `groq` ur `providers.toml`, utan reserv.
+  - Förfrågningarna märks `public`, och det är tillåtet bara i sim med SIM.
+  - Saknas `GROQ_API_KEY` vägrar kommandot att starta.
+- `ProviderRouter.calls_left()` och `LLMGateway.calls_left()`.
+- `WorkCycle` pausar före en dag som kvoten inte räcker till och loggar `simulation.paused_quota`. `resume` fortsätter senare.
+- Bedömningar (`evaluate`, `assess`) vägrar `groq`.
+- `docs/setup.md` 2g: så kör Yorgo detta själv med sin gratisnyckel.
+- Förslaget D-060 finns i `docs/proposals/2026-10-28-D-060-groq-agenter.md`.
+- `tests/unit/test_groq_agents.py`: 4 tester. Nätverket är mockat.
+
+## [Unreleased] — 2026-10-28 — PR 7: skydd mot plattformsberoende och scenariot platform_ban (D-059, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Nya gränser i `config/loader.py` och `RiskLimits`: `MAX_PLATFORM_REVENUE_SHARE` (procent) och `MIN_ACTIVE_PLATFORMS` (antal, ny typ). Värdena läggs i `risk_limits.toml` i PR 7b, som en grundare godkänner.
+- `src/aie/registry/dependency.py` (`DependencyGuard`):
+  - Plattformar med gemensamma beroenden räknas som en grupp.
+  - Andelen av intäkterna räknas de senaste 90 dagarna.
+  - Ger varning, rapport, och en spärr mot nya initiativ i en grupp på eller över gränsen. När det finns intäkter och en gräns saknas, stoppas nya initiativ (ER-02).
+- `System.tick()` skriver `dependency.warning` i revisionsloggen.
+- `python -m aie registry dependency`.
+- Scenarier kan ha `[[platforms]]` med `dependencies`, och initiativ kan ha `platform`.
+- Ny händelse `platform_ban`, och scenariot `config/scenarios/platform_ban.toml`, där plattform A stänger kontot dag 30.
+- Förslaget D-059 finns i `docs/proposals/2026-10-28-D-059-plattformsberoende.md`.
+- `tests/unit/test_dependency.py`: 10 tester.
+### Ändrat
+- `python -m aie registry` bygger registret med hela systemet, så att D-058 och D-059 gäller även där.
+- `tests/fixtures/limits/risk_limits.toml` har fått de två föreslagna gränserna, så att testerna kör med gränserna satta. Saknade gränser testas separat.
+## [Unreleased] — 2026-10-28 — Utvecklaragenten: sök/ersätt-block och starkare modell
+### Ändrat
+- Modellen svarar med sök/ersätt-block (`FILE:` + `<<<<<<< SEARCH` / `=======` / `>>>>>>> REPLACE`), samma metod som aider bygger på, i stället för unified diffs. `dev_agent/edits.py` kräver att varje SEARCH finns exakt en gång i en befintlig fil. Nya filer får bara skapas under `tests/`. Blocken görs om till en diff som `check_patch` granskar som förut. Vid fel skickas det exakta felet tillbaka i återkopplingsförsöket. Rött ⇒ filerna återställs.
+- Prompten innehåller listan över de riktiga filerna under `src/aie/`, så att modellen inte hittar på sökvägar.
+- `groq` kör nu `openai/gpt-oss-120b` och `groq-2` `openai/gpt-oss-20b` som reserv. Båda används bara om de finns i Groqs aktuella modellista. `groq-3` (`llama-3.3-70b-versatile`) är borttagen, eftersom Groq inte längre erbjuder den.
+- Uppgifterna tas lättast först: dokumentation och lint, sedan små tester, sist buggar. Uppgifter som redan är frågor i `QUESTIONS-FOR-FOUNDERS.md` hoppas över.
+- `extract_diff`, `repair_diff` och `git apply` används inte längre och är borttagna.
+
+## [Unreleased] — 2026-10-28 — PR 6: simulera före start, hård spärr (D-058, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- Migration 31 `assessments` och `assessment_events`: bedömningar med exakt de parametrar de gäller (SHA-256), och ett beslut per bedömning.
+- `src/aie/registry/assessments.py`:
+  - `AssessmentStore`.
+  - `check_active()`: automatisk paus och incident efter 14 dagar under den pessimistiska prognosen, kopplad till `System.tick()`.
+- `src/aie/simulation/assessment.py`:
+  - Scenarier byggs från registret: normalt, pessimistiskt (efterfrågan × 0,25, returer × 2) och noll försäljning, med flera körningar var.
+  - Grundarnas tid och fasta avgifter räknas som kostnad. Antagandena märks, och en känslighetsanalys ingår.
+- `python -m aie assess run|list|show|approve|reject`.
+- **Spärr:** ett initiativ eller en plattform godkänns, aktiveras eller får utgifter bara med en godkänd och redo bedömning med samma parametrar. Ändras parametrarna går initiativet tillbaka till `reviewed`.
+- `config/simulation.toml [assessment]`: antagandena, märkta som antaganden.
+- Förslaget D-058 finns i `docs/proposals/2026-10-28-D-058-simulera-fore-start.md`.
+- `tests/unit/test_assessment.py`: 6 tester. `test_registry.py` har fått 3 tester till, och registertesterna och `test_system.py` följer nu den nya ordningen.
+
+## [Unreleased] — 2026-10-28 — PR 5: webbläsning för Research (D-057, föreslaget) · kräver-oberoende-granskning
+### Tillagt
+- `src/aie/research/web.py` (`WebReader`): läser kända offentliga sidor med `urllib` bakom `AuthorizationEngine`.
+  - Bara GET, och bara värdar i `config/research.toml`.
+  - SSRF-skydd även efter omdirigeringar, och `robots.txt` följs.
+  - Dagskvot, storleksgräns, tidsgräns och bara textinnehåll.
+  - Blockeras vid nödstopp och i skyddat läge.
+- Migration 30 `web_fetches`: varje försök med URL, datum, utfall, SHA-256 och text, append-only. Innehållet är opålitlig data (`ExternalContent`, SR-06).
+- `python -m aie research fetch|history`.
+- `research/QUESTIONS.md`: R-11 om ett gratis sök-API. Inget är kopplat in.
+- Förslaget D-057 finns i `docs/proposals/2026-10-28-D-057-webblasning.md`.
+- `tests/unit/test_web.py`: 8 tester med ett låtsasnät, utan nätverksanrop.
+
+## [Unreleased] — 2026-10-28 — PR 4: plattforms- och initiativregistret (D-056, föreslaget)
+### Tillagt
+- Migration 29 `registry_versions`: plattformar och initiativ som versionerad data, append-only.
+- `src/aie/registry/`:
+  - `Register`: statusflödet idé → undersökt → granskad → godkänd → aktiv, pausad eller avvecklad. Agenter går via "Utred möjlighet" (D-011), och bara grundare godkänner.
+  - `spend_block_reason`: initiativspärren (D-054).
+  - Import från `config/registry/*.toml`, och `python -m aie registry list|show|import|status`.
+- `config/registry/platforms.toml`: Etsy, Gumroad och Fiverr från `docs/channels.md` med status `investigated`. Okända uppgifter är okända.
+- `build_system` kopplar registret till budgetmotorn. Simuleringen registrerar scenariots initiativ i sin egen databas.
+- Inga plattformsnamn i `src/`, även i exempeltexter, och ett test kontrollerar det.
+- Förslaget D-056 finns i `docs/proposals/2026-10-28-D-056-register.md`.
+- `tests/unit/test_registry.py`: 8 tester. `test_system.py` registrerar ett initiativ före utgiften.
+
 ## [Unreleased] — 2026-10-28 — F6: uppdelade köp per departement och dag, initiativspärr (D-054, föreslaget) · kräver-oberoende-granskning
 ### Tillagt
 - `BudgetEngine._split_flags`: utöver D-028 (samma initiativ, sju dagar) flaggas utgifter i samma departement samma dag, i olika initiativ, som tillsammans passerar `HUMAN_APPROVAL_THRESHOLD`. Det går alltså inte längre att kringgå tröskeln med nya initiativnamn.

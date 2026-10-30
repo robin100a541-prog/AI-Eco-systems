@@ -12,7 +12,7 @@ days = 30
 start_date = "2027-01-01"
 
 [[initiatives]]
-key = "etsy-mallar"        # ledgerns affärsinitiativ
+key = "mallar"              # ledgerns affärsinitiativ
 department = "research"
 track = "partnership"      # skattespår (D-010, simulerat); isk/self_employment/hobby kräver owner
 price = 4_900              # pris per order
@@ -23,15 +23,23 @@ visitors = 40              # möjliga köpare per dag
 conversion_bp = 500        # sannolikhet att en besökare köper
 refund_bp = 200            # sannolikhet att en order återbetalas
 listed_from = 1            # första dagen initiativet säljer
+platform = "plattform-a"   # valfri: en plattform ur [[platforms]]; utan den delar alla en plattform
+
+[[platforms]]               # valfritt (D-059): plattformar och deras kritiska beroenden
+key = "plattform-a"
+dependencies = ["betalning-x"]
 
 [[events]]
 day = 10
 kind = "demand_shock"      # se EVENT_KINDS
-initiative = "etsy-mallar"
+initiative = "mallar"
 factor_bp = 0              # 0 = ingen efterfrågan, 10 000 = oförändrad
 until = 15                 # sista dagen; utan until gäller händelsen en dag
 note = "..."
 ```
+
+`platform_ban` (D-059) gäller en plattform, inte ett initiativ: `platform = "plattform-a"`. Från `day` och
+resten av körningen säljer inget initiativ på plattformen, och plattformen pausas i registret.
 """
 from __future__ import annotations
 
@@ -45,9 +53,10 @@ from ..tax import TRACKS
 
 SCENARIO_DIR = "scenarios"
 MARKET_EVENTS = frozenset({"demand_shock", "platform_outage", "cost_spike"})
+PLATFORM_EVENTS = frozenset({"platform_ban"})  # gäller alla initiativ på en plattform, resten av körningen
 ACTOR_EVENTS = frozenset({"security_incident", "kill_switch"})  # utförs av en aktiv agent i en roll
 AGENT_EVENTS = frozenset({"conflicting_assessment", "overspend_attempt"})  # tolkas av arbetscykeln (6b-2)
-EVENT_KINDS = MARKET_EVENTS | ACTOR_EVENTS | AGENT_EVENTS
+EVENT_KINDS = MARKET_EVENTS | PLATFORM_EVENTS | ACTOR_EVENTS | AGENT_EVENTS
 _INITIATIVE_INTS = ("price", "unit_cost", "fee_fixed", "fee_bp", "visitors", "conversion_bp", "refund_bp",
                     "listed_from")
 _BP = ("fee_bp", "conversion_bp", "refund_bp")
@@ -67,6 +76,13 @@ class Initiative:
     refund_bp: int
     listed_from: int = 1
     owner: str | None = None
+    platform: str | None = None  # D-059: en nyckel ur scenariots [[platforms]]
+
+
+@dataclass(frozen=True, slots=True)
+class Platform:
+    key: str
+    dependencies: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,8 +94,11 @@ class Event:
     until: int | None = None
     role: str | None = None  # för ACTOR_EVENTS: vilken roll som agerar
     note: str = ""
+    platform: str | None = None  # för PLATFORM_EVENTS
 
     def active_on(self, day: int) -> bool:
+        if self.kind in PLATFORM_EVENTS:
+            return self.day <= day  # ett stängt konto öppnas inte igen av sig självt
         return self.day <= day <= (self.until or self.day)
 
 
@@ -92,6 +111,7 @@ class Scenario:
     start_date: str
     initiatives: tuple[Initiative, ...]
     events: tuple[Event, ...] = field(default=())
+    platforms: tuple[Platform, ...] = field(default=())
 
     def initiative(self, key: str) -> Initiative:
         return next(i for i in self.initiatives if i.key == key)
@@ -129,7 +149,8 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
         errors.append(f"{where}: {message}")
 
     for key in data:
-        if key not in ("config_version", "name", "description", "seed", "days", "start_date", "initiatives", "events"):
+        if key not in ("config_version", "name", "description", "seed", "days", "start_date", "initiatives", "events",
+                       "platforms"):
             error(f"okänd nyckel {key!r}")
     if data.get("config_version") != 1 or isinstance(data.get("config_version"), bool):
         error("config_version ska vara 1")
@@ -145,6 +166,27 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
     except (TypeError, ValueError):
         error("start_date ska vara ett datum, ÅÅÅÅ-MM-DD")
 
+    platforms: list[Platform] = []
+    for n, item in enumerate(data.get("platforms", []), 1):
+        at = f"platforms[{n}]"
+        if not isinstance(item, dict):
+            error(f"{at} ska vara en tabell")
+            continue
+        for key in item:
+            if key not in ("key", "dependencies"):
+                error(f"{at}: okänd nyckel {key!r}")
+        key = item.get("key")
+        deps = item.get("dependencies", [])
+        if not isinstance(key, str) or not key.strip() or key != key.strip().lower() or " " in key:
+            error(f"{at}: key ska vara gemener utan mellanslag")
+        elif not isinstance(deps, list) or not all(isinstance(d, str) and d.strip() for d in deps):
+            error(f"{at}: dependencies ska vara en lista med texter")
+        else:
+            platforms.append(Platform(key, tuple(deps)))
+    platform_keys = [p.key for p in platforms]
+    if len(platform_keys) != len(set(platform_keys)):
+        error("två plattformar har samma key")
+
     initiatives: list[Initiative] = []
     raw = data.get("initiatives")
     if not isinstance(raw, list) or not raw:
@@ -155,7 +197,7 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
         if not isinstance(item, dict):
             error(f"{at} ska vara en tabell")
             continue
-        known = {"key", "department", "track", "owner", *_INITIATIVE_INTS}
+        known = {"key", "department", "track", "owner", "platform", *_INITIATIVE_INTS}
         for key in item:
             if key not in known:
                 error(f"{at}: okänd nyckel {key!r}")
@@ -184,8 +226,12 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
             error(f"{at}: price ska vara > 0")
         if values.get("listed_from", 1) < 1:
             error(f"{at}: listed_from ska vara ≥ 1")
+        platform = item.get("platform")
+        if platform is not None and platform not in platform_keys:
+            error(f"{at}: plattformen {platform!r} finns inte i [[platforms]]")
         if not errors:
-            initiatives.append(Initiative(item["key"], item["department"], track, owner=owner, **values))
+            initiatives.append(Initiative(item["key"], item["department"], track, owner=owner, platform=platform,
+                                          **values))
     keys = [i.key for i in initiatives]
     if len(keys) != len(set(keys)):
         error("två initiativ har samma key")
@@ -197,7 +243,7 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
             error(f"{at} ska vara en tabell")
             continue
         for key in item:
-            if key not in ("day", "kind", "initiative", "factor_bp", "until", "role", "note"):
+            if key not in ("day", "kind", "initiative", "factor_bp", "until", "role", "note", "platform"):
                 error(f"{at}: okänd nyckel {key!r}")
         kind = item.get("kind")
         if kind not in EVENT_KINDS:
@@ -211,6 +257,11 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
         initiative = item.get("initiative")
         if kind in MARKET_EVENTS and initiative not in keys:
             error(f"{at}: {kind} kräver ett initiativ ur [[initiatives]]")
+        if kind in PLATFORM_EVENTS:
+            if item.get("platform") not in platform_keys:
+                error(f"{at}: {kind} kräver en plattform ur [[platforms]]")
+            if until is not None:
+                error(f"{at}: {kind} gäller resten av körningen; ange ingen until")
         factor = item.get("factor_bp")
         if kind in ("demand_shock", "cost_spike") and (not _int(factor) or factor < 0):
             error(f"{at}: {kind} kräver factor_bp ≥ 0")
@@ -218,8 +269,8 @@ def parse_scenario(data: dict, where: str, departments, founders) -> Scenario:
         if kind in ACTOR_EVENTS and not isinstance(role, str):
             error(f"{at}: {kind} kräver role, till exempel cro eller auditor")
         if not errors:
-            events.append(Event(day, kind, initiative, factor, until, role, item.get("note", "")))
+            events.append(Event(day, kind, initiative, factor, until, role, item.get("note", ""), item.get("platform")))
     if errors:
         raise ConfigError(errors)
     return Scenario(data["name"], data["description"], data["seed"], days, data["start_date"],
-                    tuple(initiatives), tuple(sorted(events, key=lambda e: e.day)))
+                    tuple(initiatives), tuple(sorted(events, key=lambda e: e.day)), tuple(platforms))

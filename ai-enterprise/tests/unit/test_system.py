@@ -39,6 +39,27 @@ class SystemCase(unittest.TestCase):
         for state in (S.CREATED, S.TESTING, S.ACTIVE):
             registry.transition(agent_id, state, "yorgo", "test")
 
+    def approve_initiative(self, key, platform="testplattform"):
+        """D-054, D-056: en godkänd plattform och ett godkänt initiativ i registret."""
+        register = self.system.register
+        source = [{"url": "file:test", "read_on": "2027-01-01"}]
+        fees = {k: None for k in ("per_order_minor", "percent_bp", "per_listing_minor", "monthly_minor",
+                                  "setup_minor", "payout_minor")} | {"currency": "SIM", "notes": "test"}
+        data = {"name": "Test", "url": "file:test", "type": "product", "fees": fees, "currency": "SIM",
+                "payment_terms": "x", "vat_responsibility": "x", "dac7": "x", "ai_rules": "x",
+                "automation_rules": "x", "account_requirements": "x", "payout_terms": "x", "dependencies": [],
+                "risks": [], "sources": source}
+        item = {"platform": platform, "department": "research", "offering": "product", "description": "test",
+                "price_minor": 100, "unit_cost_minor": 0, "currency": "SIM", "founder_hours_per_week": 0,
+                "demand": {"visitors_per_day": 1, "conversion_bp": 1, "refund_bp": 0, "source": "antagande"}}
+        for status in ("investigated", "reviewed"):
+            register.record("robin", "platform", platform, status, data, "test")
+            register.record("robin", "initiative", key, status, item, "test")
+        a = register.assessments.record("robin", key, platform, item, data, {"test": True}, True)  # D-058
+        register.assessments.approve("robin", a.assessment_id, "test")
+        register.record("robin", "platform", platform, "approved", data, "test")
+        register.record("robin", "initiative", key, "approved", item, "test")
+
     def book(self, key, department, entry_type, amount, status=Status.SETTLED, approval=Approval.NOT_REQUIRED):
         return self.system.ledger.record("robin", EntryDraft(key, department, amount, "SIM", entry_type, "etsy",
                                                              approval, ("decision:1",), status=status))
@@ -86,6 +107,10 @@ class TestTick(SystemCase):
     def test_reserved_tax_is_part_of_the_budget_check(self):
         """Verifies D-041 och ER-19: budgetmotorn i det byggda systemet räknar med den reserverade skatten."""
         self.book("cap", "finance", EntryType.CAPITAL_IN, 1_000_000, approval=Approval.APPROVED)
+        unknown = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))
+        self.assertFalse(unknown.allowed)  # D-054: initiativet finns inte i registret än
+        # godkänns före första intäkten: med intäkter och utan D-059-gränserna i repots config stoppas nya initiativ (ER-02)
+        self.approve_initiative("etsy")
         sale = self.book("s1", "research", EntryType.REVENUE, 10_000)
         self.system.tax.assign("robin", sale.entry_id, "partnership")
         check = self.system.budget.check("robin", SpendRequest("research", 100, "SIM", "etsy", Risk.LOW))

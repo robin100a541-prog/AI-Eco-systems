@@ -6,7 +6,13 @@ from pathlib import Path
 
 from aie.agents import AgentRegistry, AgentState
 from aie.audit import AuditLog
-from aie.authorization import AuthorizationEngine, ControlStops, PermissionDenied, StopError, load_permissions
+from aie.authorization import (
+    AuthorizationEngine,
+    ControlStops,
+    PermissionDenied,
+    StopError,
+    load_permissions,
+)
 from aie.memory import Database
 
 ROOT = Path(__file__).resolve().parents[2]

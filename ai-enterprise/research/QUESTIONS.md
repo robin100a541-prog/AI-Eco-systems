@@ -17,6 +17,7 @@ Frågor om lag, skatt eller plattformsvillkor får aldrig bli regel utan grundar
 | R-08 | Momsgränsen 120 000 kr/år: hur räknas plattformsförsäljning där plattformen redan tagit in moms? | Felaktig momsredovisning | Skatt | Öppen | Skatteverkets hobbysida nämner gränsen |
 | R-09 | Vilka API:er (betalda) skulle ge mest värde per krona när vinst finns (D-009)? | Rätt första investering | Ekonomi | Öppen | — |
 | R-10 | Vilka produkter/tjänster har verifierbar efterfrågan på Gumroad, Etsy och Fiverr med låg startkostnad? | Val av pilot (Q-08) | Marknad | Öppen | — |
+| R-11 | Finns ett kostnadsfritt sök-API vars villkor tillåter automatiserad användning för marknadsresearch, utan betalkort, med kända gränser? Kandidater att läsa villkoren för (inget är verifierat): MediaWiki-API:t (Wikipedia), DuckDuckGo Instant Answer, Brave Search API:s gratisnivå, Bing Web Search. | Utan ett sök-API kan Research bara läsa kända sidor (`config/research.toml`, D-057) och inte själv hitta nya plattformar | Verktyg/villkor | Öppen | — (2026-10-28: inget lästs; inget kopplat in) |
 
 ## Säljkanaler
 Utvärderade kanaler (Gumroad, Etsy, Fiverr) finns i [`docs/channels.md`](../docs/channels.md).

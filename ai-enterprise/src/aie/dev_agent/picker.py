@@ -1,11 +1,17 @@
-"""Väljer små uppgifter åt utvecklaragenten (D-050), i den här ordningen:
+"""Väljer små uppgifter åt utvecklaragenten (D-050). Kandidaterna hämtas ur:
 
-1. öppna punkter i `docs/BOT-BACKLOG.md` som nämner minst en fil i repot,
+1. öppna punkter i `docs/BOT-BACKLOG.md`,
 2. tester som fallerar i grundkörningen,
 3. `ruff`-varningar (om ruff finns),
 4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
 
-En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) hoppas över.
+Varje uppgift har en kontroll (`verify.py`) som bevisar att den är klar: ruff-fyndet är borta, testet
+går igenom, eller ett test märkt `Verifies <ID>` finns och går igenom. En backloggpunkt anger sin
+kontroll efter `Klart när:`; saknas den tas punkten inte förrän den skrivits om.
+
+De sorteras lättast först (`ease`): dokumentation och lint, sedan små tester, sist buggar.
+En uppgift som redan misslyckats `MAX_FAILURES` gånger (enligt tillståndsfilen) eller redan är en
+fråga i `docs/QUESTIONS-FOR-FOUNDERS.md` hoppas över.
 Kontexten till modellen begränsas till `MAX_CONTEXT_CHARS` tecken (Groqs gratisgräns per minut är
 liten). Av Markdown-filer skickas bara raderna som nämner uppgiftens krav-ID:n. Ett befintligt test
 skickas med som exempel på importer och stil (`example_test`).
@@ -19,6 +25,8 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+
+from .verify import Check, checks_in
 
 MAX_FAILURES = 3
 MAX_CONTEXT_CHARS = 6_000
@@ -39,6 +47,7 @@ class Item:
     kind: str  # backlog, failing_test, ruff, requirement
     task: str  # vad modellen ska göra
     files: tuple[str, ...]  # sökvägar relativa till ai-enterprise/
+    checks: tuple[Check, ...] = ()  # det som bevisar att uppgiften är klar (verify.py)
 
 
 def _existing(root: Path, paths) -> tuple[str, ...]:
@@ -58,9 +67,12 @@ def backlog_items(root: Path) -> list[Item]:
     for line in path.read_text(encoding="utf-8").splitlines():
         m = _BACKLOG_ITEM.match(line)
         if m:
-            files = _existing(root, _PATH.findall(m.group(2)))
-            if files:
-                items.append(Item(m.group(1), "backlog", m.group(2).strip(), files))
+            task = m.group(2).strip()
+            checks = checks_in(task, root)
+            # Filerna: de som nämns i texten, annars de som kontrollerna gäller (ruff/grep <fil>).
+            check_files = [c.arg.split(" ")[0] for c in checks if c.kind in ("ruff", "grep", "!grep")]
+            files = _existing(root, _PATH.findall(task) + check_files)
+            items.append(Item(m.group(1), "backlog", task, files, checks))
     return items
 
 
@@ -76,9 +88,14 @@ def failing_test_items(root: Path, test_output: str) -> list[Item]:
                     f"Testet {cls}.{test} fallerar. Hitta orsaken och rätta koden (inte testet). "
                     f"Utdata:\n{test_output[-3000:]}",
                     (rel,),
+                    (Check("test", _test_id(module, cls, test)),),
                 )
             )
     return items
+
+
+def _test_id(module: str, cls: str, test: str) -> str:
+    return f"{module if module.startswith('tests.') else 'tests.' + module}.{cls}.{test}"
 
 
 def ruff_items(root: Path) -> list[Item]:
@@ -110,6 +127,7 @@ def ruff_items(root: Path) -> list[Item]:
                 f"Rätta ruff-varningen {f['code']} på rad {row} i {rel}: {f['message']}. "
                 "Ändra inget beteende.",
                 (rel,),
+                (Check("ruff", f"{rel} {f['code']}"),),
             )
         )
     return items
@@ -140,20 +158,90 @@ def requirement_items(root: Path) -> list[Item]:
                     f"Kravet {rid} ({text.strip()}) har inget test. Skriv ett nytt test i en ny fil "
                     f"tests/unit/test_req_{rid.lower().replace('-', '_')}.py märkt 'Verifies {rid}'.",
                     tuple(mentions[:2]),
+                    (Check("verifies", rid),),
                 )
             )
     return items
 
 
+_BACKLOG_PRIORITY = re.compile(r"^\((\d)\b")
+# Lättast först: dokumentation och lint, sedan små tester, sist buggar och resten (D-050).
+# Dokumentation (avvikelser mellan text och kod) och tester först, lint sist (grundarnas beslut 2026-10-30).
+_EASE = {"5": 0, "2": 1, "4": 2, "3": 3, "1": 4, "6": 5}
+
+
+def ease(item: Item) -> int:
+    if item.kind == "failing_test":
+        return -1  # en röd grundkörning lagas alltid först
+    if item.kind == "requirement":
+        return 1
+    if item.kind == "ruff":
+        return 3
+    m = _BACKLOG_PRIORITY.match(item.task)
+    return _EASE.get(m.group(1), 3) if m else 3
+
+
+def escalated(root: Path) -> set[str]:
+    """Uppgifter som redan är frågor till grundarna (`**Uppgift:** <nyckel>`); de provas inte igen."""
+    path = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+    if not path.is_file():
+        return set()
+    return set(re.findall(r"\*\*Uppgift:\*\* (\S+)", path.read_text(encoding="utf-8")))
+
+
+def open_question_files(root: Path, candidates: list[Item]) -> set[str]:
+    """Filer som en öppen grundarfråga gäller. Agenten rör dem inte förrän frågan är besvarad."""
+    path = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+    if not path.is_file():
+        return set()
+    text = path.read_text(encoding="utf-8")
+    start, end = text.find("## Öppna"), text.find("## Besvarade")
+    open_part = text[start:end if end > start else None] if start >= 0 else ""
+    keys = set(re.findall(r"\*\*Uppgift:\*\* (\S+)", open_part))
+    files = {f for i in candidates if i.key in keys for f in i.files}
+    files |= {k.split(":")[2] for k in keys if k.startswith("ruff:") and k.count(":") >= 2}
+    return files
+
+
+def uncheckable(root: Path) -> list[Item]:
+    """Öppna backloggpunkter som saknar en giltig kontroll och därför måste skrivas om."""
+    skip = escalated(root)
+    return [i for i in backlog_items(root) if not i.checks and i.key not in skip]
+
+
+def already_done(root: Path, candidates: list[Item]) -> set[str]:
+    """Backloggpunkter vars kontroll redan går igenom (gjorda men inte avbockade); tas inte igen."""
+    from .verify import Verifier
+
+    verifier = Verifier(root)
+    return {
+        i.key
+        for i in candidates
+        if i.kind == "backlog" and i.checks and all(c.kind in ("grep", "!grep") for c in i.checks)
+        and verifier.verify(i.checks)[0]
+    }
+
+
 def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
-    """Alla kandidater i prioritetsordning, utan de som misslyckats för många gånger."""
+    """Kandidater med en kontroll, lättast först, utan de som misslyckats för många gånger eller är frågor.
+
+    En backloggpunkt utan kontroll (`Klart när:`) tas inte; agenten skriver först om den (`uncheckable`).
+    """
     candidates = (
         backlog_items(root)
         + failing_test_items(root, test_output)
         + ruff_items(root)
         + requirement_items(root)
     )
-    return [i for i in candidates if failures.get(i.key, 0) < MAX_FAILURES]
+    skip = escalated(root) | already_done(root, candidates)
+    blocked = open_question_files(root, candidates)
+    keep = [
+        i
+        for i in candidates
+        if i.checks and failures.get(i.key, 0) < MAX_FAILURES and i.key not in skip
+        and not set(i.files) & blocked
+    ]
+    return sorted(keep, key=ease)  # stabil: samma lätthet behåller ordningen ovan
 
 
 def _relevant(rel: str, body: str, task: str) -> str:

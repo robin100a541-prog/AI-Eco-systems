@@ -4,7 +4,7 @@
     python -m aie dev-agent open-pr --result result.json      # kräver BOT_TOKEN och GITHUB_REPOSITORY
 
 `run` gör ändringen och committar den lokalt på grenen. Den pushar inget och har ingen GitHub-token.
-En körning utan ändring och utan nya grundarfrågor committar inget och öppnar ingen PR; rapporten
+En körning utan kodändring, nya grundarfrågor eller backloggändringar committar inget och öppnar ingen PR; rapporten
 läggs i `.dev-agent-pending/` och följer med nästa PR som ändrar något.
 `open-pr` öppnar PR:en och slår på automatisk merge. Kod 0 = lyckades, kod 1 = fel.
 """
@@ -155,9 +155,10 @@ def run(config_dir: Path, branch: str, out: Path, environ=os.environ) -> int:
     title = (
         f"dev-agent: {result.item.key}"
         if result.success and result.item
-        else f"dev-agent: frågor {result.started_at[:16]}"
+        else f"dev-agent: backlogg och frågor {result.started_at[:16]}"
     )
-    publish = result.success or bool(result.questions)
+    # En PR bara när något faktiskt ändrats: kod, frågor till grundarna eller backloggen.
+    publish = result.success or bool(result.questions) or result.backlog_changed
     pending = project / PENDING_DIR
     if not publish:
         # Ingen PR för en ren rapport: den sparas och följer med nästa PR som ändrar något.
@@ -182,6 +183,7 @@ def run(config_dir: Path, branch: str, out: Path, environ=os.environ) -> int:
         str(report.relative_to(repo)),
         "ai-enterprise/docs/bot-reports/dev-agent-state.json",
         "ai-enterprise/docs/QUESTIONS-FOR-FOUNDERS.md",
+        "ai-enterprise/docs/BOT-BACKLOG.md",
     ]
     _git(repo, "checkout", "-B", branch)
     _git(repo, "add", "--", *[p for p in paths if (repo / p).exists()])

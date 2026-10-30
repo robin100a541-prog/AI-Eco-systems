@@ -1,0 +1,127 @@
+# Nattlig körning (arbetsorder 02, PR 9, D-061): tester, hälsokontroll och bedömning med skriptade agenter.
+# Varje natt och med knappen "Run workflow". Allt körs i miljön sim med valutan SIM.
+#
+# Säkerhet:
+# - Inga riktiga pengar och inga externa publiceringar. Steget "Bara sim" stoppar körningen om config inte är sim/SIM.
+# - Jobbet har bara läsrätt. Bara jobbet som öppnar ett ärende vid fel får skriva ärenden.
+# - GROQ_API_KEY finns bara i Groq-steget. Det körs bara i huvudrepot, aldrig i en fork, och bara om
+#   hemligheten finns. Nyckeln skrivs aldrig ut. Utan hemlighet hoppas steget över.
+# - Groq-steget får misslyckas utan att natten räknas som misslyckad (gratisnivån kan vara slut).
+name: nightly
+
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+    inputs:
+      groq:
+        description: "Kör även en kort simulering med Groq-agenter (om hemligheten finns)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash  # med pipefail: ett fel före "| tee" fäller steget
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bara sim
+        run: |
+          python -c "from aie.config import load_config; c = load_config('config'); assert c.system.environment == 'sim' and c.risk.currency == 'SIM', 'nattkörningen kör bara sim med SIM'; print('miljö sim, valuta SIM')"
+      - name: Tester
+        run: python -m unittest discover -s tests 2>&1 | tee "$RUNNER_TEMP/tests.txt"
+      - name: Hälsokontroll
+        run: |
+          {
+            python -m aie check-config
+            python -m aie init
+            python -m aie status
+          } 2>&1 | tee "$RUNNER_TEMP/health.txt"
+      - name: Bedömning med skriptade agenter
+        run: |
+          for scenario in normal platform_ban; do
+            python -m aie simulate evaluate --scenario "$scenario" --agents scripted
+          done 2>&1 | tee "$RUNNER_TEMP/evaluate.txt"
+      - name: Kort simulering med Groq-agenter
+        id: groq
+        if: >-
+          github.repository == 'robin100a541-prog/AI-Eco-systems' &&
+          (github.event_name == 'schedule' || inputs.groq)
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$GROQ_API_KEY" ]; then
+            echo "GROQ_API_KEY saknas som repository secret; steget hoppas över" | tee "$RUNNER_TEMP/groq.txt"
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/groq-config"
+          cp -r config/. "$RUNNER_TEMP/groq-config/"
+          sed -i 's#^data_dir = .*#data_dir = "data-groq"#; s#^log_dir = .*#log_dir = "logs-groq"#' "$RUNNER_TEMP/groq-config/system.toml"
+          python -m aie simulate start --config-dir "$RUNNER_TEMP/groq-config" --scenario normal --as yorgo --days 3 --agents groq 2>&1 | tee "$RUNNER_TEMP/groq.txt"
+      - name: Sammanfattning
+        if: always()
+        run: |
+          {
+            echo "## Nattkörning $(date -u +%Y-%m-%d)"
+            echo '```'
+            grep -E "^(Ran|OK|FAILED)" "$RUNNER_TEMP/tests.txt" || echo "testerna kördes inte"
+            grep -E "^(Bedömning|REKOMMENDATION|RESULTAT)" "$RUNNER_TEMP/evaluate.txt" || echo "bedömningen kördes inte"
+            tail -n 3 "$RUNNER_TEMP/groq.txt" 2>/dev/null || echo "Groq-steget kördes inte"
+            echo '```'
+            echo "Groq-steget: ${{ steps.groq.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Ladda upp rapporter
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tests.txt
+            ${{ runner.temp }}/health.txt
+            ${{ runner.temp }}/evaluate.txt
+            ${{ runner.temp }}/groq.txt
+            ai-enterprise/data/reports/
+            ai-enterprise/logs/
+          if-no-files-found: warn
+          retention-days: 14
+
+  report-failure:
+    needs: nightly
+    if: failure() && github.repository == 'robin100a541-prog/AI-Eco-systems'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Öppna eller uppdatera ett ärende
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nattkörningen misslyckades"
+          existing=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          body="Nattkörningen $(date -u +%Y-%m-%d) misslyckades: $RUN_URL. Rapporterna finns som artefakt i körningen."
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

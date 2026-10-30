@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from .hierarchy import reporting_line_error
@@ -29,7 +29,7 @@ _AGENT_ID = re.compile(r"[a-z][a-z0-9_-]{1,63}")
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 _SANCTIONS = frozenset({AgentState.SUSPENDED, AgentState.RETIRED})  # SR-17: kräver dokumenterade kriterier
@@ -47,6 +47,9 @@ class Agent:
     department: str  # hämtas från rollen, kan inte sättas separat
     manager_id: str | None  # None = rapporterar direkt till grundarna
     state: AgentState = AgentState.PROPOSED
+
+    def __repr__(self) -> str:
+        return f"Agent({self.agent_id!r}, {self.role!r}, {self.department!r}, {self.manager_id!r}, {self.state!r})"
 
 
 @dataclass(frozen=True, slots=True)

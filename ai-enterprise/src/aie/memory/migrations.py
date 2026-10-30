@@ -1256,6 +1256,161 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=29,
+        name="registry",
+        statements=(
+            # PR 4 (arbetsorder 02, D-056): plattforms- och initiativregistret. Varje ändring är en ny
+            # version; den senaste gäller. Inget skrivs om eller raderas.
+            """
+            CREATE TABLE registry_versions (
+                id             INTEGER PRIMARY KEY,
+                kind           TEXT NOT NULL CHECK (kind IN ('platform', 'initiative')),
+                key            TEXT NOT NULL CHECK (length(trim(key)) > 0),
+                version        INTEGER NOT NULL CHECK (version >= 1),
+                status         TEXT NOT NULL CHECK (status IN
+                               ('idea', 'investigated', 'reviewed', 'approved', 'active', 'paused', 'retired')),
+                data           TEXT NOT NULL CHECK (json_valid(data)),
+                actor          TEXT NOT NULL,
+                note           TEXT NOT NULL,
+                opportunity_id INTEGER REFERENCES opportunities (opportunity_id),
+                at             TEXT NOT NULL,
+                UNIQUE (kind, key, version)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER registry_versions_no_update BEFORE UPDATE ON registry_versions
+            BEGIN SELECT RAISE(ABORT, 'en version skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER registry_versions_no_delete BEFORE DELETE ON registry_versions
+            BEGIN SELECT RAISE(ABORT, 'registerversioner raderas aldrig'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=30,
+        name="web_fetches",
+        statements=(
+            # PR 5 (arbetsorder 02, D-057): varje hämtning av en webbsida, med URL, datum och innehåll.
+            # Innehållet är opålitlig data (SR-06). Append-only.
+            """
+            CREATE TABLE web_fetches (
+                id           INTEGER PRIMARY KEY,
+                agent        TEXT NOT NULL,
+                url          TEXT NOT NULL,
+                final_url    TEXT,
+                outcome      TEXT NOT NULL CHECK (outcome IN ('ok', 'refused', 'error')),
+                status_code  INTEGER,
+                content_type TEXT,
+                bytes        INTEGER NOT NULL DEFAULT 0,
+                sha256       TEXT,
+                text         TEXT,
+                truncated    INTEGER NOT NULL DEFAULT 0 CHECK (truncated IN (0, 1)),
+                reason       TEXT NOT NULL,
+                day          TEXT NOT NULL,
+                at           TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX web_fetches_by_day ON web_fetches (day)",
+            """
+            CREATE TRIGGER web_fetches_no_update BEFORE UPDATE ON web_fetches
+            BEGIN SELECT RAISE(ABORT, 'hämtningar skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER web_fetches_no_delete BEFORE DELETE ON web_fetches
+            BEGIN SELECT RAISE(ABORT, 'hämtningar raderas aldrig'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=31,
+        name="assessments",
+        statements=(
+            # PR 6 (arbetsorder 02, D-058): sparade bedömningar före start. En bedömning gäller exakt de
+            # parametrar som står i den (params_hash). Ändras initiativet eller plattformen gäller den inte
+            # längre. Godkännandet är en egen händelse, högst ett beslut per bedömning. Append-only.
+            """
+            CREATE TABLE assessments (
+                assessment_id INTEGER PRIMARY KEY,
+                kind          TEXT NOT NULL CHECK (kind IN ('simulation', 'scenario')),
+                initiative    TEXT NOT NULL,
+                platform      TEXT NOT NULL,
+                params_hash   TEXT NOT NULL,
+                params        TEXT NOT NULL CHECK (json_valid(params)),
+                result        TEXT NOT NULL CHECK (json_valid(result)),
+                ready         INTEGER NOT NULL CHECK (ready IN (0, 1)),
+                actor         TEXT NOT NULL,
+                at            TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER assessments_no_update BEFORE UPDATE ON assessments
+            BEGIN SELECT RAISE(ABORT, 'en bedömning skrivs aldrig om; gör en ny'); END
+            """,
+            """
+            CREATE TRIGGER assessments_no_delete BEFORE DELETE ON assessments
+            BEGIN SELECT RAISE(ABORT, 'bedömningar raderas aldrig'); END
+            """,
+            """
+            CREATE TABLE assessment_events (
+                id            INTEGER PRIMARY KEY,
+                assessment_id INTEGER NOT NULL REFERENCES assessments (assessment_id),
+                event         TEXT NOT NULL CHECK (event IN ('approved', 'rejected')),
+                actor         TEXT NOT NULL,
+                note          TEXT NOT NULL,
+                at            TEXT NOT NULL,
+                UNIQUE (assessment_id)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER assessment_events_no_update BEFORE UPDATE ON assessment_events
+            BEGIN SELECT RAISE(ABORT, 'beslut om bedömningar skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER assessment_events_no_delete BEFORE DELETE ON assessment_events
+            BEGIN SELECT RAISE(ABORT, 'beslut om bedömningar raderas aldrig'); END
+            """,
+        ),
+    ),
+    Migration(
+        version=32,
+        name="real_results",
+        statements=(
+            # PR 10 (arbetsorder 02, D-062): utfall från verkligheten, en rad per dag och initiativ, med källa.
+            # Importeras av en grundare ur en CSV-fil. Samma rad två gånger sparas en gång (row_hash).
+            # Append-only: ett fel rättas med en ny rad som har en egen källa och en förklaring.
+            """
+            CREATE TABLE real_results (
+                id             INTEGER PRIMARY KEY,
+                day            TEXT NOT NULL,
+                initiative     TEXT NOT NULL,
+                visitors       INTEGER NOT NULL CHECK (visitors >= 0),
+                orders         INTEGER NOT NULL CHECK (orders >= 0),
+                revenue_minor  INTEGER NOT NULL CHECK (revenue_minor >= 0),
+                refunds_minor  INTEGER NOT NULL CHECK (refunds_minor >= 0),
+                fees_minor     INTEGER NOT NULL CHECK (fees_minor >= 0),
+                costs_minor    INTEGER NOT NULL CHECK (costs_minor >= 0),
+                currency       TEXT NOT NULL,
+                source         TEXT NOT NULL CHECK (length(trim(source)) > 0),
+                note           TEXT NOT NULL,
+                row_hash       TEXT NOT NULL UNIQUE,
+                file_sha256    TEXT NOT NULL,
+                imported_by    TEXT NOT NULL,
+                at             TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX real_results_by_initiative ON real_results (initiative, day)",
+            """
+            CREATE TRIGGER real_results_no_update BEFORE UPDATE ON real_results
+            BEGIN SELECT RAISE(ABORT, 'utfall skrivs aldrig om; importera en rättelse'); END
+            """,
+            """
+            CREATE TRIGGER real_results_no_delete BEFORE DELETE ON real_results
+            BEGIN SELECT RAISE(ABORT, 'utfall raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

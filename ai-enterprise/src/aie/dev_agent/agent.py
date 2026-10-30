@@ -3,10 +3,10 @@
 En körning:
 1. Kör hela testsviten en gång (grundkörning). Fallerande tester blir kandidater.
 2. Väljer kandidater (`picker.pick`) och provar högst `MAX_ATTEMPTS` av dem, en i taget:
-   skickar koden till en gratismodell via `LLMGateway`, granskar diffen (`patch.check_patch`),
-   applicerar den med `git apply` och kör hela sviten.
-   Avvisad diff eller rött ⇒ diffen backas (`git apply -R`) och modellen får ett nytt försök med
-   exakt felet som återkoppling. Misslyckas även det noteras försöket och nästa kandidat provas.
+   skickar koden och fillistan till en gratismodell via `LLMGateway`, som svarar med sök/ersätt-block
+   (`edits.py`). Blocken görs om till en diff som granskas (`patch.check_patch`), skrivs och
+   hela sviten körs. Fel i blocken, avvisad ändring eller rött ⇒ filerna återställs och modellen
+   får ett nytt försök med exakt felet. Misslyckas även det noteras försöket och nästa kandidat provas.
 3. Första gröna försöket blir körningens ändring. Sedan stannar körningen.
 4. Är alla modeller slut (`NoProviderAvailable`), eller svarar bara regelreserven `rule`, stannar
    körningen lugnt: det räknas inte som ett misslyckat försök. Berodde det på 429 (gratisgränsen per
@@ -26,7 +26,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -37,8 +36,10 @@ from ..audit import AuditLog
 from ..authorization import AuthorizationEngine, PermissionDenied
 from ..llm import ChatRequest, DataClass, LLMGateway, Message, NoProviderAvailable
 from ..llm.gateway import SecretInPrompt
-from . import picker
-from .patch import check_patch, extract_diff, repair_diff
+from . import backlog, picker
+from . import edits as edit_blocks
+from .patch import check_patch
+from .verify import RunCmd, Verifier, run_cmd
 
 TOOL = "dev.propose_patch"
 MAX_ATTEMPTS = 3
@@ -59,27 +60,45 @@ Projektet:
   `PYTHONPATH=src python -m unittest discover -s tests` från `ai-enterprise/`. Följ stilen i exemplet.
 - Ett test som verifierar ett krav har en docstring som börjar med `Verifies <ID>`.
 - Bara Python-standardbiblioteket och `aie`. Inga nya beroenden. Inga nätverksanrop.
+- Använd bara filer som finns i fillistan. Hitta aldrig på moduler eller sökvägar.
 
-Svaret:
-- ENBART en giltig unified diff i git-format, inget annat (ingen förklaring).
-- Sökvägar relativa till repots rot: `--- a/ai-enterprise/...` och `+++ b/ai-enterprise/...`.
-  En ny fil har `--- /dev/null` och `+++ b/ai-enterprise/...`.
-- Varje hunk börjar med ett fullständigt huvud `@@ -start,antal +start,antal @@` (aldrig bara `@@`).
-  Sammanhangsrader börjar med ett mellanslag (även tomma rader) och är exakta kopior av filen.
-  Ta med 2–3 oförändrade rader före och efter varje ändring.
-- Exempel:
-  --- a/ai-enterprise/src/aie/exempel.py
-  +++ b/ai-enterprise/src/aie/exempel.py
-  @@ -10,3 +10,3 @@ def total(rader):
-       summa = 0
-  -    for r in rader:
-  +    for r in sorted(rader):
-           summa += r
+Svaret är ENBART ett eller flera sök/ersätt-block, ingen förklaring:
+
+FILE: ai-enterprise/src/aie/exempel.py
+<<<<<<< SEARCH
+    for r in rader:
+        summa += r
+=======
+    for r in sorted(rader):
+        summa += r
+>>>>>>> REPLACE
+
+- SEARCH är en exakt kopia av befintliga rader i filen, med samma indrag, och ska finnas exakt en
+  gång. Ta med så få rader som behövs för att den blir unik.
+- REPLACE är raderna som ersätter dem.
+- En ny testfil under `ai-enterprise/tests/` är ett block med tom SEARCH och hela filen i REPLACE.
 - Högst 200 ändrade rader. Ta aldrig bort eller försvaga tester. Rör inte `config/`, `.github/`
   eller skyddade filer."""
+MAX_REWRITES = 2  # backloggpunkter utan kontroll som skrivs om per körning
+SIDE_MAX_TOKENS = 800
+REWRITE_PROMPT = (
+    "Du sköter backloggen i Python-projektet ai-enterprise. En punkt saknar en kontroll som kan "
+    "bevisa att den är klar. Svara med EN rad och inget annat: `Klart när:` följt av en eller flera "
+    "kontroller inom backticks, t.ex. Klart när: `verifies ER-12`. Välj kontroller som faktiskt "
+    "bevisar punktens mål."
+)
+REFILL_PROMPT = (
+    "Du sköter backloggen i Python-projektet ai-enterprise. Föreslå högst 3 nya, små förbättringar "
+    "av koden nedan. En rad per förslag, exakt i formen\n"
+    "- [ ] (P kategori) Vad och var. Klart när: `kontroll`\n"
+    "där P är 1 buggar, 2 kravtäckning, 3 säkerhet, 4 kodkvalitet eller 5 dokumentation. Varje förslag "
+    "ska gå att göra i en liten ändring och bevisas av kontrollen. Inga nya funktioner, inget om "
+    "pengar, betalningar, konton eller kunder, och inga ändringar av config/, .github/ eller skyddade "
+    "filer. Svara bara med raderna."
+)
 FEEDBACK_PROMPT = (
-    "Din diff gick inte igenom ({outcome}). Exakt fel:\n{detail}\n\n"
-    "Rätta felet och svara med en ny, komplett unified diff och inget annat."
+    "Dina block gick inte igenom ({outcome}). Exakt fel:\n{detail}\n\n"
+    "Rätta felet och svara med nya sök/ersätt-block och inget annat."
 )
 
 
@@ -107,6 +126,12 @@ class RunResult:
     tests_ran: int = 0
     changed_files: tuple[str, ...] = ()
     questions: list[str] = field(default_factory=list)
+    backlog_added: list[str] = field(default_factory=list)  # nya punkter (BL-NNN)
+    backlog_checked: list[str] = field(default_factory=list)  # punkter som fått en kontroll
+
+    @property
+    def backlog_changed(self) -> bool:
+        return bool(self.backlog_added or self.backlog_checked)
 
 
 class TokenPacer:
@@ -135,6 +160,12 @@ class TokenPacer:
 
     def record(self, tokens: int) -> None:
         self._spent.append((self._clock(), max(0, tokens)))
+
+
+def _file_list(project: Path) -> str:
+    """De riktiga källfilerna, relativt till ai-enterprise/ (kort, så att prompten ryms i gratisgränsen)."""
+    files = edit_blocks.source_files(project)
+    return "### Fillista: de enda filerna under ai-enterprise/src/aie/\n" + "\n".join(files) + "\n"
 
 
 def estimate_tokens(messages, max_tokens: int) -> int:
@@ -177,6 +208,8 @@ class DevAgent:
         clock: Callable[[], datetime] = _now,
         pacer: TokenPacer | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        run: RunCmd = run_cmd,
+        refill: bool = True,
     ) -> None:
         self.project = Path(project)
         self.repo = self.project.parent
@@ -191,6 +224,9 @@ class DevAgent:
         self._sleep = sleep
         self._waited_for_rate_limit = False
         self._mark = 0
+        self._verifier = Verifier(self.project, run)
+        self._refill_enabled = refill
+        self._read_files: list[str] = []  # filerna modellen fick läsa; underlag för nya punkter
 
     # --- Körningen -----------------------------------------------------------------------------
 
@@ -209,6 +245,7 @@ class DevAgent:
         baseline = self._run_tests(self.project)
         result.tests_ran = baseline.ran
         state = self._load_state()
+        self._make_checkable(result)
         candidates = picker.pick(
             self.project, "" if baseline.ok else baseline.output, state
         )
@@ -220,6 +257,8 @@ class DevAgent:
             self._attempt(item, result, state)
         if not candidates:
             result.stopped = result.stopped or "ingen uppgift att ta"
+        if self._refill_enabled and not result.stopped.startswith(("alla gratismodeller", "bara regel")):
+            self._refill(result)
         self._save_state(state)
         self._log(
             "dev.run_finished",
@@ -234,22 +273,24 @@ class DevAgent:
     def _attempt(
         self, item: picker.Item, result: RunResult, state: dict[str, int]
     ) -> None:
-        self._log("dev.item_picked", {"item": item.key, "kind": item.kind})
+        self._log(
+            "dev.item_picked",
+            {"item": item.key, "kind": item.kind, "checks": [str(c) for c in item.checks]},
+        )
+        self._read_files += [f for f in item.files if f not in self._read_files]
         messages = [
             Message("system", SYSTEM_PROMPT),
             Message(
                 "user",
                 f"Uppgift: {item.task}\n\n{picker.context(self.project, item)}\n"
-                f"{picker.example_test(self.project, item)}",
+                f"{picker.example_test(self.project, item)}\n{_file_list(self.project)}",
             ),
         ]
         for round_no in range(1 + FEEDBACK_RETRIES):
             response = self._ask(messages, item, result, state)
             if response is None:
                 return
-            diff = extract_diff(response.text)
-            diff = repair_diff(diff) if diff else diff
-            outcome, detail, check = self._try_patch(diff)
+            outcome, detail, check = self._try_edits(response.text, item)
             if outcome == "applied":
                 self._applied(item, result, state, check, response.provider, round_no)
                 return
@@ -267,7 +308,7 @@ class DevAgent:
                         f"Uppgift: {item.task}\n\n"
                         f"{picker.context(self.project, item, picker.RETRY_CONTEXT_CHARS)}",
                     ),
-                    Message("assistant", (diff or response.text)[:3000]),
+                    Message("assistant", response.text[:3000]),
                     Message(
                         "user", FEEDBACK_PROMPT.format(outcome=outcome, detail=detail[:1500])
                     ),
@@ -340,20 +381,30 @@ class DevAgent:
         self._sleep(RATE_LIMIT_WAIT)
         return self._call(request, estimate)
 
-    def _try_patch(self, diff: str):
-        """Granskar, applicerar och testar en diff. Returnerar (utfall, felet, granskningen)."""
-        check = check_patch(diff)
+    def _try_edits(self, text: str, item: picker.Item):
+        """Applicerar blocken, granskar, testar och bevisar uppgiften. Returnerar (utfall, felet, granskningen).
+
+        Gröna tester räcker inte: uppgiftens egen kontroll (`verify.py`) måste också gå igenom,
+        annars kastas ändringen och försöket räknas som misslyckat.
+        """
+        blocks = edit_blocks.parse_edits(text)
+        try:
+            applied = edit_blocks.apply_edits(self.repo, blocks)
+        except edit_blocks.EditError as exc:
+            return ("no_diff" if not blocks else "apply_failed"), str(exc), None
+        check = check_patch(applied.diff)
         if not check.ok:
-            outcome = "no_diff" if not diff.strip() else "rejected"
-            return outcome, "; ".join(check.problems), check
-        applied, detail = self._git_apply(diff)
-        if not applied:
-            headers = [ln for ln in diff.splitlines() if ln.startswith(("---", "+++", "@@"))][:6]
-            return "apply_failed", f"{detail}; diffens huvuden: {' | '.join(headers)}", check
+            return "rejected", "; ".join(check.problems), check
+        edit_blocks.write(self.repo, applied)
         run = self._run_tests(self.project)
         if not run.ok:
-            self._git_apply(diff, reverse=True)
+            edit_blocks.revert(self.repo, applied)
             return "tests_failed", run.output[-1500:], check
+        proven, detail = self._verifier.verify(item.checks)
+        if not proven:
+            edit_blocks.revert(self.repo, applied)
+            self._log("dev.check_failed", {"item": item.key, "detail": detail[:300]})
+            return "check_failed", detail, check
         self._last_run = run
         return "applied", "", check
 
@@ -366,6 +417,10 @@ class DevAgent:
             Attempt(item.key, "applied", f"{check.changed_lines} rader, {provider}{note}")
         )
         state.pop(item.key, None)
+        if item.kind == "backlog" and backlog.mark_done(
+            self.project, item.key, self._clock().date().isoformat()
+        ) and item.key not in result.backlog_checked:
+            result.backlog_checked.append(item.key)  # backloggen ändrad: följer med i PR:en
         self._log(
             "dev.patch_applied",
             {
@@ -376,6 +431,90 @@ class DevAgent:
                 "tests": run.ran,
             },
         )
+
+    # --- Backloggen: kontroller och nya punkter --------------------------------------------------
+
+    def _make_checkable(self, result: RunResult) -> None:
+        """Skriver om backloggpunkter som saknar kontroll så att de går att bevisa (högst två per körning)."""
+        for item in picker.uncheckable(self.project)[:MAX_REWRITES]:
+            answer = self._ask_side(
+                [
+                    Message("system", REWRITE_PROMPT),
+                    Message(
+                        "user",
+                        f"Punkt {item.key}: {item.task}\n\n{backlog.CHECK_HELP}\n\n"
+                        f"{picker.context(self.project, item, picker.RETRY_CONTEXT_CHARS)}",
+                    ),
+                ]
+            )
+            if answer is None:
+                return  # ingen modell just nu
+            checks = backlog.clause_checks(self.project, answer)
+            if checks and self._already_true(checks):
+                checks = ()  # en kontroll som redan går igenom bevisar ingenting
+            clause = backlog.add_check(self.project, item.key, checks)
+            self._log("dev.backlog_checked", {"item": item.key, "clause": clause or ""})
+            if clause:
+                result.backlog_checked.append(item.key)
+
+    def _refill(self, result: RunResult) -> None:
+        """Ber modellen om högst tre nya, små punkter som går att bevisa, ur koden den läste."""
+        if not self._read_files or len(backlog.open_items(self.project)) >= backlog.MAX_OPEN_ITEMS:
+            return
+        code = "".join(
+            f"### Fil: ai-enterprise/{f}\n```\n{(self.project / f).read_text(encoding='utf-8')[:3000]}\n```\n"
+            for f in self._read_files[:2]
+            if (self.project / f).is_file()
+        )
+        answer = self._ask_side(
+            [
+                Message("system", REFILL_PROMPT),
+                Message("user", f"{backlog.CHECK_HELP}\n\n{code}"),
+            ]
+        )
+        if answer is None:
+            return
+        keep, seen = [], set()
+        accepted = 0
+        for proposal in backlog.parse_proposals(answer, self.project):
+            if accepted >= backlog.MAX_NEW_ITEMS:
+                break
+            norm = proposal.text.split("Klart när:")[0].lower()
+            if norm in seen or backlog.is_duplicate(self.project, proposal):
+                continue
+            if self._already_true(proposal.checks):
+                self._log("dev.backlog_rejected", {"text": proposal.text[:120], "why": "redan uppfylld"})
+                continue  # punkten vore "klar" utan någon ändring
+            seen.add(norm)
+            accepted += 1
+            if backlog.classify(proposal) == "founders":
+                item = picker.Item(f"förslag:{proposal.text[:60]}", "suggestion", proposal.text, ())
+                self._question(
+                    result,
+                    item,
+                    "Utvecklaragenten föreslår det här, men det rör skyddade filer, pengar, konton "
+                    "eller något utanför CONSTITUTION.md/ROADMAP.md, så bara grundarna får avgöra det.",
+                    question="Ska förslaget läggas i backloggen, ändras eller strykas?",
+                )
+            else:
+                keep.append(proposal)
+        result.backlog_added = backlog.add_items(self.project, keep)
+        self._log("dev.backlog_refilled", {"added": result.backlog_added})
+
+    def _already_true(self, checks) -> bool:
+        """En ny kontroll måste gå att misslyckas med: går den redan igenom bevisar den ingenting."""
+        return self._verifier.verify(tuple(checks))[0]
+
+    def _ask_side(self, messages: list[Message]) -> str | None:
+        """Ett anrop utanför en uppgift (backloggen). None om ingen riktig modell svarar."""
+        request = ChatRequest(tuple(messages), DataClass.PUBLIC, max_tokens=SIDE_MAX_TOKENS)
+        try:
+            response = self._call(request, estimate_tokens(messages, SIDE_MAX_TOKENS))
+        except SecretInPrompt:
+            return None
+        if response is None or response.provider == "rule":
+            return None
+        return response.text
 
     def _fail(
         self, item, result: RunResult, state: dict[str, int], outcome: str, detail: str
@@ -396,34 +535,6 @@ class DevAgent:
 
     # --- Git, tillstånd, frågor ------------------------------------------------------------------
 
-    def _git_apply(self, diff: str, reverse: bool = False) -> tuple[bool, str]:
-        with tempfile.NamedTemporaryFile(
-            "w", suffix=".diff", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(diff)
-        try:
-            # --recount: radantalen i hunk-huvudena räknas om (modellerna räknar ofta fel).
-            args = ["git", "apply", "--recount", "--whitespace=nowarn"] + (["-R"] if reverse else [])
-            check = subprocess.run(
-                args + ["--check", f.name],
-                cwd=self.repo,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if check.returncode != 0:
-                return False, check.stderr.strip()[:500]
-            done = subprocess.run(
-                args + [f.name],
-                cwd=self.repo,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            return done.returncode == 0, done.stderr.strip()[:500]
-        finally:
-            os.unlink(f.name)
-
     def _load_state(self) -> dict[str, int]:
         path = self.project / STATE_FILE
         try:
@@ -440,7 +551,13 @@ class DevAgent:
             encoding="utf-8",
         )
 
-    def _question(self, result: RunResult, item: picker.Item, why: str) -> None:
+    def _question(
+        self,
+        result: RunResult,
+        item: picker.Item,
+        why: str,
+        question: str = "Hur ska uppgiften lösas, eller ska den strykas?",
+    ) -> None:
         path = self.project / QUESTIONS_FILE
         if not path.is_file():
             return
@@ -452,7 +569,7 @@ class DevAgent:
         block = (
             f"### {qid} Utvecklaragenten behöver hjälp: {item.key}\n"
             f"- **Datum:** {self._clock().date().isoformat()}\n- **Status:** Öppen\n"
-            f"- **Uppgift:** {item.key}\n- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?\n"
+            f"- **Uppgift:** {item.key}\n- **Fråga:** {question}\n"
             f"- **Varför det spelar roll:** {why}\n"
             f"- **Alternativ:**\n  1. Ge en ledtråd eller lös den själv.\n  2. Stryk uppgiften.\n"
             f"- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.\n"
@@ -462,7 +579,7 @@ class DevAgent:
         if marker in text:
             text = text.replace(marker, marker + "\n" + block, 1).replace(
                 "\n\n_Inga ännu._\n\n## Besvarade", "\n\n## Besvarade", 1
-            )
+            ).replace("\n\n_Inga._\n\n## Besvarade", "\n\n## Besvarade", 1)
         else:
             text += "\n" + block
         path.write_text(text, encoding="utf-8")
@@ -498,6 +615,10 @@ def write_report(project: Path, result: RunResult, audit_actions: list[str]) -> 
         "",
         "## Frågor till grundarna",
         ", ".join(result.questions) or "Inga nya.",
+        "",
+        "## Backloggen",
+        f"- Nya punkter: {', '.join(result.backlog_added) or 'inga'}",
+        f"- Punkter som fått en kontroll: {', '.join(result.backlog_checked) or 'inga'}",
     ]
     lines += ["", "## Revisionslogg", ", ".join(audit_actions) or "tom", ""]
     path.write_text("\n".join(lines), encoding="utf-8")

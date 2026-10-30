@@ -11,3 +11,13 @@ min_margin_percent = 10      # medianmarginal efter alla kostnader, avgifter och
 max_drawdown_percent = 20    # likvida medel får aldrig falla mer än så från startkapitalet
 first_real_investment = 50_000   # 500 kr: första riktiga investeringen, om allt ovan är uppfyllt
 next_real_investment = 100_000   # 1 000 kr: bedöms först på resultat från riktiga pengar
+
+# Bedömning före start (PR 6, D-058). ANTAGANDEN, inte fakta: de märks i varje rapport.
+[assessment]
+usd_cent_in_sim_minor = 11          # antagande: 1 USD ≈ 11 kr, alltså 1 cent ≈ 11 öre i SIM
+unknown_percent_fee_bp = 500        # antagande när en procentavgift är okänd: 5 % (försiktigt)
+unknown_fixed_fee_minor = 500       # antagande när en fast avgift per order är okänd: 5 kr (försiktigt)
+founder_hour_value_minor = 10_000   # antagande: en timme av grundarnas tid kostar 100 kr
+pessimistic_demand_bp = 2_500       # pessimistiskt: efterfrågan × 0,25
+pessimistic_refund_factor = 2       # pessimistiskt: returer × 2
+pause_after_days = 14               # aktivt initiativ under pessimistisk prognos så länge ⇒ paus och incident

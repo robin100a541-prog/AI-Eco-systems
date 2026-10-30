@@ -19,16 +19,17 @@ from aie.authorization import AuthorizationEngine, load_permissions
 from aie.dev_agent import (
     DevAgent,
     TestRun,
+    backlog,
     check_patch,
     cli,
-    extract_diff,
+    edits,
     picker,
     write_report,
 )
 from aie.dev_agent import agent as agent_module
 from aie.dev_agent.agent import RunResult, TokenPacer
 from aie.dev_agent.github import GitHub, GitHubError
-from aie.dev_agent.patch import repair_diff
+from aie.dev_agent.verify import Check, Verifier, checks_in, parse_check
 from aie.llm import (
     LLMGateway,
     OpenAICompatibleProvider,
@@ -44,12 +45,13 @@ ROOT = Path(__file__).resolve().parents[2]
 QUESTIONS = (ROOT / "docs" / "QUESTIONS-FOR-FOUNDERS.md").read_text(encoding="utf-8")
 
 
-def diff_for(path, old, new):
-    return f"--- a/{path}\n+++ b/{path}\n@@ -1,2 +1,2 @@\n def add(a, b):\n-    {old}\n+    {new}\n"
+def block(path, search, replace):
+    return f"FILE: {path}\n<<<<<<< SEARCH\n{search}=======\n{replace}>>>>>>> REPLACE\n"
 
 
-GOOD = diff_for("ai-enterprise/src/calc.py", "return a - b", "return a + b")
-BAD = diff_for("ai-enterprise/src/calc.py", "return a - b", "return a * b")
+CALC_CHECK = " Klart när: `grep src/calc.py return a + b`"
+GOOD = block("ai-enterprise/src/calc.py", "    return a - b\n", "    return a + b\n")
+BAD = block("ai-enterprise/src/calc.py", "    return a - b\n", "    return a * b\n")
 
 
 class FakeModel:
@@ -110,15 +112,18 @@ class DevCase(unittest.TestCase):
                 registry.transition(agent_id, state, "robin", "test")
         self.engine = AuthorizationEngine(permissions, registry, "sim", self.audit)
 
-    def backlog(self, items):
+    def backlog(self, items, check=True):
+        # Varje punkt behöver en kontroll som bevisar den; standard: add() adderar.
+        suffix = CALC_CHECK if check else ""
         lines = ["# Backlogg", "", "## Öppna", ""] + [
-            f"- [ ] {i} — öppen" for i in items
+            f"- [ ] {i}{'' if 'Klart när:' in i else suffix} — öppen" for i in items
         ]
+        lines += ["", "## Pågår", ""]
         (self.project / "docs" / "BOT-BACKLOG.md").write_text(
             "\n".join(lines) + "\n", encoding="utf-8"
         )
 
-    def agent(self, model=None, calls=100, rule=True, run_tests=fake_tests):
+    def agent(self, model=None, calls=100, rule=True, run_tests=fake_tests, refill=False):
         slots = []
         if model is not None:
             slots.append(
@@ -141,6 +146,7 @@ class DevCase(unittest.TestCase):
             self.audit,
             run_tests=run_tests,
             pacer=TokenPacer(budget=10**9),  # ingen takt i testerna; TestRateLimits testar den
+            refill=refill,
         )
 
     def calc(self):
@@ -153,7 +159,7 @@ class DevCase(unittest.TestCase):
 class TestRun_(DevCase):
     def test_good_patch_is_applied_after_green_tests(self):
         """Verifies D-050: en diff från en gratismodell appliceras bara när hela sviten är grön; allt revideras."""
-        model = FakeModel(f"Här är ändringen:\n```diff\n{GOOD}```")
+        model = FakeModel(f"Här är ändringen:\n{GOOD}")
         result = self.agent(model).run()
         self.assertTrue(result.success)
         self.assertIn("return a + b", self.calc())
@@ -185,7 +191,10 @@ class TestRun_(DevCase):
         state = json.loads(
             (self.project / "docs/bot-reports/dev-agent-state.json").read_text()
         )
-        self.assertEqual(state["failures"], {"BL-001": 1, "BL-002": 1, "BL-003": 1})
+        # Uppgifter som redan är frågor i repots frågefil hoppas över (picker.escalated).
+        skipped = picker.escalated(self.project)
+        expected = [k for k in ("BL-001", "BL-002", "BL-003", "BL-004") if k not in skipped][:3]
+        self.assertEqual(state["failures"], dict.fromkeys(expected, 1))
 
     def test_three_failures_become_a_founder_question_and_the_item_is_skipped(self):
         """Verifies D-050: en uppgift som misslyckats tre gånger blir en grundarfråga och provas inte igen."""
@@ -206,10 +215,10 @@ class TestRun_(DevCase):
         self.assertIn("ingen uppgift", result.stopped)
 
     def test_protected_file_is_refused_and_asked_about(self):
-        """Verifies D-050: en diff mot en skyddad fil avvisas och blir en fråga till grundarna."""
-        evil = diff_for(
-            "ai-enterprise/config/risk_limits.toml", "return a - b", "return a + b"
-        )
+        """Verifies D-050: en ändring av en skyddad fil avvisas och blir en fråga till grundarna."""
+        (self.project / "config").mkdir()
+        (self.project / "config" / "risk_limits.toml").write_text("max = 1\n", encoding="utf-8")
+        evil = block("ai-enterprise/config/risk_limits.toml", "max = 1\n", "max = 100\n")
         result = self.agent(FakeModel(evil)).run()
         self.assertEqual(result.attempts[0].outcome, "rejected")
         self.assertIn("skyddad fil", result.attempts[0].detail)
@@ -293,10 +302,6 @@ class TestPatchCheck(unittest.TestCase):
                     any(expected in p for p in check.problems), check.problems
                 )
 
-    def test_extract_diff(self):
-        self.assertEqual(extract_diff(f"Svar:\n```diff\n{GOOD}```\nKlart."), GOOD)
-        self.assertEqual(extract_diff("ingen diff här"), "")
-
 
 class TestFeedback(DevCase):
     def test_failed_diff_is_retried_once_with_the_exact_error(self):
@@ -313,27 +318,43 @@ class TestFeedback(DevCase):
         self.assertIn("FAILED (failures=1)", retry[3]["content"])
         self.assertIn("dev.retry_with_feedback", self.actions())
 
-    def test_bare_hunk_headers_are_repaired_before_git_apply(self):
-        """Verifies D-050: `@@` utan radnummer och tomma sammanhangsrader lagas; git apply lyckas."""
-        sloppy = (
-            "--- a/ai-enterprise/src/calc.py\n+++ b/ai-enterprise/src/calc.py\n@@\n"
-            " def add(a, b):\n-    return a - b\n+    return a + b\n\n"
-        )
-        self.assertEqual(
-            repair_diff(sloppy).splitlines()[2], "@@ -1,2 +1,2 @@"
-        )
-        result = self.agent(FakeModel(sloppy)).run()
+    def test_search_must_match_exactly_once_and_the_error_is_fed_back(self):
+        """Verifies D-050: en SEARCH som inte finns exakt en gång avvisas, och felet går tillbaka till modellen."""
+        missing = block("ai-enterprise/src/calc.py", "    return a / b\n", "    return a + b\n")
+        model = FakeModel(missing, GOOD)
+        result = self.agent(model).run()
         self.assertTrue(result.success)
-        self.assertIn("return a + b", self.calc())
+        feedback = model.calls[1]["messages"][3]["content"]
+        self.assertIn("apply_failed", feedback)
+        self.assertIn("finns 0 gånger i ai-enterprise/src/calc.py", feedback)
 
-    def test_new_file_hunk_starts_at_zero(self):
-        """Verifies D-050: en ny fil får huvudet `@@ -0,0 +1,N @@`."""
-        new = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@\n+import unittest\n+\n+X = 1\n"
-        self.assertIn("@@ -0,0 +1,3 @@", repair_diff(new))
+    def test_invented_files_are_rejected_but_new_tests_are_allowed(self):
+        """Verifies D-050: en påhittad fil avvisas; en ny testfil under tests/ får skapas."""
+        repo = self.repo
+        invented = edits.parse_edits(block("ai-enterprise/src/aie/finance.py", "x = 1\n", "x = 2\n"))
+        with self.assertRaisesRegex(edits.EditError, "finns inte"):
+            edits.apply_edits(repo, invented)
+        new_src = edits.parse_edits(block("ai-enterprise/src/aie/finance.py", "", "x = 2\n"))
+        with self.assertRaisesRegex(edits.EditError, "bara skapas under ai-enterprise/tests/"):
+            edits.apply_edits(repo, new_src)
+        new_test = edits.parse_edits(block("tests/unit/test_new.py", "", "import unittest\n"))
+        applied = edits.apply_edits(repo, new_test)
+        self.assertIn("+++ b/ai-enterprise/tests/unit/test_new.py", applied.diff)
+        self.assertIn("--- /dev/null", applied.diff)
+        edits.write(repo, applied)
+        self.assertTrue((self.project / "tests/unit/test_new.py").is_file())
+        edits.revert(repo, applied)
+        self.assertFalse((self.project / "tests/unit/test_new.py").exists())
+
+    def test_red_tests_restore_the_original_file(self):
+        """Verifies D-050: rött efter skrivning ⇒ filen återställs exakt."""
+        before = self.calc()
+        self.agent(FakeModel(BAD)).run()
+        self.assertEqual(self.calc(), before)
 
     def test_rejected_import_is_fed_back_and_counted_once(self):
         """Verifies D-050: en otillåten import avvisas, återkopplas en gång, och räknas sedan som ett försök."""
-        bad_import = "--- /dev/null\n+++ b/ai-enterprise/tests/unit/test_x.py\n@@ -0,0 +1 @@\n+import ai_enterprise\n"
+        bad_import = block("ai-enterprise/tests/unit/test_x.py", "", "import ai_enterprise\n")
         model = FakeModel(bad_import)
         self.backlog(["BL-001 uppgift i `src/calc.py`"])
         result = self.agent(model).run()
@@ -341,12 +362,229 @@ class TestFeedback(DevCase):
         self.assertIn("ai_enterprise", model.calls[1]["messages"][3]["content"])
         self.assertEqual([a.outcome for a in result.attempts], ["rejected"])
 
-    def test_prompt_names_the_package_and_demands_only_a_diff(self):
-        """Verifies D-050: prompten anger paketet `aie`, importstilen och att svaret bara är en diff."""
+    def test_prompt_names_the_package_the_block_format_and_the_real_files(self):
+        """Verifies D-050: prompten anger paketet `aie`, sök/ersätt-formatet och de riktiga filerna."""
         self.assertIn("from aie.x import Y", agent_module.SYSTEM_PROMPT)
         self.assertIn("ai_enterprise", agent_module.SYSTEM_PROMPT)  # uttryckligen förbjudet
-        self.assertIn("ENBART en giltig unified diff", agent_module.SYSTEM_PROMPT)
+        self.assertIn("<<<<<<< SEARCH", agent_module.SYSTEM_PROMPT)
         self.assertIn("standardbiblioteket", agent_module.SYSTEM_PROMPT)
+        (self.project / "src" / "aie").mkdir(parents=True)
+        (self.project / "src" / "aie" / "ledger.py").write_text("X = 1\n", encoding="utf-8")
+        model = FakeModel(GOOD)
+        self.agent(model).run()
+        self.assertIn("\nsrc/aie/ledger.py\n", model.calls[0]["messages"][1]["content"])
+        self.assertIn("Fillista", model.calls[0]["messages"][1]["content"])
+
+
+class TestChecks(DevCase):
+    def test_green_tests_are_not_enough_the_items_check_must_pass(self):
+        """Verifies D-050: grönt men kontrollen går inte igenom ⇒ ändringen kastas och försöket räknas."""
+        swapped = block("ai-enterprise/src/calc.py", "    return a - b\n", "    return b + a\n")
+        result = self.agent(FakeModel(swapped)).run()
+        self.assertFalse(result.success)
+        self.assertEqual([a.outcome for a in result.attempts], ["check_failed"])
+        self.assertIn("grep src/calc.py return a + b", result.attempts[0].detail)
+        self.assertIn("return a - b", self.calc())  # återställd
+        self.assertIn("dev.check_failed", self.actions())
+
+    def test_uncheckable_backlog_item_is_rewritten_then_done(self):
+        """Verifies D-050: en punkt utan kontroll får först en kontroll, och tas sedan."""
+        self.backlog(["BL-001 (5 dokumentation) Rätta `src/calc.py` så att add adderar"], check=False)
+        model = FakeModel("Klart när: `grep src/calc.py return a + b`", GOOD)
+        result = self.agent(model).run()
+        self.assertEqual(result.backlog_checked, ["BL-001"])
+        self.assertTrue(result.success)
+        line = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertIn("- [x] BL-001 (5 dokumentation) Rätta `src/calc.py` så att add adderar Klart när: `grep src/calc.py return a + b` — klar", line)
+
+    def test_rewrite_with_an_already_true_check_is_refused(self):
+        """Verifies D-050: en kontroll som redan går igenom skrivs inte in; punkten tas inte."""
+        self.backlog(["BL-001 Rätta `src/calc.py`"], check=False)
+        result = self.agent(FakeModel("Klart när: `grep src/calc.py def add`")).run()
+        self.assertEqual((result.backlog_checked, result.attempts), ([], []))
+        text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("Klart när", text)
+
+    def test_done_backlog_item_is_ticked_and_never_taken_again(self):
+        """Verifies D-050: en klar punkt flyttas till Klart; en punkt vars kontroll redan går igenom tas inte."""
+        result = self.agent(FakeModel(GOOD)).run()
+        self.assertTrue(result.success)
+        text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("- [ ] BL-001", text)
+        self.assertIn("## Klart\n\n- [x] BL-001", text)
+        self.backlog(["BL-002 Gör om `src/calc.py`"])  # kontrollen (add adderar) går redan igenom
+        again = self.agent(FakeModel(GOOD)).run()
+        self.assertEqual((again.attempts, again.success), ([], False))
+
+    def test_invalid_rewrite_leaves_the_item_untaken(self):
+        """Verifies D-050: en kontroll som inte går att tolka skrivs inte in, och punkten tas inte."""
+        self.backlog(["BL-001 Rätta `src/calc.py`"], check=False)
+        result = self.agent(FakeModel("Klart när: `kör allt och titta`")).run()
+        self.assertEqual((result.backlog_checked, result.attempts), ([], []))
+        self.assertIn("ingen uppgift", result.stopped)
+
+    def test_refill_adds_checkable_items_skips_duplicates_and_asks_about_money(self):
+        """Verifies D-050: nya punkter med kontroll läggs till; dubbletter hoppas över; pengar blir en fråga."""
+        proposals = (
+            "- [ ] (4 kodkvalitet) Typa add i `src/calc.py`. Klart när: `grep src/calc.py \"def add(a: int\"`\n"
+            "- [ ] (5 dokumentation) Redan sant. Klart när: `grep src/calc.py def add(`\n"
+            "- [ ] (5 dokumentation) Dubblett. Klart när: `grep src/calc.py return a + b`\n"
+            "- [ ] (1 buggar) Lägg till betalning i `src/calc.py`. Klart när: `grep src/calc.py pay`\n"
+            "- [ ] (4 kodkvalitet) Saknar kontroll helt\n"
+        )
+        model = FakeModel(GOOD, proposals)
+        result = self.agent(model, refill=True).run()
+        self.assertTrue(result.success)
+        self.assertEqual(result.backlog_added, ["BL-002"])
+        text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertIn("- [ ] BL-002 (4 kodkvalitet) Typa add", text)
+        self.assertNotIn("Dubblett", text)
+        self.assertNotIn("Redan sant", text)  # en kontroll som redan går igenom bevisar ingenting
+        self.assertIn("dev.backlog_rejected", self.actions())
+        self.assertNotIn("betalning", text)
+        self.assertLess(text.index("BL-002"), text.index("## Pågår"))
+        questions = (self.project / "docs" / "QUESTIONS-FOR-FOUNDERS.md").read_text(encoding="utf-8")
+        self.assertIn("Ska förslaget läggas i backloggen", questions)
+        self.assertEqual(len(result.questions), 1)
+
+    def test_classify_sends_protected_files_and_new_phases_to_the_founders(self):
+        """Verifies D-050: skyddade filer, CI, config och prioritet 6 är grundarnas sak."""
+
+        def proposal(prio, text):
+            return backlog.Proposal(prio, text, (Check("grep", "x.py y"),))
+
+        self.assertEqual(backlog.classify(proposal("4", "Snygga till `src/aie/x.py`")), "backlog")
+        for prio, text in (
+            ("4", "Ändra `config/risk_limits.toml`"),
+            ("4", "Ändra `.github/workflows/ci.yml`"),
+            ("6", "Förbered Fas 8"),
+            ("2", "Koppla ett riktigt bankkonto"),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(backlog.classify(proposal(prio, text)), "founders")
+
+
+class TestVerifier(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.project = Path(tmp.name)
+        (self.project / "tests" / "unit").mkdir(parents=True)
+        (self.project / "src").mkdir()
+        (self.project / "src" / "x.py").write_text("A = 1\n", encoding="utf-8")
+        self.calls, self.answers = [], []
+
+    def run_cmd(self, project, argv):
+        self.calls.append(argv)
+        return self.answers.pop(0)
+
+    def verify(self, *checks):
+        return Verifier(self.project, self.run_cmd).verify(tuple(parse_check(c) for c in checks))
+
+    def test_lint_check_needs_the_specific_warning_gone(self):
+        """Verifies D-050: lint-uppgiften är klar först när just det ruff-fyndet är borta i filen."""
+        self.answers = [(1, '[{"code": "RUF022", "message": "not sorted", "location": {"row": 14}}]')]
+        ok, detail = self.verify("ruff src/x.py RUF022")
+        self.assertFalse(ok)
+        self.assertIn("RUF022 på rad 14", detail)
+        self.assertEqual(self.calls[0][:4], ["ruff", "check", "--select", "RUF022"])
+        self.answers = [(0, "[]")]
+        self.assertEqual(self.verify("ruff src/x.py RUF022"), (True, ""))
+        self.answers = [(127, "ruff: not found")]
+        self.assertIn("ruff finns inte", self.verify("ruff src/x.py")[1])
+
+    def test_failing_and_flaky_tests_must_pass_three_times(self):
+        """Verifies D-050: testet ska gå igenom; ett instabilt test tre gånger i rad."""
+        ok_run = (0, "Ran 1 test in 0.1s\n\nOK\n")
+        self.answers = [ok_run]
+        self.assertTrue(self.verify("test tests.unit.test_x.K.test_y")[0])
+        self.answers = [ok_run, (1, "Ran 1 test\nFAILED (failures=1)"), ok_run]
+        ok, detail = self.verify("flaky-test tests.unit.test_x.K.test_y")
+        self.assertFalse(ok)
+        self.assertIn("körning 2 av 3", detail)
+        self.answers = [ok_run] * 3
+        self.assertTrue(self.verify("flaky-test tests.unit.test_x.K.test_y")[0])
+        self.answers = [(0, "Ran 0 tests\n\nOK\n")]
+        self.assertFalse(self.verify("test tests.unit.test_x.K.test_y")[0])  # inget kördes
+
+    def test_requirement_needs_a_passing_test_that_names_it(self):
+        """Verifies D-050: ett test vars docstring säger 'Verifies <ID>' måste finnas och gå igenom."""
+        ok, detail = self.verify("verifies ER-12")
+        self.assertFalse(ok)
+        self.assertIn("Verifies ER-12", detail)
+        (self.project / "tests" / "unit" / "test_req.py").write_text(
+            'def test_x():\n    """Verifies ER-12: riskklass före godkännande."""\n', encoding="utf-8"
+        )
+        self.answers = [(0, "Ran 1 test\n\nOK\n")]
+        self.assertEqual(self.verify("verifies ER-12"), (True, ""))
+        self.assertEqual(self.calls[-1][-1], "tests.unit.test_req")
+
+    def test_grep_checks_and_parsing(self):
+        """Verifies D-050: grep-kontroller, och bara giltiga kontroller tolkas."""
+        self.assertTrue(self.verify("grep src/x.py A = 1")[0])
+        self.assertFalse(self.verify("!grep src/x.py A = 1")[0])
+        self.assertFalse(Verifier(self.project, self.run_cmd).verify(())[0])  # ingen kontroll, inget bevis
+        for bad in ("rm -rf /", "verifies XX-1", "test os.system", "grep ../x.py a", "ruff src/x.py lower"):
+            with self.subTest(bad=bad):
+                self.assertIsNone(parse_check(bad))
+        self.assertIsNone(parse_check("grep src/saknas.py a", self.project))
+        self.assertEqual(str(parse_check('grep src/x.py "A = 1"')), "grep src/x.py A = 1")  # citat bort
+        found = checks_in("Gör X. Klart när: `verifies ER-12`, `grep src/x.py A` och `skräp`", self.project)
+        self.assertEqual([str(c) for c in found], ["verifies ER-12", "grep src/x.py A"])
+
+
+class TestPicker(unittest.TestCase):
+    def test_easiest_first_and_escalated_items_are_skipped(self):
+        """Verifies D-050: dokumentation och lint före tester och buggar; frågor till grundarna hoppas över."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (1 buggar) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-002 (2 kravtäckning) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-004 (4 kodkvalitet) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-005 (5 dokumentation) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n",
+                encoding="utf-8",
+            )
+            (root / "docs" / "QUESTIONS-FOR-FOUNDERS.md").write_text(
+                "### Q-BOT-001\n- **Uppgift:** BL-002\n", encoding="utf-8"
+            )
+            keys = [i.key for i in picker.pick(root, "", {})]
+        self.assertEqual(keys, ["BL-005", "BL-004", "BL-001"])
+
+    def test_tests_before_lint_and_no_task_in_a_file_with_an_open_question(self):
+        """Verifies D-050: krav/tester före lint; en fil med en öppen grundarfråga rörs inte."""
+        a = picker.Item("ruff:I001:a.py:1", "ruff", "lint", ("a.py",), (Check("ruff", "a.py I001"),))
+        r = picker.Item("req:ER-12", "requirement", "test", ("b.py",), (Check("verifies", "ER-12"),))
+        self.assertLess(picker.ease(r), picker.ease(a))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (5 dokumentation) Fixa. Klart när: `grep a.py y = 2` — öppen\n", encoding="utf-8")
+            questions = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+            questions.write_text("## Öppna\n\n- **Uppgift:** ruff:F401:a.py:3\n\n## Besvarade\n", encoding="utf-8")
+            self.assertEqual(picker.pick(root, "", {}), [])  # a.py har en öppen fråga
+            questions.write_text("## Öppna\n\n_Inga._\n\n## Besvarade\n\n- **Uppgift:** ruff:F401:a.py:3\n",
+                                 encoding="utf-8")
+            self.assertEqual([i.key for i in picker.pick(root, "", {})], ["BL-001"])  # besvarad: fri igen
+
+    def test_files_come_from_the_check_and_items_without_files_can_get_a_check(self):
+        """Verifies D-050: en punkt utan filnamn i texten får filen ur sin kontroll; utan kontroll skrivs den om."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (4 kodkvalitet) Lägg till en `__repr__`. Klart när: `grep a.py def __repr__` — öppen\n"
+                "- [ ] BL-002 (5 dokumentation) Skriv bättre docstrings — öppen\n",
+                encoding="utf-8",
+            )
+            picked = picker.pick(root, "", {})
+            self.assertEqual([(i.key, i.files) for i in picked], [("BL-001", ("a.py",))])
+            self.assertEqual([i.key for i in picker.uncheckable(root)], ["BL-002"])
 
 
 class TestRateLimits(DevCase):
@@ -387,12 +625,12 @@ class TestRateLimits(DevCase):
     def test_only_groq_models_in_groqs_current_list_are_used(self):
         """Verifies DR-12, D-050: en Groq-reservmodell används bara om Groq erbjuder den just nu."""
         env = {"GROQ_API_KEY": "gsk-test"}
-        offered = frozenset({"openai/gpt-oss-20b", "llama-3.3-70b-versatile"})
+        offered = frozenset({"openai/gpt-oss-20b"})  # 120b saknas just nu i den här låtsaslistan
         with tempfile.TemporaryDirectory() as tmp:
             agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=lambda kind, key: offered)
             names = [s.provider.name for s in agent._gateway._router._slots]
-        self.assertEqual(names[:2], ["groq", "groq-3"])
-        self.assertNotIn("groq-2", names)
+        self.assertEqual(names[:1], ["groq-2"])
+        self.assertNotIn("groq", names)
 
         def broken(kind, key):
             raise ProviderError("groq: modellistan gav HTTP 503", 503)
@@ -400,7 +638,7 @@ class TestRateLimits(DevCase):
         with tempfile.TemporaryDirectory() as tmp:
             agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=broken)
             names = [s.provider.name for s in agent._gateway._router._slots]
-        self.assertEqual(names[:3], ["groq", "groq-2", "groq-3"])
+        self.assertEqual(names[:2], ["groq", "groq-2"])
 
 
 class TestContext(unittest.TestCase):

@@ -1,7 +1,7 @@
 """`python -m aie simulate start|resume|status|evaluate` (Fas 6b-2, D-043, D-048).
 
-    python -m aie simulate start --scenario normal --as yorgo [--days 10] [--agents scripted|local]
-    python -m aie simulate resume [--days 10] [--agents scripted|local]
+    python -m aie simulate start --scenario normal --as yorgo [--days 10] [--agents scripted|local|groq]
+    python -m aie simulate resume [--days 10] [--agents scripted|local|groq]
     python -m aie simulate status
     python -m aie simulate evaluate --scenario normal [--runs 5] [--days 90] [--agents scripted|local]
 
@@ -12,7 +12,9 @@ aldrig en handling. Rapporten sparas i `<data_dir>/reports/`.
 `start` kräver en tom datamapp (en körning per databas, D-042) och registrerar simuleringens
 organisation om registret är tomt. `resume` fortsätter där körningen slutade, även efter en krasch eller
 ett stopp. `--agents scripted` (standard) kör de deterministiska agenterna. `--agents local` använder
-en lokal modell (Ollama) ur `providers.toml`. Varje dag skrivs ut med order, åtgärder och pauser.
+en lokal modell (Ollama) ur `providers.toml`. `--agents groq` använder Groqs gratisnivå med nyckeln i
+`GROQ_API_KEY` (se `docs/setup.md`). Den får bara simulerade data. När kvoten är slut pausas körningen, och
+`resume` fortsätter senare. Varje dag skrivs ut med order, åtgärder och pauser.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ from .. import runtime
 from ..authorization import load_permissions
 from ..config import ConfigError
 from ..ledger import compute_result
-from .agents import build_gateway, ensure_org
+from .agents import agent_data_class, build_gateway, ensure_org
 from .cycle import WorkCycle
 from .market import SimClock
 from .run import Simulation, SimulationError, stored_run
@@ -52,20 +54,34 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
                     sc = load_scenario(config_dir, scenario, departments, frozenset(config.system.founders))
                     clock = SimClock(sc.start_date)
                     system = build_system(config, db, config_dir, clock=clock)
+                    gateway = build_gateway(system, agents, config_dir)  # före start: ett fel lämnar ingen körning
                     ensure_org(system.registry, founder)
                     sim = Simulation.start(system, config, sc, founder, clock)
                 else:
                     clock = SimClock(run["start_date"])
                     system = build_system(config, db, config_dir, clock=clock)
+                    gateway = build_gateway(system, agents, config_dir)
                     sim = Simulation.resume(system, config, clock)
-                cycle = WorkCycle(sim, system, build_gateway(system, agents, config_dir))
+                cycle = WorkCycle(sim, system, gateway, agent_data_class(agents))
             except (ConfigError, SimulationError, ValueError) as exc:
                 raise runtime.StartupError(f"FEL: {exc}") from exc
             print(f"Körning {sim.run_id}: scenario {sim.scenario.name}, dag {sim.last_day} av {sim.scenario.days} "
                   f"(agenter: {agents}, bara SIM)")
             for summary in cycle.run(days):
                 print(_line(summary))
+            if cycle.paused:
+                print(f"PAUSAD: {cycle.paused}")
             net = compute_result(system.ledger.entries("SIM"), "SIM").net_minor
+            from ..reporting.daily import save_daily_reports
+
+            reports = save_daily_reports(system, config.system.data_dir)  # FR-21: en rapport per dag
+            if reports:
+                from ..reporting.periodic import periodic_report
+
+                first, last = reports[0].stem.removeprefix("daily-"), reports[-1].stem.removeprefix("daily-")
+                whole = reports[0].parent / f"periodic-{first}--{last}.md"  # FR-22: hela körningen hittills
+                whole.write_text(periodic_report(system, first, last).render(), encoding="utf-8")
+                print(f"Rapporter: {len(reports)} dagliga och {whole.name} i {reports[0].parent}")
             check = system.audit.verify()
             print(f"Klar till dag {sim.last_day} av {sim.scenario.days}. Nettoresultat {net} SIM, "
                   f"reserverad skatt {system.tax.reserved_minor()} SIM, revisionslogg {'OK' if check.ok else 'TRASIG'}.")
@@ -76,12 +92,12 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
 
 
 def _evaluate(config, config_dir: Path, scenario: str, runs: int | None, days: int | None, agents: str) -> int:
-    from .readiness import evaluate, save_report
+    from .readiness import MARKET_NOTE, evaluate, save_report
 
     try:
         departments = {m.department for m in load_permissions(config_dir).roles.values()}
         sc = load_scenario(config_dir, scenario, departments, frozenset(config.system.founders))
-        result = evaluate(config, config_dir, sc, runs, days, agents)
+        result = evaluate(config, config_dir, sc, runs, days, agents, real_sales=_has_real_sales(config))
     except (ConfigError, SimulationError, ValueError) as exc:
         raise runtime.StartupError(f"FEL: {exc}") from exc
     print(f"Bedömning av {sc.name}: {len(result.runs)} körningar à {result.runs[0].days if result.runs else 0} dagar "
@@ -94,9 +110,18 @@ def _evaluate(config, config_dir: Path, scenario: str, runs: int | None, days: i
     for reason in result.reasons:
         print(f"  - {reason}")
     print(("REKOMMENDATION: " if result.ready else "RESULTAT: ") + result.recommendation)
+    print(f"Status: {result.status}. {MARKET_NOTE}")
     path, digest = save_report(result, config.system.data_dir)
     print(f"Rapport: {path} (SHA-256 {digest})")
     return 0
+
+
+def _has_real_sales(config) -> bool:
+    """Finns riktiga försäljningsdata (D-062) i huvuddatabasen? Bara då kan "redo" vara mer än en hypotes."""
+    with runtime._open(config) as db:
+        table = db.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'real_results'").fetchone()
+        return bool(table and db.connection.execute("SELECT 1 FROM real_results LIMIT 1").fetchone())
 
 
 def _line(d: dict) -> str:

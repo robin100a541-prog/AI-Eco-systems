@@ -1,0 +1,50 @@
+# Plattformen stänger kontot dag 30 (arbetsorder 02, PR 7, D-059). Allt är simulerat.
+# Plattform A står för det mesta av intäkterna. Efter dag 30 säljer inget där, plattformen pausas i
+# registret och inga utgifter går dit. Företaget ska överleva på plattform B utan nödstopp, och
+# beroendespärren ska ha varnat för koncentrationen innan.
+config_version = 1
+name = "platform_ban"
+description = "Plattform A stänger kontot dag 30; plattform B har ett eget betalningsflöde."
+seed = "platform-ban-1"
+days = 60
+start_date = "2027-01-01"
+
+[[platforms]]
+key = "plattform-a"
+dependencies = ["betalning-x"]
+
+[[platforms]]
+key = "plattform-b"
+dependencies = ["betalning-y"]
+
+[[initiatives]]
+key = "mallar-a"
+department = "research"
+track = "partnership"
+platform = "plattform-a"
+price = 4_900
+unit_cost = 0
+fee_fixed = 100      # simulerat; låga avgifter så att departementsbudgeten räcker i 60 dagar
+fee_bp = 500
+visitors = 20
+conversion_bp = 500
+refund_bp = 200
+
+[[initiatives]]
+key = "mallar-b"
+department = "research"
+track = "partnership"
+platform = "plattform-b"
+price = 4_900
+unit_cost = 0
+fee_fixed = 100
+fee_bp = 500
+visitors = 10
+conversion_bp = 500
+refund_bp = 200
+
+[[events]]
+day = 30
+kind = "platform_ban"
+platform = "plattform-a"
+note = "plattformen stänger kontot utan förvarning"

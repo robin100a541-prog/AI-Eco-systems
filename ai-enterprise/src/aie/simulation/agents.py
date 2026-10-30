@@ -118,15 +118,37 @@ class ScriptedPolicy:
         return out
 
 
-def build_gateway(system, mode: str = "scripted", config_dir=None):
+MODES = ("scripted", "local", "groq")
+
+
+def agent_data_class(mode: str):
+    """Dataklassen som agenternas förfrågningar märks med. Bara `groq` går till en extern leverantör.
+
+    I läget `groq` innehåller förfrågan bara simulerade data: scenariot, SIM-belopp och agenternas roller.
+    Den märks därför `public`, och det är tillåtet bara i miljön `sim` med valutan `SIM`
+    (`WorkCycle` kontrollerar det, PR 8, D-060). Inga riktiga uppgifter finns i en simulering.
+    """
+    from ..llm import DataClass
+
+    return DataClass.PUBLIC if mode == "groq" else DataClass.INTERNAL
+
+
+def build_gateway(system, mode: str = "scripted", config_dir=None, environ=None, transport=None):
     """`LLMGateway` för agenterna. `scripted`: `RuleProvider` med `ScriptedPolicy` (CI, deterministiskt).
 
     `local`: bara lokala leverantörer ur `providers.toml` (Ollama). Externa leverantörer används aldrig,
     eftersom läget är `internal`-data (DR-13). Svarar ingen lokal modell blir agentens tur tom och
     noteras i dagen; inget betalas och inget skickas ut (D-008).
+
+    `groq` (PR 8, D-060): bara leverantörerna av typen `groq` ur `providers.toml`. Det är Groqs gratisnivå
+    med nyckeln i `GROQ_API_KEY`. Ingen annan leverantör används, inte ens `rule`, så att det aldrig byts
+    tyst till något annat. När dagens kvot är slut pausas körningen (`WorkCycle`). Det finns ingen betald
+    reserv (D-008, D-009). `environ` och `transport` är till för tester. Där mockas nätverket.
     """
+    import os
+
     from ..llm.gateway import LLMGateway
-    from ..llm.providers import RuleProvider
+    from ..llm.providers import RuleProvider, urllib_transport
     from ..llm.router import ProviderRouter, QuotaLedger, Slot, load_providers
 
     if mode == "scripted":
@@ -136,7 +158,14 @@ def build_gateway(system, mode: str = "scripted", config_dir=None):
         slots = tuple(s for s in loaded if not s.provider.external and not isinstance(s.provider, RuleProvider))
         if not slots:
             raise ValueError("providers.toml har ingen lokal leverantör (ollama) för --agents local")
+    elif mode == "groq":
+        loaded, skipped = load_providers(config_dir, environ if environ is not None else os.environ,
+                                         transport or urllib_transport)
+        slots = tuple(s for s in loaded if getattr(s.provider, "kind", None) == "groq")
+        if not slots:
+            why = "; ".join(s for s in skipped if s.startswith("groq")) or "providers.toml har ingen groq-leverantör"
+            raise ValueError(f"--agents groq kan inte köras: {why}. Se docs/setup.md.")
     else:
-        raise ValueError(f"okänt agentläge {mode!r} (scripted eller local)")
+        raise ValueError(f"okänt agentläge {mode!r} ({', '.join(MODES)})")
     router = ProviderRouter(slots, QuotaLedger(system.db), system.audit)
     return LLMGateway(router, system.engine, system.audit)

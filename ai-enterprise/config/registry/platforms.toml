@@ -1,0 +1,93 @@
+# Plattformar i registret (PR 4, D-056). Hämtat från docs/channels.md (läst 2026-10-21), inget annat.
+# Det som inte står där är "okänt", och okända belopp skrivs "null" (TOML saknar null). Avgifter i minsta enhet i plattformens valuta (USD-cent).
+# Status "investigated" motsvarar UNDERSÖKT i channels.md. Godkännande görs av en grundare.
+
+config_version = 1
+
+[[platforms]]
+key = "etsy"
+status = "investigated"
+name = "Etsy"
+url = "https://www.etsy.com"
+type = "product"
+currency = "USD"
+payment_terms = "okänt"
+vat_responsibility = "marketplace: Etsy tar in moms som marknadsplats där det gäller; EU-detaljer ej bekräftade"
+dac7 = "ja, om minst 30 försäljningar eller minst 2 000 euro per år"
+ai_rules = "tillåtet som 'Seller-prompted AI creations'; AI-användning måste anges i annonsen; AI-promptpaket förbjudna"
+automation_rules = "okänt: Etsy har ett API; villkoren för appgodkännande är inte lästa"
+account_requirements = "kontot ägs och verifieras av en grundare (D-010)"
+payout_terms = "okänt"
+dependencies = []
+risks = ["kontoavstängning", "återbetalningar", "IP-intrång", "beroende av en plattform", "Offsite Ads 12–15 % vid sådan försäljning"]
+sources = [
+  { url = "https://etsy.com/legal/creativity", read_on = "2026-10-21" },
+  { url = "https://checkoutpage.com/blog/etsy-fees", read_on = "2026-10-21" },
+]
+[platforms.fees]
+per_order_minor = "null"
+percent_bp = 650
+per_listing_minor = 20
+monthly_minor = "null"
+setup_minor = "null"
+payout_minor = "null"
+currency = "USD"
+notes = "6,5 % transaktionsavgift och 0,20 USD per annons (förnyas var 4:e månad). Betalningsavgiften finns men beloppet står inte i channels.md: okänt."
+
+[[platforms]]
+key = "gumroad"
+status = "investigated"
+name = "Gumroad"
+url = "https://gumroad.com"
+type = "product"
+currency = "USD"
+payment_terms = "okänt"
+vat_responsibility = "merchant of record: Gumroad tar in och betalar moms där de har skyldighet"
+dac7 = "okänt"
+ai_rules = "okänt: ej kontrollerat"
+automation_rules = "okänt: ej kontrollerat"
+account_requirements = "kontot ägs och verifieras av en grundare (D-010)"
+payout_terms = "okänt"
+dependencies = []
+risks = ["kontoavstängning", "återbetalningar", "beroende av en plattform", "30 % avgift vid försäljning via Discover"]
+sources = [{ url = "https://gumroad.com/pricing", read_on = "2026-10-21" }]
+[platforms.fees]
+per_order_minor = 50
+percent_bp = 1000
+per_listing_minor = "null"
+monthly_minor = 0
+setup_minor = "null"
+payout_minor = "null"
+currency = "USD"
+notes = "10 % + 0,50 USD per direktförsäljning; 30 % via Discover; ingen månadsavgift."
+
+[[platforms]]
+key = "fiverr"
+status = "investigated"
+name = "Fiverr"
+url = "https://www.fiverr.com"
+type = "service"
+currency = "USD"
+payment_terms = "okänt"
+vat_responsibility = "okänt"
+dac7 = "tjänsteleverantörer rapporteras från första euron"
+ai_rules = "AI-genererat innehåll tillåtet; säljaren ansvarar för leveransen och ska leverera anpassat arbete per beställning; samma AI-innehåll till flera kunder, vilseledande innehåll, deepfakes och falska konton är förbjudet"
+automation_rules = "okänt: reglerna om integritet och autenticitet kunde inte läsas; ska kontrolleras innan agenter skriver kundmeddelanden (R-03)"
+account_requirements = "kontot ägs av en grundare; inga falska identiteter (§6)"
+payout_terms = "okänt"
+dependencies = []
+risks = ["permanent avstängning vid vilseledande om AI", "återbetalningar", "beroende av en plattform"]
+sources = [
+  { url = "https://help.fiverr.com/hc/en-us/articles/32243564776593", read_on = "2026-10-21" },
+  { url = "https://help.fiverr.com/hc/en-us/articles/34998793899665-Using-AI-on-Fiverr-Guidelines-for-freelancers-and-clients", read_on = "2026-10-21" },
+  { url = "https://blog.fiverr.com/post/so-how-does-fiverr-commission-work-anyway", read_on = "2026-10-21" },
+]
+[platforms.fees]
+per_order_minor = "null"
+percent_bp = 2000
+per_listing_minor = "null"
+monthly_minor = "null"
+setup_minor = "null"
+payout_minor = "null"
+currency = "USD"
+notes = "Fiverr behåller 20 % av varje order (Fiverrs egen blogg)."
