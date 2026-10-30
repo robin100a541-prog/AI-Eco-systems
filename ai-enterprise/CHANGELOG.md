@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 8: säkerhet för utvecklaragenten
+### Tillagt
+- Utvecklaragenten mergar högst 4 PR:er per dygn: `dev-agent.yml` räknar dagens mergade PR:er (`aie dev-agent may-merge`) och hoppar över körningen när taket är nått.
+- `dev-agent-guard.yml` kör hela sviten på main efter varje merge från utvecklaragenten. Blir den röd öppnas en revert-PR med auto-merge, och incidenten loggas som ett ärende och i `docs/bot-reports/incidents.md`.
+- Varje måndag skrivs en veckosammanfattning till `docs/bot-reports/weekly-ÅÅÅÅ-VV.md` (`aie dev-agent weekly`).
+- Utvecklaragenten är påslagen igen; `docs/DEV-AGENT-PAUSED` är borttagen.
 ## [Unreleased] — 2026-10-30 — Fas 8: daglig drift och instrumentpanel
 ### Tillagt
 - `aie daily-cycle` och workflowen `company-daily.yml` kör en företagscykel per dygn (§56). Med `GROQ_API_KEY` används Groq-agenter, annars skriptade agenter. Groqs kvot räknas i databasen, som sparas i cachen.

@@ -125,8 +125,10 @@ def build_parser() -> argparse.ArgumentParser:
     kill.add_argument("action", choices=("status", "engage", "release"))
     kill.add_argument("--as", dest="founder", help="vilken grundare som agerar (en av founders i system.toml)")
     kill.add_argument("--reason", default="", help="varför; krävs vid engage och release")
-    dev = add("dev-agent", "utvecklaragenten: run eller open-pr (D-050)")
-    dev.add_argument("action", choices=("run", "open-pr"))
+    dev = add("dev-agent", "utvecklaragenten: run, open-pr, weekly eller may-merge (D-050)")
+    dev.add_argument("action", choices=("run", "open-pr", "weekly", "may-merge"))
+    dev.add_argument("--day", help="weekly: en dag i veckan (standard: i dag); may-merge: dagen (UTC)")
+    dev.add_argument("--prs", type=Path, help="may-merge: JSON-fil med GitHubs mergade PR:er")
     dev.add_argument("--branch", default="claude/dev-agent-local", help="gren för ändringen (run)")
     dev.add_argument("--out", type=Path, default=Path("dev-agent-result.json"), help="resultatfil")
     dev.add_argument("--result", type=Path, default=Path("dev-agent-result.json"), help="resultatfil (open-pr)")
@@ -312,6 +314,19 @@ def _dev_agent(args: argparse.Namespace) -> int:
 
     if args.action == "run":
         return cli.run(args.config_dir, args.branch, args.out)
+    if args.action in ("weekly", "may-merge"):
+        import json
+        from datetime import UTC, datetime
+
+        from .dev_agent.safety import MAX_MERGES_PER_DAY, may_merge, merges_today, write_weekly
+
+        day = args.day or datetime.now(UTC).date().isoformat()
+        if args.action == "weekly":
+            print(f"Skrev {write_weekly(Path('docs/bot-reports'), day)}")
+            return 0
+        prs = json.loads(args.prs.read_text(encoding="utf-8")) if args.prs else []
+        print(f"merges_today={merges_today(prs, day)} max={MAX_MERGES_PER_DAY}")
+        return 0 if may_merge(prs, day) else 3
     return cli.open_pr(args.result)
 
 

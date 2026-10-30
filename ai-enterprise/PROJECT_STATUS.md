@@ -199,6 +199,12 @@
 - `aie export-status` skriver `docs/dashboard/status.json`. Den innehåller bara vitlistade offentliga fält (DR-13), och exporten stoppas om ett värde ser ut som en hemlighet.
 - `docs/dashboard/index.html` är ett pixelkontor utan externa bibliotek: ett rum per departement, gående agenter med fasta förnamn (migration 33), pratbubblor, färg efter status, gravsten för RETIRED, mötesbord vid tvist och en poängtavla där SIM och riktiga pengar visas var för sig. Sidan publiceras via GitHub Pages.
 
+## Ändrat 2026-10-30 (Fas 8: säkerhet för utvecklaragenten)
+- Utvecklaragenten mergar högst 4 PR:er per dygn: `dev-agent.yml` räknar dagens mergade PR:er (`aie dev-agent may-merge`) och hoppar över körningen när taket är nått.
+- `dev-agent-guard.yml` kör hela sviten på main efter varje merge från utvecklaragenten. Blir den röd öppnas en revert-PR med auto-merge, och incidenten loggas som ett ärende och i `docs/bot-reports/incidents.md`.
+- Varje måndag skrivs en veckosammanfattning till `docs/bot-reports/weekly-ÅÅÅÅ-VV.md` (`aie dev-agent weekly`).
+- Utvecklaragenten är påslagen igen; `docs/DEV-AGENT-PAUSED` är borttagen.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
