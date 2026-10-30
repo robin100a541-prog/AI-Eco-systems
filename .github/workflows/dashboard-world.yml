@@ -1,0 +1,27 @@
+name: Dashboard world
+on:
+  pull_request:
+    paths:
+      - 'ai-enterprise/docs/dashboard/**'
+      - 'ai-enterprise/tests/dashboard_world.cjs'
+      - '.github/workflows/dashboard-world.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ai-enterprise/docs/dashboard/**'
+      - 'ai-enterprise/tests/dashboard_world.cjs'
+      - '.github/workflows/dashboard-world.yml'
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check dashboard behavior
+        run: node --test ai-enterprise/tests/dashboard_world.cjs
