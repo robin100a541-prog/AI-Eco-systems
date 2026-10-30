@@ -25,10 +25,20 @@ from aie.authorization import AuthorizationEngine, load_permissions
 from aie.budget import BudgetEngine, Risk, SpendRequest, load_budgets
 from aie.config import load_config
 from aie.config.models import Money
-from aie.ledger import Approval, DuplicateEntry, EntryDraft, EntryType, Ledger, Status, recompute, result_for
+from aie.ledger import (
+    Approval,
+    DuplicateEntry,
+    EntryDraft,
+    EntryType,
+    Ledger,
+    Status,
+    recompute,
+    result_for,
+)
 from aie.memory import Database
 from aie.risk import KillSwitch, ProtectedMode, StopLoss
 from aie.tax import TaxEngine, load_tax_config
+
 from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]

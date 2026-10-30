@@ -10,7 +10,12 @@ from pathlib import Path
 from aie.monitoring import shutdown_logging
 from aie.results import MIN_DAYS, VERIFIED, ResultError, ResultStore
 from aie.results.cli import results as results_cli
-from aie.simulation.assessment import apply_observed, drop_replaced, load_assessment_rules, scenario_inputs
+from aie.simulation.assessment import (
+    apply_observed,
+    drop_replaced,
+    load_assessment_rules,
+    scenario_inputs,
+)
 
 from .fixture_config import TEST_CONFIG
 from .test_registry import INITIATIVE, PLATFORM, RegisterCase

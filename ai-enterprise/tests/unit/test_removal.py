@@ -7,7 +7,13 @@ from pathlib import Path
 from aie.agents import AgentRegistry, AgentState, RegistryError
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, load_permissions
-from aie.evaluation import ForecastLog, IncidentLog, PerformanceReview, RemovalError, RemovalReview
+from aie.evaluation import (
+    ForecastLog,
+    IncidentLog,
+    PerformanceReview,
+    RemovalError,
+    RemovalReview,
+)
 from aie.memory import Database
 from aie.risk import KillSwitch
 
