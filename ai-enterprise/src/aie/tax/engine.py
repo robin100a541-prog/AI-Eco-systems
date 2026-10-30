@@ -248,7 +248,13 @@ class TaxEngine:
         return out
 
     def pay(self, founder: str, track: str | None, year: int, amount_minor: int, evidence: tuple[str, ...],
-            note: str = "") -> int:
+            note: str = "", *, payment_id: str | None = None) -> int:
+        """Record one payment atomically; supply a unique bank/receipt reference for retries."""
+        with self._db.transaction():
+            return self._pay(founder, track, year, amount_minor, evidence, note, payment_id=payment_id)
+
+    def _pay(self, founder: str, track: str | None, year: int, amount_minor: int, evidence: tuple[str, ...],
+             note: str = "", *, payment_id: str | None = None) -> int:
         """Bokför betald skatt för ett spår och år (D-052). Returnerar ledgerpostens ID.
 
         Bara grundarna betalar skatt. Posten bokförs som `tax_payment` med status `settled` och minskar
@@ -264,11 +270,22 @@ class TaxEngine:
             raise TaxError("beloppet ska vara ett heltal > 0 i minsta enhet (D-006)")
         if not evidence:
             raise TaxError("ange underlag för betalningen, till exempel file:kvitto.pdf")
-        key = f"tax-payment-{track or 'untracked'}-{year}-{len(self.payments(year)) + 1}"
+        if payment_id is not None and (not isinstance(payment_id, str) or not payment_id.strip()):
+            raise TaxError("betalningsreferensen får inte vara tom")
+        # Legacy callers use their receipt references as identity; distinct payments must
+        # supply distinct receipt references or an explicit external payment_id.
+        identity = payment_id if payment_id is not None else json.dumps([track, year, list(evidence)], sort_keys=True)
+        key = "tax-payment-" + hashlib.sha256(identity.encode()).hexdigest()
         entry = self._ledger.record(founder, EntryDraft(
             key, "finance", amount_minor, self._config.currency, EntryType.TAX_PAYMENT, f"skatt-{year}",
             Approval.APPROVED, (*evidence, "decision:D-052"), None, Status.SETTLED,
             note or f"betald skatt {year}, spår {track or 'utan spår'} (D-052)"))
+        existing = self._db.connection.execute(
+            "SELECT track, year FROM tax_payments WHERE entry_id = ?", (entry.entry_id,)).fetchone()
+        if existing is not None:
+            if existing != (track, year):
+                raise TaxError("betalningsreferensen gäller ett annat spår eller år")
+            return entry.entry_id
         with self._db.transaction() as tx:
             tx.execute("INSERT INTO tax_payments (entry_id, track, year, actor, at) VALUES (?, ?, ?, ?, ?)",
                        (entry.entry_id, track, year, founder, self._clock()))

@@ -40,6 +40,7 @@ from .providers import (
     RuleProvider,
     Transport,
     urllib_transport,
+    validate_local_endpoint,
 )
 
 PROVIDERS_FILE = "providers.toml"
@@ -226,6 +227,12 @@ def load_providers(
         if base_url is not None and (kind != "ollama" or not isinstance(base_url, str)):
             error(f"{where}: base_url får bara anges för ollama")
             ok = False
+        if ok and kind == "ollama" and base_url is not None:
+            try:
+                validate_local_endpoint(base_url)
+            except ValueError as exc:
+                error(f"{where}: {exc}")
+                ok = False
         if not ok:
             continue
         if kind == "rule":
