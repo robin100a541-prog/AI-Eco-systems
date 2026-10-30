@@ -1442,6 +1442,14 @@ MIGRATIONS: tuple[Migration, ...] = (
             "ALTER TABLE ledger_entries ADD COLUMN occurred_on TEXT CHECK (occurred_on IS NULL OR length(occurred_on) = 10)",
         ),
     ),
+    Migration(
+        version=35,
+        name="spend_request_classification",
+        statements=(
+            "ALTER TABLE spend_approvals ADD COLUMN risk_class TEXT CHECK (risk_class IN ('low', 'medium', 'high'))",
+            "ALTER TABLE spend_approvals ADD COLUMN category TEXT",
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

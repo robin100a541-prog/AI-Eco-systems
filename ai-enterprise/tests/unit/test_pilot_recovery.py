@@ -132,7 +132,7 @@ class Recovery(PilotLive):
                            "VALUES ('old', '2025-12-31T00:00:00+00:00', 'robin', 'research', 100, 'SIM', "
                            "'revenue', 'legacy', 'not_required', '[\"file:legacy\"]', 'old record')")
         with Database.open(folder, "sim") as upgraded:
-            self.assertEqual(upgraded.schema_version, 34)
+            self.assertEqual(upgraded.schema_version, len(MIGRATIONS))
             row = upgraded.connection.execute("SELECT amount_minor, occurred_on FROM ledger_entries").fetchone()
             self.assertEqual(row, (100, None))
             import sqlite3

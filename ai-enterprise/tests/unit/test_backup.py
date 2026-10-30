@@ -5,6 +5,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+from contextlib import closing
 from pathlib import Path
 
 from aie.memory.backup import BackupError, create, verify
@@ -27,7 +28,7 @@ class BackupRecovery(PilotLive):
         self.assertEqual(counts["ledger_entries"], len(self.system_.ledger.entries()))
         self.assertEqual(counts["approval_requests"], 1)
         self.assertEqual(result["database"]["audit_head"], self.system_.audit.verify().head_hash)
-        with sqlite3.connect(snapshot) as conn:
+        with closing(sqlite3.connect(snapshot)) as conn:
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM audit_log WHERE action='backup.test'").fetchone()[0], 1)
         self.assertEqual(snapshot.stat().st_mode & 0o777, 0o600)
         self.assertEqual(snapshot.with_suffix(".json").stat().st_mode & 0o777, 0o600)
@@ -51,11 +52,12 @@ class BackupRecovery(PilotLive):
 
     def test_rehashed_backup_still_needs_valid_audit(self):
         snapshot = self.snapshot()
-        with sqlite3.connect(snapshot) as conn:
+        with closing(sqlite3.connect(snapshot)) as conn:
             triggers = conn.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='audit_log'").fetchall()
             for (name,) in triggers:
                 conn.execute(f'DROP TRIGGER "{name}"')
             conn.execute("UPDATE audit_log SET action='tampered' WHERE seq=1")
+            conn.commit()
         path = snapshot.with_suffix(".json")
         manifest = json.loads(path.read_text())
         manifest["sha256"] = hashlib.sha256(snapshot.read_bytes()).hexdigest()
