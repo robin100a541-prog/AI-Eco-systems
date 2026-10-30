@@ -1,0 +1,2 @@
+Utvecklaragenten är pausad medan en Claude-session bygger Fas 7–8 (masterprompten 2026-10-30, Robin).
+Ta bort filen för att slå på den igen. Workflowen hoppar över agentsteget så länge filen finns.

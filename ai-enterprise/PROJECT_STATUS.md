@@ -173,6 +173,10 @@
 - Värdena i `config/risk_limits.toml` är simulerade (Q-04).
 - `python -m aie` fungerar bara när `PYTHONPATH=src` är satt (se `docs/setup.md`).
 
+## Ändrat 2026-10-30 (Fas 7 steg 1: oberoende granskning)
+- `docs/reviews/REVIEW-PROMPT.md`: den exakta prompten för en ny Claude-session som granskar säkerhetskritisk kod (D-055). Ingen granskning finns ännu; det är en grundaråtgärd.
+- Utvecklaragenten pausas medan Fas 7–8 byggs: `docs/DEV-AGENT-PAUSED` gör att workflowen hoppar över agentsteget.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|

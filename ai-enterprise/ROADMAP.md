@@ -141,7 +141,7 @@ Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot 
 ## Fas 7 — Kontrollerad pilot
 Kräver: Fas 1–6 godkända, Q-03…Q-05 och Q-07 besvarade, §25-parametrar satta, nödstopp testat, skattespår för pilotens intäkter bekräftat med Skatteverket.
 
-Arbetspunkter (föreslagna 2026-10-30; startas bara när grundarna startar Fas 7):
+Arbetspunkter (Fas 7 startad av Robin 2026-10-30, masterprompten). Oberoende granskning (D-055): prompten finns i `docs/reviews/REVIEW-PROMPT.md`, granskningen är en grundaråtgärd.
 
 | Punkt | Vad | Status |
 |---|---|---|
