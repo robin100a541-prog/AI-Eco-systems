@@ -23,7 +23,7 @@ from datetime import date, timedelta
 
 from ..agents import ACTING_STATES
 from ..authorization import PermissionDenied
-from ..budget import Risk, SpendRequest
+from ..budget import BudgetBlocked, Risk, SpendRequest
 from ..evaluation import ForecastError
 from ..ledger import Approval, EntryDraft, EntryType, Status, compute_result
 from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable
@@ -183,40 +183,50 @@ class WorkCycle:
             if not check.blocked and check.required_approvals and s.spend_approvals is not None:
                 # F5, D-053: över tröskeln begärs en grundares godkännande; utgiften görs först efter ja
                 a = s.spend_approvals.request(agent.agent_id, initiative.department, initiative.key,
-                                              action.get("amount"), "SIM", action.get("purpose"))
+                                              action.get("amount"), "SIM", action.get("purpose"),
+                                              risk_class=request.risk_class, category=request.category)
                 return "pending", f"väntar på en grundares godkännande (förfrågan {a.approval_id}, D-053)"
             return "blocked", check.describe()
         ref = f"sim-{self.sim.run_id}-d{day}-{agent.agent_id}-spend{n}"
-        self._book_cost(ref, initiative, action.get("amount"), Approval.NOT_REQUIRED, (f"external:{ref}",),
-                        f"{action.get('purpose')} (föreslaget av {agent.agent_id})")
+        try:
+            self._book_cost(ref, initiative, request, (f"external:{ref}",),
+                            f"{action.get('purpose')} (föreslaget av {agent.agent_id})", agent.agent_id)
+        except BudgetBlocked as exc:
+            return "blocked", exc.check.describe()
         return "done", f"bokförd kostnad {action.get('amount')} SIM"
 
     def _approved_spends(self, day: int, record: dict) -> None:
-        """F5: utgifter som en grundare har godkänt genomförs, om alla andra gränser fortfarande tillåter det."""
+        """Execute the original classified request; recheck authority and all gates."""
         s = self._system
         if s.spend_approvals is None:
             return
         keys = {i.key: i for i in self.sim.scenario.initiatives}
         for a in s.spend_approvals.approved_unused():
             initiative = keys.get(a.initiative)
-            if initiative is None or self._system.registry.get(a.requested_by) is None:
+            if initiative is None:
                 continue
-            request = SpendRequest(a.department, a.amount_minor, a.currency, a.initiative, Risk.LOW)
-            check = s.budget.check(a.requested_by, request, approval_id=a.approval_id)
             outcome = {"approval_id": a.approval_id, "amount": a.amount_minor}
-            if check.allowed:
-                ref = f"sim-{self.sim.run_id}-d{day}-approval{a.approval_id}"
-                self._book_cost(ref, initiative, a.amount_minor, Approval.APPROVED,
-                                (f"approval:spend-{a.approval_id}", f"external:{ref}"),
-                                f"{a.reason} (godkänd av {a.decided_by}, förfrågan {a.approval_id})")
-                outcome["outcome"] = "done"
+            authority = s.engine.check(a.requested_by, "sim.spend")
+            if not authority.allowed or a.risk_class is None or a.category is None:
+                outcome.update(outcome="blocked", reason=authority.reason if not authority.allowed else
+                               "äldre godkännande saknar riskklass/kategori; begär ett nytt")
             else:
-                outcome.update(outcome="blocked", reason=check.describe())
+                request = SpendRequest(a.department, a.amount_minor, a.currency, a.initiative,
+                                       Risk(a.risk_class), a.category)
+                ref = f"sim-{self.sim.run_id}-d{day}-approval{a.approval_id}"
+                try:
+                    self._book_cost(ref, initiative, request, (f"external:{ref}",),
+                                    f"{a.reason} (godkänd av {a.decided_by})", a.requested_by, a.approval_id)
+                    outcome["outcome"] = "done"
+                except BudgetBlocked as exc:
+                    outcome.update(outcome="blocked", reason=exc.check.describe())
             record["approved_spends"].append(outcome)
 
-    def _book_cost(self, ref, initiative, amount, approval, evidence, note) -> None:
-        self._system.ledger.record(SYSTEM, EntryDraft(ref, initiative.department, amount, "SIM", EntryType.COST,
-                                                      initiative.key, approval, evidence, ref, Status.SETTLED, note))
+    def _book_cost(self, ref, initiative, request, evidence, note, actor, approval_id=None):
+        return self._system.budget.record_spend(actor, request, EntryDraft(
+            ref, initiative.department, request.amount_minor, "SIM", EntryType.COST,
+            initiative.key, Approval.NOT_REQUIRED, evidence, ref, Status.SETTLED, note),
+            writer=SYSTEM, approval_id=approval_id)
 
     # --- Läge och förfrågan ----------------------------------------------------------------
 

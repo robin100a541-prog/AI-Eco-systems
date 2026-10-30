@@ -16,7 +16,7 @@ Flödet:
 4. Godkännandet ersätter **bara** kravet på en grundare. Alla andra gränser gäller ändå: budgettak,
    reserv, `MAX_SINGLE_TRANSACTION`, stop-loss, nödstopp och skyddat driftläge. Hårda gränser kan
    aldrig godkännas bort (§21).
-5. När svaret blir ja förbrukas godkännandet i samma transaktion. Ett unikt index gör att det förbrukas
+5. `BudgetEngine.record_spend()` förbrukar godkännandet i samma transaktion som utgiften. Ett unikt index gör att det förbrukas
    exakt en gång, även när två försök görs samtidigt. Det andra försöket får nej.
 """
 from __future__ import annotations
@@ -28,6 +28,7 @@ from datetime import UTC, datetime, timedelta
 
 from ..audit import AuditLog
 from ..memory import Database
+from .config import Risk
 
 VALID_DAYS = 7  # D-053
 
@@ -53,6 +54,8 @@ class SpendApproval:
     status: str  # pending | approved | rejected | consumed
     decided_by: str | None = None
     decided_at: str | None = None
+    risk_class: str | None = None  # NULL for legacy requests: fail closed
+    category: str | None = None
 
 
 class SpendApprovals:
@@ -64,16 +67,18 @@ class SpendApprovals:
         self._clock = clock
 
     def request(self, actor: str, department: str, initiative: str, amount_minor: int, currency: str,
-                reason: str) -> SpendApproval:
+                reason: str, *, risk_class: Risk, category: str = "OPERATIONS") -> SpendApproval:
+        if not isinstance(risk_class, Risk) or risk_class is Risk.CRITICAL or not category.strip():
+            raise SpendApprovalError("ange tillåten riskklass och kategori")
         if not isinstance(amount_minor, int) or isinstance(amount_minor, bool) or amount_minor <= 0:
             raise SpendApprovalError("beloppet ska vara ett heltal > 0 i minsta enhet (D-006)")
         if not reason.strip() or not initiative.strip() or not department.strip():
             raise SpendApprovalError("ange departement, initiativ och skäl")
         with self._db.transaction() as tx:
             approval_id = tx.execute(
-                "INSERT INTO spend_approvals (department, initiative, amount_minor, currency, requested_by, reason, at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (department, initiative, amount_minor, currency, actor, reason, self._clock()),
+                "INSERT INTO spend_approvals (department, initiative, amount_minor, currency, requested_by, reason, at, risk_class, category) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (department, initiative, amount_minor, currency, actor, reason, self._clock(), risk_class.value, category),
             ).lastrowid
         self._audit.append(actor, "spend_approval.requested",
                            {"approval_id": approval_id, "department": department, "initiative": initiative,
@@ -90,7 +95,7 @@ class SpendApprovals:
 
     def get(self, approval_id: int) -> SpendApproval | None:
         row = self._db.connection.execute(
-            "SELECT approval_id, department, initiative, amount_minor, currency, requested_by, reason, at "
+            "SELECT approval_id, department, initiative, amount_minor, currency, requested_by, reason, at, risk_class, category "
             "FROM spend_approvals WHERE approval_id = ?", (approval_id,)).fetchone()
         if row is None:
             return None
@@ -103,7 +108,7 @@ class SpendApprovals:
                 status, by, when = event, actor, at
             elif event == "consumed":
                 status = "consumed"
-        return SpendApproval(*row, status=status, decided_by=by, decided_at=when)
+        return SpendApproval(*row[:8], status=status, decided_by=by, decided_at=when, risk_class=row[8], category=row[9])
 
     def pending(self) -> tuple[SpendApproval, ...]:
         ids = [r[0] for r in self._db.connection.execute("SELECT approval_id FROM spend_approvals ORDER BY approval_id")]
@@ -121,6 +126,8 @@ class SpendApprovals:
         if a.status != "approved":
             return [f"godkännande {approval_id} är {a.status}, inte godkänt och oanvänt (D-053)"]
         out = []
+        if a.risk_class is None or a.risk_class != getattr(request.risk_class, "value", None) or a.category != request.category:
+            out.append("godkännandets riskklass/kategori saknas eller stämmer inte; begär nytt godkännande")
         if now - datetime.fromisoformat(a.decided_at) > timedelta(days=VALID_DAYS):
             out.append(f"godkännande {approval_id} är äldre än {VALID_DAYS} dagar (D-053)")
         if a.department != request.department:

@@ -210,3 +210,8 @@ Migration 34 körs när databasen öppnas. Den skriver inte om äldre ledgerpost
 Ollama får endast peka på loopback (`localhost`, `127.0.0.1`, `::1`). En LAN-/internetadress nekas eftersom intern data annars kunde lämna datorn. Externa modellleverantörer ska använda sin riktiga public-only-klassificering.
 
 När kod registrerar betald skatt med `TaxEngine.pay`, ange ett stabilt, unikt `payment_id` från betalningsunderlaget. Samma referens och innehåll registreras bara en gång. Olika betalningar ska ha olika referenser. Anrop utan explicit ID använder spår, år och kvittoreferenser som identitet; återanvänd därför inte ett generiskt filnamn för olika betalningar. Koden registrerar fakta och skickar aldrig pengar till Skatteverket.
+## Utgifter efter H4/M1
+
+Budgetkontrollen `check()` är en förhandsbedömning och reserverar inga pengar. Kod som initierar utgifter måste använda `record_spend(actor, request, draft, writer=..., approval_id=...)`. Använd pending för en beständig reservation innan en extern handling och avräkna samma ledgerpost först när utfallet är känt. Simuleringen använder settled för sin kostnad. Ett godkännande förbrukas i samma transaktion; ett misslyckande lämnar det oanvänt.
+
+Förfrågningar om godkännande kräver uttrycklig `risk_class` och sparar kategori. Äldre förfrågningar utan klassificering från före migration 35 gäller inte längre som utgiftsgodkännande. Begär ett nytt med rätt risk och kategori; gissa inte low. Detta tillför inte något externt betalningsverktyg.
