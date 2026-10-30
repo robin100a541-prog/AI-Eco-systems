@@ -8,6 +8,13 @@ skills = [
 ]
 languages = ["swedish", "english", "arabic", "french"]
 
+# Sökord som research-agenten använder för att hitta signaler om efterfrågan.
+search_terms = [
+  "davinci resolve luts", "cinematic luts", "motion graphics pack", "video transitions pack",
+  "real estate video template", "football edit pack", "content creator templates",
+  "arabic social media templates", "video editing service",
+]
+
 [[audience]]
 name = "AOUN"
 description = "grundarnas eget varumärke och publik inom innehåll och video"
@@ -15,10 +22,3 @@ description = "grundarnas eget varumärke och publik inom innehåll och video"
 [[audience]]
 name = "fastighetsbolaget"
 description = "familjens fastighetsbolag: kontakter och kunskap om fastighetsmarknaden"
-
-# Sökord som research-agenten använder för att hitta signaler om efterfrågan.
-search_terms = [
-  "davinci resolve luts", "cinematic luts", "motion graphics pack", "video transitions pack",
-  "real estate video template", "football edit pack", "content creator templates",
-  "arabic social media templates", "video editing service",
-]

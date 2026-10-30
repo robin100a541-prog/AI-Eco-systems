@@ -97,3 +97,14 @@ class TestDiscovery(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRepoConfig(unittest.TestCase):
+    def test_repo_config_loads(self):
+        from aie.pilot.discovery import load_settings
+
+        from .fixture_config import ROOT
+        s = load_settings(ROOT / "config")
+        self.assertGreaterEqual(len(s.search_terms), 5)
+        self.assertIn("gumroad", s.fees)
+        self.assertEqual(s.min_signals, 2)
