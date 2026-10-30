@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — M3/M4: lokal modell och skattebetalningsåterförsök
+- Ollama med intern data accepterar bara loopback/localhost utan inloggningsuppgifter, query eller fragment. Felaktig remote-endpoint nekas både av leverantören och konfigurationsladdaren före transport.
+- Skattebetalningens kassapost och spår/år sparas i en transaktion. `payment_id` binder återförsök till samma betalning; äldre anrop använder spår/år/kvitto som identitet. Olika betalningar måste ha olika externa referenser eller kvitton. Ingen bankbetalning utförs av funktionen.
+- Fem nya gräns-/avbrottstester OK. Hela sviten på basen före PR #128: 757 OK (Python 3.15.0). Inga riskvärden eller skattesatser ändrade.
 ## [Unreleased] — 2026-10-30 — H4/M1: atomär utgift och bevarad risk
 - `BudgetEngine.record_spend()` kontrollerar budget, förbrukar godkännande och bokför inom en skrivtransaktion. Pending reserverar kapital; simulerade kostnader genomförs som settled. `check()` är rådgivande och förbrukar inte längre godkännanden. Återförsök med samma referens bokför aldrig dubbelt.
 - Arbetscykeln använder den atomära vägen även för godkända utgifter och kontrollerar agentens mandat igen. Migration 35 bevarar riskklass/kategori i godkännandet; äldre oklassificerade förfrågningar blockeras tills ett nytt godkännande begärts.

@@ -3,6 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [x] M3/M4: lokal modellendpoint och atomär skattebetalningsregistrering — Codex 2026-10-30 (codex/review-network-tax), ingen migration.
 - [x] H4/M1: atomär budgetkontroll/bokföring och bevarad riskklass — Codex 2026-10-30 (codex/atomic-spending). Migration 35 reserverad efter 34; inga ändrade riskvärden.
 - [x] Pilotbackup och återställningsövning utan överskrivning av driftdata — Codex 2026-10-30 (codex/pilot-backup-restore), ingen migration.
 - [x] Pilotens granskningsfynd H1–H3/M2: atomär import, senare returer, händelsedatum och avstämning — Codex 2026-10-30 (codex/pilot-import-recovery). Migration 34 reserverad (nästa efter befintlig 33); inget nytt D-beslut eller ändrade riskgränser.
