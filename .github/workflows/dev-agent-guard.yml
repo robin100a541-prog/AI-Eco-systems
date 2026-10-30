@@ -1,0 +1,95 @@
+# Säkerhet för utvecklaragenten (masterprompten 2026-10-30, src/aie/dev_agent/safety.py).
+# - Efter varje merge av en PR från claude/dev-agent-* körs hela sviten på main. Blir den röd öppnas en
+#   revert-PR med auto-merge, och en incident loggas (ärende + docs/bot-reports/incidents.md).
+# - Varje måndag skrivs veckosammanfattningen docs/bot-reports/weekly-ÅÅÅÅ-VV.md via en PR.
+name: dev-agent-guard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "37 5 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '/claude/dev-agent-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hela sviten på main
+        id: tests
+        continue-on-error: true
+        run: python -m unittest discover -s tests 2>&1 | tail -n 30 | tee "$RUNNER_TEMP/tests.txt"
+      - name: Backa mergen och logga en incident
+        if: steps.tests.outcome == 'failure'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          sha="${{ github.sha }}"
+          branch="claude/revert-dev-agent-${sha:0:7}"
+          git config user.name "ai-enterprise-bot"; git config user.email "bot@users.noreply.github.com"
+          git revert --no-edit -m 1 "$sha"
+          printf -- "- %s: main blev röd efter merge %s från utvecklaragenten; mergen backades automatiskt.\n" \
+            "$(date -u +%F)" "${sha:0:7}" >> docs/bot-reports/incidents.md
+          git add docs/bot-reports/incidents.md && git commit -q --amend --no-edit
+          title="Utvecklaragenten: main röd efter ${sha:0:7}, mergen backas"
+          gh issue create --repo "$REPO" --title "$title" --body "Sviten föll på main efter merge ${sha}. Revert-PR öppnas från ${branch}. Utdrag: $(tail -n 5 "$RUNNER_TEMP/tests.txt")"
+          if [ -n "$BOT_TOKEN" ]; then
+            git -c core.hooksPath=/dev/null push -q "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${branch}"
+            GH_TOKEN="$BOT_TOKEN" gh pr create --repo "$REPO" --head "$branch" --base main --title "revert: $title" \
+              --body "Automatisk revert: sviten föll på main efter utvecklaragentens merge."
+            GH_TOKEN="$BOT_TOKEN" gh pr merge --repo "$REPO" "$branch" --auto --merge
+          fi
+          exit 1
+
+  weekly:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Veckosammanfattning
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python -m aie dev-agent weekly --day "$(date -u -d 'yesterday' +%F)"
+          git add docs/bot-reports/weekly-*.md
+          if git diff --cached --quiet || [ -z "$BOT_TOKEN" ]; then exit 0; fi
+          branch="claude/dev-agent-weekly-$(date -u +%G-%V)"
+          git -c user.name="ai-enterprise-bot" -c user.email="bot@users.noreply.github.com" commit -q -m "docs: utvecklaragentens veckosammanfattning"
+          git -c core.hooksPath=/dev/null push -q "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${branch}"
+          GH_TOKEN="$BOT_TOKEN" gh pr create --repo "$REPO" --head "$branch" --base main --title "docs: utvecklaragentens vecka $(date -u +%G-%V)" --body "Veckosammanfattning."
+          GH_TOKEN="$BOT_TOKEN" gh pr merge --repo "$REPO" "$branch" --auto --merge
