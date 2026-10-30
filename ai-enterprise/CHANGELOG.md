@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 7 steg 1: oberoende granskning
+### Tillagt
+- `docs/reviews/REVIEW-PROMPT.md`: den exakta prompten för en ny Claude-session som granskar säkerhetskritisk kod (D-055). Ingen granskning finns ännu; det är en grundaråtgärd.
+- Utvecklaragenten pausas medan Fas 7–8 byggs: `docs/DEV-AGENT-PAUSED` gör att workflowen hoppar över agentsteget.
 ## [Unreleased] — 2026-10-30 — Utvecklaragentens regler och stängda frågor
 ### Ändrat
 - Q-BOT-001–004 är stängda som "släppt, lågt värde" (Robin, 2026-10-30) och flyttade till Besvarade.

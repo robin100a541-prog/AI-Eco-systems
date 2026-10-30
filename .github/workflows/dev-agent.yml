@@ -50,6 +50,7 @@ jobs:
           restore-keys: dev-agent-
       - name: Run the dev agent
         id: agent
+        if: hashFiles('ai-enterprise/docs/DEV-AGENT-PAUSED') == ''
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
