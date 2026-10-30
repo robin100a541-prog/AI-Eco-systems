@@ -62,7 +62,8 @@ jobs:
           key: company-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Sammanfattning
         if: always()
-        run: { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: PR med rapporter och status
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
