@@ -5,6 +5,9 @@
 - Arbetscykeln använder den atomära vägen även för godkända utgifter och kontrollerar agentens mandat igen. Migration 35 bevarar riskklass/kategori i godkännandet; äldre oklassificerade förfrågningar blockeras tills ett nytt godkännande begärts.
 - 750 tester OK (Python 3.15.0), inklusive samtidiga anslutningar till samma budgetutrymme, avbrott före bokföring, idempotent återförsök och nekad risknedgradering.
 
+## [Unreleased] — 2026-10-30 — privat backup med återställningsövning
+- `python -m aie.memory.backup create|verify`: SQLite online-backup inklusive WAL, privata filer (0600), manifest och återställning i en separat temporär mapp. Kontrollerar filhash, databas-/FK-integritet, schema, miljö, tabellantal och revisionskedja. Verktyget skriver aldrig över driftdata.
+- Hela sviten före inmerge av pilotfixen: 742 OK (Python 3.15.0). Sex regressionstester verifierar WAL-innehåll, godkännanden/ledger/audit, orörd driftdata, korrupt backup, trasig revisionskedja och CLI. Grundarchecklistan beskriver privat off-device-kopia och säker återställning; den externa kopian är inte konfigurerad automatiskt.
 ## [Unreleased] — 2026-10-30 — H1–H3/M2: återställbar pilotimport
 - Hela försäljningsimporten, incidenten och revisionsposterna sparas atomärt. Undertransaktioner använder SAVEPOINT, så ett avbrott lämnar inga halvskrivna försäljningar.
 - Senare returer importeras som egna händelser. Ändrade data eller äldre poster utan verifierat händelsedatum kräver en uttrycklig rättelse. Avstämning kontrollerar beständiga ledgerposter inklusive korrigeringar.
