@@ -49,6 +49,7 @@ class Database:
         self.connection = connection
         self.path = path
         self.environment = environment
+        self._savepoint_seq = 0
 
     @classmethod
     def open(
@@ -112,14 +113,22 @@ class Database:
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Allt i blocket sparas tillsammans eller inte alls."""
-        self.connection.execute("BEGIN IMMEDIATE")
+        nested = self.connection.in_transaction
+        self._savepoint_seq += 1
+        name = f"aie_{self._savepoint_seq}"
+        self.connection.execute(f"SAVEPOINT {name}" if nested else "BEGIN IMMEDIATE")
         try:
             yield self.connection
+            self.connection.execute(f"RELEASE SAVEPOINT {name}" if nested else "COMMIT")
         except BaseException as exc:
-            self.connection.execute("ROLLBACK")
+            if self.connection.in_transaction:
+                if nested:
+                    self.connection.execute(f"ROLLBACK TO SAVEPOINT {name}")
+                    self.connection.execute(f"RELEASE SAVEPOINT {name}")
+                else:
+                    self.connection.execute("ROLLBACK")
             log.warning("transaktionen rullades tillbaka: %s: %s", type(exc).__name__, exc)
             raise
-        self.connection.execute("COMMIT")
 
     def close(self) -> None:
         self.connection.close()

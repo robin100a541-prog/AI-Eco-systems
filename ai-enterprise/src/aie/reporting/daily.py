@@ -4,7 +4,7 @@
 att rapporten alltid motsvarar transaktionsdata (§54). Saknas data för en punkt står det uttryckligen
 `SAKNAS: <skäl>` i stället för en siffra, aldrig en nolla som ser ut som ett riktigt värde.
 
-Perioden är ett dygn (`day`, `ÅÅÅÅ-MM-DD`) räknat på postens `recorded_at`, som i en simulering är
+Perioden är ett dygn (`day`, `ÅÅÅÅ-MM-DD`) räknat på postens `economic_date` (händelsedatum, annars registreringsdatum), som i en simulering är
 affärstiden. Kapital, reserv, åtaganden och budget är ställningen vid rapporttillfället.
 """
 
@@ -66,9 +66,9 @@ class DailyReport:
 def daily_report(system, day: str) -> DailyReport:
     currency = system.currency
     entries = system.ledger.entries(currency)
-    today = tuple(e for e in entries if e.recorded_at[:10] == day)
+    today = tuple(e for e in entries if e.economic_date == day)
     # En dag utan poster efter att ledgern startat är en dag utan affärer (0), inte saknade data.
-    has_data = any(e.recorded_at[:10] <= day for e in entries)
+    has_data = any(e.economic_date <= day for e in entries)
     quiet = "" if today else " (inga poster under dagen)"
     limits = system.budget._limits  # samma gränser som budgetmotorn använder
     tax = system.tax.reserved_minor(currency) if system.tax is not None else None
@@ -196,7 +196,7 @@ def save_daily_reports(system, data_dir) -> list:
     out = Path(data_dir) / "reports"
     out.mkdir(parents=True, exist_ok=True)
     paths = []
-    for day in sorted({e.recorded_at[:10] for e in system.ledger.entries(system.currency)}):
+    for day in sorted({e.economic_date for e in system.ledger.entries(system.currency)}):
         path = out / f"daily-{day}.md"
         path.write_text(daily_report(system, day).render(), encoding="utf-8")
         paths.append(path)

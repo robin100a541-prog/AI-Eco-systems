@@ -77,7 +77,7 @@ class DependencyGuard:
         for e in self._ledger.entries(self._limits.currency):
             if e.status is not Status.SETTLED or e.entry_type not in (EntryType.REVENUE, EntryType.REFUND):
                 continue
-            if e.recorded_at[:10] < since:
+            if e.economic_date < since:
                 continue
             initiative = self._register.get("initiative", e.initiative)
             platform = initiative.data.get("platform") if initiative else None

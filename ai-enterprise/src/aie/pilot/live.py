@@ -28,6 +28,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from datetime import date
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 
 from .settings import SETTINGS
@@ -154,15 +155,22 @@ def _column(header: list[str], key: str) -> str:
     raise PilotError(f"kolumnen för {key} saknas (väntade en av: {', '.join(_ALIASES[key])})")
 
 
-def _usd_cents(text: str) -> int:
-    clean = text.strip().replace("$", "").replace(",", "")
+def _decimal(value, label: str) -> Decimal:
     try:
-        value = float(clean or "0")
-    except ValueError as exc:
-        raise PilotError(f"ogiltigt belopp {text!r}") from exc
-    if value < 0:
-        raise PilotError(f"negativt belopp {text!r}")
-    return round(value * 100)
+        number = Decimal(str(value))
+    except InvalidOperation as exc:
+        raise PilotError(f"ogiltigt {label}") from exc
+    if not number.is_finite():
+        raise PilotError(f"ogiltigt {label}")
+    return number
+
+
+def _usd_cents(text: str) -> int:
+    value = _decimal(text.strip().replace("$", "").replace(",", "") or "0", "belopp")
+    cents = value * 100
+    if value < 0 or cents != cents.to_integral_value():
+        raise PilotError("beloppet måste vara icke-negativt med högst två decimaler")
+    return int(cents)
 
 
 def parse_sales_csv(text: str) -> list[dict]:
@@ -171,75 +179,135 @@ def parse_sales_csv(text: str) -> list[dict]:
         raise PilotError("CSV-filen är tom")
     cols = {k: _column(reader.fieldnames, k) for k in ("id", "date", "price", "fee")}
     refunded = next((h for h in reader.fieldnames if h.strip().lower() in _ALIASES["refunded"]), None)
-    rows = []
+    refund_date = next((h for h in reader.fieldnames if h.strip().lower() in
+                        ("refund date", "refund_date", "refunded at", "refunded_at")), None)
+    rows, unique = [], {}
     for n, r in enumerate(reader, 2):
         sale_id = (r.get(cols["id"]) or "").strip()
         if not sale_id:
             raise PilotError(f"rad {n}: försäljnings-ID saknas")
         day = (r.get(cols["date"]) or "").strip()[:10]
+        flag = (r.get(refunded) or "").strip().lower() if refunded else ""
+        if flag not in ("true", "yes", "ja", "1", "false", "no", "nej", "0", ""):
+            raise PilotError(f"rad {n}: okänd återbetalningsstatus")
+        is_refund = flag in ("true", "yes", "ja", "1")
+        refund_day = (r.get(refund_date) or "").strip()[:10] if refund_date else ""
         try:
             date.fromisoformat(day)
+            if is_refund:
+                if not refund_day:
+                    raise PilotError(f"rad {n}: återbetalning kräver Refund Date; datum får inte gissas")
+                date.fromisoformat(refund_day)
+                if refund_day < day:
+                    raise PilotError(f"rad {n}: återbetalningen är före försäljningen")
         except ValueError as exc:
-            raise PilotError(f"rad {n}: ogiltigt datum {day!r}") from exc
-        is_refund = (r.get(refunded) or "").strip().lower() in ("true", "yes", "ja", "1") if refunded else False
-        rows.append({"id": sale_id, "day": day, "price": _usd_cents(r[cols["price"]]),
-                     "fee": _usd_cents(r[cols["fee"]]), "refunded": is_refund})
+            if isinstance(exc, PilotError):
+                raise
+            raise PilotError(f"rad {n}: ogiltigt händelsedatum") from exc
+        row = {"id": sale_id, "day": day, "price": _usd_cents(r.get(cols["price"]) or ""),
+               "fee": _usd_cents(r.get(cols["fee"]) or ""), "refunded": is_refund,
+               "refund_day": refund_day if is_refund else None}
+        if sale_id in unique and unique[sale_id] != row:
+            raise PilotError(f"rad {n}: motstridiga rader för samma försäljnings-ID")
+        unique[sale_id] = row
+        rows.append(row)
     return rows
 
 
 def import_sales(system, founder: str, initiative: str, text: str, usd_sek: float,
                  reported_net_usd: float | None) -> ImportResult:
-    """Bokför plattformens försäljning i pilotens ledger (SEK) och stämmer av mot plattformens totalsumma."""
+    """Atomic event import; later refunds do not get skipped as duplicate sales."""
     from ..ledger import Approval, EntryDraft, EntryType, Status
 
     if system.currency == "SIM":
         raise PilotError("riktig försäljning bokförs aldrig i en SIM-databas (ER-15)")
-    if usd_sek <= 0:
+    rate = _decimal(usd_sek, "växelkurs")
+    if rate <= 0:
         raise PilotError("växelkursen måste vara större än 0")
     approved = approval(system.db, initiative)
     if approved is None:
         raise PilotError(f"piloten {initiative} är inte godkänd; kör `aie pilot prepare` och `aie pilot approve` först")
     rows = parse_sales_csv(text)
+    reported = None if reported_net_usd is None else _decimal(reported_net_usd, "plattformsnetto") * 100
+    if reported is not None and reported != reported.to_integral_value():
+        raise PilotError("plattformsnetto måste ha högst två decimaler")
     file_sha = hashlib.sha256(text.encode()).hexdigest()
     result, seen = ImportResult(), set()
-    sek = lambda cents: round(cents * usd_sek)  # noqa: E731
-    known = {e.external_id for e in system.ledger.entries(CURRENCY) if e.external_id}
-    for row in rows:
-        key = f"{SETTINGS.platform_key}:{row['id']}"
-        if key in seen or f"{key}:sale" in known:
-            result.duplicates += 1
-            continue
-        seen.add(key)
-        evidence = (f"file:{SETTINGS.platform_key}-csv/{file_sha[:16]}", f"external:kurs-usd-sek/{usd_sek}",
-                    f"decision:{approved[0]}")
-        posts = [("sale", EntryType.REVENUE, sek(row["price"])), ("fee", EntryType.FEE, sek(row["fee"]))]
-        if row["refunded"]:
-            posts.append(("refund", EntryType.REFUND, sek(row["price"])))
-        for suffix, kind, amount in posts:
-            if amount == 0:
+    convert = lambda cents, fx: int((Decimal(cents) * fx).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    # Nested ledger/audit operations use savepoints. Failures roll back the whole batch.
+    with system.db.transaction():
+        known = {e.external_id: e for e in system.ledger.entries(CURRENCY) if e.external_id}
+        ledger_net = csv_net = expected_ledger_net = 0
+        for row in rows:
+            key = f"{SETTINGS.platform_key}:{row['id']}"
+            if key in seen:
+                result.duplicates += 1
                 continue
-            system.ledger.record(founder, EntryDraft(
-                f"{key}:{suffix}", "research", amount, CURRENCY, kind, initiative, Approval.APPROVED, evidence,
-                external_id=f"{key}:{suffix}", status=Status.SETTLED, note=f"{SETTINGS.platform} {row['day']}"))
-        result.sales += 1
-        result.gross_minor += sek(row["price"])
-        result.fees_minor += sek(row["fee"])
-        if row["refunded"]:
-            result.refunds += 1
-            result.refunds_minor += sek(row["price"])
-    if reported_net_usd is not None:
-        expected = round(reported_net_usd * 100)
-        unique = {r["id"]: r for r in rows}.values()
-        csv_net = sum(r["price"] - r["fee"] - (r["price"] if r["refunded"] else 0) for r in unique)
-        if csv_net != expected:
-            result.mismatch = (f"{SETTINGS.platform} visar netto {expected / 100:.2f} USD, CSV-filen ger {csv_net / 100:.2f} USD "
-                               f"(skillnad {(csv_net - expected) / 100:+.2f} USD)")
-            incident = system.incidents.open(founder, f"Avstämning mot {SETTINGS.platform} stämmer inte (ER-23)",
-                                             source=f"pilot:reconcile:{file_sha[:16]}")
+            seen.add(key)
+            evidence = (f"file:{SETTINGS.platform_key}-csv/{file_sha[:16]}", f"external:kurs-usd-sek/{rate}",
+                        f"decision:{approved[0]}")
+            posts = [("sale", EntryType.REVENUE, row["price"], row["day"]),
+                     ("fee", EntryType.FEE, row["fee"], row["day"])]
+            if row["refunded"]:
+                posts.append(("refund", EntryType.REFUND, row["price"], row["refund_day"]))
+            new_sale = new_refund = changed = False
+            for suffix, kind, cents, day in posts:
+                external_id = f"{key}:{suffix}"
+                existing = known.get(external_id)
+                fx = rate
+                if existing is not None:
+                    fx_text = next((v.split("external:kurs-usd-sek/", 1)[1] for v in existing.evidence
+                                    if v.startswith("external:kurs-usd-sek/")), None)
+                    if fx_text is None:
+                        raise PilotError(f"{external_id}: kursunderlag saknas; granska den äldre posten")
+                    fx = _decimal(fx_text, "tidigare växelkurs")
+                amount = convert(cents, fx)
+                if existing is not None:
+                    if (existing.initiative != initiative or existing.entry_type is not kind
+                            or existing.amount_minor != amount or existing.status is not Status.SETTLED
+                            or existing.occurred_on is None or existing.economic_date != day):
+                        raise PilotError(f"{external_id}: ändrat underlag eller äldre post utan händelsedatum; "
+                                         "kräver spårbar rättelse")
+                elif amount:
+                    existing = system.ledger.record(founder, EntryDraft(
+                        external_id, "research", amount, CURRENCY, kind, initiative, Approval.APPROVED, evidence,
+                        external_id=external_id, status=Status.SETTLED,
+                        note=f"{SETTINGS.platform} {day}", occurred_on=day))
+                    known[external_id] = existing
+                    changed = True
+                    new_sale |= suffix == "sale"
+                    new_refund |= suffix == "refund"
+                    if suffix == "sale":
+                        result.gross_minor += amount
+                    elif suffix == "fee":
+                        result.fees_minor += amount
+                    else:
+                        result.refunds_minor += amount
+                sign = -1 if kind in (EntryType.FEE, EntryType.REFUND) else 1
+                expected_ledger_net += sign * amount
+                ledger_net += sign * (existing.amount_minor + sum(c.amount_minor for c in system.ledger.corrections(existing.entry_id))
+                                      if existing else 0)
+            if not row["refunded"] and f"{key}:refund" in known:
+                raise PilotError(f"{key}: exporten saknar en redan bokförd återbetalning")
+            result.sales += int(new_sale)
+            result.refunds += int(new_refund)
+            result.duplicates += int(not changed)
+            csv_net += row["price"] - row["fee"] - (row["price"] if row["refunded"] else 0)
+        if ledger_net != expected_ledger_net:
+            raise PilotError("ledgerns netto stämmer inte med importens beständiga poster")
+        if reported is not None and csv_net != int(reported):
+            result.mismatch = (f"{SETTINGS.platform} visar netto {reported / 100:.2f} USD, "
+                               f"CSV-filen ger {csv_net / 100:.2f} USD (avvikelse i underlaget)")
+            source = f"pilot:reconcile:{initiative}:{file_sha[:16]}:{reported}"
+            incident = next((i for i in system.incidents.all() if i.source == source), None)
+            if incident is None:
+                incident = system.incidents.open(founder, f"Avstämning mot {SETTINGS.platform} stämmer inte (ER-23)",
+                                                 source=source)
             result.incident_id = incident.incident_id
-    system.audit.append(founder, "pilot.sales_imported", {
-        "initiative": initiative, "sales": result.sales, "refunds": result.refunds, "duplicates": result.duplicates,
-        "net_minor": result.net_minor, "currency": CURRENCY, "mismatch": result.mismatch})
+        system.audit.append(founder, "pilot.sales_imported", {
+            "initiative": initiative, "sales": result.sales, "refunds": result.refunds,
+            "duplicates": result.duplicates, "net_minor": result.net_minor, "currency": CURRENCY,
+            "reconciled_ledger_net_minor": ledger_net, "mismatch": result.mismatch})
     return result
 
 
