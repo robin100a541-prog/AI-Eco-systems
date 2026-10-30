@@ -222,6 +222,10 @@
 ## Pilotimport: rättning 2026-10-30 (Codex)
 - H1–H3 och M2 i den tekniska granskningen har implementation och 10 regressionstester: atomär import, separata returer, händelsedatum, ledgeravstämning och idempotenta incidenter. Hela sviten: 746 OK (Python 3.15.0). Detta är inte oberoende godkännande för riktiga pengar; övriga fynd i granskningen kvarstår.
 
+## Ändrat 2026-10-30 (Q-TAX-01 besvarad, produkten rättad)
+- Q-TAX-01 besvarad av Robin: momsen sköts av plattformarna, och inget företag behöver öppnas nu. En ny intäktsväg utan plattformsmoms kräver att momsen löses först.
+- `products/f-skatt-guide`: sakfelen är rättade (NE-bilaga, momsgräns 120 000 kr, F-skatt på fakturan, platshållare, AI-upplysning) och PDF:en är omgjord.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|

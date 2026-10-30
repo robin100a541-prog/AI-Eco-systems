@@ -19,7 +19,7 @@
 |------|----------------------|
 | **Tid och engagemang** | Har du tid att lägga åt bokföring och administration utöver ditt ordinarie jobb? |
 | **Ansvar** | I enskild firma är du personligt ansvarig för företagets skulder. |
-| **Skatteplanering** | Vinsten beskattas som inkomst av tjänst. Fundera på hur detta påverkar din privata skatt. |
+| **Skatteplanering** | Vinsten beskattas som inkomst av näringsverksamhet (NE-bilagan i din deklaration). Du betalar egenavgifter och preliminärskatt. |
 | **Verksamhetens art** | Är din verksamhet av sådan art att du kan fakturera utan att behöva särskilda tillstånd? |
 | **Risk** | Är du beredd att ta den ekonomiska risken själv? |
 
@@ -57,8 +57,8 @@
 
 | Omsättning (12‑mån) | Momsregistrering krävs? |
 |---------------------|--------------------------|
-| **< 30 000 kr** | Nej (men du kan välja att registrera dig frivilligt). |
-| **≥ 30 000 kr** | Ja – du måste registrera dig för moms. |
+| **Högst 120 000 kr** | Nej, du kan vara momsbefriad (men du kan välja att registrera dig). |
+| **Över 120 000 kr** | Ja – du måste registrera dig för moms. |
 
 ### Så här registrerar du dig för moms  
 
@@ -73,8 +73,8 @@
 | Typ av vara/tjänst | Momssats |
 |--------------------|----------|
 | Standard (de flesta) | 25 % |
-| Livsmedel, restaurang | 12 % |
-| Böcker, tidningar | 6 % |
+| Livsmedel, restaurang, hotell | 12 % (livsmedel tillfälligt sänkt; kontrollera aktuell sats hos Skatteverket) |
+| Böcker, tidningar, persontransporter | 6 % |
 
 *Använd rätt sats på varje faktura.*  
 
@@ -86,8 +86,9 @@
 
 | Gratis | Betald |
 |--------|--------|
-| **Bokio** – enkel för nybörjare | **Visma eEkonomi** – fler funktioner |
-| **Fortnox** – bra integrationer | **BL Administration** – för mer avancerade behov |
+| **Kalkylark** – räcker för få affärer | **Visma eEkonomi** – fler funktioner |
+| **Bokio Free** (begränsad) | **Fortnox** – bra integrationer |
+| | **BL Administration** – för mer avancerade behov |
 
 > **Tips:** Många program har en gratis provperiod – testa innan du bestämmer dig.  
 
@@ -128,19 +129,19 @@
 
 | Obligatorisk uppgift | Exempel |
 |----------------------|---------|
-| **Ditt namn och adress** | Anna Svensson, Storgatan 12, 123 45 Stockholm |
-| **Organisationsnummer** (personnummer för enskild firma) | 850101‑1234 |
-| **F‑skattenummer** | 123456‑7890 |
-| **Momsregistreringsnummer** (om momsregistrerad) | SE123456789001 |
+| **Ditt namn och adress** | [Ditt namn], [gata], [postnummer och ort] |
+| **Organisationsnummer** (personnummer för enskild firma) | ÅÅMMDD‑XXXX |
+| **Texten ”Godkänd för F‑skatt”** | Godkänd för F‑skatt |
+| **Momsregistreringsnummer** (om momsregistrerad) | SEÅÅMMDDXXXX01 |
 | **Fakturadatum** | 2026‑10‑30 |
 | **Fakturanummer** (unik, löpande) | 2026‑001 |
-| **Kundens namn och adress** | Företag AB, Västra vägen 5, 543 21 Göteborg |
+| **Kundens namn och adress** | [Kundens namn], [adress] |
 | **Specifikation av varor/tjänster** | Konsulttimmar – 10 h à 800 kr |
 | **Pris exkl. moms** | 8 000 kr |
 | **Momsbelopp** | 2 000 kr (25 %) |
 | **Totalt belopp inkl. moms** | 10 000 kr |
 | **Betalningsvillkor** | 30 dagar netto |
-| **Bankuppgifter** (IBAN/BIC) | SE45 5000 0000 1234 5678 90 / SWEDBANK |
+| **Bankuppgifter** (bankgiro eller IBAN) | Bankgiro XXX‑XXXX |
 
 ### Så här skickar du fakturan  
 
@@ -158,7 +159,7 @@
 | 1 | Gör en kort affärsplan och budget för första året. | Direkt |
 | 2 | Kontrollera att du har rätt kompetens/utrustning för verksamheten. | Direkt |
 | 3 | Registrera enskild firma på Verksamt.se. | Inom 1 vecka |
-| 4 | Ansök om F‑skatt (och moms om du förväntar dig > 30 000 kr). | Samtidigt som registrering |
+| 4 | Ansök om F‑skatt (och moms om du förväntar dig mer än 120 000 kr per år). | Samtidigt som registrering |
 | 5 | Välj och installera ett bokföringsprogram. | Inom 1 vecka efter registrering |
 | 6 | Skapa mall för faktura med alla obligatoriska uppgifter. | Direkt |
 | 7 | Sätt upp en rutin för att spara kvitton (digitalt). | Direkt |
@@ -166,7 +167,7 @@
 | 9 | Gör en första preliminärskatt (kolla på Skatteverkets kalkylator). | Efter första intäkten |
 | 10 | Sätt upp påminnelser för moms- och skatteinbetalningar. | Veckovis |
 | 11 | Gör en månatlig avstämning av bank, bokföring och moms. | Varje månad |
-| 12 | Gör årsbokslut och deklarera NE‑blanketten. | Senast 31 maj året efter räkenskapsåret |
+| 12 | Gör årsbokslut och deklarera med NE‑bilagan. | Enligt Skatteverkets datum (vanligen början av maj året efter) |
 | 13 | Utvärdera verksamheten och justera budgeten inför nästa år. | Efter årsbokslut |
 
 ---
@@ -178,4 +179,6 @@
 * **Använd digitala verktyg** för kvittohantering och fakturering – det sparar både tid och papper.  
 * **Fråga om hjälp** – Skatteverket, en revisor eller en bokföringskonsult kan ge värdefull vägledning, särskilt under det första året.  
 
-Lycka till med din nya verksamhet! 🚀
+*Den här guiden är skriven med hjälp av AI och granskad av en människa. Den är ingen juridisk eller skattemässig rådgivning; kontrollera alltid hos Skatteverket.*
+
+Lycka till med din nya verksamhet!

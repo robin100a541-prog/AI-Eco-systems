@@ -590,7 +590,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 | ID | Fråga | Behövs före | Förslag från Claude |
 |---|---|---|---|
-| Q-TAX-01 | Vilket skattespår (D-010: A–D) gäller för systemets intäkter? Väntar på svar från Skatteverket. | Fas 7 (riktiga pengar) | Spår C (enkelt bolag) för digitala produkter, om Skatteverket bekräftar |
+| Q-TAX-01 | ~~Vilket skattespår gäller?~~ **Besvarad av Robin 2026-10-30:** momsen sköts av plattformarna (merchant of record). Inget företag behöver öppnas nu. Hittar systemet en ny intäktsväg där plattformen inte sköter momsen, ska systemet ta fram hur momsen sköts innan den används. Svaret är grundarnas, inte skriftligt från Skatteverket. | Fas 7 | — |
 | Q-01 | ~~Hur är beslutsmakten fördelad mellan Yorgo och Robin?~~ **Besvarad av D-019 (2026-10-23).** | Fas 3 | — |
 | Q-02 | Vilka datorer/OS har ni? (Besvaras av `check_env.py`) | Fas 1 | — |
 | Q-03 | Valuta för verkligt kapital (SEK?) | Fas 4 | SEK |
