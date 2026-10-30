@@ -19,7 +19,14 @@ from pathlib import Path
 from aie.agents import AgentRegistry, AgentState
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, PermissionDenied, load_permissions
-from aie.llm import DataClass, OpenAICompatibleProvider, ProviderRouter, QuotaLedger, RuleProvider, Slot
+from aie.llm import (
+    DataClass,
+    OpenAICompatibleProvider,
+    ProviderRouter,
+    QuotaLedger,
+    RuleProvider,
+    Slot,
+)
 from aie.llm.gateway import LLMGateway
 from aie.memory import Database
 from aie.orchestration import AgentWorker, TaskBoard, TaskStatus

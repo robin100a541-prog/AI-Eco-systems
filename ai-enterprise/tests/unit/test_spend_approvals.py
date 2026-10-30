@@ -10,7 +10,14 @@ from pathlib import Path
 from aie.agents import AgentRegistry
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, load_permissions
-from aie.budget import BudgetEngine, Risk, SpendApprovalError, SpendApprovals, SpendRequest, load_budgets
+from aie.budget import (
+    BudgetEngine,
+    Risk,
+    SpendApprovalError,
+    SpendApprovals,
+    SpendRequest,
+    load_budgets,
+)
 from aie.config import load_config
 from aie.config.models import Money
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status

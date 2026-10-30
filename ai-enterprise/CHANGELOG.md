@@ -4,6 +4,16 @@
 ### Ändrat
 - Varje SIM-rapport (daglig, periodisk och bedömningen före start) anger att marknadsantagandena är OVERIFIERADE, eftersom de kommer ur scenariofilerna och inte från riktig försäljning.
 - "Redo" är bara en hypotes tills riktiga försäljningsdata finns (`real_results`, D-062). Rekommendationen börjar då med `HYPOTES:`. `simulate evaluate` skriver ut statusen, och rapportfilen har `status` och `market_assumptions: unverified|verified`.
+## [Unreleased] — 2026-10-30 — Fas 6b-5: acceptanstester för §54
+### Tillagt
+- `tests/acceptance/test_fas6.py` har ett test per kriterium i §54. Alla körs mot riktiga simuleringar av repots scenarier:
+  - SIM blandas aldrig med riktiga pengar,
+  - förlustinitiativ identifieras,
+  - riskgränser och nödstopp nekar utgifter,
+  - dagliga och periodiska rapporter stämmer med ledgern,
+  - stopp och omstart förlorar ingen historik.
+### Rättat
+- Daglig rapport: startkapital räknas inte längre som ett aktivt affärsinitiativ. En dag utan poster efter att ledgern startat visar 0 med notering i stället för `SAKNAS`, eftersom bara dagar innan ledgern fanns räknas som saknade data.
 
 ## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
 ### Tillagt

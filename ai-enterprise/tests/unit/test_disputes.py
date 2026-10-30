@@ -27,6 +27,7 @@ from aie.governance import (
 )
 from aie.memory import Database
 from aie.orchestration import TaskBoard
+
 from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]

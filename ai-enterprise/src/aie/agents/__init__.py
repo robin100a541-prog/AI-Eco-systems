@@ -8,7 +8,13 @@ from .hierarchy import (
     OrgChart,
     reporting_line_error,
 )
-from .lifecycle import ACTING_STATES, TRANSITIONS, AgentState, IllegalTransition, check_transition
+from .lifecycle import (
+    ACTING_STATES,
+    TRANSITIONS,
+    AgentState,
+    IllegalTransition,
+    check_transition,
+)
 from .registry import Agent, AgentRegistry, RegistryError, StateChange
 
 __all__ = [

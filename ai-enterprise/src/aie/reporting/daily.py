@@ -67,6 +67,9 @@ def daily_report(system, day: str) -> DailyReport:
     currency = system.currency
     entries = system.ledger.entries(currency)
     today = tuple(e for e in entries if e.recorded_at[:10] == day)
+    # En dag utan poster efter att ledgern startat är en dag utan affärer (0), inte saknade data.
+    has_data = any(e.recorded_at[:10] <= day for e in entries)
+    quiet = "" if today else " (inga poster under dagen)"
     limits = system.budget._limits  # samma gränser som budgetmotorn använder
     tax = system.tax.reserved_minor(currency) if system.tax is not None else None
     pos = capital_position(entries, limits, tax)
@@ -102,14 +105,14 @@ def daily_report(system, day: str) -> DailyReport:
             POINTS[2],
             amount(revenue - refunds)
             + (f" (brutto {revenue}, återbetalt {refunds})" if refunds else "")
-            if today
-            else missing("inga poster i ledgern för dagen"),
+            if has_data
+            else missing("ledgern har inga poster till och med dagen"),
         ),
         (
             POINTS[3],
-            amount(costs) if today else missing("inga poster i ledgern för dagen"),
+            amount(costs) + quiet if has_data else missing("ledgern har inga poster till och med dagen"),
         ),
-        (POINTS[4], net if today else missing("inga poster i ledgern för dagen")),
+        (POINTS[4], net if has_data else missing("ledgern har inga poster till och med dagen")),
         (POINTS[5], amount(pos.committed_minor)),
         (POINTS[6], _budget_usage(system)),
         (POINTS[7], _initiatives(system, entries)),
@@ -136,7 +139,8 @@ def _initiatives(system, entries) -> str:
     stopped = {
         t.scope_value for t in system.stoploss.active() if t.scope_kind == "initiative"
     }
-    active = sorted({e.initiative for e in entries if e.initiative} - stopped)
+    business = (EntryType.REVENUE, EntryType.COST, EntryType.FEE, EntryType.REFUND)  # inte kapital eller skatt
+    active = sorted({e.initiative for e in entries if e.initiative and e.entry_type in business} - stopped)
     if not active and not stopped:
         return "inga"
     text = ", ".join(active) or "inga"

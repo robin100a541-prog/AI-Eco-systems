@@ -395,7 +395,7 @@ class TestChecks(DevCase):
         self.assertEqual(result.backlog_checked, ["BL-001"])
         self.assertTrue(result.success)
         line = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
-        self.assertIn("Klart när: `grep src/calc.py return a + b` — öppen", line)
+        self.assertIn("- [x] BL-001 (5 dokumentation) Rätta `src/calc.py` så att add adderar Klart när: `grep src/calc.py return a + b` — klar", line)
 
     def test_rewrite_with_an_already_true_check_is_refused(self):
         """Verifies D-050: en kontroll som redan går igenom skrivs inte in; punkten tas inte."""
@@ -404,6 +404,17 @@ class TestChecks(DevCase):
         self.assertEqual((result.backlog_checked, result.attempts), ([], []))
         text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Klart när", text)
+
+    def test_done_backlog_item_is_ticked_and_never_taken_again(self):
+        """Verifies D-050: en klar punkt flyttas till Klart; en punkt vars kontroll redan går igenom tas inte."""
+        result = self.agent(FakeModel(GOOD)).run()
+        self.assertTrue(result.success)
+        text = (self.project / "docs" / "BOT-BACKLOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("- [ ] BL-001", text)
+        self.assertIn("## Klart\n\n- [x] BL-001", text)
+        self.backlog(["BL-002 Gör om `src/calc.py`"])  # kontrollen (add adderar) går redan igenom
+        again = self.agent(FakeModel(GOOD)).run()
+        self.assertEqual((again.attempts, again.success), ([], False))
 
     def test_invalid_rewrite_leaves_the_item_untaken(self):
         """Verifies D-050: en kontroll som inte går att tolka skrivs inte in, och punkten tas inte."""
@@ -530,10 +541,10 @@ class TestPicker(unittest.TestCase):
             (root / "docs").mkdir()
             (root / "a.py").write_text("x = 1\n", encoding="utf-8")
             (root / "docs" / "BOT-BACKLOG.md").write_text(
-                "- [ ] BL-001 (1 buggar) i `a.py`. Klart när: `grep a.py x = 1` — öppen\n"
-                "- [ ] BL-002 (2 kravtäckning) i `a.py`. Klart när: `grep a.py x = 1` — öppen\n"
-                "- [ ] BL-004 (4 kodkvalitet) i `a.py`. Klart när: `grep a.py x = 1` — öppen\n"
-                "- [ ] BL-005 (5 dokumentation) i `a.py`. Klart när: `grep a.py x = 1` — öppen\n",
+                "- [ ] BL-001 (1 buggar) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-002 (2 kravtäckning) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-004 (4 kodkvalitet) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n"
+                "- [ ] BL-005 (5 dokumentation) i `a.py`. Klart när: `grep a.py y = 2` — öppen\n",
                 encoding="utf-8",
             )
             (root / "docs" / "QUESTIONS-FOR-FOUNDERS.md").write_text(

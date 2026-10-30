@@ -20,9 +20,8 @@ from dataclasses import dataclass
 
 from ..agents import AgentRegistry
 from ..audit import AuditLog
-from ..authorization import AuthorizationEngine
+from ..authorization import AuthorizationEngine, PermissionDenied
 from ..llm import ChatRequest, DataClass, Message, NoProviderAvailable
-from ..authorization import PermissionDenied
 from ..llm.gateway import LLMGateway, SecretInPrompt
 from ..reporting import Claim, ClaimKind, Report, ReportError
 from ..security import ExternalContent
