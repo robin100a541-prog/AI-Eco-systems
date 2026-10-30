@@ -15,6 +15,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
 - `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
+- `pilot`         Fas 7: ideas (produktagent och beslutscykel), prepare, approve, status
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -160,6 +161,13 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--day", help="daily: dagen ÅÅÅÅ-MM-DD (standard: senaste dagen i ledgern)")
     rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
     rep.add_argument("--to", dest="end", help="periodic: sista dagen")
+    pl = add("pilot", "Fas 7-piloten: ideas, prepare, approve eller status")
+    pl.add_argument("action", choices=("ideas",))
+    pl.add_argument("--as", dest="founder", required=True, help="vilken grundare som kör")
+    pl.add_argument("--agents", choices=("rule", "groq"), default="rule", help="rule = inga nätverksanrop")
+    pl.add_argument("--usd-sek", type=_positive, default=10.5, help="antagen växelkurs USD→SEK")
+    pl.add_argument("--out", type=Path, default=Path("products"), help="mapp för produkterna")
+    pl.add_argument("--report", type=Path, help="spara 7c-rapporten här")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -244,6 +252,12 @@ def _simulate(args: argparse.Namespace) -> int:
     return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
 
 
+def _pilot(args: argparse.Namespace) -> int:
+    from .pilot.cli import ideas  # importeras bara när kommandot används
+
+    return ideas(args.config_dir, args.founder, args.agents, args.usd_sek, args.out, args.report)
+
+
 def _report(args: argparse.Namespace) -> int:
     from .reporting.cli import report  # importeras bara när kommandot används
 
@@ -299,6 +313,7 @@ def main(argv: list[str] | None = None) -> int:
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
         "report": lambda: _report(args),
+        "pilot": lambda: _pilot(args),
         "spend": lambda: _spend(args),
         "results": lambda: _results(args),
         "registry": lambda: _registry(args),

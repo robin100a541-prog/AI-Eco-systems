@@ -1,0 +1,47 @@
+# Fas 7a/7c (masterprompten 2026-10-30): produktagenten och beslutscykeln på Groq, en gång per knapptryck.
+# Bara offentliga data skickas till Groq (produktidéer och Gumroads avgifter). Inga pengar, inga konton,
+# ingen publicering. Resultatet skrivs ut i loggen och sparas som artefakt; en människa eller Claude-session
+# lägger in det i repot med en PR.
+name: pilot-groq
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Produktagent och beslutscykel på Groq
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python -m aie init
+          python -m aie pilot ideas --as robin --agents groq --out "$RUNNER_TEMP/products" \
+            --report "$RUNNER_TEMP/7c-llm-quality.md"
+      - name: Visa filerna
+        run: |
+          for f in "$RUNNER_TEMP"/products/*/*.md "$RUNNER_TEMP"/products/*/idea.json; do
+            echo "===== FILE ${f#$RUNNER_TEMP/} ====="; cat "$f"; echo; echo "===== END ====="
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pilot-groq-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/products/
+            ${{ runner.temp }}/7c-llm-quality.md
