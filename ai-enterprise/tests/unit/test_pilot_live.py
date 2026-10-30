@@ -62,7 +62,7 @@ class PilotLive(unittest.TestCase):
 class TestImport(PilotLive):
     def test_import_refunds_duplicates_and_reconciliation(self):
         self.prepare_and_approve()
-        code, text = self.importing(net=(3 * 10.30 - 12.00))
+        code, text = self.importing(net=18.90)
         self.assertEqual(code, 0, text)
         self.assertIn("Importerat 3 försäljningar (1 återbetalda, 1 dubbletter", text)
         self.assertIn("netto 189.00 kr", text)  # 360 - 51 - 120
@@ -71,7 +71,7 @@ class TestImport(PilotLive):
         self.assertEqual(sum(1 for e in entries if e.entry_type is EntryType.REFUND), 1)
         self.assertEqual(system.ledger.entries("SIM"), ())  # aldrig SIM i pilotens databas
         self.assertGreater(system.tax.reserved_minor("SEK"), 0)
-        code, text = self.importing(net=(3 * 10.30 - 12.00))  # samma fil igen: inget bokförs två gånger
+        code, text = self.importing(net=18.90)  # samma fil igen: inget bokförs två gånger
         self.assertIn("Importerat 0 försäljningar", text)
 
     def test_mismatch_opens_incident(self):
@@ -112,8 +112,8 @@ class TestStops(PilotLive):
     def test_refund_ratio_stops(self):
         self.prepare_and_approve()
         refunds = self.dir / "refunds.csv"
-        refunds.write_text("Purchase ID,Purchase Date,Sale Price ($),Fees ($),Refunded?\n"
-                           + "".join(f"R{i},2026-11-0{i},12.00,1.70,{'true' if i == 1 else 'false'}\n"
+        refunds.write_text("Purchase ID,Purchase Date,Sale Price ($),Fees ($),Refunded?,Refund Date\n"
+                           + "".join(f"R{i},2026-11-0{i},12.00,1.70,{'true' if i == 1 else 'false'},2026-11-03\n"
                                      for i in range(1, 4)))
         code, text = self.importing(net=None, csv=refunds)
         self.assertIn("1 återbetalningar på 3 försäljningar", text)

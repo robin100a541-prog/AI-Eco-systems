@@ -111,9 +111,9 @@ def periodic_report(system, start: str, end: str) -> PeriodicReport:
         raise ValueError(f"perioden börjar efter att den slutar: {start} – {end}")
     currency = system.currency
     entries = system.ledger.entries(currency)
-    before = tuple(e for e in entries if e.recorded_at[:10] < start)
-    upto_end = tuple(e for e in entries if e.recorded_at[:10] <= end)
-    period = tuple(e for e in upto_end if e.recorded_at[:10] >= start)
+    before = tuple(e for e in entries if e.economic_date < start)
+    upto_end = tuple(e for e in entries if e.economic_date <= end)
+    period = tuple(e for e in upto_end if e.economic_date >= start)
     limits = system.budget._limits
     opening = capital_position(before, limits).liquid_minor
     closing = capital_position(upto_end, limits).liquid_minor
@@ -178,7 +178,7 @@ def _initiatives(period) -> tuple[InitiativeFigures, ...]:
     for e in period:
         if e.status is not Status.SETTLED or not e.initiative:
             continue
-        day = e.recorded_at[:10]
+        day = e.economic_date
         if e.entry_type is EntryType.REVENUE:
             revenue[e.initiative] += e.amount_minor
             daily[e.initiative][day] += e.amount_minor

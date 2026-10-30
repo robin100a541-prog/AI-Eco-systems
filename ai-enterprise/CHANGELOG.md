@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — H1–H3/M2: återställbar pilotimport
+- Hela försäljningsimporten, incidenten och revisionsposterna sparas atomärt. Undertransaktioner använder SAVEPOINT, så ett avbrott lämnar inga halvskrivna försäljningar.
+- Senare returer importeras som egna händelser. Ändrade data eller äldre poster utan verifierat händelsedatum kräver en uttrycklig rättelse. Avstämning kontrollerar beständiga ledgerposter inklusive korrigeringar.
+- Migration 34 lägger till `occurred_on`; registreringstiden bevaras. Periodrapporter, moms, skatteunderlag och plattformsandelar använder händelsedatum. Äldre poster ändras inte och faller tillbaka på registreringsdatum.
+- Refund Date krävs vid återbetalning. Belopp och växling beräknas med Decimal, inte binära flyttal. Samma avstämningsavvikelse återanvänder incidenten.
+- Verifierat: 746 tester OK på Python 3.15.0, inklusive 10 nya regressionstester och uppgradering från schema 33. Oberoende granskning krävs före riktiga pengar.
+
 ## [Unreleased] — 2026-10-30 — company-daily: giltig YAML
 ### Rättat
 - Sammanfattningsstegets shell-grupp ligger nu i ett YAML-block (`run: |`). Tidigare tolkades klamrarna som YAML och GitHub avvisade workflowen innan något jobb startade (körning 41056471949 och tidigare).

@@ -21,7 +21,7 @@ class FakeLedger:
 
     def add(self, initiative, amount, kind=EntryType.REVENUE, at="2027-03-01T12:00:00+00:00"):
         self.rows.append(SimpleNamespace(initiative=initiative, amount_minor=amount, entry_type=kind,
-                                         status=Status.SETTLED, recorded_at=at, currency="SIM"))
+                                         status=Status.SETTLED, recorded_at=at, economic_date=at[:10], currency="SIM"))
 
     def entries(self, currency=None):
         return tuple(self.rows)

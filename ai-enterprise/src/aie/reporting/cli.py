@@ -31,7 +31,7 @@ def report(config_dir: Path, kind: str, day: str | None, start: str | None, end:
             run = stored_run(db)
             clock = SimClock(run["start_date"]) if run else None
             system = build_system(config, db, config_dir, clock=clock)
-            last = max((e.recorded_at[:10] for e in system.ledger.entries(system.currency)), default=None)
+            last = max((e.economic_date for e in system.ledger.entries(system.currency)), default=None)
             today = last or datetime.now(UTC).date().isoformat()
             if kind == "daily":
                 print(daily_report(system, day or today).render(), end="")

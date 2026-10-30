@@ -160,13 +160,14 @@ class TestMigration(unittest.TestCase):
             tx.execute("INSERT INTO ledger_status (entry_id, status, actor, note, at) VALUES (1, 'settled', 'robin', '', 'x')")
             tx.execute("INSERT INTO tax_assignments (entry_id, track, owners, actor, note, corrects, at) "
                        "VALUES (1, 'partnership', '{}', 'robin', '', NULL, 'x')")
-        before = db.connection.execute("SELECT * FROM ledger_entries ORDER BY entry_id").fetchall()
+        columns = ", ".join(row[1] for row in db.connection.execute("PRAGMA table_info(ledger_entries)"))
+        before = db.connection.execute(f"SELECT {columns} FROM ledger_entries ORDER BY entry_id").fetchall()
         db.close()
         db = Database.open(Path(tmp.name) / "data", "sim")
         self.addCleanup(db.close)
         c = db.connection
         self.assertEqual(db.schema_version, len(MIGRATIONS))
-        self.assertEqual(c.execute("SELECT * FROM ledger_entries ORDER BY entry_id").fetchall(), before)
+        self.assertEqual(c.execute(f"SELECT {columns} FROM ledger_entries ORDER BY entry_id").fetchall(), before)
         self.assertEqual(c.execute("PRAGMA foreign_key_check").fetchall(), [])
         for sql in ("UPDATE ledger_entries SET note = 'x'", "DELETE FROM ledger_entries",
                     "INSERT INTO ledger_status (entry_id, status, actor, note, at) VALUES (99, 'settled', 'r', '', 'x')"):

@@ -29,7 +29,7 @@ import re
 import sqlite3
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import Enum
 
 from ..audit import AuditLog
@@ -102,6 +102,7 @@ class EntryDraft:
     external_id: str | None = None
     status: Status = Status.PENDING
     note: str = ""
+    occurred_on: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,11 +131,17 @@ class Entry:
     note: str
     status: Status
     history: tuple[StatusEvent, ...] = field(default=(), compare=False)
+    occurred_on: str | None = None
+
+    @property
+    def economic_date(self) -> str:
+        """Event date for financial periods; old records fall back to registration day."""
+        return self.occurred_on or self.recorded_at[:10]
 
 
 _COLUMNS = (
     "entry_id, idempotency_key, recorded_at, recorded_by, department, amount_minor, currency, "
-    "entry_type, initiative, approval_status, evidence, external_id, corrects, note"
+    "entry_type, initiative, approval_status, evidence, external_id, corrects, note, occurred_on"
 )
 
 
@@ -257,6 +264,7 @@ class Ledger:
             None,
             Status.SETTLED,
             reason,
+            occurred_on=original.economic_date,
         )
         errors = self._validate(draft, correction=True)
         if not reason.strip():
@@ -319,6 +327,12 @@ class Ledger:
 
     def _validate(self, d: EntryDraft, correction: bool = False) -> list[str]:
         errors: list[str] = []
+        if d.occurred_on is not None:
+            try:
+                if date.fromisoformat(d.occurred_on).isoformat() != d.occurred_on:
+                    raise ValueError("noncanonical date")
+            except (ValueError, TypeError):
+                errors.append("occurred_on måste vara ett datum ÅÅÅÅ-MM-DD")
         if not isinstance(d.idempotency_key, str) or not d.idempotency_key.strip():
             errors.append("idempotensnyckel saknas (SR-12)")
         if d.department not in self._departments:
@@ -398,6 +412,7 @@ class Ledger:
             existing.entry_type,
             existing.initiative,
             existing.external_id,
+            existing.occurred_on,
         ) == (
             draft.department,
             draft.amount_minor,
@@ -405,6 +420,7 @@ class Ledger:
             draft.entry_type,
             draft.initiative,
             draft.external_id,
+            draft.occurred_on,
         )
         if not same:
             self._refuse_duplicate(
@@ -435,8 +451,8 @@ class Ledger:
             with self._db.transaction() as tx:
                 cursor = tx.execute(
                     "INSERT INTO ledger_entries (idempotency_key, recorded_at, recorded_by, department, amount_minor, "
-                    "currency, entry_type, initiative, approval_status, evidence, external_id, corrects, note) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "currency, entry_type, initiative, approval_status, evidence, external_id, corrects, note, occurred_on) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (
                         d.idempotency_key,
                         now,
@@ -451,6 +467,7 @@ class Ledger:
                         d.external_id,
                         corrects,
                         d.note,
+                        d.occurred_on,
                     ),
                 )
                 entry_id = cursor.lastrowid
@@ -489,6 +506,7 @@ class Ledger:
             row[13],
             history[-1].status,
             history,
+            occurred_on=row[14],
         )
 
     @staticmethod
