@@ -1,6 +1,6 @@
 """Produktagenten (Fas 7a): föreslår tre digitala produkter och skriver den valda produkten.
 
-Modellen svarar med JSON. Koden räknar själv alla pengar (Gumroads avgift 10 % + 0,50 USD, netto per
+Modellen svarar med JSON. Koden räknar själv alla pengar (plattformens avgift ur config/pilot.toml, netto per
 försäljning, förväntat netto och största förlust), så att modellens siffror aldrig används oprövade.
 Ett svar som saknar fält eller har siffror som inte stämmer avvisas, och då används regelförslagen
 (`RULE_IDEAS`). Efterfrågan är alltid `unverified` tills riktig försäljning finns (D-062, D-063):
@@ -14,9 +14,8 @@ import re
 from dataclasses import asdict, dataclass
 
 from ..llm import ChatRequest, DataClass, Message
+from .settings import SETTINGS
 
-GUMROAD_PERCENT = 10
-GUMROAD_FIXED_CENTS = 50
 AGENT = "res-1"  # researcher: har llm.complete och proposal.submit
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{2,40}$")
 REQUIRED = ("id", "title", "format", "target_customer", "problem", "demand_evidence", "price_usd",
@@ -46,7 +45,7 @@ class Idea:
 
     @property
     def fee_cents(self) -> int:
-        return (self.price_cents * GUMROAD_PERCENT + 50) // 100 + GUMROAD_FIXED_CENTS
+        return (self.price_cents * SETTINGS.fee_percent + 50) // 100 + SETTINGS.fee_fixed_cents
 
     @property
     def net_per_sale_cents(self) -> int:
@@ -58,7 +57,7 @@ class Idea:
 
     @property
     def max_loss_cents(self) -> int:
-        """Största förlust: förskottskostnaderna. Gumroad tar bara avgift när något säljs."""
+        """Största förlust: förskottskostnaderna. Plattformen tar bara avgift när något säljs."""
         return self.upfront_costs_cents
 
     def as_dict(self) -> dict:
@@ -145,8 +144,9 @@ RULE_IDEAS = (
 
 SYSTEM_PROMPT = (
     "Du är produktagenten i ett litet AI-företag. Föreslå exakt 3 digitala produkter (en PDF-guide eller en mall) "
-    "som en grundare kan lista för hand på Gumroad. Inga betalda verktyg, ingen annonsering, inga kunduppgifter. "
-    "Gumroad tar 10 % + 0,50 USD per försäljning. Svara ENDAST med JSON: {\"ideas\": [ {\"id\": \"slug\", "
+    f"som en grundare kan lista för hand på {SETTINGS.platform}. Inga betalda verktyg, ingen annonsering, inga kunduppgifter. "
+    f"{SETTINGS.platform} tar {SETTINGS.fee_percent} % + {SETTINGS.fee_fixed_cents / 100:.2f} USD per försäljning. "
+    "Svara ENDAST med JSON: {\"ideas\": [ {\"id\": \"slug\", "
     "\"title\": str, \"format\": \"pdf-guide\"|\"template\", \"target_customer\": str, \"problem\": str, "
     "\"demand_evidence\": [str], \"price_usd\": number, \"upfront_costs_usd\": number, \"expected_sales_90d\": int, "
     "\"time_to_first_sale_days\": int, \"expected_net_90d_usd\": number, \"continue_criteria\": str, "

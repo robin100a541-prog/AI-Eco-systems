@@ -1,4 +1,4 @@
-"""Skriver den valda produkten till `products/<id>/` och utkastet till Gumroad-listningen (Fas 7a).
+"""Skriver den valda produkten till `products/<id>/` och utkastet till listningen på plattformen (Fas 7a).
 
 - `product.md`: hela produkten. Produktagenten skriver den via LLMGateway; ett tomt eller för kort svar
   ersätts av en regelmall och det står i filen.
@@ -17,6 +17,7 @@ from pathlib import Path
 
 from ..llm import ChatRequest, DataClass, Message
 from .product import AGENT, Idea
+from .settings import SETTINGS
 
 AI_DISCLOSURE = ("Den här produkten är skriven med hjälp av AI (språkmodeller) och granskad av en människa "
                  "innan publicering. Den är ingen juridisk eller skattemässig rådgivning.")
@@ -71,11 +72,11 @@ def _rule_content(idea: Idea) -> str:
 def listing(idea: Idea) -> str:
     tags = ", ".join(sorted({idea.format, "svenska", "mall" if idea.format == "template" else "guide", "frilans"}))
     return textwrap.dedent(f"""\
-        # Gumroad-listning (UTKAST — publiceras för hand av en grundare)
+        # Listning på {SETTINGS.platform} (UTKAST — publiceras för hand av en grundare)
 
         - **Titel:** {idea.title}
         - **Pris:** {idea.price_cents / 100:.2f} USD
-        - **Gumroads avgift:** {idea.fee_cents / 100:.2f} USD per försäljning (10 % + 0,50 USD)
+        - **Plattformens avgift:** {idea.fee_cents / 100:.2f} USD per försäljning ({SETTINGS.fee_percent} % + {SETTINGS.fee_fixed_cents / 100:.2f} USD)
         - **Netto per försäljning:** {idea.net_per_sale_cents / 100:.2f} USD (före skatt)
         - **Taggar:** {tags}
 

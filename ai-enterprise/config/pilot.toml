@@ -1,0 +1,21 @@
+# Fas 7-piloten (masterprompten 2026-10-30). Plattformsdata ligger här och inte i src/ (D-056).
+# Inga hemligheter. Ändras via PR.
+config_version = 1
+# Antagen växelkurs för beräkningar före första försäljningen. Vid import anger grundaren den riktiga kursen.
+usd_sek = 10.5
+
+
+[platform]
+slug = "gumroad"
+name = "Gumroad"
+currency = "USD"
+fee_percent = 10        # procent av priset per försäljning
+fee_fixed_cents = 50    # fast avgift per försäljning, i cent
+
+# Kolumnnamn i plattformens försäljnings-CSV (små bokstäver; första som finns används).
+[csv]
+id = ["purchase id", "sale id", "id", "order id"]
+date = ["purchase date", "sale date", "date", "created at"]
+price = ["sale price ($)", "sale price", "price", "price ($)"]
+fee = ["fees ($)", "gumroad fee", "fee", "fees"]
+refunded = ["refunded?", "refunded", "is refunded"]

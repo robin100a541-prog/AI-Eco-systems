@@ -114,7 +114,7 @@ def _rule_ceo(ideas, blocked: set, usd_sek: float) -> tuple[Idea, DecisionDraft]
     allowed = [i for i in ideas if i.id not in blocked] or list(ideas)
     idea = max(allowed, key=lambda i: (i.expected_net_90d_cents, -i.price_cents))
     return idea, DecisionDraft(
-        f"Välj {idea.id} som pilotprodukt och förbered en manuell Gumroad-listning",
+        f"Välj {idea.id} som pilotprodukt och förbered en manuell listning",
         f"Högst förväntat netto utan invändning från risk: {idea.expected_net_90d_cents / 100:.2f} USD på 90 dagar",
         (f"pris {idea.price_cents / 100:.2f} USD, avgift {idea.fee_cents / 100:.2f} USD per försäljning",
          "efterfrågan overifierad (antagande)"),
@@ -124,7 +124,7 @@ def _rule_ceo(ideas, blocked: set, usd_sek: float) -> tuple[Idea, DecisionDraft]
 
 def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
               data_class: DataClass = DataClass.PUBLIC) -> CycleResult:
-    task = gov.board.create(founder, "Fas 7: välj pilotprodukt", "Välj en av tre produkter för manuell Gumroad-listning")
+    task = gov.board.create(founder, "Fas 7: välj pilotprodukt", "Välj en av tre produkter för manuell listning")
     gov.board.assign(founder, task.task_id, CEO, "piloten (Fas 7a)")
     quality = {"roles": {}, "risk_should_object": sorted(i.id for i in ideas if should_object(i, limits, usd_sek))}
     assessments = {}

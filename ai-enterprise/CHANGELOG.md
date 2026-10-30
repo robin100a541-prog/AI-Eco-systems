@@ -7,6 +7,7 @@
 - Varje modellsvar valideras i kod (fält, budget mot största förlust, förväntat netto, risk som borde invänt). Ett felaktigt svar avvisas och regeln används; 7c-rapporten visar varje roll.
 - Den valda produkten skrivs till `products/<id>/`: product.md, product.pdf (stdlib), listing.md med upplysning om AI-användning och idea.json.
 - Workflowen `pilot-groq.yml` kör allt på Groq vid knapptryck.
+- Plattformens namn, avgift och CSV-kolumner ligger i `config/pilot.toml`, inte i koden (D-056).
 ## [Unreleased] — 2026-10-30 — Fas 7 steg 1: oberoende granskning
 ### Tillagt
 - `docs/reviews/REVIEW-PROMPT.md`: den exakta prompten för en ny Claude-session som granskar säkerhetskritisk kod (D-055). Ingen granskning finns ännu; det är en grundaråtgärd.
