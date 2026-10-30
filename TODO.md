@@ -27,6 +27,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 - [ ] ai-enterprise Fas 6 stängs formellt — en grundare godkänner (allt byggt och acceptanstestat, 2026-10-30)
 - [ ] ai-enterprise Fas 7–8 enligt masterprompten (Robin 2026-10-30) — anspråk: Claude-session claude/fas7-*
   - [x] Steg 1: REVIEW-PROMPT.md (granskningen själv är en grundaråtgärd)
+  - [x] Steg 5/6: daglig cykel, rapporter, instrumentpanel (Pages slås på av en grundare)
   - [x] Steg 3: pilot prepare/approve, import av försäljning, avstämning och stoppregler
   - [x] Steg 2/4: produktagent och beslutscykel (kod); körning på Groq via pilot-groq.yml
 
