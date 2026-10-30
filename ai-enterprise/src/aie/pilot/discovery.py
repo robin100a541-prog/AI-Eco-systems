@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import tomllib
 import urllib.parse
 from dataclasses import dataclass, field
@@ -176,7 +177,7 @@ def research(reader, gateway, settings: Settings, log: list) -> list[Signal]:
             '{"signals": [{"kind": "competitor|price|reviews|sales|question", "title": str, '
             '"quote": str (exakt utdrag ur texten, högst 120 tecken), "price_usd": number|null, '
             '"count": int|null}]}. Högst 8 signaler. Hitta inte på något.',
-            page.content.render()[:7_000],
+            page.content.render()[:4_000],
         )
         haystack = _norm(text)
         for item in raw.get("signals") or []:

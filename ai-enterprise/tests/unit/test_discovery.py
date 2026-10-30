@@ -108,3 +108,25 @@ class TestRepoConfig(unittest.TestCase):
         self.assertGreaterEqual(len(s.search_terms), 5)
         self.assertIn("gumroad", s.fees)
         self.assertEqual(s.min_signals, 2)
+
+
+class TestRateLimit(unittest.TestCase):
+    def test_429_is_retried_after_a_pause_not_replaced(self):
+        from aie.pilot import discovery
+
+        calls = []
+
+        class Flaky(FakeGateway):
+            def complete(self, agent, request):
+                calls.append(1)
+                if len(calls) == 1:
+                    raise RuntimeError("groq: HTTP 429 (rate_limit_exceeded)")
+                return super().complete(agent, request)
+
+        waits = []
+        old, discovery._sleep = discovery._sleep, waits.append
+        try:
+            run(FakeReader(), Flaky(), settings(), "regler", 500)
+        finally:
+            discovery._sleep = old
+        self.assertEqual(waits, [20])
