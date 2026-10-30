@@ -134,21 +134,24 @@ def _norm(text: str) -> str:
     return " ".join(text.lower().split())
 
 
+RETRY_WAITS = (20, 40, 60)  # sekunder; Groqs gratisnivå har gränser per minut (HTTP 429)
+_sleep = time.sleep  # byts i testerna
+
+
 def _ask(gateway, agent: str, system: str, user: str, max_tokens: int = 3_000) -> dict:
+    request = ChatRequest((Message("system", system), Message("user", user)), DataClass.PUBLIC, max_tokens)
     try:
-        r = gateway.complete(
-            agent,
-            ChatRequest(
-                (Message("system", system), Message("user", user)),
-                DataClass.PUBLIC,
-                max_tokens,
-            ),
-        )
+        for wait in (*RETRY_WAITS, None):
+            try:
+                r = gateway.complete(agent, request)
+                break
+            except Exception as exc:  # vänta och försök igen bara vid gräns per minut, aldrig en reserv
+                if wait is None or "429" not in str(exc):
+                    raise
+                _sleep(wait)
         return _extract_json(r.text)
     except Exception as exc:
-        raise AgentStopped(
-            f"{agent}: modellen gav inget användbart svar ({type(exc).__name__}: {exc})"
-        ) from exc
+        raise AgentStopped(f"{agent}: modellen gav inget användbart svar ({type(exc).__name__}: {exc})") from exc
 
 
 def research(reader, gateway, settings: Settings, log: list) -> list[Signal]:
