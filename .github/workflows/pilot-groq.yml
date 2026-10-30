@@ -32,16 +32,16 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python -m aie init
-          python -m aie pilot ideas --as robin --agents groq --out "$RUNNER_TEMP/products" \
-            --report "$RUNNER_TEMP/7c-llm-quality.md"
+          # Fas 7a ombyggd: research med källor, minst tio idéer, poäng i kod, topp 3. Ingen vinnare väljs.
+          # Kod 3 = stoppad utan reserv (modellen eller researchen räckte inte); rapporten skrivs ändå.
+          python -m aie pilot discover --as robin --agents groq --report "$RUNNER_TEMP/7a-opportunities.md" || [ $? -eq 3 ]
       - name: Visa filerna
         run: |
-          for f in "$RUNNER_TEMP"/products/*/*.md "$RUNNER_TEMP"/products/*/idea.json; do
+          for f in "$RUNNER_TEMP"/7a-opportunities.md; do
             echo "===== FILE ${f#$RUNNER_TEMP/} ====="; cat "$f"; echo; echo "===== END ====="
           done
       - uses: actions/upload-artifact@v4
         with:
           name: pilot-groq-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/products/
-            ${{ runner.temp }}/7c-llm-quality.md
+            ${{ runner.temp }}/7a-opportunities.md

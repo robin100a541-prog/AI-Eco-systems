@@ -38,7 +38,7 @@ def ideas(config_dir: Path, founder: str, mode: str, usd_sek: float, out: Path, 
     from ..governance.cli import build
     from ..simulation.agents import ensure_org
     from .decide import quality_report, run_cycle
-    from .product import propose
+    from .product import AgentStopped, propose
     from .writer import write_content, write_product
 
     try:
@@ -54,6 +54,9 @@ def ideas(config_dir: Path, founder: str, mode: str, usd_sek: float, out: Path, 
             result = run_cycle(gov, gateway, proposed, founder, config.risk, usd_sek)
             content, source = write_content(gateway, result.chosen)
             folder = write_product(result.chosen, content, source, out)
+    except AgentStopped as exc:
+        print(f"STOPPAD: {exc}. Ingen reserv används; grundarna avgör.", file=sys.stderr)
+        return 3
     except (ConfigError, ValueError) as exc:
         print(f"FEL: {exc}", file=sys.stderr)
         return 1
@@ -150,3 +153,40 @@ def import_platform_sales(config_dir: Path, founder: str, csv_path: Path, produc
         print(f"AVSTÄMNING STÄMMER INTE: {result.mismatch}. Incident #{result.incident_id} är öppnad.")
     print(stop_advice(reasons))
     return 2 if result.mismatch else 0
+
+
+def discover(config_dir: Path, founder: str, mode: str, report: Path) -> int:
+    """`aie pilot discover`: research, minst tio idéer, poäng i kod, topp 3. Ingen vinnare väljs (Fas 7a)."""
+    from ..governance.cli import build
+    from ..research.web import WebReader, load_limits
+    from ..simulation.agents import ensure_org
+    from .discovery import load_settings, run
+    from .discovery import report as render
+    from .product import AgentStopped
+
+    try:
+        config = runtime._load(config_dir, console=False)
+        if founder not in config.system.founders:
+            print(f"FEL: {founder!r} är ingen grundare", file=sys.stderr)
+            return 1
+        settings = load_settings(config_dir)
+        rules = (Path(config_dir).parent / "docs" / "channels.md").read_text(encoding="utf-8")
+        loss = config.risk.max_single_experiment_loss.amount_minor  # öre; jämförs försiktigt som cent
+        with runtime._open(config) as db:
+            gov = build(config, db, config_dir)
+            ensure_org(gov.registry, founder)
+            gateway = gateway_for(gov, db, mode, config_dir)
+            reader = WebReader(db, gov.engine, gov.audit, load_limits(config_dir))
+            stopped, signals, ideas, top, log = None, [], [], [], []
+            try:
+                signals, ideas, top, log = run(reader, gateway, settings, rules, loss // 10)
+            except AgentStopped as exc:
+                stopped = str(exc)
+    except (ConfigError, ValueError, OSError) as exc:
+        print(f"FEL: {exc}", file=sys.stderr)
+        return 1
+    text = render(signals, ideas, top, log, settings, mode, stopped)
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(text, encoding="utf-8")
+    print(text)
+    return 3 if stopped else 0

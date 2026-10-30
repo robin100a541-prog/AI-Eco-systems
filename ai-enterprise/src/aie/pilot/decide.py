@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from ..governance import DecisionDraft, RiskClass
 from ..governance.disputes import ConflictType, Position
 from ..llm import ChatRequest, DataClass, Message
-from .product import Idea, IdeaError, _extract_json
+from .product import AgentStopped, Idea, IdeaError, _extract_json
 
 CEO, CFO, CRO = "ceo-1", "cfo-1", "cro-1"
 FIELDS = ("chosen_action", "reasoning", "evidence", "budget_minor", "risk_class", "expected_result",
@@ -44,20 +44,6 @@ def should_object(idea: Idea, limits, usd_sek: float) -> bool:
     """Risk ska invända när förlusten kan bli större än ett experiment får förlora, eller när det tar för länge."""
     cap = limits.max_single_experiment_loss.amount_minor if limits.max_single_experiment_loss else 0
     return to_sek_minor(idea.max_loss_cents, usd_sek) > cap or idea.time_to_first_sale_days > 90
-
-
-def rule_assessment(role: str, ideas, limits, usd_sek) -> dict:
-    out = {}
-    for i in ideas:
-        if role == CFO:
-            ok = i.expected_net_90d_cents > 0
-            out[i.id] = ("for" if ok else "against", f"förväntat netto 90 dagar {i.expected_net_90d_cents / 100:.2f} USD")
-        else:
-            bad = should_object(i, limits, usd_sek)
-            out[i.id] = ("against" if bad else "for",
-                         f"största förlust {to_sek_minor(i.max_loss_cents, usd_sek) / 100:.2f} kr, "
-                         f"första försäljning efter {i.time_to_first_sale_days} dagar")
-    return out
 
 
 def _ask(gateway, agent: str, system: str, payload: dict, data_class) -> dict:
@@ -87,7 +73,7 @@ def _assess(gateway, role: str, ideas, data_class) -> dict:
 
 def _ceo_draft(raw: dict, ideas, blocked: set, usd_sek: float) -> tuple[Idea, DecisionDraft]:
     by_id = {i.id: i for i in ideas}
-    missing = [f for f in ("idea_id", *FIELDS, "expected_net_90d_usd") if raw.get(f) in (None, "", [])]
+    missing = [f for f in ("idea_id", *(f for f in FIELDS if f != "budget_minor")) if raw.get(f) in (None, "", [])]
     if missing:
         raise IdeaError("CEO-beslutet saknar " + ", ".join(missing))
     idea = by_id.get(raw["idea_id"])
@@ -97,29 +83,11 @@ def _ceo_draft(raw: dict, ideas, blocked: set, usd_sek: float) -> tuple[Idea, De
         raise IdeaError(f"{idea.id} har en invändning från risk och får inte väljas")
     if raw["risk_class"] not in [r.value for r in RiskClass]:
         raise IdeaError("risk_class måste vara low, medium, high eller critical")
-    budget = raw["budget_minor"]
-    if isinstance(budget, bool) or not isinstance(budget, int) or budget != to_sek_minor(idea.max_loss_cents, usd_sek):
-        raise IdeaError(f"budget_minor {budget!r} stämmer inte med största förlust "
-                        f"{to_sek_minor(idea.max_loss_cents, usd_sek)} öre")
-    claimed = raw["expected_net_90d_usd"]
-    if not isinstance(claimed, (int, float)) or abs(round(claimed * 100) - idea.expected_net_90d_cents) > 100:
-        raise IdeaError(f"expected_net_90d_usd {claimed!r} stämmer inte med {idea.expected_net_90d_cents / 100:.2f}")
+    budget = to_sek_minor(idea.max_loss_cents, usd_sek)  # koden räknar, modellen ger inga belopp
     evidence = raw["evidence"] if isinstance(raw["evidence"], list) else [raw["evidence"]]
     return idea, DecisionDraft(str(raw["chosen_action"]), str(raw["reasoning"]), tuple(map(str, evidence)), budget,
                                RiskClass(raw["risk_class"]), str(raw["expected_result"]),
                                str(raw["stop_conditions"]), str(raw["follow_up"]))
-
-
-def _rule_ceo(ideas, blocked: set, usd_sek: float) -> tuple[Idea, DecisionDraft]:
-    allowed = [i for i in ideas if i.id not in blocked] or list(ideas)
-    idea = max(allowed, key=lambda i: (i.expected_net_90d_cents, -i.price_cents))
-    return idea, DecisionDraft(
-        f"Välj {idea.id} som pilotprodukt och förbered en manuell listning",
-        f"Högst förväntat netto utan invändning från risk: {idea.expected_net_90d_cents / 100:.2f} USD på 90 dagar",
-        (f"pris {idea.price_cents / 100:.2f} USD, avgift {idea.fee_cents / 100:.2f} USD per försäljning",
-         "efterfrågan overifierad (antagande)"),
-        to_sek_minor(idea.max_loss_cents, usd_sek), RiskClass.LOW,
-        f"{idea.expected_sales_90d} försäljningar på 90 dagar (hypotes)", idea.stop_criteria, idea.continue_criteria)
 
 
 def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
@@ -132,9 +100,8 @@ def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
         try:
             assessments[role] = _assess(gateway, role, ideas, data_class)
             quality["roles"][role] = {"valid": True}
-        except Exception as exc:  # noqa: BLE001
-            assessments[role] = rule_assessment(role, ideas, limits, usd_sek)
-            quality["roles"][role] = {"valid": False, "fallback": f"{type(exc).__name__}: {exc}"[:300]}
+        except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+            raise AgentStopped(f"{role} gav ingen giltig bedömning: {type(exc).__name__}: {exc}") from exc
     model_objections = sorted(k for k, (p, _) in assessments[CRO].items() if p == "against")
     quality["risk_objected"] = model_objections
     quality["risk_objection_correct"] = set(quality["risk_should_object"]) <= set(model_objections)
@@ -153,14 +120,12 @@ def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
         "usd_sek": usd_sek, "risk_blocked": sorted(blocked)}
     try:
         raw = _ask(gateway, CEO, "Du är CEO. Välj exakt ett förslag som risk inte invänt mot. Svara ENDAST med JSON "
-                   "med fälten idea_id, chosen_action, reasoning, evidence (lista), budget_minor (heltal öre = största "
-                   "förlust i USD-cent gånger usd_sek), risk_class (low|medium|high|critical), expected_result, "
-                   "stop_conditions, follow_up och expected_net_90d_usd (ur förslaget).", payload, data_class)
+                   "med fälten idea_id, chosen_action, reasoning, evidence (lista), risk_class (low|medium|high|critical), "
+                   "expected_result, stop_conditions och follow_up. Ange inga belopp; koden räknar dem.", payload, data_class)
         idea, draft = _ceo_draft(raw, ideas, blocked, usd_sek)
         quality["roles"][CEO] = {"valid": True, "fields": "alla åtta fält i §20 steg 7", "numbers_consistent": True}
-    except Exception as exc:  # noqa: BLE001
-        idea, draft = _rule_ceo(ideas, blocked, usd_sek)
-        quality["roles"][CEO] = {"valid": False, "fallback": f"{type(exc).__name__}: {exc}"[:300]}
+    except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+        raise AgentStopped(f"CEO gav inget giltigt beslut: {type(exc).__name__}: {exc}") from exc
     decision = gov.queue.submit_decision(CEO, task.task_id, draft)
     return CycleResult(task.task_id, idea, decision, assessments, disputes, quality)
 

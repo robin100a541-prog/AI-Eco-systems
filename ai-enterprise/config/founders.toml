@@ -1,0 +1,24 @@
+# Grundarnas profil (Robin 2026-10-30). Produktagenten väger in grundarnas färdigheter och publik.
+# Inga personuppgifter utöver det grundarna själva valt att dela. Ändras via PR med founder-approved.
+config_version = 1
+
+skills = [
+  "video editing", "davinci resolve", "cinematic edits", "color grading", "motion graphics",
+  "content creation", "marketing", "social media", "real estate", "football",
+]
+languages = ["swedish", "english", "arabic", "french"]
+
+[[audience]]
+name = "AOUN"
+description = "grundarnas eget varumärke och publik inom innehåll och video"
+
+[[audience]]
+name = "fastighetsbolaget"
+description = "familjens fastighetsbolag: kontakter och kunskap om fastighetsmarknaden"
+
+# Sökord som research-agenten använder för att hitta signaler om efterfrågan.
+search_terms = [
+  "davinci resolve luts", "cinematic luts", "motion graphics pack", "video transitions pack",
+  "real estate video template", "football edit pack", "content creator templates",
+  "arabic social media templates", "video editing service",
+]

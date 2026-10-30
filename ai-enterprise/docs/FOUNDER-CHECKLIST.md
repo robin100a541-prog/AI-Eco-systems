@@ -19,7 +19,11 @@ eller `set PYTHONPATH=src` (Windows).
    `founder-approved`).
 3. Tills svaret finns reserverar systemet 50 % av intäkten som skatt (`untracked_rate` i `config/tax.toml`).
 
-## 3. Granska produkten (rättad; läs PDF:en en gång)
+## 3. Välj produkt bland topp 3 (f-skatt-guide är STOPPAD, Robin 2026-10-30)
+
+Läs `docs/reports/7a-opportunities.md` och välj en av de tre bästa tillsammans. Den gamla delen nedan gäller inte längre.
+
+### (Gammalt) Granska produkten
 1. Läs `products/f-skatt-guide/GRANSKNING.md` och rätta felen i `products/f-skatt-guide/product.md`.
 2. Gör om PDF:en: `python -c "from pathlib import Path; from aie.pilot.writer import write_pdf; d=Path('products/f-skatt-guide'); write_pdf((d/'product.md').read_text(), d/'product.pdf')"`.
 3. Öppna `product.pdf` och läs den. Ta bort raden "INTE KLAR ATT LISTA" i `GRANSKNING.md`. Gör en PR.

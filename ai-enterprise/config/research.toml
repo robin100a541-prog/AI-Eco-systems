@@ -22,6 +22,12 @@ allowed_hosts = [
   "help.fiverr.com",
   "blog.fiverr.com",
   "checkoutpage.com",
+  "discover.gumroad.com",
+  "www.reddit.com",
+  "old.reddit.com",
+  "payhip.com",
+  "www.creativefabrica.com",
+  "motionarray.com",
   "www.skatteverket.se",
   "skatteverket.se",
 ]

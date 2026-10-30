@@ -226,6 +226,14 @@
 - Q-TAX-01 besvarad av Robin: momsen sköts av plattformarna, och inget företag behöver öppnas nu. En ny intäktsväg utan plattformsmoms kräver att momsen löses först.
 - `products/f-skatt-guide`: sakfelen är rättade (NE-bilaga, momsgräns 120 000 kr, F-skatt på fakturan, platshållare, AI-upplysning) och PDF:en är omgjord.
 
+## Ändrat 2026-10-30 (Fas 7a ombyggd: produktavdelningen)
+- Piloten med f-skatt-guide är stoppad (Robin). Produkten listas inte.
+- `aie pilot discover`: research-agenten hämtar offentliga marknadssidor med WebReader. En signal sparas bara om dess citat finns ordagrant i sidan, med URL och hämtnings-ID.
+- Produktagenten föreslår minst tio idéer (mallar, LUTs, presets, motion graphics, guider, kurser och tjänster) utifrån `config/founders.toml`. Koden räknar avgifter per plattform, netto och förväntat värde och poängsätter enligt en skriven mall.
+- En idé kvalificerar sig bara med minst två belagda signaler och ett förväntat värde över tröskeln i `config/pilot.toml`. Annars blir svaret "ingen bra idé hittad ännu". Grundarna väljer bland topp 3.
+- Ingen reserv: fel hos modellen eller i researchen stoppar cykeln. RULE_IDEAS finns bara i testerna, och modellens summor används aldrig, så avrundning kan inte fälla en idé.
+- `config/research.toml`: fler offentliga marknadsplatser och Reddit.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
