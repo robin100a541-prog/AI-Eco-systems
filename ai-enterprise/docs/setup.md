@@ -198,3 +198,9 @@ Den andra grundaren granskar och mergar. Uppdatera PROJECT_STATUS.md och CHANGEL
 
 ## Viktigt om Claude-kostnader
 Sätt **inte** miljövariabeln `ANTHROPIC_API_KEY`. Om den är satt använder Claude Code betald API-fakturering i stället för ert Pro-abonnemang. `check_env.py` varnar för detta.
+
+## Säker pilotimport efter granskningsfynden H1–H3
+
+En export med återbetalning måste ha `Refund Date` (eller `refund_date`/`refunded_at`) med det verkliga återbetalningsdatumet. Datum får inte gissas från importdagen. Försäljningen och återbetalningen kan höra till olika perioder. Samma export kan importeras igen; en senare retur skapar en separat post. Motstridiga rader, ändrade belopp och en gammal export som utelämnar en redan bokförd retur avvisas.
+
+Migration 34 körs när databasen öppnas. Den skriver inte om äldre ledgerposter. Sådana poster saknar ofta verkligt händelsedatum och rapporteras fortsatt på registreringsdatum tills en granskad, spårbar rättelse gjorts. Importen stoppar vid en sådan äldre post i stället för att anta att perioden stämmer. Säkerhetskopiera databasen före uppgradering.

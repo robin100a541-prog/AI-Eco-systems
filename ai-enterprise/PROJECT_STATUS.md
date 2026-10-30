@@ -219,6 +219,9 @@
 - Den tidigare company-daily-workflowen var ogiltig YAML vid rad 65 och startade inga jobb (Actions 41056471949). Shell-gruppen är flyttad till ett `run: |`-block. Sju workflowfiler parsade; shellsyntax och sammanfattningssteget provade lokalt. En full schemalagd körning och Pages-publicering är inte verifierade av denna ändring.
 - Teknisk pilotgranskning finns i separat PR: `docs/reviews/REVIEW-2026-10-30.md`. Den ger inte klartecken för riktiga pengar.
 
+## Pilotimport: rättning 2026-10-30 (Codex)
+- H1–H3 och M2 i den tekniska granskningen har implementation och 10 regressionstester: atomär import, separata returer, händelsedatum, ledgeravstämning och idempotenta incidenter. Hela sviten: 746 OK (Python 3.15.0). Detta är inte oberoende godkännande för riktiga pengar; övriga fynd i granskningen kvarstår.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|

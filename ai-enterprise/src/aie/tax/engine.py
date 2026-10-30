@@ -202,14 +202,14 @@ class TaxEngine:
         for e in self._taxable(currency, statuses=(Status.SETTLED,)):
             a = self.assignment(e.entry_id)
             track = a.track if a else None
-            groups.setdefault((track, int(e.recorded_at[:4])), []).append(e)
+            groups.setdefault((track, int(e.economic_date[:4])), []).append(e)
             initiative_track.setdefault(e.initiative, track)
         costs: dict[tuple[str | None, int], int] = {}
         if self._config.basis == "profit":
             for e in self._ledger.entries(currency):
                 if (e.status is Status.SETTLED and e.entry_type in (EntryType.COST, EntryType.FEE)
                         and e.initiative in initiative_track):
-                    key = (initiative_track[e.initiative], int(e.recorded_at[:4]))
+                    key = (initiative_track[e.initiative], int(e.economic_date[:4]))
                     costs[key] = costs.get(key, 0) + e.amount_minor
         paid = self.payments_by_track_year(currency)
         rows = []
@@ -287,7 +287,7 @@ class TaxEngine:
     def vat_status(self, year: int | None = None) -> VatStatus:
         year = year or int(self._clock()[:4])
         sales = sum(self._signed(e) for e in self._taxable(self._config.currency, (Status.SETTLED, Status.PENDING))
-                    if int(e.recorded_at[:4]) == year and not (e.entry_type is EntryType.REFUND
+                    if int(e.economic_date[:4]) == year and not (e.entry_type is EntryType.REFUND
                                                              and e.status is Status.PENDING))
         threshold = self._config.vat_threshold_minor
         if sales >= threshold:
@@ -352,7 +352,7 @@ class TaxEngine:
         currency = self._config.currency
         tracks: dict[str, dict] = {}
         for e in self._taxable(currency, (Status.SETTLED,)):
-            if int(e.recorded_at[:4]) != year:
+            if int(e.economic_date[:4]) != year:
                 continue
             a = self.assignment(e.entry_id)
             key = a.track if a else "untracked"
@@ -364,11 +364,11 @@ class TaxEngine:
             bucket["gross_minor"] += amount
             bucket["entries"].append({"entry_id": e.entry_id, "type": e.entry_type.value, "amount_minor": e.amount_minor,
                                       "share_bp": share, "your_amount_minor": amount, "initiative": e.initiative,
-                                      "recorded_at": e.recorded_at, "evidence": list(e.evidence),
+                                      "recorded_at": e.recorded_at, "occurred_on": e.economic_date, "evidence": list(e.evidence),
                                       "external_id": e.external_id})
         share_c = self._config.partnership_shares_bp.get(founder, 0)
         costs = [e for e in self._ledger.entries(currency) if e.status is Status.SETTLED
-                 and e.entry_type in (EntryType.COST, EntryType.FEE) and int(e.recorded_at[:4]) == year]
+                 and e.entry_type in (EntryType.COST, EntryType.FEE) and int(e.economic_date[:4]) == year]
         if "partnership" in tracks:
             tracks["partnership"]["costs_share_minor"] = sum(e.amount_minor for e in costs) * share_c // 10_000
             tracks["partnership"]["cost_entry_ids"] = [e.entry_id for e in costs]

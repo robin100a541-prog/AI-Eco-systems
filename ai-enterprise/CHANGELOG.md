@@ -2,7 +2,13 @@
 
 ## [Unreleased] — 2026-10-30 — privat backup med återställningsövning
 - `python -m aie.memory.backup create|verify`: SQLite online-backup inklusive WAL, privata filer (0600), manifest och återställning i en separat temporär mapp. Kontrollerar filhash, databas-/FK-integritet, schema, miljö, tabellantal och revisionskedja. Verktyget skriver aldrig över driftdata.
-- Sex regressionstester verifierar WAL-innehåll, godkännanden/ledger/audit, orörd driftdata, korrupt backup, trasig revisionskedja och CLI. Grundarchecklistan beskriver privat off-device-kopia och säker återställning; den externa kopian är inte konfigurerad automatiskt.
+- Hela sviten före inmerge av pilotfixen: 742 OK (Python 3.15.0). Sex regressionstester verifierar WAL-innehåll, godkännanden/ledger/audit, orörd driftdata, korrupt backup, trasig revisionskedja och CLI. Grundarchecklistan beskriver privat off-device-kopia och säker återställning; den externa kopian är inte konfigurerad automatiskt.
+## [Unreleased] — 2026-10-30 — H1–H3/M2: återställbar pilotimport
+- Hela försäljningsimporten, incidenten och revisionsposterna sparas atomärt. Undertransaktioner använder SAVEPOINT, så ett avbrott lämnar inga halvskrivna försäljningar.
+- Senare returer importeras som egna händelser. Ändrade data eller äldre poster utan verifierat händelsedatum kräver en uttrycklig rättelse. Avstämning kontrollerar beständiga ledgerposter inklusive korrigeringar.
+- Migration 34 lägger till `occurred_on`; registreringstiden bevaras. Periodrapporter, moms, skatteunderlag och plattformsandelar använder händelsedatum. Äldre poster ändras inte och faller tillbaka på registreringsdatum.
+- Refund Date krävs vid återbetalning. Belopp och växling beräknas med Decimal, inte binära flyttal. Samma avstämningsavvikelse återanvänder incidenten.
+- Verifierat: 746 tester OK på Python 3.15.0, inklusive 10 nya regressionstester och uppgradering från schema 33. Oberoende granskning krävs före riktiga pengar.
 
 ## [Unreleased] — 2026-10-30 — company-daily: giltig YAML
 ### Rättat

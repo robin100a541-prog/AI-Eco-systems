@@ -1434,6 +1434,14 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=34,
+        name="ledger_event_date",
+        statements=(
+            # Old immutable rows retain NULL and explicitly fall back to registration day.
+            "ALTER TABLE ledger_entries ADD COLUMN occurred_on TEXT CHECK (occurred_on IS NULL OR length(occurred_on) = 10)",
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
