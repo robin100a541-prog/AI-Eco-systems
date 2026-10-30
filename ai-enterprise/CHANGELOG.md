@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 7–8: acceptans och överlämning
+### Tillagt
+- `tests/acceptance/test_fas7.py`: §55-villkoren provas på pilotens prod-databas: budget, behörigheter, reserv, nödstopp, bokföring och mänskligt godkännande. Ett test kontrollerar att varje bevis för §62 finns.
+- `docs/ACCEPTANCE-55-62.md`: ja eller nej med bevis per punkt. §55 har 8 av 9 villkor uppfyllda (granskningen återstår), §62 har 15 av 16 (lagar och villkor kan inte testas).
+- `docs/FOUNDER-CHECKLIST.md`: grundarnas återstående steg i ordning, skrivna för en nybörjare.
 ## [Unreleased] — 2026-10-30 — Fas 7a/7c: riktig körning på Groq
 ### Tillagt
 - Produktagenten och beslutscykeln kördes på Groq (`openai/gpt-oss-120b`). Vald produkt: `products/f-skatt-guide/` (12 USD, avgift 1,70, netto 10,30 per försäljning, förväntat netto 82,40 USD på 90 dagar, största förlust 0). Efterfrågan är overifierad.

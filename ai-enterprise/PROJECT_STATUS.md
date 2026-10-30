@@ -210,12 +210,15 @@
 - `docs/reports/7c-llm-quality.md`: CFO och risk svarade giltigt. Produktagenten och CEO räknade fel på förväntat netto och avvisades i kod, så regeln beslutade.
 - Produkttexten är skriven av modellen men har sakfel om moms och skatt. `GRANSKNING.md` listar vad en grundare måste rätta före listning.
 
+## Ändrat 2026-10-30 (Fas 7–8: acceptans och överlämning)
+- `tests/acceptance/test_fas7.py`: §55-villkoren provas på pilotens prod-databas: budget, behörigheter, reserv, nödstopp, bokföring och mänskligt godkännande. Ett test kontrollerar att varje bevis för §62 finns.
+- `docs/ACCEPTANCE-55-62.md`: ja eller nej med bevis per punkt. §55 har 8 av 9 villkor uppfyllda (granskningen återstår), §62 har 15 av 16 (lagar och villkor kan inte testas).
+- `docs/FOUNDER-CHECKLIST.md`: grundarnas återstående steg i ordning, skrivna för en nybörjare.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Svar från Skatteverket om skattespår (Q-TAX-01, D-010) | En grundare |
-| 2 | Oberoende granskning (ny Claude-session) av PR:er med `kräver-oberoende-granskning` före Fas 7 (D-055) | Före Fas 7 |
-| 3 | Fas 7a–7c i ROADMAP: produktagent, manuell listning och beslutscykel mot Groq | När grundarna startar Fas 7 |
+| 1 | Följ `docs/FOUNDER-CHECKLIST.md`: granskning, Skatteverket (Q-TAX-01), produktgranskning, Gumroad-konto, pilot prepare/approve, listning, GitHub Pages, veckoimport | En grundare |
 
 ## Blockerare
 Inga. Fas 7 kräver grundarnas beslut (§55).
