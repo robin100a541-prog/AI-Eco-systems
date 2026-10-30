@@ -25,9 +25,13 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 
 ## Öppna
 
+_Inga._
+
+## Besvarade
+
 ### Q-BOT-004 Utvecklaragenten behöver hjälp: ruff:RUF022:src/aie/agents/__init__.py:14
 - **Datum:** 2026-10-29
-- **Status:** Öppen
+- **Status:** Stängd — släppt, lågt värde
 - **Uppgift:** ruff:RUF022:src/aie/agents/__init__.py:14
 - **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
 - **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: check_failed.
@@ -35,12 +39,12 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
   1. Ge en ledtråd eller lös den själv.
   2. Stryk uppgiften.
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
-- **Svar (grundare, namn och datum):**
+- **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
 
 ### Q-BOT-003 Utvecklaragenten behöver hjälp: ruff:I001:src/aie/agents/__init__.py:2
 - **Datum:** 2026-10-28
-- **Status:** Öppen
+- **Status:** Stängd — släppt, lågt värde
 - **Uppgift:** ruff:I001:src/aie/agents/__init__.py:2
 - **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
 - **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: apply_failed.
@@ -48,12 +52,12 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
   1. Ge en ledtråd eller lös den själv.
   2. Stryk uppgiften.
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
-- **Svar (grundare, namn och datum):**
+- **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
 
 ### Q-BOT-002 Utvecklaragenten behöver hjälp: BL-005
 - **Datum:** 2026-10-28
-- **Status:** Öppen
+- **Status:** Stängd — släppt, lågt värde
 - **Uppgift:** BL-005
 - **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
 - **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: apply_failed.
@@ -61,12 +65,12 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
   1. Ge en ledtråd eller lös den själv.
   2. Stryk uppgiften.
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
-- **Svar (grundare, namn och datum):**
+- **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
 
 ### Q-BOT-001 Utvecklaragenten behöver hjälp: BL-002
 - **Datum:** 2026-10-28
-- **Status:** Öppen
+- **Status:** Stängd — släppt, lågt värde
 - **Uppgift:** BL-002
 - **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
 - **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: apply_failed.
@@ -74,9 +78,4 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
   1. Ge en ledtråd eller lös den själv.
   2. Stryk uppgiften.
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
-- **Svar (grundare, namn och datum):**
-
-
-## Besvarade
-
-_Inga ännu._
+- **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.

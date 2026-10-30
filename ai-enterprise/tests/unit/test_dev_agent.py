@@ -553,6 +553,24 @@ class TestPicker(unittest.TestCase):
             keys = [i.key for i in picker.pick(root, "", {})]
         self.assertEqual(keys, ["BL-005", "BL-004", "BL-001"])
 
+    def test_tests_before_lint_and_no_task_in_a_file_with_an_open_question(self):
+        """Verifies D-050: krav/tester före lint; en fil med en öppen grundarfråga rörs inte."""
+        a = picker.Item("ruff:I001:a.py:1", "ruff", "lint", ("a.py",), (Check("ruff", "a.py I001"),))
+        r = picker.Item("req:ER-12", "requirement", "test", ("b.py",), (Check("verifies", "ER-12"),))
+        self.assertLess(picker.ease(r), picker.ease(a))
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "a.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (5 dokumentation) Fixa. Klart när: `grep a.py y = 2` — öppen\n", encoding="utf-8")
+            questions = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+            questions.write_text("## Öppna\n\n- **Uppgift:** ruff:F401:a.py:3\n\n## Besvarade\n", encoding="utf-8")
+            self.assertEqual(picker.pick(root, "", {}), [])  # a.py har en öppen fråga
+            questions.write_text("## Öppna\n\n_Inga._\n\n## Besvarade\n\n- **Uppgift:** ruff:F401:a.py:3\n",
+                                 encoding="utf-8")
+            self.assertEqual([i.key for i in picker.pick(root, "", {})], ["BL-001"])  # besvarad: fri igen
+
     def test_files_come_from_the_check_and_items_without_files_can_get_a_check(self):
         """Verifies D-050: en punkt utan filnamn i texten får filen ur sin kontroll; utan kontroll skrivs den om."""
         with tempfile.TemporaryDirectory() as tmp:

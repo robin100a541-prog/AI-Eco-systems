@@ -579,7 +579,7 @@ class DevAgent:
         if marker in text:
             text = text.replace(marker, marker + "\n" + block, 1).replace(
                 "\n\n_Inga ännu._\n\n## Besvarade", "\n\n## Besvarade", 1
-            )
+            ).replace("\n\n_Inga._\n\n## Besvarade", "\n\n## Besvarade", 1)
         else:
             text += "\n" + block
         path.write_text(text, encoding="utf-8")

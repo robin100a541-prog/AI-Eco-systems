@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Utvecklaragentens regler och stängda frågor
+### Ändrat
+- Q-BOT-001–004 är stängda som "släppt, lågt värde" (Robin, 2026-10-30) och flyttade till Besvarade.
+- Utvecklaragenten tar aldrig en uppgift i en fil som har en öppen grundarfråga. Uppgifter med dokumentation och tester går före lint: ordningen är dokumentation, krav och tester, kodkvalitet, lint, buggar.
 ## [Unreleased] — 2026-10-30 — Simuleringens marknad är overifierad
 ### Ändrat
 - Varje SIM-rapport (daglig, periodisk och bedömningen före start) anger att marknadsantagandena är OVERIFIERADE, eftersom de kommer ur scenariofilerna och inte från riktig försäljning.

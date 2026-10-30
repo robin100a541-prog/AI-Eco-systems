@@ -166,16 +166,17 @@ def requirement_items(root: Path) -> list[Item]:
 
 _BACKLOG_PRIORITY = re.compile(r"^\((\d)\b")
 # Lättast först: dokumentation och lint, sedan små tester, sist buggar och resten (D-050).
-_EASE = {"5": 0, "4": 1, "2": 2, "3": 3, "1": 4, "6": 5}
+# Dokumentation (avvikelser mellan text och kod) och tester först, lint sist (grundarnas beslut 2026-10-30).
+_EASE = {"5": 0, "2": 1, "4": 2, "3": 3, "1": 4, "6": 5}
 
 
 def ease(item: Item) -> int:
     if item.kind == "failing_test":
         return -1  # en röd grundkörning lagas alltid först
-    if item.kind == "ruff":
-        return 1
     if item.kind == "requirement":
-        return 2
+        return 1
+    if item.kind == "ruff":
+        return 3
     m = _BACKLOG_PRIORITY.match(item.task)
     return _EASE.get(m.group(1), 3) if m else 3
 
@@ -186,6 +187,20 @@ def escalated(root: Path) -> set[str]:
     if not path.is_file():
         return set()
     return set(re.findall(r"\*\*Uppgift:\*\* (\S+)", path.read_text(encoding="utf-8")))
+
+
+def open_question_files(root: Path, candidates: list[Item]) -> set[str]:
+    """Filer som en öppen grundarfråga gäller. Agenten rör dem inte förrän frågan är besvarad."""
+    path = root / "docs" / "QUESTIONS-FOR-FOUNDERS.md"
+    if not path.is_file():
+        return set()
+    text = path.read_text(encoding="utf-8")
+    start, end = text.find("## Öppna"), text.find("## Besvarade")
+    open_part = text[start:end if end > start else None] if start >= 0 else ""
+    keys = set(re.findall(r"\*\*Uppgift:\*\* (\S+)", open_part))
+    files = {f for i in candidates if i.key in keys for f in i.files}
+    files |= {k.split(":")[2] for k in keys if k.startswith("ruff:") and k.count(":") >= 2}
+    return files
 
 
 def uncheckable(root: Path) -> list[Item]:
@@ -219,10 +234,12 @@ def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
         + requirement_items(root)
     )
     skip = escalated(root) | already_done(root, candidates)
+    blocked = open_question_files(root, candidates)
     keep = [
         i
         for i in candidates
         if i.checks and failures.get(i.key, 0) < MAX_FAILURES and i.key not in skip
+        and not set(i.files) & blocked
     ]
     return sorted(keep, key=ease)  # stabil: samma lätthet behåller ordningen ovan
 
