@@ -8,6 +8,15 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-055 Vanlig kod slås ihop av den som skrev den; säkerhetskritisk kod granskas oberoende före Fas 7
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-28 · **Bygger på:** D-016, D-049
+- **Beslut:**
+  1. D-016 gäller för vanlig kod: den som skrev PR:en slår ihop den när alla obligatoriska kontroller är gröna.
+  2. PR:er som rör ledger, budgetmotor, skatt, stopp eller behörigheter får etiketten `kräver-oberoende-granskning`.
+  3. Före Fas 7 (riktiga pengar) ska varje sådan PR vara granskad av någon som inte skrev den. En separat, ny Claude-session som inte byggde koden räcker. Granskningen dokumenteras som en kommentar på PR:en. Ingen granskning krävs före Fas 7.
+  4. Underlag: `docs/proposals/2026-10-28-D-055-granskning.md`.
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
+
 ### D-050 Utvecklaragenten: förbättrar koden med gratismodeller, aldrig Anthropic
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-28 · **Bygger på:** D-008, D-009, D-014, D-017, D-020, D-049
 - **Beslut:**
