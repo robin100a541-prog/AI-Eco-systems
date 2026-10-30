@@ -4,6 +4,16 @@
 ### Ändrat
 - Q-BOT-001–004 är stängda som "släppt, lågt värde" (Robin, 2026-10-30) och flyttade till Besvarade.
 - Utvecklaragenten tar aldrig en uppgift i en fil som har en öppen grundarfråga. Uppgifter med dokumentation och tester går före lint: ordningen är dokumentation, krav och tester, kodkvalitet, lint, buggar.
+## [Unreleased] — 2026-10-30 — Fas 6b-5: acceptanstester för §54
+### Tillagt
+- `tests/acceptance/test_fas6.py` har ett test per kriterium i §54. Alla körs mot riktiga simuleringar av repots scenarier:
+  - SIM blandas aldrig med riktiga pengar,
+  - förlustinitiativ identifieras,
+  - riskgränser och nödstopp nekar utgifter,
+  - dagliga och periodiska rapporter stämmer med ledgern,
+  - stopp och omstart förlorar ingen historik.
+### Rättat
+- Daglig rapport: startkapital räknas inte längre som ett aktivt affärsinitiativ. En dag utan poster efter att ledgern startat visar 0 med notering i stället för `SAKNAS`, eftersom bara dagar innan ledgern fanns räknas som saknade data.
 
 ## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
 ### Tillagt

@@ -8,7 +8,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aie.agents import LEVEL_CEO, LEVEL_CONTROL, LEVEL_HEAD, LEVEL_WORKER, AgentRegistry, AgentState, OrgChart, RegistryError
+from aie.agents import (
+    LEVEL_CEO,
+    LEVEL_CONTROL,
+    LEVEL_HEAD,
+    LEVEL_WORKER,
+    AgentRegistry,
+    AgentState,
+    OrgChart,
+    RegistryError,
+)
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, PermissionDenied, load_permissions
 from aie.config import ConfigError

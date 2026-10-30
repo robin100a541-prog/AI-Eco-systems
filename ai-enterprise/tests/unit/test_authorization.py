@@ -9,7 +9,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from aie.agents import TRANSITIONS, AgentRegistry, AgentState, IllegalTransition, RegistryError
+from aie.agents import (
+    TRANSITIONS,
+    AgentRegistry,
+    AgentState,
+    IllegalTransition,
+    RegistryError,
+)
 from aie.audit import AuditLog
 from aie.authorization import AuthorizationEngine, PermissionDenied, load_permissions
 from aie.config import ConfigError

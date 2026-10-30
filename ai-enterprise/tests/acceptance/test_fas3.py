@@ -38,6 +38,7 @@ from aie.governance import (
 from aie.governance.cli import build
 from aie.memory import Database
 from aie.orchestration import TaskError, TaskStatus
+
 from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]

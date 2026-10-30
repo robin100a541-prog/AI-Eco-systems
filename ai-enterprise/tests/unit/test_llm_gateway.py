@@ -36,7 +36,6 @@ from aie.memory import Database
 from aie.monitoring import LOG_FILE_NAME, setup_logging, shutdown_logging
 
 from .org_helpers import register_in_line
-
 from .test_llm_router import FakeTransport
 
 ROOT = Path(__file__).resolve().parents[2]
