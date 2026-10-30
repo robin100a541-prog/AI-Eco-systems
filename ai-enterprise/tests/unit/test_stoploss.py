@@ -17,6 +17,7 @@ from aie.config import load_config
 from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.risk import StopLoss, StopLossError
+
 from .fixture_config import TEST_CONFIG
 
 ROOT = Path(__file__).resolve().parents[2]

@@ -14,7 +14,12 @@ from aie.ledger import Approval, EntryDraft, EntryType, Ledger, Status
 from aie.memory import Database
 from aie.registry import SYSTEM, AssessmentError, Register, RegistryError, check_active
 from aie.simulation import SimulationError
-from aie.simulation.assessment import DISCLAIMER, assess_initiative, load_assessment_rules, scenario_inputs
+from aie.simulation.assessment import (
+    DISCLAIMER,
+    assess_initiative,
+    load_assessment_rules,
+    scenario_inputs,
+)
 from aie.system import build_system
 
 from .fixture_config import TEST_CONFIG

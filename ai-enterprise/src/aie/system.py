@@ -34,19 +34,25 @@ from .agents import AgentRegistry
 from .audit import AuditLog
 from .authorization import AuthorizationEngine, ControlStops, load_permissions
 from .budget import BudgetEngine, SpendApprovals, load_budgets
+from .collaboration import OpportunityRegister
 from .config import Config
-from .evaluation import (ForecastLog, IncidentLog, LessonRegistry, PerformanceReview, RemovalReview,
-                         StrategyRegistry)
+from .evaluation import (
+    ForecastLog,
+    IncidentLog,
+    LessonRegistry,
+    PerformanceReview,
+    RemovalReview,
+    StrategyRegistry,
+)
 from .ledger import EntryType, Ledger, Status
 from .memory import Database
 from .monitoring import get_logger
 from .orchestration import TaskBoard
+from .registry import AssessmentStore, DependencyGuard, Register
+from .results import ResultStore
 from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
-from .collaboration import OpportunityRegister
-from .registry import AssessmentStore, DependencyGuard, Register
-from .results import ResultStore
 
 SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
 

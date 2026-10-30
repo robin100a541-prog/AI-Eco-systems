@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from .hierarchy import reporting_line_error
