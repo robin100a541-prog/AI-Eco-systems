@@ -3,6 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [ ] M5: atomär kvot för webbförsök, även misslyckade — Codex 2026-10-30 (codex/web-attempt-quota). Migration 36 reserverad (nästa efter 35); inga nya verktyg eller ändrade kvotvärden.
 - [x] H4/M1: atomär budgetkontroll/bokföring och bevarad riskklass — Codex 2026-10-30 (codex/atomic-spending). Migration 35 reserverad efter 34; inga ändrade riskvärden.
 - [x] Pilotbackup och återställningsövning utan överskrivning av driftdata — Codex 2026-10-30 (codex/pilot-backup-restore), ingen migration.
 - [x] Pilotens granskningsfynd H1–H3/M2: atomär import, senare returer, händelsedatum och avstämning — Codex 2026-10-30 (codex/pilot-import-recovery). Migration 34 reserverad (nästa efter befintlig 33); inget nytt D-beslut eller ändrade riskgränser.
