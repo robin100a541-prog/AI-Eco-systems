@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — M3/M4: lokal modell och skattebetalningsåterförsök
+- Ollama med intern data accepterar bara loopback/localhost utan inloggningsuppgifter, query eller fragment. Felaktig remote-endpoint nekas både av leverantören och konfigurationsladdaren före transport.
+- Skattebetalningens kassapost och spår/år sparas i en transaktion. `payment_id` binder återförsök till samma betalning; äldre anrop använder spår/år/kvitto som identitet. Olika betalningar måste ha olika externa referenser eller kvitton. Ingen bankbetalning utförs av funktionen.
+- Fem nya gräns-/avbrottstester OK. Hela sviten på basen före PR #128: 757 OK (Python 3.15.0). Inga riskvärden eller skattesatser ändrade.
+
 ## [Unreleased] — 2026-10-30 — privat backup med återställningsövning
 - `python -m aie.memory.backup create|verify`: SQLite online-backup inklusive WAL, privata filer (0600), manifest och återställning i en separat temporär mapp. Kontrollerar filhash, databas-/FK-integritet, schema, miljö, tabellantal och revisionskedja. Verktyget skriver aldrig över driftdata.
 - Hela sviten före inmerge av pilotfixen: 742 OK (Python 3.15.0). Sex regressionstester verifierar WAL-innehåll, godkännanden/ledger/audit, orörd driftdata, korrupt backup, trasig revisionskedja och CLI. Grundarchecklistan beskriver privat off-device-kopia och säker återställning; den externa kopian är inte konfigurerad automatiskt.

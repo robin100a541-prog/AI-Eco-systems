@@ -204,3 +204,9 @@ Sätt **inte** miljövariabeln `ANTHROPIC_API_KEY`. Om den är satt använder Cl
 En export med återbetalning måste ha `Refund Date` (eller `refund_date`/`refunded_at`) med det verkliga återbetalningsdatumet. Datum får inte gissas från importdagen. Försäljningen och återbetalningen kan höra till olika perioder. Samma export kan importeras igen; en senare retur skapar en separat post. Motstridiga rader, ändrade belopp och en gammal export som utelämnar en redan bokförd retur avvisas.
 
 Migration 34 körs när databasen öppnas. Den skriver inte om äldre ledgerposter. Sådana poster saknar ofta verkligt händelsedatum och rapporteras fortsatt på registreringsdatum tills en granskad, spårbar rättelse gjorts. Importen stoppar vid en sådan äldre post i stället för att anta att perioden stämmer. Säkerhetskopiera databasen före uppgradering.
+
+## Modellendpoint och skattebetalningsreferens
+
+Ollama får endast peka på loopback (`localhost`, `127.0.0.1`, `::1`). En LAN-/internetadress nekas eftersom intern data annars kunde lämna datorn. Externa modellleverantörer ska använda sin riktiga public-only-klassificering.
+
+När kod registrerar betald skatt med `TaxEngine.pay`, ange ett stabilt, unikt `payment_id` från betalningsunderlaget. Samma referens och innehåll registreras bara en gång. Olika betalningar ska ha olika referenser. Anrop utan explicit ID använder spår, år och kvittoreferenser som identitet; återanvänd därför inte ett generiskt filnamn för olika betalningar. Koden registrerar fakta och skickar aldrig pengar till Skatteverket.

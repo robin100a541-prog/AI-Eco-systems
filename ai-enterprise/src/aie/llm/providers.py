@@ -7,12 +7,14 @@ API-nycklar läses från miljövariabler och skrivs aldrig ut eller loggas (SR-1
 from __future__ import annotations
 
 import json
+import ipaddress
 import re
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
+from urllib.parse import urlsplit
 
 
 class DataClass(str, Enum):
@@ -139,6 +141,22 @@ KINDS = {
 }
 
 
+def validate_local_endpoint(url: str) -> None:
+    """Ollama carries internal data: only explicit loopback endpoints are allowed."""
+    try:
+        parts = urlsplit(url)
+        host = parts.hostname or ""
+        local = host == "localhost"
+        if not local:
+            local = ipaddress.ip_address(host).is_loopback
+        valid = (parts.scheme in ("http", "https") and local and not parts.username and not parts.password
+                 and not parts.query and not parts.fragment and (parts.port is None or parts.port > 0))
+    except (ValueError, TypeError):
+        valid = False
+    if not valid:
+        raise ValueError("ollama base_url måste vara en http/https-adress på loopback; intern data får inte lämna datorn")
+
+
 class OpenAICompatibleProvider(Provider):
     def __init__(
         self,
@@ -155,6 +173,8 @@ class OpenAICompatibleProvider(Provider):
         if kind == "openrouter" and not model.endswith(":free"):
             raise ValueError("OpenRouter-modellen måste sluta på ':free'; annars kan anropet kosta pengar (§42)")
         default_url, key_env, external = KINDS[kind]
+        if kind == "ollama":
+            validate_local_endpoint(base_url or default_url)
         if key_env and not api_key:
             raise ValueError(f"{key_env} saknas")
         self.name, self.kind, self.model = name, kind, model
