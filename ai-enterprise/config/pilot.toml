@@ -45,6 +45,5 @@ search_urls = [
   "https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=votes&q={q}&site=video&pagesize=25",
   "https://itch.io/search?q={q}",
   "https://hn.algolia.com/api/v1/search?query={q}&hitsPerPage=20",
-  "https://gumroad.com/discover/search?query={q}",
   "https://www.etsy.com/search?q={q}",
 ]

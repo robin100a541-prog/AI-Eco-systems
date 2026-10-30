@@ -130,3 +130,22 @@ class TestRateLimit(unittest.TestCase):
         finally:
             discovery._sleep = old
         self.assertEqual(waits, [20])
+
+
+class TestMarketSignal(unittest.TestCase):
+    def test_questions_and_opinions_alone_never_qualify(self):
+        """Forumfrågor och åsikter är inte efterfrågan på en marknad; en signal med pris eller antal krävs."""
+
+        class OnlyTalk(FakeGateway):
+            def complete(self, agent, request):
+                if "research-agenten" in request.messages[0].content:
+                    sig = [{"kind": "question", "title": "q", "quote": "how do I color grade football edits?",
+                            "price_usd": None, "count": None},
+                           {"kind": "reviews", "title": "r", "quote": "Cinematic LUT Pack for DaVinci Resolve",
+                            "price_usd": None, "count": None}]
+                    return ChatResponse("fake", "m", json.dumps({"signals": sig}), 0)
+                return super().complete(agent, request)
+
+        _, ideas, top, _ = run(FakeReader(), OnlyTalk(), settings(max_fetches=1), "regler", 500)
+        self.assertEqual(top, [])
+        self.assertIn("ingen marknadssignal", " ".join(ideas[0].why_not))

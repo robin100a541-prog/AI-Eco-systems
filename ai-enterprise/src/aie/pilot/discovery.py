@@ -32,6 +32,7 @@ RESEARCHER = "res-1"
 PRODUCT_AGENT = "res-1"
 KINDS = ("template", "lut", "preset", "motion-graphics", "guide", "course", "service")
 SIGNAL_KINDS = ("competitor", "price", "reviews", "sales", "question")
+MARKET_KINDS = ("competitor", "price", "sales")  # minst en sådan med siffra krävs: frågor och åsikter räcker inte
 RUBRIC = (  # (nyckel, vikt, hur poängen 0–5 räknas)
     ("demand", 3, "antal belagda signaler som idén bygger på (högst 5)"),
     (
@@ -344,6 +345,9 @@ def score(
         100 * sum(idea.scores[k] * weights[k] for k in weights) / MAX_SCORE
     )
     idea.why_not = []
+    market = [s for s in linked if s.kind in MARKET_KINDS and (s.price_cents is not None or s.count is not None)]
+    if not market:
+        idea.why_not.append("ingen marknadssignal (konkurrent, pris eller försäljning med siffra)")
     if len(linked) < settings.min_signals:
         idea.why_not.append(
             f"{len(linked)} belagda signaler, minst {settings.min_signals} krävs"
@@ -419,7 +423,7 @@ def report(
     out += [
         "",
         (f"Totalpoäng = viktad summa i procent av {MAX_SCORE}. Kvalificerad: minst {settings.min_signals} "
-        f"belagda signaler och förväntat värde minst {settings.min_expected_value_cents / 100:.2f} USD på 90 "
+        f"belagda signaler varav minst en marknadssignal med siffra (konkurrent, pris eller försäljning), och förväntat värde minst {settings.min_expected_value_cents / 100:.2f} USD på 90 "
         "dagar. Alla belopp räknas i kod; modellen gav bara pris och uppskattad försäljning."),
         "",
     ]
