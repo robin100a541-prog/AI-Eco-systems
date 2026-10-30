@@ -3,6 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [ ] Live-status utan extra modellanrop: pågående steg, rollplan, mötesdeltagare, heartbeat och ärlig offlinevisning — Codex 2026-10-30 (codex/live-agent-status). Ingen ny körfrekvens eller höjda kvoter.
 - [x] Tecknad spelvärld för dashboarden: avdelningshus, rörliga agenter, aktiviteter och valbar agent — Codex 2026-10-30 (codex/game-world-dashboard). Endast offentlig statusvisning.
 - [x] Isolerad verifiering av company-daily: två sparade dagar, inga nycklar, cacheändringar, PR:er eller Pages — Codex 2026-10-30 (codex/offline-daily-verification).
 - [x] M5: atomär kvot för webbförsök, även misslyckade — Codex 2026-10-30 (codex/web-attempt-quota). Migration 36 reserverad (nästa efter 35); inga nya verktyg eller ändrade kvotvärden.
