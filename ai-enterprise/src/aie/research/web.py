@@ -9,7 +9,8 @@
    bara kända sidor.
 3. **SSRF-skydd:** värdnamnet slås upp, och varje adress måste vara offentlig. Privata, lokala,
    länklokala, reserverade adresser och multicast stoppas, både i början och efter varje omdirigering.
-4. **Kvot:** högst `per_day` hämtningar per dag för alla agenter tillsammans, räknat i databasen.
+4. **Kvot:** högst `per_day` försök per dag för alla agenter tillsammans, reserverat atomärt före DNS/HTTP.
+   Fel, avvisade adresser och avbrott räknas också. Ett försök kan omfatta robots.txt och begränsade omdirigeringar.
 5. **robots.txt:** sidan hämtas bara om webbplatsens `robots.txt` tillåter det för vår user-agent.
    Saknas filen tillåts hämtningen, enligt standarden.
 6. **Hämtning:** bara GET, aldrig formulär eller POST. Tidsgräns `timeout_seconds`, högst `max_bytes`
@@ -176,9 +177,8 @@ class WebReader:
     def fetch(self, agent: str, url: str) -> WebPage:
         self._engine.require(agent, TOOL)  # PermissionDenied vid nej; nödstopp och skyddat läge ingår
         try:
+            self._reserve_attempt()
             self._check_url(url)
-            if self.used_today() >= self._limits.per_day:
-                raise WebError(f"dagens kvot på {self._limits.per_day} hämtningar är slut")
             if not self._robots_allow(url):
                 raise WebError("robots.txt tillåter inte hämtningen")
             final_url, response = self._follow(url)
@@ -205,10 +205,20 @@ class WebReader:
                                {"fetch_id": fetch_id, "source": f"url:{final_url}", "signals": list(signals)})
         return WebPage(fetch_id, url, final_url, content, response.truncated, signals)
 
+    def _reserve_attempt(self) -> None:
+        """Reserve before DNS/HTTP; failures and interrupted requests still count."""
+        day = self._clock()[:10]
+        with self._db.transaction() as tx:
+            tx.execute("INSERT OR IGNORE INTO web_attempt_usage (day, attempts) VALUES (?, 0)", (day,))
+            changed = tx.execute("UPDATE web_attempt_usage SET attempts = attempts + 1 "
+                                 "WHERE day = ? AND attempts < ?", (day, self._limits.per_day)).rowcount
+            if changed != 1:
+                raise WebError(f"dagens kvot på {self._limits.per_day} hämtningar är slut")
+
     def used_today(self) -> int:
         row = self._db.connection.execute(
-            "SELECT COUNT(*) FROM web_fetches WHERE day = ? AND outcome = 'ok'", (self._clock()[:10],)).fetchone()
-        return row[0]
+            "SELECT attempts FROM web_attempt_usage WHERE day = ?", (self._clock()[:10],)).fetchone()
+        return row[0] if row else 0
 
     def history(self, limit: int = 50) -> list[dict]:
         rows = self._db.connection.execute(

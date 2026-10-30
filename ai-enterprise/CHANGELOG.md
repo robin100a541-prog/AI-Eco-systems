@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — M5: atomär kvot för alla webbförsök
+- Migration 36 inför web_attempt_usage, initierad konservativt från tidigare lagrade försök. Kvoten reserveras i en skrivtransaktion före DNS/HTTP; fel, ogiltiga adresser och avbrott räknas också. Samtidiga anrop kan inte ta samma sista försök.
+- Kvoten gäller fetch-försök. Varje försök kan göra robots.txt- och redirect-anrop inom befintliga storleks-, tids- och redirectgränser; inga konfigurerade kvotvärden höjs.
+- 759 tester OK på basen före PR #129 (Python 3.15.0), inklusive tre nya fel-/datum-/samtidighetstester utan riktigt nätverk.
+
 ## [Unreleased] — 2026-10-30 — H4/M1: atomär utgift och bevarad risk
 - `BudgetEngine.record_spend()` kontrollerar budget, förbrukar godkännande och bokför inom en skrivtransaktion. Pending reserverar kapital; simulerade kostnader genomförs som settled. `check()` är rådgivande och förbrukar inte längre godkännanden. Återförsök med samma referens bokför aldrig dubbelt.
 - Arbetscykeln använder den atomära vägen även för godkända utgifter och kontrollerar agentens mandat igen. Migration 35 bevarar riskklass/kategori i godkännandet; äldre oklassificerade förfrågningar blockeras tills ett nytt godkännande begärts.
