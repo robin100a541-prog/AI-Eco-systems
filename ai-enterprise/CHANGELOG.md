@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — isolerad driftskontroll
+- company-daily har ett manuellt verify_only-läge (standard på) som kör två separata SIM-processer utan hemligheter, cacheändringar, rapport-PR eller Pages. Schemat och den vanliga driftvägen är oförändrade.
+- `scripts/verify_daily_cycle.py` provar återupptagning, två rapporter, revisionskedja och offentlig SIM-status i en temporär mapp. Lokalt test godkänt; GitHub-körningen dokumenteras i PR:en.
 ## [Unreleased] — 2026-10-30 — M5: atomär kvot för alla webbförsök
 - Migration 36 inför web_attempt_usage, initierad konservativt från tidigare lagrade försök. Kvoten reserveras i en skrivtransaktion före DNS/HTTP; fel, ogiltiga adresser och avbrott räknas också. Samtidiga anrop kan inte ta samma sista försök.
 - Kvoten gäller fetch-försök. Varje försök kan göra robots.txt- och redirect-anrop inom befintliga storleks-, tids- och redirectgränser; inga konfigurerade kvotvärden höjs.
