@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 7a/7c: riktig körning på Groq
+### Tillagt
+- Produktagenten och beslutscykeln kördes på Groq (`openai/gpt-oss-120b`). Vald produkt: `products/f-skatt-guide/` (12 USD, avgift 1,70, netto 10,30 per försäljning, förväntat netto 82,40 USD på 90 dagar, största förlust 0). Efterfrågan är overifierad.
+- `docs/reports/7c-llm-quality.md`: CFO och risk svarade giltigt. Produktagenten och CEO räknade fel på förväntat netto och avvisades i kod, så regeln beslutade.
+- Produkttexten är skriven av modellen men har sakfel om moms och skatt. `GRANSKNING.md` listar vad en grundare måste rätta före listning.
 ## [Unreleased] — 2026-10-30 — Fas 8: säkerhet för utvecklaragenten
 ### Tillagt
 - Utvecklaragenten mergar högst 4 PR:er per dygn: `dev-agent.yml` räknar dagens mergade PR:er (`aie dev-agent may-merge`) och hoppar över körningen när taket är nått.

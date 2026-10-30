@@ -205,6 +205,11 @@
 - Varje måndag skrivs en veckosammanfattning till `docs/bot-reports/weekly-ÅÅÅÅ-VV.md` (`aie dev-agent weekly`).
 - Utvecklaragenten är påslagen igen; `docs/DEV-AGENT-PAUSED` är borttagen.
 
+## Ändrat 2026-10-30 (Fas 7a/7c: riktig körning på Groq)
+- Produktagenten och beslutscykeln kördes på Groq (`openai/gpt-oss-120b`). Vald produkt: `products/f-skatt-guide/` (12 USD, avgift 1,70, netto 10,30 per försäljning, förväntat netto 82,40 USD på 90 dagar, största förlust 0). Efterfrågan är overifierad.
+- `docs/reports/7c-llm-quality.md`: CFO och risk svarade giltigt. Produktagenten och CEO räknade fel på förväntat netto och avvisades i kod, så regeln beslutade.
+- Produkttexten är skriven av modellen men har sakfel om moms och skatt. `GRANSKNING.md` listar vad en grundare måste rätta före listning.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
