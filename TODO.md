@@ -3,6 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
+- [ ] H4/M1: atomär budgetkontroll/bokföring och bevarad riskklass — Codex 2026-10-30 (codex/atomic-spending). Migration 35 reserverad efter 34; inga ändrade riskvärden.
 - [x] Pilotens granskningsfynd H1–H3/M2: atomär import, senare returer, händelsedatum och avstämning — Codex 2026-10-30 (codex/pilot-import-recovery). Migration 34 reserverad (nästa efter befintlig 33); inget nytt D-beslut eller ändrade riskgränser.
 - [x] Drift: rätta YAML-felet i company-daily.yml som stoppar jobbet före start — Codex 2026-10-30 (codex/company-daily-workflow). Endast syntax och verifiering; inga ändrade säkerhetsregler.
 - **Överlämning endast 2026-10-26:** Robin lämnar över alla sina uppgifter till @yorgo-jarjous **endast idag**. Robin har godkänt överlämningen 2026-10-26 (endast idag). Från 2026-10-27 gäller den vanliga fördelningen igen, och det som inte är klart går tillbaka till @robin.
