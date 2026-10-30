@@ -1,8 +1,8 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`, 2026-10-30); stängs formellt när en grundare godkänner. Fas 7 startas bara av grundarna. **Fas 4 och Fas 5 är stängda** och acceptanstestade (§52, §53). Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
-**Fasstatus:** Fas 1–5 är mergade till `main`. Acceptanstester finns för §49–§53. Fas 0-punkterna 0.8 och 0.10 är öppna.
+**Senast uppdaterad:** 2026-10-30 av Claude (Claude Code-session med Robin)
+**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter (6a, 6b-1–6b-5) byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`). Stängs formellt när en grundare godkänner. Fas 7 startas bara av grundarna.
+**Fasstatus:** Fas 1–6 är mergade till `main`. Acceptanstester finns för §49–§54. Hela sviten: 697 OK (2026-10-30, Python 3.13 lokalt; CI kör 3.11 och 3.12). Fas 0-punkten 0.8 är öppen.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -148,22 +148,37 @@
 - **Mätt med dagens fasta budget:** "inte redo", eftersom avgifterna stoppar departementet efter cirka 50 000 SIM.
 - **Med värdena för 500 kr** (PR #67, godkänd av båda 2026-10-27): `normal` gav "redo för 500 kr" i 5 av 5 körningar, och `loss` gav "inte redo". Marknadsparametrarna i scenarierna (besökare och konvertering) är antaganden, inte uppmätt efterfrågan. En rekommendation är bara så bra som scenariot.
 
+## Ändrat 2026-10-28–30 (Robin, Claude Code)
+- **D-049:** grundarna agerar som en, och en grundares godkännande räcker. Anspråk utan commit på 6 timmar får tas över.
+- **Groq är kopplat:** `GROQ_API_KEY` finns som hemlighet i repot. Utvecklaragenten anropar Groq från GitHub Actions med `openai/gpt-oss-120b` och har `gpt-oss-20b` som reserv. Modellerna kontrolleras mot Groqs aktuella lista, och HTTP 200 är loggat. Det täcker i praktiken 0.10. `llm_smoke_test.py` har inte körts lokalt.
+- **Utvecklaragenten (D-050):** `.github/workflows/dev-agent.yml` kör den schemalagt, i praktiken ungefär var 8:e timme eftersom GitHub skjuter upp schemalagda jobb.
+  - Modellen svarar med sök/ersätt-block.
+  - Varje uppgift måste bevisas av sin egen kontroll (ruff-fyndet borta, testet grönt eller `Verifies <ID>`).
+  - Agenten fyller själv på backloggen och bockar av klara punkter.
+  - PR:er mergas automatiskt när CI är grön, eftersom branch protection på `main` kräver unittest 3.11, unittest 3.12 och protected-files.
+  - Agenten har fixat UP017 (#102) och lagt till `Agent.__repr__` (BL-006).
+- **Fas 6b-3–6b-5, övertagna enligt D-049 eftersom anspråket i #93 var inaktuellt:**
+  - `reporting/daily.py` (§57),
+  - `reporting/periodic.py` (§58) och `reporting/monitor.py` (FR-24),
+  - `python -m aie report daily|periodic|monitor`,
+  - `tests/acceptance/test_fas6.py` (#110, #111).
+- Simuleringens marknadsantaganden är markerade som OVERIFIERADE i varje rapport, och "redo" är bara en hypotes tills riktig försäljning finns (#113).
+- Importerna är sorterade (ruff I001) i hela `src` och `tests` (#112). Q-BOT-001–004 är stängda som "släppt, lågt värde" (#114).
+- Arbetsorder 02 (PR 4–11, F1–F6) är mergad av Yorgo. #86 (F7, granskningsregel) och #95 (plattformsgränser i `risk_limits.toml`) väntar på en grundare.
+
 ## Vad som INTE är gjort / inte verifierat
-- `python -m aie start` bygger nu hela systemet med spärrar (Fas 6a, D-041). Det finns ännu ingen arbetscykel som kör agenter; `tick()` kör bara kontrollerna. Arbetscykeln och simulerade marknader är Fas 6b. Kvalitet, kostnadseffektivitet, samarbetsförmåga och dokumentation (§31) mäts inte än och listas som omätta.
-- Hela sviten, inklusive start och stopp med riktiga processer och `pid_alive`, är körd på Windows (473 OK, 2026-10-26). Bara de två SIGINT-testerna hoppas över, eftersom Windows inte skickar SIGINT till en annan process.
-- Routern är bara testad med falsk transport. Inget riktigt anrop till Groq eller OpenRouter är gjort (0.10). Ollama är installerat men körde inte på Yorgos dator.
-- När konfigurationen är ogiltig loggas felen i `logs/` i arbetsmappen, inte i den `log_dir` som står i `system.toml`.
-- Groq-testet (0.10) är inte gjort. D-005–D-012 är inte beslutade (0.8); Q-01 är besvarad av D-019.
+- Inget riktigt kapital, konto eller riktig kund används. Allt körs i SIM (Fas 7 är inte startad).
+- Simuleringens marknad (besökare, konvertering, priser) är antaganden ur scenarierna och har inte prövats mot riktig försäljning.
+- Agenternas beslut (VD, CFO, risk) har inte körts mot en riktig modell från början till slut. Det är punkt 7c i ROADMAP.
 - Värdena i `config/risk_limits.toml` är simulerade (Q-04).
 - `python -m aie` fungerar bara när `PYTHONPATH=src` är satt (se `docs/setup.md`).
 
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna D-032–D-034 (Tax Engine) och D-038–D-040 (lärdomar, strategier, SR-17) | Båda |
-| 2 | Godkänna D-041–D-044 (spärrar vid start, simulering, arbetscykel och **behörighetsändringen** D-044) | Båda |
-| 3 | Fas 6b-3–6b-5: rapporter, övervakning och acceptanstester (plan godkänd av båda) | Yorgo |
-| 4 | Godkänna D-005–D-012 (0.8) | Båda, på plats |
+| 1 | Godkänna att Fas 6 stängs, och ta ställning till #86 och #95 | En grundare |
+| 2 | Godkänna D-005–D-012 (0.8) och kvarvarande föreslagna beslut | En grundare |
+| 3 | Fas 7a–7c i ROADMAP: produktagent, manuell listning och beslutscykel mot Groq | När grundarna startar Fas 7 |
 
 ## Blockerare
-Inga.
+Inga. Fas 7 kräver grundarnas beslut (§55).
