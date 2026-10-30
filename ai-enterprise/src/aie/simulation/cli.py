@@ -92,12 +92,12 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
 
 
 def _evaluate(config, config_dir: Path, scenario: str, runs: int | None, days: int | None, agents: str) -> int:
-    from .readiness import evaluate, save_report
+    from .readiness import MARKET_NOTE, evaluate, save_report
 
     try:
         departments = {m.department for m in load_permissions(config_dir).roles.values()}
         sc = load_scenario(config_dir, scenario, departments, frozenset(config.system.founders))
-        result = evaluate(config, config_dir, sc, runs, days, agents)
+        result = evaluate(config, config_dir, sc, runs, days, agents, real_sales=_has_real_sales(config))
     except (ConfigError, SimulationError, ValueError) as exc:
         raise runtime.StartupError(f"FEL: {exc}") from exc
     print(f"Bedömning av {sc.name}: {len(result.runs)} körningar à {result.runs[0].days if result.runs else 0} dagar "
@@ -110,9 +110,18 @@ def _evaluate(config, config_dir: Path, scenario: str, runs: int | None, days: i
     for reason in result.reasons:
         print(f"  - {reason}")
     print(("REKOMMENDATION: " if result.ready else "RESULTAT: ") + result.recommendation)
+    print(f"Status: {result.status}. {MARKET_NOTE}")
     path, digest = save_report(result, config.system.data_dir)
     print(f"Rapport: {path} (SHA-256 {digest})")
     return 0
+
+
+def _has_real_sales(config) -> bool:
+    """Finns riktiga försäljningsdata (D-062) i huvuddatabasen? Bara då kan "redo" vara mer än en hypotes."""
+    with runtime._open(config) as db:
+        table = db.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'real_results'").fetchone()
+        return bool(table and db.connection.execute("SELECT 1 FROM real_results LIMIT 1").fetchone())
 
 
 def _line(d: dict) -> str:
