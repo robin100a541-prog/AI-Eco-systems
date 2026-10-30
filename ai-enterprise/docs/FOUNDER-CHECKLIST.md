@@ -12,14 +12,14 @@ eller `set PYTHONPATH=src` (Windows).
 3. Slå ihop PR:en med granskningen. Be sedan en byggsession rätta allt som är märkt `high` eller `critical`.
 
 ## 2. Skatteverket (Q-TAX-01)
-1. Ring eller skriv till Skatteverket. Fråga: "Vi säljer en digital PDF-guide via en utländsk plattform
+1. **Klart (Robin 2026-10-30):** momsen sköts av plattformarna; inget företag behöver öppnas nu (Q-TAX-01 i DECISIONS.md).
    (Gumroad, som är merchant of record). Ska intäkten deklareras som enkelt bolag (NE-bilaga), och behöver vi
    registrera oss för moms?"
 2. Skriv svaret, med datum och namn på handläggaren, under Q-TAX-01 i `DECISIONS.md` (via en PR med etiketten
    `founder-approved`).
 3. Tills svaret finns reserverar systemet 50 % av intäkten som skatt (`untracked_rate` i `config/tax.toml`).
 
-## 3. Granska produkten
+## 3. Granska produkten (rättad; läs PDF:en en gång)
 1. Läs `products/f-skatt-guide/GRANSKNING.md` och rätta felen i `products/f-skatt-guide/product.md`.
 2. Gör om PDF:en: `python -c "from pathlib import Path; from aie.pilot.writer import write_pdf; d=Path('products/f-skatt-guide'); write_pdf((d/'product.md').read_text(), d/'product.pdf')"`.
 3. Öppna `product.pdf` och läs den. Ta bort raden "INTE KLAR ATT LISTA" i `GRANSKNING.md`. Gör en PR.
