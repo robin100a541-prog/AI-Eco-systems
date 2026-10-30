@@ -33,7 +33,8 @@ from .scenario import load_scenario
 
 
 def simulate(config_dir: Path, action: str, scenario: str | None = None, founder: str | None = None,
-             days: int | None = None, agents: str = "scripted", runs: int | None = None) -> int:
+             days: int | None = None, agents: str = "scripted", runs: int | None = None,
+             dashboard: Path | None = None) -> int:
     from ..system import build_system
 
     try:
@@ -67,8 +68,15 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
                 raise runtime.StartupError(f"FEL: {exc}") from exc
             print(f"Körning {sim.run_id}: scenario {sim.scenario.name}, dag {sim.last_day} av {sim.scenario.days} "
                   f"(agenter: {agents}, bara SIM)")
-            for summary in cycle.run(days):
-                print(_line(summary))
+            from ..dashboard.live import LiveStatus
+
+            with LiveStatus(system, dashboard, agents) as observer:
+                cycle.observer = observer
+                cycle._gateway = observer.gateway(gateway)
+                for summary in cycle.run(days):
+                    print(_line(summary))
+                if cycle.paused:
+                    observer.state = "paused"
             if cycle.paused:
                 print(f"PAUSAD: {cycle.paused}")
             net = compute_result(system.ledger.entries("SIM"), "SIM").net_minor

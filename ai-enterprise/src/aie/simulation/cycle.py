@@ -19,6 +19,7 @@ av `system:simulation`, och inga betalnings- eller nätverksverktyg finns.
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from datetime import date, timedelta
 
 from ..agents import ACTING_STATES
@@ -43,12 +44,13 @@ ROLE_ACTIONS = {
 
 
 class WorkCycle:
-    def __init__(self, sim: Simulation, system, gateway, data_class: DataClass = DataClass.INTERNAL) -> None:
+    def __init__(self, sim: Simulation, system, gateway, data_class: DataClass = DataClass.INTERNAL, observer=None) -> None:
         """`data_class`: `public` bara för `--agents groq`, och bara i miljön sim med SIM (PR 8, D-060)."""
         if data_class is not DataClass.INTERNAL:
             from .run import require_sim
 
             require_sim(sim.config)  # en simulering innehåller inga riktiga uppgifter; prod skickas aldrig ut
+        self.observer = observer
         self.sim = sim
         self._system = system
         self._gateway = gateway
@@ -89,6 +91,8 @@ class WorkCycle:
         events = [e for e in ctx["events"]]
         self._approved_spends(ctx["day"], record)
 
+        if self.observer is not None:
+            self.observer.queue(ctx["day"], [a.agent_id for role in ORDER if (a := self._agent(role)) is not None])
         for role in ORDER:
             self._turn(role, ctx["day"], events, listed, held, record)
         conflicts = [e for e in events if e.kind == "conflicting_assessment"]
@@ -96,9 +100,13 @@ class WorkCycle:
             for key in {e.initiative for e in conflicts}:
                 held.add(key)  # §21: ingen falsk konsensus; initiativet väntar tills CEO har avgjort
                 listed.discard(key)
-            self._turn("cfo", ctx["day"], events, listed, held, record)
-            self._turn("cro", ctx["day"], events, listed, held, record)
-            self._turn("ceo", ctx["day"], events, listed, held, record)
+            participants = [a.agent_id for role in ("cfo", "cro", "ceo")
+                            if (a := self._agent(role)) is not None]
+            meeting = self.observer.meeting(participants) if self.observer is not None else nullcontext()
+            with meeting:
+                self._turn("cfo", ctx["day"], events, listed, held, record)
+                self._turn("cro", ctx["day"], events, listed, held, record)
+                self._turn("ceo", ctx["day"], events, listed, held, record)
 
         record["held"] = sorted(held)
         return self.sim.finish_day(ctx, frozenset(listed), record)
@@ -106,6 +114,21 @@ class WorkCycle:
     # --- En agents tur ---------------------------------------------------------------------
 
     def _turn(self, role: str, day: int, events, listed: set, held: set, record: dict) -> None:
+        agent = self._agent(role)
+        before = len(record["rejected"])
+        action_start = len(record["actions"])
+        try:
+            self._turn_impl(role, day, events, listed, held, record)
+        except BaseException:
+            if self.observer is not None and agent is not None:
+                self.observer.agent(agent.agent_id, "blocked")
+            raise
+        if self.observer is not None and agent is not None:
+            phase = "blocked" if (len(record["rejected"]) > before or
+                                  any(a["outcome"] != "done" for a in record["actions"][action_start:])) else "done"
+            self.observer.agent(agent.agent_id, phase)
+
+    def _turn_impl(self, role: str, day: int, events, listed: set, held: set, record: dict) -> None:
         agent = self._agent(role)
         if agent is None:
             record["rejected"].append({"role": role, "reason": f"ingen aktiv {role}"})
