@@ -101,6 +101,12 @@ class TestValidConfig(ConfigTestCase):
         self.assertEqual(config.risk.missing, ())
         self.assertEqual(config.warnings, ())
 
+    def test_platform_limits_are_phase7_pilot_values(self):
+        """D-059: Fas 7-piloten tillåter en plattform; 2 och 60 gäller först från Fas 8."""
+        text = (ROOT / "config" / "risk_limits.toml").read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?m)^MIN_ACTIVE_PLATFORMS = 1\b")
+        self.assertRegex(text, r"(?m)^MAX_PLATFORM_REVENUE_SHARE = 100\b")
+
     def test_config_is_frozen(self):
         """Verifies FR-02: konfigurationen kan inte ändras efter att den validerats."""
         config = load_config(self.write())

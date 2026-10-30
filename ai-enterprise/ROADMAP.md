@@ -151,3 +151,5 @@ Arbetspunkter (föreslagna 2026-10-30; startas bara när grundarna startar Fas 7
 
 ## Fas 8 — Kontinuerlig drift
 Återkommande cykel enligt §56, statusrapport per cykel.
+
+- [ ] **8a Plattformsgränser till fullt läge (D-059):** när Fas 8 startar ändras `config/risk_limits.toml` till `MIN_ACTIVE_PLATFORMS = 2` och `MAX_PLATFORM_REVENUE_SHARE = 60` (PR med `founder-approved`).

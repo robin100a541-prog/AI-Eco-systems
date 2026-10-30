@@ -27,5 +27,5 @@ API_REINVEST_SHARE = 20                  # procent av realiserad nettovinst (fö
 API_MONTHLY_CAP = 0                      # belopp per månad; 0 tills realiserad vinst finns (ER-22)
 
 # --- D-059: plattformsberoende (arbetsorder 02, PR 7b; kräver en grundares godkännande) -------
-MAX_PLATFORM_REVENUE_SHARE = 60          # procent: högsta andel av intäkterna från en plattform eller ett gemensamt beroende
-MIN_ACTIVE_PLATFORMS = 2                 # antal: minsta antal oberoende godkända eller aktiva plattformar när det finns intäkter
+MAX_PLATFORM_REVENUE_SHARE = 100         # Fas 7-pilot (D-059); 60 från Fas 8; procent: högsta andel av intäkterna från en plattform eller ett gemensamt beroende
+MIN_ACTIVE_PLATFORMS = 1                 # Fas 7-pilot (D-059); 2 från Fas 8; antal: minsta antal oberoende godkända eller aktiva plattformar när det finns intäkter
