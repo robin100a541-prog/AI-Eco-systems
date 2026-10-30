@@ -39,12 +39,12 @@ fixed_cents = 0
 min_ideas = 10
 min_signals = 2                    # minst två belagda signaler om efterfrågan per idé
 min_expected_value_cents = 15000   # förväntat netto på 90 dagar (USD-cent) som en idé måste nå
-max_fetches = 24                   # högst så många hämtningar per körning (research.toml har dagskvoten)
+max_fetches = 40                   # högst så många hämtningar per körning (research.toml har dagskvoten)
 # Sökadresser: {q} byts mot ett sökord ur founders.toml (URL-kodat).
 search_urls = [
-  "https://gumroad.com/discover?query={q}",
+  "https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=votes&q={q}&site=video&pagesize=25",
+  "https://itch.io/search?q={q}",
+  "https://hn.algolia.com/api/v1/search?query={q}&hitsPerPage=20",
+  "https://gumroad.com/discover/search?query={q}",
   "https://www.etsy.com/search?q={q}",
-  "https://www.fiverr.com/search/gigs?query={q}",
-  "https://old.reddit.com/search?q={q}",
-  "https://payhip.com/search?q={q}",
 ]
