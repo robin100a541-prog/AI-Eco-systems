@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — privat backup med återställningsövning
+- `python -m aie.memory.backup create|verify`: SQLite online-backup inklusive WAL, privata filer (0600), manifest och återställning i en separat temporär mapp. Kontrollerar filhash, databas-/FK-integritet, schema, miljö, tabellantal och revisionskedja. Verktyget skriver aldrig över driftdata.
+- Sex regressionstester verifierar WAL-innehåll, godkännanden/ledger/audit, orörd driftdata, korrupt backup, trasig revisionskedja och CLI. Grundarchecklistan beskriver privat off-device-kopia och säker återställning; den externa kopian är inte konfigurerad automatiskt.
+
 ## [Unreleased] — 2026-10-30 — company-daily: giltig YAML
 ### Rättat
 - Sammanfattningsstegets shell-grupp ligger nu i ett YAML-block (`run: |`). Tidigare tolkades klamrarna som YAML och GitHub avvisade workflowen innan något jobb startade (körning 41056471949 och tidigare).

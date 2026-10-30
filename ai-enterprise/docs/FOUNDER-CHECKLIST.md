@@ -63,3 +63,18 @@ eller `set PYTHONPATH=src` (Windows).
 ## 10. Fas 8 (senare)
 När piloten har fler intäktskällor: ändra `MIN_ACTIVE_PLATFORMS` till 2 och `MAX_PLATFORM_REVENUE_SHARE`
 till 60 i `config/risk_limits.toml` (D-059, en PR med `founder-approved`).
+
+## Säkerhetskopiering (teknisk del, kan köras av kodagenten)
+
+När pilotens databas finns, kör från `ai-enterprise/`:
+
+```bash
+PYTHONPATH=src python3 -m aie.memory.backup create data-pilot/data/prod.db --out data-pilot/backups
+PYTHONPATH=src python3 -m aie.memory.backup verify data-pilot/backups/<filnamnet-från-första-kommandot>.db
+```
+
+Första kommandot tar en konsistent SQLite-backup inklusive WAL och provar återställning i en separat temporär mapp. Manifestet (`.json`) innehåller kontrollsumma, schema, miljö, tabellantal och revisionskedjans slut. Det andra kommandot provar samma backup igen utan att skriva över driftdata. Båda måste lyckas. Saknad databas ger fel, aldrig en tom "backup".
+
+Behåll både `.db` och `.json` privat. Kopiera dem till en separat, privat lagringsplats utanför datorn efter varje försäljningsimport och före databasuppgraderingar. `data-pilot/` är gitignorerad; ladda aldrig upp dessa filer till det publika repot eller publika Actions-artefakter. En annan privat plats och backupintervallet måste fortfarande väljas av grundaren. Lokal backup skyddar inte mot att hela datorn försvinner.
+
+Vid skarp återställning: stoppa alla skrivande processer, verifiera backupen, återställ till en **ny** datamapp och kontrollera rapporter/godkännanden innan konfigurationen pekas om. Skriv inte över originaldatabasen. Backupverktyget gör bara övningen och kan inte skriva över driftdata. Manifest och databas tillsammans är ingen kryptografisk signatur mot en angripare som kan ersätta båda.

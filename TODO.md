@@ -3,7 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
-- [ ] Pilotbackup och återställningsövning utan överskrivning av driftdata — Codex 2026-10-30 (codex/pilot-backup-restore), ingen migration.
+- [x] Pilotbackup och återställningsövning utan överskrivning av driftdata — Codex 2026-10-30 (codex/pilot-backup-restore), ingen migration.
 - [x] Drift: rätta YAML-felet i company-daily.yml som stoppar jobbet före start — Codex 2026-10-30 (codex/company-daily-workflow). Endast syntax och verifiering; inga ändrade säkerhetsregler.
 - **Överlämning endast 2026-10-26:** Robin lämnar över alla sina uppgifter till @yorgo-jarjous **endast idag**. Robin har godkänt överlämningen 2026-10-26 (endast idag). Från 2026-10-27 gäller den vanliga fördelningen igen, och det som inte är klart går tillbaka till @robin.
 - [x] Fill in Goal + Tech stack in CLAUDE.md — @robin → @yorgo-jarjous (endast 2026-10-26) (yorgo/overlamning-idag)
