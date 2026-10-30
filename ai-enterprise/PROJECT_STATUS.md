@@ -1,7 +1,7 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-26 av Claude (Claude Code-session med Yorgo)
-**Aktuell fas:** Fas 6 — Affärssimulering. **Fas 4 och Fas 5 är stängda** och acceptanstestade (§52, §53). Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
+**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`, 2026-10-30); stängs formellt när en grundare godkänner. Fas 7 startas bara av grundarna. **Fas 4 och Fas 5 är stängda** och acceptanstestade (§52, §53). Fas 3 är klar: byggd, acceptanstestad (§51) och alla beslut är godkända av båda.
 **Fasstatus:** Fas 1–5 är mergade till `main`. Acceptanstester finns för §49–§53. Fas 0-punkterna 0.8 och 0.10 är öppna.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
