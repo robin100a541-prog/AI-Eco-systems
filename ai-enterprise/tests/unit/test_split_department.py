@@ -86,7 +86,7 @@ class TestDepartmentDay(SplitCase):
         """Verifies §21 och D-053: ett godkännande löser uppdelningsflaggan men aldrig en hård gräns."""
         for n in range(5):
             self.buy(250, f"namn-{n}")
-        a = self.approvals.request("lead-1", "research", "namn-5", 25_000, "SIM", "test")
+        a = self.approvals.request("lead-1", "research", "namn-5", 25_000, "SIM", "test", risk_class=Risk.LOW)
         self.approvals.approve("yorgo", a.approval_id, "ok")
         engine = self.engine()
         check = engine.check("lead-1", SpendRequest("research", 25_000, "SIM", "namn-5", Risk.LOW),

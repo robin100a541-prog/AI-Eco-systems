@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — H4/M1: atomär utgift och bevarad risk
+- `BudgetEngine.record_spend()` kontrollerar budget, förbrukar godkännande och bokför inom en skrivtransaktion. Pending reserverar kapital; simulerade kostnader genomförs som settled. `check()` är rådgivande och förbrukar inte längre godkännanden. Återförsök med samma referens bokför aldrig dubbelt.
+- Arbetscykeln använder den atomära vägen även för godkända utgifter och kontrollerar agentens mandat igen. Migration 35 bevarar riskklass/kategori i godkännandet; äldre oklassificerade förfrågningar blockeras tills ett nytt godkännande begärts.
+- 750 tester OK (Python 3.15.0), inklusive samtidiga anslutningar till samma budgetutrymme, avbrott före bokföring, idempotent återförsök och nekad risknedgradering.
+
 ## [Unreleased] — 2026-10-30 — H1–H3/M2: återställbar pilotimport
 - Hela försäljningsimporten, incidenten och revisionsposterna sparas atomärt. Undertransaktioner använder SAVEPOINT, så ett avbrott lämnar inga halvskrivna försäljningar.
 - Senare returer importeras som egna händelser. Ändrade data eller äldre poster utan verifierat händelsedatum kräver en uttrycklig rättelse. Avstämning kontrollerar beständiga ledgerposter inklusive korrigeringar.

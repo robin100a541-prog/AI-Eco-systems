@@ -67,7 +67,7 @@ class ApprovalCase(unittest.TestCase):
                                  approval_id=approval_id)
 
     def approved(self, amount=5_000, department="research", initiative="etsy"):
-        a = self.approvals.request("lead-1", department, initiative, amount, "SIM", "annonser")
+        a = self.approvals.request("lead-1", department, initiative, amount, "SIM", "annonser", risk_class=Risk.LOW)
         return self.approvals.approve("yorgo", a.approval_id, "ok").approval_id
 
 
@@ -82,6 +82,11 @@ class TestApproval(ApprovalCase):
         """Verifies D-053: ett giltigt godkännande ger ja exakt en gång; återanvändning ger nej."""
         approval_id = self.approved()
         self.assertTrue(self.ask(approval_id=approval_id).allowed)
+        self.assertEqual(self.approvals.get(approval_id).status, "approved")  # preflight does not consume
+        self.engine.record_spend("lead-1", SpendRequest("research", 5_000, "SIM", "etsy", Risk.LOW),
+            EntryDraft("approved-spend", "research", 5_000, "SIM", EntryType.COST, "etsy",
+                       Approval.NOT_REQUIRED, ("file:invoice",), status=Status.SETTLED),
+            writer="robin", approval_id=approval_id)
         self.assertEqual(self.approvals.get(approval_id).status, "consumed")
         again = self.ask(approval_id=approval_id)
         self.assertFalse(again.allowed)
@@ -110,7 +115,7 @@ class TestApproval(ApprovalCase):
 
     def test_only_founders_decide_and_only_once(self):
         """Verifies D-049 och D-053: bara en grundare beslutar, och en förfrågan får högst ett beslut."""
-        a = self.approvals.request("lead-1", "research", "etsy", 5_000, "SIM", "annonser")
+        a = self.approvals.request("lead-1", "research", "etsy", 5_000, "SIM", "annonser", risk_class=Risk.LOW)
         with self.assertRaises(SpendApprovalError):
             self.approvals.approve("ceo-1", a.approval_id, "ok")
         self.approvals.reject("robin", a.approval_id, "för dyrt")

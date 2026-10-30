@@ -1,5 +1,9 @@
 """Budgetmotorn (Fas 4b, ER-03, ER-17, ER-22): kontrollen före varje ekonomisk handling.
 
+`BudgetEngine.record_spend()` låser, kontrollerar och bokför en ny utgift atomärt.
+En pending-post reserverar pengar före extern verkställighet; settled används för simulerade kostnader.
+`check()` är endast rådgivande och varken reserverar kapital eller förbrukar godkännanden.
+
 `BudgetEngine.check()` svarar på frågan "får den här utgiften göras nu?" innan något händer.
 Alla skäl samlas, och svaret är ja bara när inget blockerar och inget godkännande behövs:
 
@@ -44,12 +48,12 @@ Saknas en gräns som behövs blockeras handlingen (ER-02). Varje kontroll skrivs
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 from ..audit import AuditLog
 from ..config.models import RiskLimits
-from ..ledger import Approval, EntryType, Ledger, Status, compute_result
+from ..ledger import Approval, EntryDraft, EntryType, Ledger, LedgerError, Status, compute_result
 from .capital import capital_position
 from .config import Budget, Risk
 
@@ -135,7 +139,7 @@ class BudgetEngine:
 
     def check(self, actor: str, request: SpendRequest, approval_id: int | None = None) -> BudgetCheck:
         """`approval_id`: ett godkännande från en grundare (F5, D-053). Det ersätter bara kravet på en
-        grundare; alla andra gränser gäller. Blir svaret ja förbrukas godkännandet, exakt en gång."""
+        grundare; alla andra gränser gäller. Kontroll är rådgivande; record_spend förbrukar atomärt."""
         blocked: list[str] = []
         r, limits = request, self._limits
         amount_ok = (
@@ -223,9 +227,6 @@ class BudgetEngine:
                 blocked += problems
                 if not problems:
                     required = 0  # en grundare har godkänt just den här utgiften (D-049)
-        if approval_id is not None and not blocked and required == 0:
-            if not self._approvals.consume(approval_id, actor, f"{r.department}/{r.initiative} {amount} {r.currency}"):
-                blocked.append(f"godkännande {approval_id} är redan förbrukat (D-053)")
         result = BudgetCheck(
             not blocked and required == 0,
             tuple(blocked),
@@ -251,6 +252,38 @@ class BudgetEngine:
             },
         )
         return result
+
+    def record_spend(self, actor: str, request: SpendRequest, draft: EntryDraft, *,
+                     writer: str | None = None, approval_id: int | None = None):
+        """Atomically check, consume approval and record a COST (pending reserves funds).
+
+        `check()` is advisory. All new spending must use this command before external
+        execution. The ledger still accepts historical facts independently.
+        """
+        if (draft.department, draft.initiative, draft.amount_minor, draft.currency, draft.entry_type) != (
+                request.department, request.initiative, request.amount_minor, request.currency, EntryType.COST):
+            raise LedgerError("utgiftens bokföringsunderlag stämmer inte med budgetförfrågan")
+        evidence = tuple(draft.evidence)
+        if approval_id is not None:
+            evidence += (f"approval:spend-{approval_id}",)
+        draft = replace(draft, approval=Approval.APPROVED if approval_id is not None else Approval.NOT_REQUIRED,
+                        evidence=evidence)
+        try:
+            with self._ledger._db.transaction():
+                existing = self._ledger._by_key(draft.idempotency_key)
+                if existing is not None:
+                    return self._ledger.record(writer or actor, draft)  # verify replay, do not spend again
+                checked = self.check(actor, request, approval_id)
+                if not checked.allowed:
+                    raise BudgetBlocked(checked)
+                if approval_id is not None and not self._approvals.consume(approval_id, actor, draft.idempotency_key):
+                    raise BudgetBlocked(replace(checked, allowed=False, blocked=("godkännandet är redan förbrukat",)))
+                return self._ledger.record(writer or actor, draft)
+        except BudgetBlocked as exc:
+            # The denied transaction rolled back; retain the refusal outside it.
+            self._audit.append(actor, "budget.blocked", {"reference": draft.idempotency_key,
+                                                        "reasons": list(exc.check.blocked)})
+            raise
 
     def require(self, actor: str, request: SpendRequest) -> BudgetCheck:
         """Som `check`, men kastar `BudgetBlocked` vid nej. Anropas före varje ekonomisk handling."""

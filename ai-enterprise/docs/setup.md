@@ -204,3 +204,9 @@ Sätt **inte** miljövariabeln `ANTHROPIC_API_KEY`. Om den är satt använder Cl
 En export med återbetalning måste ha `Refund Date` (eller `refund_date`/`refunded_at`) med det verkliga återbetalningsdatumet. Datum får inte gissas från importdagen. Försäljningen och återbetalningen kan höra till olika perioder. Samma export kan importeras igen; en senare retur skapar en separat post. Motstridiga rader, ändrade belopp och en gammal export som utelämnar en redan bokförd retur avvisas.
 
 Migration 34 körs när databasen öppnas. Den skriver inte om äldre ledgerposter. Sådana poster saknar ofta verkligt händelsedatum och rapporteras fortsatt på registreringsdatum tills en granskad, spårbar rättelse gjorts. Importen stoppar vid en sådan äldre post i stället för att anta att perioden stämmer. Säkerhetskopiera databasen före uppgradering.
+
+## Utgifter efter H4/M1
+
+Budgetkontrollen `check()` är en förhandsbedömning och reserverar inga pengar. Kod som initierar utgifter måste använda `record_spend(actor, request, draft, writer=..., approval_id=...)`. Använd pending för en beständig reservation innan en extern handling och avräkna samma ledgerpost först när utfallet är känt. Simuleringen använder settled för sin kostnad. Ett godkännande förbrukas i samma transaktion; ett misslyckande lämnar det oanvänt.
+
+Förfrågningar om godkännande kräver uttrycklig `risk_class` och sparar kategori. Äldre förfrågningar utan klassificering från före migration 35 gäller inte längre som utgiftsgodkännande. Begär ett nytt med rätt risk och kategori; gissa inte low. Detta tillför inte något externt betalningsverktyg.
