@@ -1,0 +1,77 @@
+# Opportunity Scout (Robin 2026-10-30): en cykel per dygn och med knappen "Run workflow".
+# Bara gratismodeller via LLMGateway (Groq), aldrig Claude. Nycklarna finns bara i scoutsteget.
+# Scouten skapar aldrig konton, godkänner aldrig villkor, betalar aldrig och publicerar aldrig (D-011, §6).
+name: scout
+
+on:
+  schedule:
+    - cron: "47 5 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scout
+  cancel-in-progress: false
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hämta scoutens databas
+        uses: actions/cache/restore@v4
+        with:
+          path: ai-enterprise/data
+          key: scout-${{ github.run_id }}
+          restore-keys: scout-
+      - name: Scoutcykel
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ETSY_API_KEY: ${{ secrets.ETSY_API_KEY }}
+        run: |
+          python -m aie init
+          python -m aie scout run --as robin --agents groq 2>&1 | tee "$RUNNER_TEMP/scout.txt" || [ ${PIPESTATUS[0]} -eq 3 ]
+      - name: Spara scoutens databas
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ai-enterprise/data
+          key: scout-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: PR med registret
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then echo "BOT_TOKEN saknas; ingen PR"; exit 0; fi
+          git add docs/opportunities docs/QUESTIONS-FOR-FOUNDERS.md
+          if git diff --cached --quiet; then echo "inget nytt"; exit 0; fi
+          branch="claude/scout-$(date -u +%Y%m%d-%H%M)"
+          git -c user.name="ai-enterprise-bot" -c user.email="bot@users.noreply.github.com" \
+            commit -q -m "chore: scoutens register $(date -u +%F)"
+          git -c core.hooksPath=/dev/null push -q "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${branch}"
+          export GH_TOKEN="$BOT_TOKEN"
+          gh pr create --repo "$REPO" --head "$branch" --base main --title "chore: scoutens register $(date -u +%F)" \
+            --body "Automatisk scoutcykel: docs/opportunities/ och grundarnotis."
+          gh pr merge --repo "$REPO" "$branch" --auto --merge
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scout-${{ github.run_id }}
+          path: |
+            ai-enterprise/docs/opportunities/
+            ${{ runner.temp }}/scout.txt

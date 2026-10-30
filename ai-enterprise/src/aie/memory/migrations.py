@@ -1459,6 +1459,39 @@ MIGRATIONS: tuple[Migration, ...] = (
             "INSERT INTO web_attempt_usage (day, attempts) SELECT day, COUNT(*) FROM web_fetches GROUP BY day",
         ),
     ),
+    Migration(
+        version=37,
+        name="scout_register",
+        statements=(
+            # Opportunity Scout (Robin 2026-10-30): varje version av en möjlighet sparas (append-only).
+            # Senaste raden per nyckel är läget; varje statusbyte har ett skäl.
+            """
+            CREATE TABLE scout_entries (
+                id        INTEGER PRIMARY KEY,
+                key       TEXT NOT NULL CHECK (length(trim(key)) > 0),
+                version   INTEGER NOT NULL CHECK (version >= 1),
+                type      TEXT NOT NULL CHECK (type IN ('digital', 'pod', 'service', 'other')),
+                niche     TEXT NOT NULL,
+                title     TEXT NOT NULL,
+                status    TEXT NOT NULL CHECK (status IN ('new', 'researching', 'scored', 'proposed', 'approved',
+                                                          'testing', 'stopped', 'succeeded')),
+                data      TEXT NOT NULL,
+                reason    TEXT NOT NULL CHECK (length(trim(reason)) > 0),
+                actor     TEXT NOT NULL,
+                at        TEXT NOT NULL,
+                UNIQUE (key, version)
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER scout_entries_no_update BEFORE UPDATE ON scout_entries
+            BEGIN SELECT RAISE(ABORT, 'scoutregistret skrivs aldrig om; lägg till en ny version'); END
+            """,
+            """
+            CREATE TRIGGER scout_entries_no_delete BEFORE DELETE ON scout_entries
+            BEGIN SELECT RAISE(ABORT, 'scoutregistret raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

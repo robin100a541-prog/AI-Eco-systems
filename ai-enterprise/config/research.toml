@@ -24,6 +24,8 @@ allowed_hosts = [
   "checkoutpage.com",
   "discover.gumroad.com",
   "api.stackexchange.com",
+  "www.googleapis.com",
+  "openapi.etsy.com",
   "hn.algolia.com",
   "itch.io",
   "www.reddit.com",
