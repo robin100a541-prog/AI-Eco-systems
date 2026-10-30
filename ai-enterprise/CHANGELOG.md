@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
+### Tillagt
+- `reporting/monitor.py` (FR-24) läser revisionsloggen och ledgern och letar efter tre saker:
+  - loopar: samma agent gör samma sak 5 gånger i rad,
+  - upprepat arbete: samma åtgärd med samma underlag 3 gånger eller fler,
+  - kostnad utan värde: ett initiativ med kostnader men ingen intäkt, eller en agent som bara anropar modellen.
+- `reporting/periodic.py` (FR-22) täcker de tio punkterna i §58. Varje initiativ har samma nyckeltal, så att perioder och initiativ går att jämföra: netto, marginal, avkastning på kostnad, netto per dag och sämsta dag. Förlustinitiativ och övervakningsfynd blir rekommenderade förändringar, och saknade data står som `SAKNAS`.
+- `python -m aie report daily|periodic|monitor` läser bara. `simulate` sparar dessutom en periodisk rapport för hela körningen i `<data_dir>/reports/`.
+- Ingen migration behövdes, eftersom allt räknas om ur befintliga data. `tests/unit/test_periodic_report.py` har 5 tester.
+
 ## [Unreleased] — 2026-10-30 — Fas 6b-3: daglig rapport (FR-21, §57)
 ### Tillagt
 - `src/aie/reporting/daily.py`: de elva punkterna i §57 hämtas direkt ur ledgern, budgetmotorn, stop-loss, nödstoppet, skyddat läge, incidenter och godkännandeköerna. Saknade data står som `SAKNAS: <skäl>`, aldrig som en tyst nolla.

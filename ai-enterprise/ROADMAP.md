@@ -135,7 +135,7 @@ Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot 
 | 6b-1 Simulerat startkapital, marknad och scenarier (FR-20), migration 26, D-042 | Yorgo | ✅ PR #64 |
 | 6b-2 Åtgärdsprotokoll och arbetscykel, `python -m aie simulate` (FR-20, FR-23), D-043, D-044 | Yorgo | ✅ gren `yorgo/fas6b2-cykel` |
 | 6b-3 Daglig rapport och affärsförslag (FR-21, FR-23), D-045 | Robin (övertagen, D-049) | ✅ `reporting/daily.py`; FR-23 fanns i `simulation/actions.py` |
-| 6b-4 Övervakning och periodisk rapport (FR-24, FR-22), migration 27, D-046 | Yorgo | ☐ |
+| 6b-4 Övervakning och periodisk rapport (FR-24, FR-22), D-046 | Robin (övertagen, D-049) | ✅ `reporting/monitor.py`, `reporting/periodic.py`, `python -m aie report`; ingen migration behövdes |
 | 6b-5 Acceptanstester för §54, Fas 6 stängs | Yorgo | ☐ |
 
 ## Fas 7 — Kontrollerad pilot
