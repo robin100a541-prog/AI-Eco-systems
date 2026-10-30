@@ -16,12 +16,17 @@ from aie.governance.cli import build
 from aie.memory import Database
 from aie.monitoring import shutdown_logging
 from aie.pilot.cli import import_platform_sales, live
-from aie.pilot.product import RULE_IDEAS, parse_idea
+import json
+
+from aie.pilot.product import parse_idea
 from aie.pilot.writer import write_product
 from aie.system import build_system
 
 ROOT = Path(__file__).resolve().parents[2]
 CSV = ROOT / "tests" / "fixtures" / "gumroad" / "sales.csv"
+
+
+RULE_IDEAS = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "rule_ideas.json").read_text())
 
 
 class Fas7Pilot(unittest.TestCase):

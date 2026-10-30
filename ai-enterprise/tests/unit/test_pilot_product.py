@@ -11,13 +11,16 @@ from aie.llm import LLMGateway
 from aie.llm.providers import RuleProvider
 from aie.llm.router import ProviderRouter, QuotaLedger, Slot
 from aie.memory import Database
-from aie.pilot.decide import CEO, quality_report, run_cycle, should_object
-from aie.pilot.product import RULE_IDEAS, IdeaError, parse_idea, propose
+from aie.pilot.decide import CEO, run_cycle, should_object
+import json
+
+from aie.pilot.product import AgentStopped, IdeaError, parse_idea, propose
 from aie.pilot.writer import AI_DISCLOSURE, listing, write_product
 from aie.simulation.agents import ensure_org
 
 from .fixture_config import TEST_CONFIG
 
+RULE_IDEAS = json.loads((Path(__file__).resolve().parents[1] / "fixtures" / "rule_ideas.json").read_text())
 IDEAS = [dict(r) for r in RULE_IDEAS]
 
 
@@ -77,13 +80,16 @@ class TestProductAgent(PilotCase):
         self.assertEqual(first.net_per_sale_cents, 760)
         self.assertTrue(all(i.demand_status == "unverified" for i in ideas))
 
-    def test_inconsistent_numbers_fall_back_to_rules(self):
-        bad = [dict(i, expected_net_90d_usd=9999) for i in IDEAS]
-        ideas, log = propose(self.gateway(FakeModel(ideas=bad)))
-        self.assertEqual(log["source"], "rule")
-        self.assertEqual(len(log["rejected"]), 3)
-        self.assertEqual(len(ideas), 3)
+    def test_model_sums_are_ignored_so_rounding_never_rejects(self):
+        """Robin 2026-10-30: koden räknar; modellens summor används aldrig."""
+        odd = [dict(i, expected_net_90d_usd=9999) for i in IDEAS]
+        ideas, log = propose(self.gateway(FakeModel(ideas=odd)))
+        self.assertEqual(log["source"], "model")
+        self.assertEqual(ideas[0].net_per_sale_cents, 760)
 
+    def test_no_fallback_when_model_fails(self):
+        with self.assertRaises(AgentStopped):
+            propose(self.gateway(lambda req: "inget json"))
     def test_missing_fields_are_rejected(self):
         with self.assertRaises(IdeaError):
             parse_idea({"id": "x-y-z", "title": "t"})
@@ -96,31 +102,20 @@ class TestDecisionCycle(PilotCase):
         self.assertEqual(result.chosen.id, "frilans-fakturamall")
         self.assertTrue(all(r["valid"] for r in result.quality["roles"].values()))
 
-    def test_wrong_budget_is_rejected_and_rules_decide(self):
+    def test_budget_comes_from_code_not_model(self):
         ceo = {"idea_id": "frilans-fakturamall", "chosen_action": "a", "reasoning": "b", "evidence": ["c"],
                "budget_minor": 12345, "risk_class": "low", "expected_result": "d", "stop_conditions": "e",
-               "follow_up": "f", "expected_net_90d_usd": 76.0}
+               "follow_up": "f"}
         result, _ = self.cycle(FakeModel(ceo=ceo))
-        self.assertFalse(result.quality["roles"][CEO]["valid"])
-        self.assertIn("budget_minor", result.quality["roles"][CEO]["fallback"])
-        self.assertIsInstance(result.decision, Decision)
-
-    def test_risk_objection_opens_dispute_and_blocks_choice(self):
-        result, _ = self.cycle(FakeModel(cro_objects={"frilans-fakturamall"}))
-        self.assertEqual(len(result.disputes), 1)
-        self.assertNotEqual(result.chosen.id, "frilans-fakturamall")  # CEO:s val avvisades
-        self.assertFalse(result.quality["roles"][CEO]["valid"])
-
-    def test_missed_objection_is_flagged(self):
+        self.assertEqual(result.decision.budget_minor, 0)
+    def test_choosing_an_objected_idea_stops_without_fallback(self):
+        with self.assertRaises(AgentStopped):
+            self.cycle(FakeModel(cro_objects={"frilans-fakturamall"}))
+    def test_unknown_choice_stops_without_fallback(self):
         risky = parse_idea(dict(IDEAS[0], id="dyr-kurs", upfront_costs_usd=50))
         self.assertTrue(should_object(risky, self.config.risk, 10.5))
-        ideas = (risky, *propose(self.gateway(FakeModel()))[0][1:])
-        result, _ = self.cycle(FakeModel(ideas=[dict(IDEAS[0], id="dyr-kurs", upfront_costs_usd=50), *IDEAS[1:]]),
-                               ideas)
-        self.assertFalse(result.quality["risk_objection_correct"])
-        self.assertNotEqual(result.chosen.id, "dyr-kurs")
-        self.assertIn("Invändningarna räckte: nej", quality_report(result, {"source": "model"}, ideas))
-
+        with self.assertRaises(AgentStopped):
+            self.cycle(FakeModel(), (risky,))
 
 class TestWriter(unittest.TestCase):
     def test_files_and_pdf(self):

@@ -16,7 +16,7 @@ import textwrap
 from pathlib import Path
 
 from ..llm import ChatRequest, DataClass, Message
-from .product import AGENT, Idea
+from .product import AGENT, AgentStopped, Idea
 from .settings import SETTINGS
 
 AI_DISCLOSURE = ("Den här produkten är skriven med hjälp av AI (språkmodeller) och granskad av en människa "
@@ -33,40 +33,9 @@ def write_content(gateway, idea: Idea, data_class: DataClass = DataClass.PUBLIC)
         r = gateway.complete(AGENT, ChatRequest((Message("user", prompt),), data_class, 4_000))
         if len(r.text.strip()) >= MIN_CHARS:
             return r.text.strip() + "\n", f"model:{r.provider}/{r.model}"
-    except Exception:  # noqa: BLE001 — regelmallen används, och källan säger det
-        pass
-    return _rule_content(idea), "rule"
-
-
-def _rule_content(idea: Idea) -> str:
-    return textwrap.dedent(f"""\
-        # {idea.title}
-
-        > Regelmall: språkmodellen gav inget användbart svar, så det här är en stomme som en grundare fyller i.
-
-        ## För vem
-        {idea.target_customer}
-
-        ## Problemet
-        {idea.problem}
-
-        ## Så använder du den
-        1. Läs igenom hela dokumentet en gång.
-        2. Fyll i dina egna uppgifter där det står [fyll i].
-        3. Kontrollera allt som rör skatt och moms hos Skatteverket.
-
-        ## Checklista
-        - [ ] Dina uppgifter är ifyllda
-        - [ ] Momsen är kontrollerad
-        - [ ] Du har sparat en kopia
-
-        ## Vanliga fel
-        - Att glömma förfallodag eller betalningsvillkor.
-        - Att räkna moms fel.
-
-        ## Ansvarsfriskrivning
-        {AI_DISCLOSURE}
-        """)
+    except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+        raise AgentStopped(f"produktagenten skrev ingen produkt: {type(exc).__name__}: {exc}") from exc
+    raise AgentStopped("produktagenten skrev för lite text; ingen regelmall används")
 
 
 def listing(idea: Idea) -> str:
