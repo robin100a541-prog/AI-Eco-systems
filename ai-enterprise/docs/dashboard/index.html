@@ -1,121 +1,31 @@
 <!doctype html>
 <html lang="sv">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Eco Systems — kontoret</title>
-<style>
-  :root { --bg:#14161c; --panel:#1e2230; --ink:#e8e6df; --dim:#9aa0b0; --sim:#7fb3ff; --real:#7fe0a0; --warn:#ff8f6b; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 ui-monospace, Menlo, Consolas, monospace; }
-  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:12px 16px; }
-  h1 { font-size:16px; margin:0; letter-spacing:.5px; }
-  #banner { padding:4px 10px; border-radius:4px; background:var(--warn); color:#1a0d08; font-weight:bold; display:none; }
-  .wrap { padding:0 16px 16px; max-width:1200px; margin:0 auto; }
-  canvas { width:100%; height:auto; image-rendering:pixelated; background:#0f1116; border:2px solid #2b3042; border-radius:6px; display:block; }
-  .score { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:12px; }
-  .card { background:var(--panel); border-radius:6px; padding:10px 12px; }
-  .card h2 { font-size:13px; margin:0 0 6px; color:var(--dim); font-weight:normal; }
-  .row { display:flex; justify-content:space-between; }
-  .sim .v { color:var(--sim); } .real .v { color:var(--real); }
-  footer { color:var(--dim); font-size:12px; margin-top:10px; }
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#243d38">
+<title>AI Eco Systems — vår lilla värld</title>
+<link rel="stylesheet" href="world.css">
+<script defer src="world.js"></script>
 </head>
 <body>
-<header><h1>AI Eco Systems — kontoret</h1><span id="banner"></span><span id="time" style="color:var(--dim)"></span></header>
-<div class="wrap">
-  <canvas id="office" width="480" height="300"></canvas>
-  <div class="score">
-    <div class="card sim"><h2>SIMULERING (SIM)</h2><div id="sim"></div></div>
-    <div class="card real"><h2>RIKTIGA PENGAR (pilot)</h2><div id="real"></div></div>
-  </div>
-  <footer>Bara offentliga data (DR-13). SIM och riktiga pengar visas alltid var för sig. Uppdateras av den dagliga cykeln.</footer>
+<header class="topbar"><a class="brand" href="./"><span class="brand-icon">✳</span><span>AI ECO SYSTEMS<small>Ett litet samhälle. Stora idéer.</small></span></a><div class="mode"><i></i> SIMULERINGSVÄRLD</div><button id="refresh" class="outline">↻ Uppdatera data</button></header>
+<main>
+<section class="heading"><div><p class="eyebrow">VÄLKOMMEN TILL KONTORET</p><h1>Här bor idéerna<span>.</span></h1><p>Följ våra AI-kollegor genom deras arbetsdag.</p></div><div class="snapshot"><span id="connection">Hämtar status…</span><small id="time">Väntar på första ögonblicksbilden</small></div></section>
+<div id="alert" role="alert" hidden></div>
+<section class="stats" aria-label="Resultat"><article><span class="stat-icon green">◈</span><div><small>SIMULERAT KAPITAL</small><strong id="capital">–</strong></div></article><article><span class="stat-icon gold">↗</span><div><small>SIMULERAT RESULTAT</small><strong id="result">–</strong></div></article><article><span class="stat-icon purple">♙</span><div><small>KOLLEGOR I VÄRLDEN</small><strong id="population">–</strong></div></article><article><span class="stat-icon blue">⌂</span><div><small>AVDELNINGAR</small><strong id="departments">–</strong></div></article></section>
+<div class="workspace">
+<section class="map-card" aria-label="Den animerade AI-världen"><div class="map-toolbar"><div><span class="tiny-dot"></span><b>Ekobyn</b><span class="map-subtitle"> · vår gemensamma arbetsplats</span></div><div class="map-actions"><button id="labels" aria-pressed="true" title="Visa eller dölj pratbubblor">Pratbubblor</button><button id="pause" aria-pressed="false">Ⅱ Pausa</button></div></div>
+<div class="world-viewport"><svg id="world" viewBox="0 0 1000 740" role="group" aria-labelledby="world-title world-description"><title id="world-title">Ekobyn med avdelningshus och AI-agenter</title><desc id="world-description">En illustrerad värld. Använd agentlistan för att välja kollega och läsa rapporterad aktivitet.</desc>
+<defs><pattern id="grass" width="38" height="38" patternUnits="userSpaceOnUse"><rect width="38" height="38" fill="#b8d899"/><path d="M7 16l2-3 2 3m17 15 2-3 2 3" fill="none" stroke="#a8ca85" stroke-width="1.5"/></pattern><pattern id="water" width="34" height="18" patternUnits="userSpaceOnUse"><rect width="34" height="18" fill="#8fc9d0"/><path d="M3 9h10m8-4h8" stroke="#b9e2df" stroke-width="2" stroke-linecap="round"/></pattern><filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="6" stdDeviation="0" flood-color="#395a3d" flood-opacity=".14"/></filter></defs>
+<rect width="1000" height="740" fill="url(#grass)"/>
+<path d="M-30 609Q80 545 113 638T300 750H-30Z" fill="#a7c784"/><path d="M-35 620Q80 570 111 664T260 780H-35Z" fill="url(#water)" stroke="#dbdfb1" stroke-width="12"/>
+<g id="landscape"></g><g id="roads"></g><g id="buildings"></g><g id="plaza"></g><g id="agents"></g>
+<g transform="translate(918 686)" fill="#4b6e50"><circle r="24" fill="#f6f4db" opacity=".8"/><path d="M0-17l7 23-7-4-7 4Z"/><text y="40" text-anchor="middle" font-size="11" font-weight="700">N</text></g>
+</svg><div class="map-key"><span>✦ Klicka på en kollega eller ett hus</span><span>Rörelser & möten är illustrationer</span></div></div>
+<div class="map-footer"><span><i class="tiny-dot"></i> <span id="world-state">Läser status</span></span><span>Offentliga data · läsvy</span></div></section>
+<aside><section class="panel selected-panel"><p class="eyebrow">DIN UTVALDA KOLLEGA</p><div id="profile"><p>Välj en kollega på kartan.</p></div></section><section class="panel team-panel"><div class="section-title"><h2>Alla kollegor</h2><span id="team-count">0</span></div><div id="team" aria-label="Välj en agent"></div></section></aside>
 </div>
-<script>
-"use strict";
-const STATE_COLOR = { ACTIVE:"#5bd17a", TESTING:"#f2c14e", CREATED:"#9aa0b0", PROPOSED:"#6b7080",
-  PROBATION:"#ff9f43", SUSPENDED:"#e05656", RETIRED:"#555a66" };
-const ROOM_COLOR = ["#2a3350","#33294a","#28403a","#45322a","#2f3a45","#3d2f3f","#2d3f2b","#40402a"];
-const SKIN = ["#f1c27d","#e0ac69","#c68642","#8d5524","#ffdbac"];
-const cv = document.getElementById("office"), ctx = cv.getContext("2d");
-let status = null, sprites = [], rooms = {};
-
-function fmt(m, cur) { return m === null || m === undefined ? "–" : (m / 100).toLocaleString("sv-SE", {minimumFractionDigits:2, maximumFractionDigits:2}) + " " + cur; }
-function scoreHtml(s) {
-  if (!s) return '<div class="row"><span>Ingen pilotdata ännu</span></div>';
-  return ["capital_minor:Kapital","reserve_minor:Reserv","result_minor:Resultat"].map(p => {
-    const [k, label] = p.split(":"); return `<div class="row"><span>${label}</span><span class="v">${fmt(s[k], s.currency)}</span></div>`;
-  }).join("");
-}
-function hash(str) { let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
-
-function layout() {
-  const deps = status.departments, cols = Math.min(4, deps.length), rowsN = Math.ceil(deps.length / cols);
-  const w = Math.floor(cv.width / cols), h = Math.floor((cv.height - 20) / rowsN);
-  rooms = {};
-  deps.forEach((d, i) => { rooms[d] = { x:(i % cols) * w, y:20 + Math.floor(i / cols) * h, w, h, color:ROOM_COLOR[i % ROOM_COLOR.length] }; });
-  sprites = status.agents.map(a => {
-    const r = rooms[a.department] || Object.values(rooms)[0], seed = hash(a.id);
-    return { a, r, x:r.x + 10 + seed % (r.w - 30), y:r.y + 22 + (seed >> 3) % (r.h - 40), tx:0, ty:0, skin:SKIN[seed % SKIN.length], t:seed % 100 };
-  });
-  sprites.forEach(newTarget);
-}
-function newTarget(s) { s.tx = s.r.x + 8 + Math.random() * (s.r.w - 26); s.ty = s.r.y + 22 + Math.random() * (s.r.h - 40); }
-
-function drawRoom(name, r) {
-  ctx.fillStyle = r.color; ctx.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
-  ctx.fillStyle = "#0f1116"; ctx.fillRect(r.x + 2, r.y + 2, r.w - 4, 12);
-  ctx.fillStyle = "#c9cbd3"; ctx.font = "8px monospace"; ctx.fillText(name.toUpperCase(), r.x + 6, r.y + 11);
-  ctx.fillStyle = "#5a4630"; ctx.fillRect(r.x + r.w - 26, r.y + r.h - 18, 18, 8); // skrivbord
-}
-function drawMeeting() {
-  const x = cv.width / 2 - 20, y = 4;
-  ctx.fillStyle = "#7a5a3a"; ctx.fillRect(x, y + 4, 40, 8);
-  ctx.fillStyle = "#e8e6df"; ctx.font = "7px monospace"; ctx.fillText("MÖTE / TVIST", x - 6, y + 2 + 18);
-}
-function drawGrave(s) {
-  ctx.fillStyle = "#777c88"; ctx.fillRect(s.x, s.y + 2, 10, 12); ctx.fillRect(s.x + 1, s.y, 8, 2);
-  ctx.fillStyle = "#444"; ctx.fillRect(s.x + 4, s.y + 4, 2, 6); ctx.fillRect(s.x + 2, s.y + 6, 6, 2);
-}
-function drawSprite(s) {
-  const c = STATE_COLOR[s.a.state] || "#999", step = Math.floor(s.t / 8) % 2;
-  ctx.fillStyle = s.skin; ctx.fillRect(s.x + 2, s.y, 6, 5);            // huvud
-  ctx.fillStyle = c; ctx.fillRect(s.x + 1, s.y + 5, 8, 6);              // kropp i statusfärg
-  ctx.fillStyle = "#222"; ctx.fillRect(s.x + 2 + step, s.y + 11, 2, 3); ctx.fillRect(s.x + 6 - step, s.y + 11, 2, 3);
-  ctx.fillStyle = "#e8e6df"; ctx.font = "7px monospace"; ctx.fillText(s.a.name, s.x - 2, s.y + 21);
-}
-function drawBubble(s) {
-  const text = s.a.activity; ctx.font = "7px monospace";
-  const w = ctx.measureText(text).width + 6, x = Math.min(Math.max(2, s.x - w / 2 + 5), cv.width - w - 2), y = s.y - 12;
-  ctx.fillStyle = "#f5f3ea"; ctx.fillRect(x, y, w, 9); ctx.fillRect(s.x + 4, y + 9, 2, 2);
-  ctx.fillStyle = "#1a1a1a"; ctx.fillText(text, x + 3, y + 7);
-}
-function frame() {
-  ctx.fillStyle = "#0f1116"; ctx.fillRect(0, 0, cv.width, cv.height);
-  for (const [n, r] of Object.entries(rooms)) drawRoom(n, r);
-  if (status.meeting) drawMeeting();
-  for (const s of sprites) {
-    if (s.a.state === "RETIRED") { drawGrave(s); continue; }
-    const moving = ["ACTIVE", "TESTING", "PROBATION"].includes(s.a.state) && !status.kill_switch;
-    if (moving) {
-      const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy);
-      if (d < 1) newTarget(s); else { s.x += dx / d * 0.4; s.y += dy / d * 0.4; s.t++; }
-    }
-    drawSprite(s);
-  }
-  for (const s of sprites) if (s.a.state !== "RETIRED" && Math.floor((Date.now() / 1000 + hash(s.a.id)) % 8) < 5) drawBubble(s);
-  requestAnimationFrame(frame);
-}
-fetch("status.json", { cache:"no-store" }).then(r => r.json()).then(data => {
-  status = data;
-  document.getElementById("time").textContent = "uppdaterad " + data.generated_at;
-  const b = document.getElementById("banner"), alerts = [];
-  if (data.kill_switch) alerts.push("NÖDSTOPP"); if (data.protected_mode) alerts.push("SKYDDAT LÄGE");
-  if (alerts.length) { b.textContent = alerts.join(" · "); b.style.display = "inline-block"; }
-  document.getElementById("sim").innerHTML = scoreHtml(data.scoreboard.sim);
-  document.getElementById("real").innerHTML = scoreHtml(data.scoreboard.real);
-  layout(); frame();
-}).catch(err => { document.getElementById("time").textContent = "status.json kunde inte läsas: " + err; });
-</script>
-</body>
-</html>
+<section class="bottom-grid"><article class="panel"><div class="section-title"><h2>Senast rapporterat</h2><span class="tag">STATUSDATA</span></div><ul id="activities" class="activities"><li>Inväntar data…</li></ul></article><article class="panel reality"><span class="eyebrow">FRÅN SIMULERING TILL VERKLIGHET</span><h2>En trygg plats att testa idéer.</h2><p>Pengarna ovan är simulerade. Kartans rörelser och sociala möten är animationer; aktivitetstexterna kommer från systemets senaste rapport.</p><div id="real">Ingen pilotdata för riktiga pengar ännu.</div><small>Kontrollerar ny status var 15:e sekund. Systemet producerar status när den dagliga cykeln körs.</small></article></section>
+<footer>AI Eco Systems <span>Byggt för nyfikenhet, samarbete och mänsklig kontroll.</span></footer>
+</main>
+</body></html>

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Ekobyn
+- Instrumentpanelen är en tecknad by med avdelningshus, mötestorg, vandrande agenter, bestående aktivitetsbubblor, agentval och följkamera. Paus, tangentbord, minskad rörelse och mobil layout stöds.
+- Offentlig status hämtas var 15:e sekund; datatid och fel visas. Rörelser/sociala möten är uttryckligen illustrationer. Nödstopp och skyddat läge stoppar animationen; inga företagskommandon läggs till.
+- Åtta beroendefria Node-tester och separat dashboard-CI. Befintliga exporter-/cykeltester körda.
+
 ## [Unreleased] — 2026-10-30 — Fas 7a ombyggd: produktavdelningen
 ### Tillagt
 - Piloten med f-skatt-guide är stoppad (Robin). Produkten listas inte.
