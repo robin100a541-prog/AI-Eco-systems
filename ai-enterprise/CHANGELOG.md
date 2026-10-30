@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 6b-3: daglig rapport (FR-21, §57)
+### Tillagt
+- `src/aie/reporting/daily.py`: de elva punkterna i §57 hämtas direkt ur ledgern, budgetmotorn, stop-loss, nödstoppet, skyddat läge, incidenter och godkännandeköerna. Saknade data står som `SAKNAS: <skäl>`, aldrig som en tyst nolla.
+- `python -m aie simulate start|resume` skriver en rapport per affärsdag till `<data_dir>/reports/daily-ÅÅÅÅ-MM-DD.md`.
+- FR-23 (affärsförslagets elva fält) kontrollerades redan i `simulation/actions.py` (6b-2).
+- `tests/unit/test_daily_report.py`: 4 tester.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten: kontroller som faktiskt bevisar något
 ### Rättat
 - En ny eller omskriven kontroll som redan går igenom innan någon ändring gjorts avvisas, eftersom den inte bevisar något. Körning 9 lade till BL-006 med `!grep ... "__repr__"`, som var sann från början.

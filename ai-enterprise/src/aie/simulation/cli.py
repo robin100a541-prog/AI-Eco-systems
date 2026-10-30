@@ -72,6 +72,11 @@ def simulate(config_dir: Path, action: str, scenario: str | None = None, founder
             if cycle.paused:
                 print(f"PAUSAD: {cycle.paused}")
             net = compute_result(system.ledger.entries("SIM"), "SIM").net_minor
+            from ..reporting.daily import save_daily_reports
+
+            reports = save_daily_reports(system, config.system.data_dir)  # FR-21: en rapport per dag
+            if reports:
+                print(f"Dagliga rapporter: {len(reports)} st i {reports[0].parent}")
             check = system.audit.verify()
             print(f"Klar till dag {sim.last_day} av {sim.scenario.days}. Nettoresultat {net} SIM, "
                   f"reserverad skatt {system.tax.reserved_minor()} SIM, revisionslogg {'OK' if check.ok else 'TRASIG'}.")
