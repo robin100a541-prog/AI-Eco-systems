@@ -18,6 +18,7 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-007 (2 kravtäckning) I `register`‑metoden, lägg till en kontroll att `manager_id != agent_id` (en agent får inte vara sin egen chef). Klart när: `grep src/aie/agents/registry.py manager_id != agent_id` — öppen
 - [ ] BL-008 (5 dokumentation) Utöka docstringen för `AgentRegistry.register` med beskrivning av `reason`‑parametern och vilka fel som kan kastas. — öppen
 - [ ] BL-009 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` kastar `RegistryError` om `guard` saknar `transition_block_reason`. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_invalid` — öppen
+- [ ] BL-010 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` accepterar `None` utan att krascha. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_none` — öppen
 
 ## Pågår
 
