@@ -52,12 +52,13 @@ function buildHouses(departments) {
     b.append(svg("rect",{x:-70,y:-71,width:140,height:93,rx:6,fill:wall,stroke:"#698065","stroke-width":2}),svg("path",{d:"M-82-68L-61-124H57L82-68Z",fill:roof,stroke:"#5f735c","stroke-width":2,"stroke-linejoin":"round"}),svg("path",{d:"M-64-111H61M-71-95H68M-76-81H75",fill:"none",stroke:"#ffffff",opacity:".18","stroke-width":3}),svg("rect",{x:37,y:-147,width:16,height:38,rx:2,fill:wall,stroke:"#71805e","stroke-width":2}));
     [-44,36].forEach(x=>{b.append(svg("rect",{x,y:-52,width:24,height:29,rx:4,fill:"#88bac0",stroke:"#fdf4d8","stroke-width":5}),svg("path",{d:`M${x+12}-52v29m-12-14h24`,stroke:"#fdf4d8","stroke-width":2}));});
     b.append(svg("rect",{x:-13,y:-27,width:26,height:49,rx:12,fill:"#8b7658",stroke:"#6d7555","stroke-width":2}),svg("circle",{cx:6,cy:4,r:2,fill:"#ead596"}),svg("rect",{x:-22,y:22,width:44,height:8,rx:3,fill:"#e5d3a8"}),svg("circle",{cx:0,cy:-88,r:15,fill:"#fff3d6",stroke:"#6c795b","stroke-width":2}),svg("text",{x:0,y:-82,"text-anchor":"middle",fill:roof,"font-size":19,"font-weight":800},icon));
-    g.append(b,svg("rect",{x:-91,y:44,width:182,height:45,rx:10,fill:"#faf8e4",stroke:"#9caf87","stroke-width":1}),svg("text",{y:63,"text-anchor":"middle",class:"world-label"},name),svg("text",{y:78,"text-anchor":"middle",class:"world-caption"},sub));
+    const labelY=h.top?-182:44;
+    g.append(b,svg("rect",{x:-91,y:labelY,width:182,height:45,rx:10,fill:"#faf8e4",stroke:"#9caf87","stroke-width":1}),svg("text",{y:labelY+19,"text-anchor":"middle",class:"world-label"},name),svg("text",{y:labelY+34,"text-anchor":"middle",class:"world-caption"},sub));
     function pick(){const p=people.find(p=>p.a.department===h.id);if(p)select(p.a.id);}
     g.addEventListener("click",pick);g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick();}});$('buildings').append(g);
   }
   const plaza=$('plaza');
-  plaza.append(svg("ellipse",{cx:500,cy:370,rx:81,ry:49,fill:"#e3d2a7",stroke:"#f9eccb","stroke-width":5}),svg("ellipse",{cx:500,cy:359,rx:31,ry:16,fill:"#86b8bd",stroke:"#f4e6c6","stroke-width":6}),svg("path",{d:"M500 359v-26",stroke:"#eee8cc","stroke-width":9,"stroke-linecap":"round"}),svg("ellipse",{cx:500,cy:329,rx:17,ry:7,fill:"#aed8d4",stroke:"#eee8cc","stroke-width":4}),svg("text",{x:500,y:439,"text-anchor":"middle",class:"world-label"},"Mötestorget"));
+  plaza.append(svg("ellipse",{cx:500,cy:370,rx:81,ry:49,fill:"#e3d2a7",stroke:"#f9eccb","stroke-width":5}),svg("ellipse",{cx:500,cy:359,rx:31,ry:16,fill:"#86b8bd",stroke:"#f4e6c6","stroke-width":6}),svg("path",{d:"M500 359v-26",stroke:"#eee8cc","stroke-width":9,"stroke-linecap":"round"}),svg("ellipse",{cx:500,cy:329,rx:17,ry:7,fill:"#aed8d4",stroke:"#eee8cc","stroke-width":4}),svg("text",{x:500,y:416,"text-anchor":"middle",class:"world-label"},"Mötestorget"));
   [-1,1].forEach(n=>{plaza.append(svg("rect",{x:500+n*111-23,y:365,width:46,height:10,rx:3,fill:"#a88257",stroke:"#826e4e","stroke-width":2}),svg("path",{d:`M${500+n*111-17} 375v9m34-9v9`,stroke:"#826e4e","stroke-width":4}));});
 }
 function makePerson(a,i) {
