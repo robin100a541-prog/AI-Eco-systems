@@ -1,0 +1,50 @@
+[
+ {
+  "id": "frilans-fakturamall",
+  "title": "Fakturamall för svenska frilansare (F-skatt)",
+  "format": "template",
+  "target_customer": "Nya frilansare och enskilda firmor i Sverige",
+  "problem": "Vet inte vad en korrekt svensk faktura måste innehålla (moms, F-skatt, OCR, förfallodag)",
+  "demand_evidence": [
+   "antagande: många nya enskilda firmor varje år; ingen egen mätning"
+  ],
+  "price_usd": 9,
+  "upfront_costs_usd": 0,
+  "expected_sales_90d": 10,
+  "time_to_first_sale_days": 30,
+  "continue_criteria": "minst 3 försäljningar inom 60 dagar och återbetalningar under 10 %",
+  "stop_criteria": "ingen försäljning på 60 dagar, eller en återbetalning per tre försäljningar"
+ },
+ {
+  "id": "hushallsbudget-mall",
+  "title": "Hushållsbudget i kalkylark med sparmål",
+  "format": "template",
+  "target_customer": "Hushåll i Sverige som vill få koll på sina utgifter",
+  "problem": "Saknar en enkel budget på svenska med månadsflikar och sparmål",
+  "demand_evidence": [
+   "antagande: budgetmallar säljs på flera plattformar; ingen egen mätning"
+  ],
+  "price_usd": 5,
+  "upfront_costs_usd": 0,
+  "expected_sales_90d": 12,
+  "time_to_first_sale_days": 30,
+  "continue_criteria": "minst 4 försäljningar inom 60 dagar",
+  "stop_criteria": "ingen försäljning på 60 dagar"
+ },
+ {
+  "id": "f-skatt-guide",
+  "title": "Guide: starta enskild firma med F-skatt steg för steg",
+  "format": "pdf-guide",
+  "target_customer": "Personer som vill börja fakturera vid sidan av jobbet",
+  "problem": "Osäkra på registrering, F-skatt, moms och bokföring första året",
+  "demand_evidence": [
+   "antagande: vanlig fråga i forum; ingen egen mätning"
+  ],
+  "price_usd": 12,
+  "upfront_costs_usd": 0,
+  "expected_sales_90d": 8,
+  "time_to_first_sale_days": 30,
+  "continue_criteria": "minst 3 försäljningar inom 60 dagar",
+  "stop_criteria": "ingen försäljning på 60 dagar, eller återbetalningar över 15 %"
+ }
+]

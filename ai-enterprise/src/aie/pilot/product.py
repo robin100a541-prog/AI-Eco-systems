@@ -2,8 +2,8 @@
 
 Modellen svarar med JSON. Koden räknar själv alla pengar (plattformens avgift ur config/pilot.toml, netto per
 försäljning, förväntat netto och största förlust), så att modellens siffror aldrig används oprövade.
-Ett svar som saknar fält eller har siffror som inte stämmer avvisas, och då används regelförslagen
-(`RULE_IDEAS`). Efterfrågan är alltid `unverified` tills riktig försäljning finns (D-062, D-063):
+Ett svar som saknar fält avvisas. Det finns ingen reserv: håller inte svaret stoppas agenten och
+grundarna får frågan (Robin 2026-10-30). Modellens egna summor används aldrig; avrundning kan inte fälla en idé. Efterfrågan är alltid `unverified` tills riktig försäljning finns (D-062, D-063):
 en modell kan inte verifiera efterfrågan.
 """
 
@@ -24,7 +24,11 @@ REQUIRED = ("id", "title", "format", "target_customer", "problem", "demand_evide
 
 
 class IdeaError(ValueError):
-    """Förslaget är ofullständigt eller har siffror som inte stämmer."""
+    """Förslaget är ofullständigt."""
+
+
+class AgentStopped(RuntimeError):
+    """Modellen eller researchen gav inget användbart; ingen reserv används, grundarna avgör."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,36 +115,9 @@ def parse_idea(raw: dict) -> Idea:
                 raw["problem"].strip(), tuple(e.strip() for e in evidence), "unverified", price, upfront,
                 raw["expected_sales_90d"], raw["time_to_first_sale_days"], raw["continue_criteria"].strip(),
                 raw["stop_criteria"].strip())
-    claimed = raw.get("expected_net_90d_usd")
-    if claimed is not None and abs(_cents(abs(claimed), "expected_net_90d_usd") * (1 if claimed >= 0 else -1)
-                                   - idea.expected_net_90d_cents) > 100:
-        raise IdeaError(f"expected_net_90d_usd {claimed} stämmer inte med kodens beräkning "
-                        f"{idea.expected_net_90d_cents / 100:.2f}")
     return idea
 
 
-RULE_IDEAS = (
-    {"id": "frilans-fakturamall", "title": "Fakturamall för svenska frilansare (F-skatt)", "format": "template",
-     "target_customer": "Nya frilansare och enskilda firmor i Sverige",
-     "problem": "Vet inte vad en korrekt svensk faktura måste innehålla (moms, F-skatt, OCR, förfallodag)",
-     "demand_evidence": ["antagande: många nya enskilda firmor varje år; ingen egen mätning"],
-     "price_usd": 9, "upfront_costs_usd": 0, "expected_sales_90d": 10, "time_to_first_sale_days": 30,
-     "continue_criteria": "minst 3 försäljningar inom 60 dagar och återbetalningar under 10 %",
-     "stop_criteria": "ingen försäljning på 60 dagar, eller en återbetalning per tre försäljningar"},
-    {"id": "hushallsbudget-mall", "title": "Hushållsbudget i kalkylark med sparmål", "format": "template",
-     "target_customer": "Hushåll i Sverige som vill få koll på sina utgifter",
-     "problem": "Saknar en enkel budget på svenska med månadsflikar och sparmål",
-     "demand_evidence": ["antagande: budgetmallar säljs på flera plattformar; ingen egen mätning"],
-     "price_usd": 5, "upfront_costs_usd": 0, "expected_sales_90d": 12, "time_to_first_sale_days": 30,
-     "continue_criteria": "minst 4 försäljningar inom 60 dagar", "stop_criteria": "ingen försäljning på 60 dagar"},
-    {"id": "f-skatt-guide", "title": "Guide: starta enskild firma med F-skatt steg för steg", "format": "pdf-guide",
-     "target_customer": "Personer som vill börja fakturera vid sidan av jobbet",
-     "problem": "Osäkra på registrering, F-skatt, moms och bokföring första året",
-     "demand_evidence": ["antagande: vanlig fråga i forum; ingen egen mätning"],
-     "price_usd": 12, "upfront_costs_usd": 0, "expected_sales_90d": 8, "time_to_first_sale_days": 30,
-     "continue_criteria": "minst 3 försäljningar inom 60 dagar",
-     "stop_criteria": "ingen försäljning på 60 dagar, eller återbetalningar över 15 %"},
-)
 
 SYSTEM_PROMPT = (
     "Du är produktagenten i ett litet AI-företag. Föreslå exakt 3 digitala produkter (en PDF-guide eller en mall) "
@@ -149,8 +126,8 @@ SYSTEM_PROMPT = (
     "Svara ENDAST med JSON: {\"ideas\": [ {\"id\": \"slug\", "
     "\"title\": str, \"format\": \"pdf-guide\"|\"template\", \"target_customer\": str, \"problem\": str, "
     "\"demand_evidence\": [str], \"price_usd\": number, \"upfront_costs_usd\": number, \"expected_sales_90d\": int, "
-    "\"time_to_first_sale_days\": int, \"expected_net_90d_usd\": number, \"continue_criteria\": str, "
-    "\"stop_criteria\": str} ]}. expected_net_90d_usd = expected_sales_90d * (price - 10 % - 0,50) - upfront_costs. "
+    "\"time_to_first_sale_days\": int, \"continue_criteria\": str, "
+    "\"stop_criteria\": str} ]}. Räkna inga summor; koden räknar avgifter och netto. "
     "Skriv på svenska. Efterfrågan är ett antagande; påstå inte att den är verifierad."
 )
 
@@ -184,6 +161,5 @@ def propose(gateway, data_class: DataClass = DataClass.PUBLIC) -> tuple[tuple[Id
         if len(ideas) < 3:
             raise IdeaError(f"bara {len(ideas)} giltiga förslag av 3")
         return tuple(ideas[:3]), log
-    except Exception as exc:  # noqa: BLE001 — varje fel ger regelförslagen, och felet loggas
-        log.update(source="rule", reason=f"{type(exc).__name__}: {exc}")
-        return tuple(parse_idea(r) for r in RULE_IDEAS), log
+    except Exception as exc:  # noqa: BLE001 — ingen reserv: agenten stoppar och grundarna får frågan
+        raise AgentStopped(f"produktagenten stoppade: {type(exc).__name__}: {exc}") from exc

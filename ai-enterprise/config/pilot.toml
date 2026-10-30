@@ -19,3 +19,31 @@ date = ["purchase date", "sale date", "date", "created at"]
 price = ["sale price ($)", "sale price", "price", "price ($)"]
 fee = ["fees ($)", "gumroad fee", "fee", "fees"]
 refunded = ["refunded?", "refunded", "is refunded"]
+
+# Fas 7a (Robin 2026-10-30): plattformarnas avgifter i baspunkter (1 % = 100) och fast avgift i cent.
+# Koden räknar alla pengar; modellen ger bara pris och uppskattad försäljning.
+[fees.gumroad]
+percent_bp = 1000
+fixed_cents = 50
+[fees.etsy]
+percent_bp = 950      # 6,5 % transaktion + cirka 3 % betalning
+fixed_cents = 45      # 0,20 USD per annons + 0,25 USD betalning
+[fees.fiverr]
+percent_bp = 2000
+fixed_cents = 0
+[fees.payhip]
+percent_bp = 500
+fixed_cents = 0
+
+[discovery]
+min_ideas = 10
+min_signals = 2                    # minst två belagda signaler om efterfrågan per idé
+min_expected_value_cents = 15000   # förväntat netto på 90 dagar (USD-cent) som en idé måste nå
+max_fetches = 40                   # högst så många hämtningar per körning (research.toml har dagskvoten)
+# Sökadresser: {q} byts mot ett sökord ur founders.toml (URL-kodat).
+search_urls = [
+  "https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=votes&q={q}&site=video&pagesize=25",
+  "https://itch.io/search?q={q}",
+  "https://hn.algolia.com/api/v1/search?query={q}&hitsPerPage=20",
+  "https://www.etsy.com/search?q={q}",
+]

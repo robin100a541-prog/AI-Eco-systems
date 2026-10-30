@@ -171,7 +171,7 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
     rep.add_argument("--to", dest="end", help="periodic: sista dagen")
     pl = add("pilot", "Fas 7-piloten: ideas, prepare, approve eller status")
-    pl.add_argument("action", choices=("ideas", "prepare", "approve", "status"))
+    pl.add_argument("action", choices=("ideas", "discover", "prepare", "approve", "status"))
     pl.add_argument("request_id", type=int, nargs="?", help="approve: förfrågans nummer i godkännandekön")
     pl.add_argument("--as", dest="founder", help="vilken grundare som kör")
     pl.add_argument("--product", type=Path, help="prepare/status: produktmappen (products/<id>)")
@@ -289,6 +289,10 @@ def _pilot(args: argparse.Namespace) -> int:
     if args.action == "prepare" and not args.product or args.action == "approve" and args.request_id is None:
         print("FEL: prepare kräver --product och approve ett förfrågans nummer", file=sys.stderr)
         return 1
+    if args.action == "discover":
+        from .pilot.cli import discover
+
+        return discover(args.config_dir, args.founder, args.agents, args.report or Path("docs/reports/7a-opportunities.md"))
     if args.action != "ideas":
         return live(args.config_dir, args.action, args.founder, args.product, args.request_id)
     return ideas(args.config_dir, args.founder, args.agents, args.usd_sek, args.out, args.report)
