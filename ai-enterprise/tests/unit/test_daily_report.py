@@ -36,8 +36,11 @@ class TestDailyReport(SystemCase):
         values = dict(report.points)
         for point in ("Intäkter under perioden", "Kostnader under perioden",
                       "Realiserad nettovinst eller nettoförlust"):
-            self.assertTrue(values[point].startswith("SAKNAS: inga poster"), values[point])
+            self.assertTrue(values[point].startswith("SAKNAS: ledgern har inga poster"), values[point])
         self.assertIn("Data saknas för", report.render())
+        self.book("in-1", "finance", EntryType.CAPITAL_IN, 1_000)
+        quiet = dict(daily_report(self.system, "2999-01-01").points)  # en dag utan affärer efter start
+        self.assertEqual(quiet["Kostnader under perioden"], "0 SIM (inga poster under dagen)")
 
     def test_stops_and_incidents_are_reported(self):
         """Verifies FR-21: nödstopp syns som risk och som kritiskt fel (incident)."""
