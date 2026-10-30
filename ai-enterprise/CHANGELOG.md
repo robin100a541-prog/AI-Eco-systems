@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
+### Tillagt
+- `reporting/monitor.py` (FR-24) läser revisionsloggen och ledgern och letar efter tre saker:
+  - loopar: samma agent gör samma sak 5 gånger i rad,
+  - upprepat arbete: samma åtgärd med samma underlag 3 gånger eller fler,
+  - kostnad utan värde: ett initiativ med kostnader men ingen intäkt, eller en agent som bara anropar modellen.
+- `reporting/periodic.py` (FR-22) täcker de tio punkterna i §58. Varje initiativ har samma nyckeltal, så att perioder och initiativ går att jämföra: netto, marginal, avkastning på kostnad, netto per dag och sämsta dag. Förlustinitiativ och övervakningsfynd blir rekommenderade förändringar, och saknade data står som `SAKNAS`.
+- `python -m aie report daily|periodic|monitor` läser bara. `simulate` sparar dessutom en periodisk rapport för hela körningen i `<data_dir>/reports/`.
+- Ingen migration behövdes, eftersom allt räknas om ur befintliga data. `tests/unit/test_periodic_report.py` har 5 tester.
+
+## [Unreleased] — 2026-10-30 — Fas 6b-3: daglig rapport (FR-21, §57)
+### Tillagt
+- `src/aie/reporting/daily.py`: de elva punkterna i §57 hämtas direkt ur ledgern, budgetmotorn, stop-loss, nödstoppet, skyddat läge, incidenter och godkännandeköerna. Saknade data står som `SAKNAS: <skäl>`, aldrig som en tyst nolla.
+- `python -m aie simulate start|resume` skriver en rapport per affärsdag till `<data_dir>/reports/daily-ÅÅÅÅ-MM-DD.md`.
+- FR-23 (affärsförslagets elva fält) kontrollerades redan i `simulation/actions.py` (6b-2).
+- `tests/unit/test_daily_report.py`: 4 tester.
+
 ## [Unreleased] — 2026-10-28 — Utvecklaragenten: kontroller som faktiskt bevisar något
 ### Rättat
 - En ny eller omskriven kontroll som redan går igenom innan någon ändring gjorts avvisas, eftersom den inte bevisar något. Körning 9 lade till BL-006 med `!grep ... "__repr__"`, som var sann från början.
