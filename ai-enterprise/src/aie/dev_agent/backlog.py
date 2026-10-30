@@ -156,3 +156,26 @@ def add_check(project: Path, key: str, checks: tuple[Check, ...]) -> str | None:
             path.write_text("".join(lines), encoding="utf-8")
             return clause
     return None
+
+
+def mark_done(project: Path, key: str, note: str) -> bool:
+    """Flyttar en klar punkt till "## Klart" som `- [x] ... — klar (note)`, så att den inte tas igen."""
+    path = project / BACKLOG_FILE
+    if not path.is_file():
+        return False
+    lines = path.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        m = _ITEM.match(line)
+        if m and m.group(1) == key:
+            done = f"- [x] {key} {m.group(3).strip()} — klar ({note})"
+            del lines[i]
+            text = "\n".join(lines) + "\n"
+            if "\n## Klart" in text:
+                head, tail = text.split("\n## Klart", 1)
+                tail = tail.replace("\n_Inget ännu._\n", "\n", 1)
+                text = f"{head}\n## Klart\n\n{done}" + ("\n" + tail.lstrip("\n") if tail.strip() else "\n")
+            else:
+                text += f"\n## Klart\n\n{done}\n"
+            path.write_text(text, encoding="utf-8")
+            return True
+    return False

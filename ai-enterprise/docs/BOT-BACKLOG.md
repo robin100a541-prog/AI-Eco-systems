@@ -14,7 +14,6 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-003 (2 kravtäckning) FR-14, FR-26 och DR-02, DR-04, DR-06, DR-08, DR-09, DR-10, DR-11 saknar test som nämner dem (2026-10-28). En PR per krav eller per liten grupp. Krav som hör till en fas som inte är byggd (Fas 7 eller senare) noteras här i stället Klart när: `verifies FR-14`, `verifies FR-26`, `verifies DR-02`, `verifies DR-04`, `verifies DR-06`, `verifies DR-08`, `verifies DR-09`, `verifies DR-10`, `verifies DR-11` — öppen
 - [ ] BL-004 (4 kodkvalitet) `ruff check src tests` ger 78 fynd (2026-10-28), varav 35 `I001` (osorterade importer). Rätta bara `I001`, med `ruff check --select I001 --fix`. Testerna ska vara oförändrade och gröna före och efter. Övriga regler blir egna punkter — öppen
 - [ ] BL-005 (5 dokumentation) `PROJECT_STATUS.md` och `ROADMAP.md` anger testantal från olika tillfällen. Kör sviten, uppdatera siffrorna till dagens riktiga antal och kontrollera att varje kommando i `docs/setup.md` fungerar som beskrivet — öppen
-- [ ] BL-006 (4 kodkvalitet) Lägg till en `__repr__`‑metod på `Agent` för tydligare debugging. Klart när: `grep src/aie/agents/registry.py def __repr__` — öppen
 - [ ] BL-007 (2 kravtäckning) I `register`‑metoden, lägg till en kontroll att `manager_id != agent_id` (en agent får inte vara sin egen chef). Klart när: `grep src/aie/agents/registry.py manager_id != agent_id` — öppen
 - [ ] BL-008 (5 dokumentation) Utöka docstringen för `AgentRegistry.register` med beskrivning av `reason`‑parametern och vilka fel som kan kastas. — öppen
 - [ ] BL-009 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` kastar `RegistryError` om `guard` saknar `transition_block_reason`. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_invalid` — öppen
@@ -25,4 +24,4 @@ _Inget._
 
 ## Klart
 
-_Inget ännu._
+- [x] BL-006 (4 kodkvalitet) Lägg till en `__repr__`‑metod på `Agent` för tydligare debugging. Klart när: `grep src/aie/agents/registry.py def __repr__` — klar (2026-10-29, #104)

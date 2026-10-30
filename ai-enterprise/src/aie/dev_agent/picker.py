@@ -194,6 +194,19 @@ def uncheckable(root: Path) -> list[Item]:
     return [i for i in backlog_items(root) if not i.checks and i.key not in skip]
 
 
+def already_done(root: Path, candidates: list[Item]) -> set[str]:
+    """Backloggpunkter vars kontroll redan går igenom (gjorda men inte avbockade); tas inte igen."""
+    from .verify import Verifier
+
+    verifier = Verifier(root)
+    return {
+        i.key
+        for i in candidates
+        if i.kind == "backlog" and i.checks and all(c.kind in ("grep", "!grep") for c in i.checks)
+        and verifier.verify(i.checks)[0]
+    }
+
+
 def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
     """Kandidater med en kontroll, lättast först, utan de som misslyckats för många gånger eller är frågor.
 
@@ -205,7 +218,7 @@ def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
         + ruff_items(root)
         + requirement_items(root)
     )
-    skip = escalated(root)
+    skip = escalated(root) | already_done(root, candidates)
     keep = [
         i
         for i in candidates
