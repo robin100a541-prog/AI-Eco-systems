@@ -14,6 +14,7 @@ from aie.ledger import Approval, EntryDraft, EntryType, Status
 from aie.memory import Database
 from aie.monitoring import shutdown_logging
 from aie.system import build_system
+from .evidence import evidence
 
 ROOT = Path(__file__).resolve().parents[2]
 S = AgentState
@@ -55,7 +56,7 @@ class SystemCase(unittest.TestCase):
         for status in ("investigated", "reviewed"):
             register.record("robin", "platform", platform, status, data, "test")
             register.record("robin", "initiative", key, status, item, "test")
-        a = register.assessments.record("robin", key, platform, item, data, {"test": True}, True)  # D-058
+        a = register.assessments.record("robin", key, platform, item, data, evidence(), True)  # D-058
         register.assessments.approve("robin", a.assessment_id, "test")
         register.record("robin", "platform", platform, "approved", data, "test")
         register.record("robin", "initiative", key, "approved", item, "test")

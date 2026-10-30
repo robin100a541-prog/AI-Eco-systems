@@ -24,7 +24,7 @@ eller `set PYTHONPATH=src` (Windows).
 2. Gör om PDF:en: `python -c "from pathlib import Path; from aie.pilot.writer import write_pdf; d=Path('products/f-skatt-guide'); write_pdf((d/'product.md').read_text(), d/'product.pdf')"`.
 3. Öppna `product.pdf` och läs den. Ta bort raden "INTE KLAR ATT LISTA" i `GRANSKNING.md`. Gör en PR.
 
-## 4. Skapa Gumroad-kontot (en grundare, i eget namn)
+## 4. Skapa Gumroad-kontot (KLART 2026-10-30: konto skapat, AI-regler lästa)
 1. Gå till gumroad.com och skapa ett konto med din e-post. Verifiera kontot och lägg in utbetalningsuppgifter.
 2. Läs Gumroads villkor och reglerna om AI-innehåll. Godkänn bara om de tillåter produkten.
 3. Sätt undan **500 kr** som pilotens kapital. Mer får inte användas (START_CAPITAL).

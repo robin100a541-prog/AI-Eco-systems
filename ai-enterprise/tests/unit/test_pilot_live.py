@@ -127,3 +127,22 @@ class TestStops(PilotLive):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReviewFindings(PilotLive):
+    def test_n3_agent_decision_with_same_text_is_not_an_approval(self):
+        """Granskning N3: bara grundarens godkännande i kön räknas, aldrig en fritextträff."""
+        from aie.governance import DecisionDraft, RiskClass
+        from aie.pilot.live import approval
+
+        code, text = self.run_cli(live, self.config_dir, "prepare", "robin", self.product, None, root=self.root)
+        system = self.system()
+        gov = build(load_config(self.root / "config"), system.db, self.root / "config")
+        task = gov.board.create("robin", "annan uppgift", "")
+        gov.board.assign("robin", task.task_id, "ceo-1", "")
+        gov.decisions.record("ceo-1", task.task_id, DecisionDraft(
+            "Starta piloten pilot-f-skatt-guide: falskt", "x", ("task:1",), 0, RiskClass.LOW, "x", "x", "x"))
+        self.assertIsNone(approval(system.db, "pilot-f-skatt-guide"))
+        code, text = self.importing(net=None)
+        self.assertEqual(code, 1)
+        self.assertIn("inte godkänd", text)

@@ -11,6 +11,7 @@ from aie.registry.cli import _print_dependency
 
 from .test_registry import INITIATIVE, PLATFORM, RegisterCase
 from .test_simulation import SimCase
+from .evidence import evidence
 
 LIMITS = SimpleNamespace(currency="SIM", max_platform_revenue_share=Decimal(60), min_active_platforms=2)
 
@@ -57,7 +58,7 @@ class GuardCase(RegisterCase):
         for status in ("investigated", "reviewed"):
             self.register.record("yorgo", "initiative", key, status, data, "test")
         a = self.register.assessments.record("yorgo", key, platform, data, self.register.get("platform", platform).data,
-                                             {"test": True}, True)
+                                             evidence(), True)
         self.register.assessments.approve("yorgo", a.assessment_id, "ok")
         if approve:
             if self.register.get("platform", platform).status == "reviewed":

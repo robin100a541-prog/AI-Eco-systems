@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Granskningens high-fynd åtgärdade
+### Tillagt
+- N1: en nekad utgift raderar inte längre skyddat läge, nödstopp eller incidenter.
+- N2: stop-loss gäller före varje utgift, inte bara i tick().
+- N3: pilotens godkännande kommer bara från grundarens godkännande i kön.
+- H5: en bedömning är redo bara med simuleringsbevis. Se `docs/reviews/FIXES-2026-10-30.md`.
 ## [Unreleased] — 2026-10-30 — isolerad driftskontroll
 - company-daily har ett manuellt verify_only-läge (standard på) som kör två separata SIM-processer utan hemligheter, cacheändringar, rapport-PR eller Pages. Schemat och den vanliga driftvägen är oförändrade.
 - `scripts/verify_daily_cycle.py` provar återupptagning, två rapporter, revisionskedja och offentlig SIM-status i en temporär mapp. Lokalt test godkänt; GitHub-körningen dokumenteras i PR:en.

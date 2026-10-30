@@ -222,6 +222,12 @@
 ## Pilotimport: rättning 2026-10-30 (Codex)
 - H1–H3 och M2 i den tekniska granskningen har implementation och 10 regressionstester: atomär import, separata returer, händelsedatum, ledgeravstämning och idempotenta incidenter. Hela sviten: 746 OK (Python 3.15.0). Detta är inte oberoende godkännande för riktiga pengar; övriga fynd i granskningen kvarstår.
 
+## Ändrat 2026-10-30 (Granskningens high-fynd åtgärdade)
+- N1: en nekad utgift raderar inte längre skyddat läge, nödstopp eller incidenter.
+- N2: stop-loss gäller före varje utgift, inte bara i tick().
+- N3: pilotens godkännande kommer bara från grundarens godkännande i kön.
+- H5: en bedömning är redo bara med simuleringsbevis. Se `docs/reviews/FIXES-2026-10-30.md`.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
