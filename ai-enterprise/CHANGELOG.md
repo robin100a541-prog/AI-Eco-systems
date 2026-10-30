@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — M5: atomär kvot för alla webbförsök
+- Migration 36 inför web_attempt_usage, initierad konservativt från tidigare lagrade försök. Kvoten reserveras i en skrivtransaktion före DNS/HTTP; fel, ogiltiga adresser och avbrott räknas också. Samtidiga anrop kan inte ta samma sista försök.
+- Kvoten gäller fetch-försök. Varje försök kan göra robots.txt- och redirect-anrop inom befintliga storleks-, tids- och redirectgränser; inga konfigurerade kvotvärden höjs.
+- 759 tester OK på basen före PR #129 (Python 3.15.0), inklusive tre nya fel-/datum-/samtidighetstester utan riktigt nätverk.
+
 ## [Unreleased] — 2026-10-30 — M3/M4: lokal modell och skattebetalningsåterförsök
 - Ollama med intern data accepterar bara loopback/localhost utan inloggningsuppgifter, query eller fragment. Felaktig remote-endpoint nekas både av leverantören och konfigurationsladdaren före transport.
 - Skattebetalningens kassapost och spår/år sparas i en transaktion. `payment_id` binder återförsök till samma betalning; äldre anrop använder spår/år/kvitto som identitet. Olika betalningar måste ha olika externa referenser eller kvitton. Ingen bankbetalning utförs av funktionen.
