@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Fas 7a/7c: produktagent och beslutscykel
+### Tillagt
+- `python -m aie pilot ideas`: produktagenten föreslår tre produkter via LLMGateway; koden räknar Gumroads avgift (10 % + 0,50 USD), netto, förväntat netto och största förlust, och efterfrågan är alltid overifierad.
+- CFO och risk bedömer, en tvist öppnas och eskaleras till CEO när de är oense (§21), och CEO:s beslut med alla åtta fält i §20 steg 7 skrivs i beslutsloggen via godkännandekön.
+- Varje modellsvar valideras i kod (fält, budget mot största förlust, förväntat netto, risk som borde invänt). Ett felaktigt svar avvisas och regeln används; 7c-rapporten visar varje roll.
+- Den valda produkten skrivs till `products/<id>/`: product.md, product.pdf (stdlib), listing.md med upplysning om AI-användning och idea.json.
+- Workflowen `pilot-groq.yml` kör allt på Groq vid knapptryck.
+- Plattformens namn, avgift och CSV-kolumner ligger i `config/pilot.toml`, inte i koden (D-056).
 ## [Unreleased] — 2026-10-30 — Fas 7 steg 1: oberoende granskning
 ### Tillagt
 - `docs/reviews/REVIEW-PROMPT.md`: den exakta prompten för en ny Claude-session som granskar säkerhetskritisk kod (D-055). Ingen granskning finns ännu; det är en grundaråtgärd.
