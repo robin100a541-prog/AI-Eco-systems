@@ -136,7 +136,7 @@ Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot 
 | 6b-2 Åtgärdsprotokoll och arbetscykel, `python -m aie simulate` (FR-20, FR-23), D-043, D-044 | Yorgo | ✅ gren `yorgo/fas6b2-cykel` |
 | 6b-3 Daglig rapport och affärsförslag (FR-21, FR-23), D-045 | Robin (övertagen, D-049) | ✅ `reporting/daily.py`; FR-23 fanns i `simulation/actions.py` |
 | 6b-4 Övervakning och periodisk rapport (FR-24, FR-22), D-046 | Robin (övertagen, D-049) | ✅ `reporting/monitor.py`, `reporting/periodic.py`, `python -m aie report`; ingen migration behövdes |
-| 6b-5 Acceptanstester för §54, Fas 6 stängs | Yorgo | ☐ |
+| 6b-5 Acceptanstester för §54, Fas 6 stängs | Robin (övertagen, D-049) | ✅ `tests/acceptance/test_fas6.py` |
 
 ## Fas 7 — Kontrollerad pilot
 Kräver: Fas 1–6 godkända, Q-03…Q-05 och Q-07 besvarade, §25-parametrar satta, nödstopp testat, skattespår för pilotens intäkter bekräftat med Skatteverket.
