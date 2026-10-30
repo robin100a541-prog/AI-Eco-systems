@@ -3,6 +3,10 @@
 ## [Unreleased] — 2026-10-30 — isolerad driftskontroll
 - company-daily har ett manuellt verify_only-läge (standard på) som kör två separata SIM-processer utan hemligheter, cacheändringar, rapport-PR eller Pages. Schemat och den vanliga driftvägen är oförändrade.
 - `scripts/verify_daily_cycle.py` provar återupptagning, två rapporter, revisionskedja och offentlig SIM-status i en temporär mapp. Lokalt test godkänt; GitHub-körningen dokumenteras i PR:en.
+## [Unreleased] — 2026-10-30 — M5: atomär kvot för alla webbförsök
+- Migration 36 inför web_attempt_usage, initierad konservativt från tidigare lagrade försök. Kvoten reserveras i en skrivtransaktion före DNS/HTTP; fel, ogiltiga adresser och avbrott räknas också. Samtidiga anrop kan inte ta samma sista försök.
+- Kvoten gäller fetch-försök. Varje försök kan göra robots.txt- och redirect-anrop inom befintliga storleks-, tids- och redirectgränser; inga konfigurerade kvotvärden höjs.
+- 759 tester OK på basen före PR #129 (Python 3.15.0), inklusive tre nya fel-/datum-/samtidighetstester utan riktigt nätverk.
 
 ## [Unreleased] — 2026-10-30 — M3/M4: lokal modell och skattebetalningsåterförsök
 - Ollama med intern data accepterar bara loopback/localhost utan inloggningsuppgifter, query eller fragment. Felaktig remote-endpoint nekas både av leverantören och konfigurationsladdaren före transport.

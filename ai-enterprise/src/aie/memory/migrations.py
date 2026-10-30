@@ -1450,6 +1450,15 @@ MIGRATIONS: tuple[Migration, ...] = (
             "ALTER TABLE spend_approvals ADD COLUMN category TEXT",
         ),
     ),
+    Migration(
+        version=36,
+        name="web_attempt_quota",
+        statements=(
+            "CREATE TABLE web_attempt_usage (day TEXT PRIMARY KEY, attempts INTEGER NOT NULL CHECK (attempts >= 0)) STRICT",
+            # Conservatively count every stored attempt from before this migration.
+            "INSERT INTO web_attempt_usage (day, attempts) SELECT day, COUNT(*) FROM web_fetches GROUP BY day",
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
