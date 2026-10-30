@@ -152,4 +152,6 @@ Arbetspunkter (Fas 7 startad av Robin 2026-10-30, masterprompten). Oberoende gra
 ## Fas 8 — Kontinuerlig drift
 Återkommande cykel enligt §56, statusrapport per cykel.
 
+- [x] **Daglig drift** (`company-daily.yml`, `aie daily-cycle`): en cykel per dygn, rapporter §57/§58, nödstopp via fil, notis till grundarna (byggt 2026-10-30).
+- [x] **Instrumentpanel** (`docs/dashboard/`, `aie export-status`): pixelkontor via GitHub Pages; Pages slås på av en grundare (byggt 2026-10-30).
 - [ ] **8a Plattformsgränser till fullt läge (D-059):** när Fas 8 startar ändras `config/risk_limits.toml` till `MIN_ACTIVE_PLATFORMS = 2` och `MAX_PLATFORM_REVENUE_SHARE = 60` (PR med `founder-approved`).

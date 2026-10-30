@@ -191,6 +191,14 @@
 - Stoppregler på riktiga data: stop-loss, ingen försäljning på 60 dagar eller en återbetalning per tre försäljningar sätter skyddat läge (inga nya utgifter) och rekommenderar avpublicering.
 - Piloten kräver ett godkännande innan försäljning kan importeras.
 
+## Ändrat 2026-10-30 (Fas 8: daglig drift och instrumentpanel)
+- `aie daily-cycle` och workflowen `company-daily.yml` kör en företagscykel per dygn (§56). Med `GROQ_API_KEY` används Groq-agenter, annars skriptade agenter. Groqs kvot räknas i databasen, som sparas i cachen.
+- Varje dygn skrivs en daglig rapport (§57) till `docs/reports/daily/`, och på måndagar en veckorapport (§58) till `docs/reports/periodic/`. Ändringarna går in via en PR med auto-merge.
+- Nödstopp i CI: filen `docs/KILL-SWITCH` slår på nödstoppet i databasen. Skyddat läge och stop-loss gäller som vanligt.
+- När något väntar på en grundare skriver cykeln en notis i `QUESTIONS-FOR-FOUNDERS.md` och tar bort den när det är klart.
+- `aie export-status` skriver `docs/dashboard/status.json`. Den innehåller bara vitlistade offentliga fält (DR-13), och exporten stoppas om ett värde ser ut som en hemlighet.
+- `docs/dashboard/index.html` är ett pixelkontor utan externa bibliotek: ett rum per departement, gående agenter med fasta förnamn (migration 33), pratbubblor, färg efter status, gravsten för RETIRED, mötesbord vid tvist och en poängtavla där SIM och riktiga pengar visas var för sig. Sidan publiceras via GitHub Pages.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|

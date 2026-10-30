@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-10-30T12:24:08+00:00",
+  "classification": "public",
+  "departments": [
+    "audit",
+    "compliance",
+    "executive",
+    "finance",
+    "research",
+    "risk"
+  ],
+  "agents": [
+    {
+      "id": "audit-1",
+      "name": "Astrid",
+      "role": "auditor",
+      "department": "audit",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "ceo-1",
+      "name": "Bertil",
+      "role": "ceo",
+      "department": "executive",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "cfo-1",
+      "name": "Cecilia",
+      "role": "cfo",
+      "department": "finance",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "comp-1",
+      "name": "David",
+      "role": "compliance",
+      "department": "compliance",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "cro-1",
+      "name": "Elsa",
+      "role": "cro",
+      "department": "risk",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "lead-1",
+      "name": "Filip",
+      "role": "research_lead",
+      "department": "research",
+      "state": "ACTIVE",
+      "activity": "väntar"
+    },
+    {
+      "id": "res-1",
+      "name": "Greta",
+      "role": "researcher",
+      "department": "research",
+      "state": "ACTIVE",
+      "activity": "gör en prognos"
+    }
+  ],
+  "meeting": false,
+  "kill_switch": false,
+  "protected_mode": false,
+  "scoreboard": {
+    "sim": {
+      "currency": "SIM",
+      "capital_minor": 71805,
+      "reserve_minor": 10000,
+      "result_minor": 21805
+    },
+    "real": null
+  }
+}

@@ -1,0 +1,98 @@
+# Fas 8 (masterprompten 2026-10-30): en företagscykel per dygn (§56), gratis.
+# - Kör en simulerad dag (SIM) med Groq-agenter om GROQ_API_KEY finns, annars skriptade agenter.
+#   Groqs kvot räknas i databasen (sparas mellan körningar i cachen); när den är slut pausas agenterna.
+# - Nödstopp: finns ai-enterprise/docs/KILL-SWITCH slås nödstoppet på i databasen och agenterna gör ingenting.
+#   Skyddat läge och stop-loss gäller som vanligt.
+# - Skriver daglig rapport (§57), på måndagar en veckorapport (§58), status.json för instrumentpanelen och en
+#   notis i QUESTIONS-FOR-FOUNDERS.md när något väntar på en grundare. Ändringarna går in via en PR med auto-merge.
+# - Publicerar instrumentpanelen på GitHub Pages (kräver att en grundare slår på Pages med källan "GitHub Actions").
+name: company-daily
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: company-daily
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bara sim
+        run: |
+          python -c "from aie.config import load_config; c = load_config('config'); assert c.system.environment == 'sim' and c.risk.currency == 'SIM'"
+      - name: Hämta företagets databas
+        uses: actions/cache/restore@v4
+        with:
+          path: ai-enterprise/data
+          key: company-${{ github.run_id }}
+          restore-keys: company-
+      - name: Företagscykel
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          agents=scripted
+          if [ -n "$GROQ_API_KEY" ]; then agents=groq; fi
+          python -m aie init
+          python -m aie daily-cycle --as robin --agents "$agents" 2>&1 | tee "$RUNNER_TEMP/cycle.txt"
+      - name: Spara företagets databas
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ai-enterprise/data
+          key: company-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Sammanfattning
+        if: always()
+        run: { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: PR med rapporter och status
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then echo "BOT_TOKEN saknas; ingen PR"; exit 0; fi
+          git add docs/reports docs/dashboard/status.json docs/QUESTIONS-FOR-FOUNDERS.md
+          if git diff --cached --quiet; then echo "inget nytt"; exit 0; fi
+          branch="claude/daily-$(date -u +%Y%m%d)"
+          git -c user.name="ai-enterprise-bot" -c user.email="bot@users.noreply.github.com" \
+            commit -q -m "chore: daglig cykel $(date -u +%F) (rapporter och status)"
+          git -c core.hooksPath=/dev/null push -q "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${branch}"
+          export GH_TOKEN="$BOT_TOKEN"
+          gh pr create --repo "$REPO" --head "$branch" --base main --title "chore: daglig cykel $(date -u +%F)" \
+            --body "Automatisk daglig cykel (§56): rapporter, status.json och grundarnotis."
+          gh pr merge --repo "$REPO" "$branch" --auto --merge
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ai-enterprise/docs/dashboard
+
+  pages:
+    needs: cycle
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Pages måste slås på av en grundare (docs/FOUNDER-CHECKLIST.md)
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

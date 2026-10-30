@@ -16,6 +16,8 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
 - `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
 - `pilot`         Fas 7: ideas (produktagent och beslutscykel), prepare, approve, status
+- `export-status` instrumentpanelens status.json, bara offentliga data (Fas 8, DR-13)
+- `daily-cycle`   en företagscykel per dygn med rapporter och notis till grundarna (Fas 8, §56)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -175,6 +177,15 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--usd-sek", type=_positive, default=10.5, help="antagen växelkurs USD→SEK")
     pl.add_argument("--out", type=Path, default=Path("products"), help="mapp för produkterna")
     pl.add_argument("--report", type=Path, help="spara 7c-rapporten här")
+    ex = add("export-status", "skriv instrumentpanelens status.json (bara offentliga data, DR-13)")
+    ex.add_argument("--out", type=Path, default=Path("docs/dashboard/status.json"))
+    dc = add("daily-cycle", "en företagscykel per dygn (§56): sim-dag, rapporter, status.json och grundarnotis")
+    dc.add_argument("--as", dest="founder", default="robin", help="grundaren som cykeln körs i namn av")
+    dc.add_argument("--agents", choices=("scripted", "groq"), default="scripted")
+    dc.add_argument("--out", type=Path, default=Path("docs/reports"))
+    dc.add_argument("--dashboard", type=Path, default=Path("docs/dashboard/status.json"))
+    dc.add_argument("--questions", type=Path, default=Path("docs/QUESTIONS-FOR-FOUNDERS.md"))
+    dc.add_argument("--kill-file", type=Path, default=Path("docs/KILL-SWITCH"))
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -337,6 +348,9 @@ def main(argv: list[str] | None = None) -> int:
         "simulate": lambda: _simulate(args),
         "report": lambda: _report(args),
         "pilot": lambda: _pilot(args),
+        "export-status": lambda: __import__("aie.dashboard.export", fromlist=["export"]).export(args.config_dir, args.out),
+        "daily-cycle": lambda: __import__("aie.dashboard.cycle", fromlist=["run"]).run(
+            args.config_dir, args.founder, args.agents, args.out, args.dashboard, args.questions, args.kill_file),
         "spend": lambda: _spend(args),
         "results": lambda: _results(args),
         "registry": lambda: _registry(args),

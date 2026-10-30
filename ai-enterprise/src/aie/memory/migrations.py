@@ -1411,6 +1411,29 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=33,
+        name="agent_names",
+        statements=(
+            # Fas 8 (masterprompten 2026-10-30): varje agent får ett fast mänskligt förnamn för instrumentpanelen.
+            # Namnet sätts en gång och ändras aldrig (append-only), så att samma agent alltid heter samma sak.
+            """
+            CREATE TABLE agent_names (
+                agent_id    TEXT PRIMARY KEY,
+                first_name  TEXT NOT NULL CHECK (length(trim(first_name)) > 0),
+                at          TEXT NOT NULL
+            ) STRICT
+            """,
+            """
+            CREATE TRIGGER agent_names_no_update BEFORE UPDATE ON agent_names
+            BEGIN SELECT RAISE(ABORT, 'ett agentnamn ändras aldrig'); END
+            """,
+            """
+            CREATE TRIGGER agent_names_no_delete BEFORE DELETE ON agent_names
+            BEGIN SELECT RAISE(ABORT, 'ett agentnamn raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
