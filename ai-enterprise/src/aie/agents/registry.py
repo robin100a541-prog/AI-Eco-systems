@@ -49,12 +49,7 @@ class Agent:
     state: AgentState = AgentState.PROPOSED
 
     def __repr__(self) -> str:
-        """Return a concise representation useful for debugging."""
-        return (
-            f"Agent(agent_id={self.agent_id!r}, role={self.role!r}, "
-            f"department={self.department!r}, manager_id={self.manager_id!r}, "
-            f"state={self.state!r})"
-        )
+        return f"Agent({self.agent_id!r}, {self.role!r}, {self.department!r}, {self.manager_id!r}, {self.state!r})"
 
 
 @dataclass(frozen=True, slots=True)
