@@ -63,7 +63,7 @@ jobs:
       - name: Sammanfattning
         if: always()
         run: |
-          { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: PR med rapporter och status
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}

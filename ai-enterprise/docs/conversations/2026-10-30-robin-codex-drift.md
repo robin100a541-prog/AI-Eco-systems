@@ -12,7 +12,7 @@ Main e39f117 innehöll Fas 6–8-koden. En separat rapport-PR dokumenterar tekni
 736 gröna tester; rapporten är inte godkännande av pilot eller ett påstående om fullgjord ny-session-rutin.
 
 Denna drift-PR rättar ett separat konkret fel: company-daily.yml gick inte att tolka som YAML vid
-sammanfattningssteget, så inga jobb startade. Ändringen är endast blocksyntax runt befintlig shell-kod.
+sammanfattningssteget, så inga jobb startade. Ändringen är blocksyntax runt shell-koden och en fallback när loggfilen saknas. Det första testet med saknad loggfil hittade att `bash -e` avbröt sammanfattningen; `tail ... || true` rättade det före den slutliga verifieringen.
 Alla sju workflowfiler parsades. Shell-stegen i company-daily kontrollerades med bash -n och
 sammanfattningen kördes framgångsrikt med och utan loggfil. En full företagskörning med Groq,
 automatisk rapport-PR och GitHub Pages startades inte manuellt som del av verifieringen.
