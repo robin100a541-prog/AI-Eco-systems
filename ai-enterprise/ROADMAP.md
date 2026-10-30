@@ -141,5 +141,13 @@ Simulerade marknader och scenarier i `SIM`-valuta. Audit jämför rapporter mot 
 ## Fas 7 — Kontrollerad pilot
 Kräver: Fas 1–6 godkända, Q-03…Q-05 och Q-07 besvarade, §25-parametrar satta, nödstopp testat, skattespår för pilotens intäkter bekräftat med Skatteverket.
 
+Arbetspunkter (föreslagna 2026-10-30; startas bara när grundarna startar Fas 7):
+
+| Punkt | Vad | Status |
+|---|---|---|
+| 7a | **Produktagent:** en agent tar fram EN digital produkt (en PDF-guide eller mall) som en fil i repot (`products/`), med testad struktur och utan externa beroenden. | ☐ |
+| 7b | **Manuell listning:** systemet skriver Gumroad-listningens text, pris och stop-loss. En grundare listar produkten för hand och för in försäljningen i ledgern via CLI (`python -m aie results import`). Inga konton eller betalningar sköts av systemet. | ☐ |
+| 7c | **Beslutscykel mot Groq:** ett test kör VD, CFO och risk genom ett beslut en gång via `LLMGateway` på Groq och loggar hur bra besluten är (motivering, siffror som stämmer mot ledgern, gränser som respekteras). | ☐ |
+
 ## Fas 8 — Kontinuerlig drift
 Återkommande cykel enligt §56, statusrapport per cykel.
