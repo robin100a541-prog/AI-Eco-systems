@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Simuleringens marknad är overifierad
+### Ändrat
+- Varje SIM-rapport (daglig, periodisk och bedömningen före start) anger att marknadsantagandena är OVERIFIERADE, eftersom de kommer ur scenariofilerna och inte från riktig försäljning.
+- "Redo" är bara en hypotes tills riktiga försäljningsdata finns (`real_results`, D-062). Rekommendationen börjar då med `HYPOTES:`. `simulate evaluate` skriver ut statusen, och rapportfilen har `status` och `market_assumptions: unverified|verified`.
+
 ## [Unreleased] — 2026-10-30 — Fas 6b-4: övervakning och periodisk rapport (FR-24, FR-22, §58)
 ### Tillagt
 - `reporting/monitor.py` (FR-24) läser revisionsloggen och ledgern och letar efter tre saker:

@@ -124,3 +124,32 @@ class TestJudgement(ReadinessCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUnverifiedMarket(unittest.TestCase):
+    def test_ready_is_only_a_hypothesis_without_real_sales(self):
+        """Verifies §29 och D-062: "redo" är en hypotes tills riktiga försäljningsdata finns; antagandena är overifierade."""
+        from aie.simulation.readiness import MARKET_NOTE, RunResult, _judge
+
+        rules = load_readiness_rules(ROOT / "config")
+        good = RunResult("s", rules.min_days, 100_000, 1_000, 1_000, 98_000, 10_000, 88_000, 5_000, 80.0,
+                         900_000, 0.0, False, False, False)
+        runs = (good,) * rules.min_runs
+        hypo = _judge("normal", "scripted", runs, rules, rules.min_runs, rules.min_days)
+        self.assertTrue(hypo.ready)
+        self.assertTrue(hypo.recommendation.startswith("HYPOTES: "))
+        self.assertIn(MARKET_NOTE, hypo.recommendation)
+        self.assertEqual(hypo.as_dict()["market_assumptions"], "unverified")
+        self.assertEqual(hypo.status, "redo som hypotes (overifierat)")
+        real = _judge("normal", "scripted", runs, rules, rules.min_runs, rules.min_days, real_sales=True)
+        self.assertFalse(real.recommendation.startswith("HYPOTES"))
+        self.assertEqual(real.as_dict()["market_assumptions"], "verified")
+
+    def test_sim_reports_say_the_market_is_unverified(self):
+        """Verifies §57, §58: varje SIM-rapport anger att marknadsantagandena är overifierade."""
+        from aie.reporting.daily import DailyReport
+        from aie.reporting.periodic import PeriodicReport
+
+        self.assertIn("OVERIFIERADE", DailyReport("2027-01-01", "SIM", ()).render())
+        self.assertIn("OVERIFIERADE", PeriodicReport("2027-01-01", "2027-01-02", "SIM", (), ()).render())
+        self.assertNotIn("OVERIFIERADE", DailyReport("2027-01-01", "SEK", ()).render())

@@ -47,6 +47,10 @@ class DailyReport:
 
     def render(self) -> str:
         lines = [f"# Daglig rapport {self.day} ({self.currency})", ""]
+        if self.currency == "SIM":
+            from ..simulation.readiness import MARKET_NOTE
+
+            lines += [f"_{MARKET_NOTE} Siffrorna visar vad som händer om antagandena stämmer._", ""]
         lines += [
             f"{i}. **{name}:** {value}"
             for i, (name, value) in enumerate(self.points, 1)
