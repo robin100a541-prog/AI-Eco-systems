@@ -19,6 +19,7 @@ from aie.registry import SYSTEM, AssessmentError, Register, RegistryError, impor
 from aie.registry.cli import registry as registry_cli
 
 from .fixture_config import TEST_CONFIG
+from .evidence import evidence
 
 ROOT = Path(__file__).resolve().parents[2]
 FOUNDERS = frozenset({"robin", "yorgo"})
@@ -55,7 +56,7 @@ class RegisterCase(unittest.TestCase):
     def assessed(self, initiative="mallar", platform="plattform-a", data=None, ready=True):
         """En godkänd bedömning med exakt de parametrar som initiativet och plattformen har (D-058)."""
         a = self.register.assessments.record("yorgo", initiative, platform, data or INITIATIVE,
-                                             self.register.get("platform", platform).data, {"test": True}, ready)
+                                             self.register.get("platform", platform).data, evidence() if ready else {"test": True}, ready)
         return self.register.assessments.approve("yorgo", a.assessment_id, "ok") if ready else a
 
     def approved_pair(self, initiative="mallar", platform="plattform-a"):

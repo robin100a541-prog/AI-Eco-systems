@@ -23,6 +23,7 @@ from aie.simulation.assessment import (
 from aie.system import build_system
 
 from .fixture_config import TEST_CONFIG
+from .evidence import evidence
 
 FOUNDERS = frozenset({"robin", "yorgo"})
 FEES = {"per_order_minor": 30, "percent_bp": 500, "per_listing_minor": None, "monthly_minor": None,
@@ -157,7 +158,7 @@ class TestAutoPause(unittest.TestCase):
             self.register.record("yorgo", "platform", "plattform-a", status, PLATFORM, "test")
             self.register.record("yorgo", "initiative", "mallar", status, STRONG, "test")
         a = self.register.assessments.record("yorgo", "mallar", "plattform-a", STRONG, PLATFORM,
-                                             {"scenarios": {"pessimistic": {"daily_net_minor": 1_000}}}, True)
+                                             evidence(1_000), True)
         self.register.assessments.approve("yorgo", a.assessment_id, "test")
         for key, kind in (("plattform-a", "platform"), ("mallar", "initiative")):
             self.register.set_status("yorgo", kind, key, "approved", "test")

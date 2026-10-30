@@ -232,6 +232,10 @@ class StopLoss:
                    or (trip.scope_kind == "initiative" and trip.scope_value == request.initiative))
             if hit:
                 reasons.append(trip.describe() + "; nya åtaganden blockeras tills en grundare godkänt en plan (D-049)")
+        active = {(t.scope_kind, t.scope_value, t.limit_name) for t in self.active()}
+        for b in self.breaches():  # N2: ett initiativs förlustgräns spärrar även innan den har utlösts
+            if b.scope_kind == "initiative" and b.scope_value == request.initiative and b.key not in active:
+                reasons.append(f"{b.limit_name} nådd för {b.scope_kind} {b.scope_value} ({b.measured} av {b.limit_value})")
         return reasons
 
     # --- Frågor --------------------------------------------------------------------------

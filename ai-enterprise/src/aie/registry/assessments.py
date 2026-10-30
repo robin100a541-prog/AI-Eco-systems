@@ -55,6 +55,33 @@ class Assessment:
     decided_by: str | None = None
 
 
+SCENARIOS = ("normal", "pessimistic", "zero_sales")
+
+
+def evidence_errors(result: dict) -> list[str]:
+    """Vad som saknas för att en bedömning ska få vara "redo" (granskning H5, D-058, D-048).
+
+    Underlaget ska vara körningar från `simulation.assessment.assess`: alla tre scenarierna med minst en
+    körning var, inga skäl emot, och i pessimistiskt scenario vinst efter alla kostnader i varje körning.
+    """
+    errors = []
+    if not isinstance(result, dict):
+        return ["underlaget är inget objekt"]
+    if result.get("ready") is not True or result.get("reasons"):
+        errors.append("underlaget säger inte redo, eller har skäl emot")
+    scenarios = result.get("scenarios") if isinstance(result.get("scenarios"), dict) else {}
+    for name in SCENARIOS:
+        runs = (scenarios.get(name) or {}).get("runs")
+        if not isinstance(runs, list) or not runs:
+            errors.append(f"scenariot {name} saknar körningar")
+        elif name == "pessimistic" and any(r.get("adjusted_after_tax_minor", 0) <= 0 for r in runs):
+            errors.append("pessimistiskt scenario har körningar utan vinst")
+    if not isinstance(result.get("runs"), int) or any(
+            len((scenarios.get(n) or {}).get("runs") or []) < result.get("runs", 1) for n in SCENARIOS):
+        errors.append("färre körningar än underlaget anger")
+    return errors
+
+
 class AssessmentStore:
     def __init__(self, db: Database, audit: AuditLog, founders: frozenset[str], environment: str = "sim",
                  clock: Callable[[], str] = _now) -> None:
@@ -68,6 +95,8 @@ class AssessmentStore:
                result: dict, ready: bool, kind: str = "simulation") -> Assessment:
         if kind == "scenario" and (self._environment != "sim" or not platform.startswith("sim-")):
             raise AssessmentError("en scenariobedömning finns bara i simuleringens egen databas (D-058)")
+        if ready and kind != "scenario" and evidence_errors(result):
+            raise AssessmentError("en bedömning är bara redo med simuleringsbevis: " + "; ".join(evidence_errors(result)))
         digest = params_hash(initiative_data, platform_data)
         params = {"initiative": initiative_data, "platform": platform_data}
         with self._db.transaction() as tx:
@@ -87,6 +116,8 @@ class AssessmentStore:
             raise AssessmentError("bara en grundare godkänner en bedömning (D-049, D-058)")
         if not a.ready:
             raise AssessmentError("bedömningen är inte redo: initiativet klarar inte kraven (D-048, D-058)")
+        if a.kind != "scenario" and evidence_errors(a.result):
+            raise AssessmentError("underlaget räcker inte: " + "; ".join(evidence_errors(a.result)))
         return self._decide(founder, a, "approved", note)
 
     def reject(self, founder: str, assessment_id: int, note: str) -> Assessment:

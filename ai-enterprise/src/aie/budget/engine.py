@@ -268,6 +268,7 @@ class BudgetEngine:
             evidence += (f"approval:spend-{approval_id}",)
         draft = replace(draft, approval=Approval.APPROVED if approval_id is not None else Approval.NOT_REQUIRED,
                         evidence=evidence)
+        self._refresh_gates()  # N1/N2: spärrarnas läge sparas utanför utgiftens transaktion
         try:
             with self._ledger._db.transaction():
                 existing = self._ledger._by_key(draft.idempotency_key)
@@ -284,6 +285,19 @@ class BudgetEngine:
             self._audit.append(actor, "budget.blocked", {"reference": draft.idempotency_key,
                                                         "reasons": list(exc.check.blocked)})
             raise
+
+    def _refresh_gates(self) -> None:
+        """Utlös stop-loss och uppdatera skyddat läge i egna transaktioner, före utgiften.
+
+        En nekad utgift rullar tillbaka sin transaktion. Görs utlösningen där inne försvinner skyddat
+        läge, nödstopp och incidenter med den (granskning N1). Stop-loss utvärderas här, inte bara i
+        `tick()`, så att en nådd gräns stoppar nästa utgift direkt (N2).
+        """
+        for gate in self._gates:
+            for name in ("evaluate", "update"):
+                refresh = getattr(gate, name, None)
+                if callable(refresh):
+                    refresh()
 
     def require(self, actor: str, request: SpendRequest) -> BudgetCheck:
         """Som `check`, men kastar `BudgetBlocked` vid nej. Anropas före varje ekonomisk handling."""
