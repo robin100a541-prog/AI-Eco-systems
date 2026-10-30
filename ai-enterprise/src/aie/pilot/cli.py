@@ -66,3 +66,87 @@ def ideas(config_dir: Path, founder: str, mode: str, usd_sek: float, out: Path, 
     print(f"Beslut: {type(decision).__name__} #{getattr(decision, 'decision_id', getattr(decision, 'request_id', '?'))}"
           f" för uppgift {result.task_id}; vald produkt {result.chosen.id}")
     return 0
+
+
+PILOT_ROOT = Path("data-pilot")
+
+
+def _pilot_system(config_dir: Path, root: Path):
+    """(config, db-kontext) för pilotens egen prod-databas."""
+    from .live import pilot_config
+
+    pconf_dir = pilot_config(config_dir, root)
+    return pconf_dir, runtime._load(pconf_dir, console=False)
+
+
+def live(config_dir: Path, action: str, founder: str | None, product: Path | None, request_id: int | None,
+         root: Path = PILOT_ROOT, today: str | None = None) -> int:
+    from datetime import UTC, datetime
+
+    from ..governance.cli import build
+    from ..system import build_system
+    from .live import PilotError, approve, approval, check_stops, initiative_for, load_idea, prepare, stop_advice
+
+    try:
+        pconf_dir, config = _pilot_system(config_dir, root)
+        if founder is not None and founder.lower() not in config.system.founders:
+            raise PilotError(f"{founder!r} är ingen grundare")
+        with runtime._open(config) as db:
+            gov = build(config, db, pconf_dir)
+            if action == "prepare":
+                text, request = prepare(gov, config.risk, founder.lower(), product)
+                print(text, end="")
+            elif action == "approve":
+                req = approve(gov, build_system(config, db, pconf_dir), founder, request_id)
+                print(f"Förfrågan #{req.request_id}: {req.status.value} (godkänd av {', '.join(req.approvals)})")
+            else:
+                system = build_system(config, db, pconf_dir)
+                initiative = initiative_for(load_idea(product)) if product else None
+                print(f"Pilotens databas: miljö {config.system.environment}, valuta {system.currency} (aldrig SIM)")
+                pending = gov.queue.pending()
+                print(f"Väntande förfrågningar: {len(pending)}")
+                if initiative:
+                    found = approval(db, initiative)
+                    since = found[1] if found else None
+                    print(f"Godkänd: {since or 'nej'}")
+                    reasons = check_stops(system, founder or "robin", initiative, since,
+                                          today or datetime.now(UTC).date().isoformat())
+                    print(stop_advice(reasons))
+    except (ConfigError, PilotError, ValueError, PermissionError) as exc:
+        print(f"FEL: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def import_platform_sales(config_dir: Path, founder: str, csv_path: Path, product: Path, usd_sek: float,
+                   reported_net_usd: float | None, root: Path = PILOT_ROOT, today: str | None = None) -> int:
+    from datetime import UTC, datetime
+
+    from ..system import build_system
+    from .live import PilotError, approval, check_stops, import_sales, initiative_for, load_idea, stop_advice
+
+    try:
+        pconf_dir, config = _pilot_system(config_dir, root)
+        founder = founder.lower()
+        if founder not in config.system.founders:
+            raise PilotError(f"{founder!r} är ingen grundare")
+        initiative = initiative_for(load_idea(product))
+        with runtime._open(config) as db:
+            system = build_system(config, db, pconf_dir)
+            result = import_sales(system, founder, initiative, csv_path.read_text(encoding="utf-8"), usd_sek,
+                                  reported_net_usd)
+            found = approval(db, initiative)
+            since = found[1] if found else None
+            reasons = check_stops(system, founder, initiative, since, today or datetime.now(UTC).date().isoformat())
+            reserved = system.tax.reserved_minor(system.currency)
+    except (ConfigError, PilotError, ValueError, PermissionError, OSError) as exc:
+        print(f"FEL: {exc}", file=sys.stderr)
+        return 1
+    print(f"Importerat {result.sales} försäljningar ({result.refunds} återbetalda, {result.duplicates} dubbletter "
+          f"hoppades över). Brutto {result.gross_minor / 100:.2f} kr, avgifter {result.fees_minor / 100:.2f} kr, "
+          f"återbetalt {result.refunds_minor / 100:.2f} kr, netto {result.net_minor / 100:.2f} kr. "
+          f"Skattereserv totalt {reserved / 100:.2f} kr.")
+    if result.mismatch:
+        print(f"AVSTÄMNING STÄMMER INTE: {result.mismatch}. Incident #{result.incident_id} är öppnad.")
+    print(stop_advice(reasons))
+    return 2 if result.mismatch else 0

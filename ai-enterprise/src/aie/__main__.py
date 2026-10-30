@@ -151,6 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
     rs.add_argument("action", choices=("import", "list", "report"))
     rs.add_argument("target", nargs="?", help="CSV-filen (för import) eller initiativet (för report)")
     rs.add_argument("--as", dest="founder", help="vilken grundare som importerar")
+    rs.add_argument("--format", choices=("daily", "sales"), default="daily",
+                    help="daily = en rad per dag (D-062); sales = plattformens försäljnings-CSV till pilotens ledger")
+    rs.add_argument("--product", type=Path, help="sales: produktmappen (products/<id>)")
+    rs.add_argument("--usd-sek", type=_positive, help="sales: växelkursen USD→SEK för de här försäljningarna")
+    rs.add_argument("--platform-net", type=float, help="sales: nettot i USD som plattformen visar, för avstämning (ER-23)")
     sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
     sp.add_argument("action", choices=("list", "approve", "reject"))
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
@@ -162,8 +167,10 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
     rep.add_argument("--to", dest="end", help="periodic: sista dagen")
     pl = add("pilot", "Fas 7-piloten: ideas, prepare, approve eller status")
-    pl.add_argument("action", choices=("ideas",))
-    pl.add_argument("--as", dest="founder", required=True, help="vilken grundare som kör")
+    pl.add_argument("action", choices=("ideas", "prepare", "approve", "status"))
+    pl.add_argument("request_id", type=int, nargs="?", help="approve: förfrågans nummer i godkännandekön")
+    pl.add_argument("--as", dest="founder", help="vilken grundare som kör")
+    pl.add_argument("--product", type=Path, help="prepare/status: produktmappen (products/<id>)")
     pl.add_argument("--agents", choices=("rule", "groq"), default="rule", help="rule = inga nätverksanrop")
     pl.add_argument("--usd-sek", type=_positive, default=10.5, help="antagen växelkurs USD→SEK")
     pl.add_argument("--out", type=Path, default=Path("products"), help="mapp för produkterna")
@@ -222,6 +229,14 @@ def _results(args: argparse.Namespace) -> int:
     if args.action == "import" and not args.founder:
         print("FEL: import kräver --as <grundare>", file=sys.stderr)
         return 1
+    if args.format == "sales":
+        from .pilot.cli import import_platform_sales
+
+        if args.action != "import" or not args.product or not args.usd_sek:
+            print("FEL: --format sales kräver import, --product och --usd-sek", file=sys.stderr)
+            return 1
+        return import_platform_sales(args.config_dir, args.founder, Path(args.target), args.product, args.usd_sek,
+                              args.platform_net)
     return results(args.config_dir, args.action, args.target, args.founder)
 
 
@@ -253,8 +268,16 @@ def _simulate(args: argparse.Namespace) -> int:
 
 
 def _pilot(args: argparse.Namespace) -> int:
-    from .pilot.cli import ideas  # importeras bara när kommandot används
+    from .pilot.cli import ideas, live  # importeras bara när kommandot används
 
+    if args.action != "status" and not args.founder:
+        print("FEL: kräver --as <grundare>", file=sys.stderr)
+        return 1
+    if args.action == "prepare" and not args.product or args.action == "approve" and args.request_id is None:
+        print("FEL: prepare kräver --product och approve ett förfrågans nummer", file=sys.stderr)
+        return 1
+    if args.action != "ideas":
+        return live(args.config_dir, args.action, args.founder, args.product, args.request_id)
     return ideas(args.config_dir, args.founder, args.agents, args.usd_sek, args.out, args.report)
 
 
