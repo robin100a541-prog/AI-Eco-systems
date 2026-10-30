@@ -184,6 +184,13 @@
 - Den valda produkten skrivs till `products/<id>/`: product.md, product.pdf (stdlib), listing.md med upplysning om AI-användning och idea.json.
 - Workflowen `pilot-groq.yml` kör allt på Groq vid knapptryck.
 
+## Ändrat 2026-10-30 (Fas 7b: manuell listning och försäljning)
+- `aie pilot prepare --as <grundare> --product products/<id>`: visar listningen, priset, budgettaket (START_CAPITAL, 500 kr), stop-loss och stoppkriterierna, och lägger "godkänn piloten" i godkännandekön.
+- `aie pilot approve <nr> --as Robin`: en grundare godkänner (D-049), och pilotkapitalet bokförs med hänvisning till godkännandet.
+- `aie results import <csv> --format sales --as <grundare> --product ... --usd-sek ... [--platform-net ...]`: plattformens försäljnings-CSV bokförs i pilotens egen prod-databas i SEK (aldrig SIM): intäkt, avgift och återbetalning. Dubbletter bokförs en gång, skatten reserveras av Tax Engine, och summan stäms av mot plattformens netto (ER-23). En skillnad blir en incident.
+- Stoppregler på riktiga data: stop-loss, ingen försäljning på 60 dagar eller en återbetalning per tre försäljningar sätter skyddat läge (inga nya utgifter) och rekommenderar avpublicering.
+- Piloten kräver ett godkännande innan försäljning kan importeras.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
