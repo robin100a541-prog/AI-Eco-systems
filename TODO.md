@@ -3,7 +3,7 @@
 Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 ## Now
-- [ ] Isolerad verifiering av company-daily: två sparade dagar, inga nycklar, cacheändringar, PR:er eller Pages — Codex 2026-10-30 (codex/offline-daily-verification).
+- [x] Isolerad verifiering av company-daily: två sparade dagar, inga nycklar, cacheändringar, PR:er eller Pages — Codex 2026-10-30 (codex/offline-daily-verification).
 - [x] M3/M4: lokal modellendpoint och atomär skattebetalningsregistrering — Codex 2026-10-30 (codex/review-network-tax), ingen migration.
 - [x] H4/M1: atomär budgetkontroll/bokföring och bevarad riskklass — Codex 2026-10-30 (codex/atomic-spending). Migration 35 reserverad efter 34; inga ändrade riskvärden.
 - [x] Pilotbackup och återställningsövning utan överskrivning av driftdata — Codex 2026-10-30 (codex/pilot-backup-restore), ingen migration.

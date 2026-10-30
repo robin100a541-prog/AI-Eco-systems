@@ -78,3 +78,9 @@ Första kommandot tar en konsistent SQLite-backup inklusive WAL och provar åter
 Behåll både `.db` och `.json` privat. Kopiera dem till en separat, privat lagringsplats utanför datorn efter varje försäljningsimport och före databasuppgraderingar. `data-pilot/` är gitignorerad; ladda aldrig upp dessa filer till det publika repot eller publika Actions-artefakter. En annan privat plats och backupintervallet måste fortfarande väljas av grundaren. Lokal backup skyddar inte mot att hela datorn försvinner.
 
 Vid skarp återställning: stoppa alla skrivande processer, verifiera backupen, återställ till en **ny** datamapp och kontrollera rapporter/godkännanden innan konfigurationen pekas om. Skriv inte över originaldatabasen. Backupverktyget gör bara övningen och kan inte skriva över driftdata. Manifest och databas tillsammans är ingen kryptografisk signatur mot en angripare som kan ersätta båda.
+
+## Testa automatiken utan att publicera
+
+En kodagent kan köra `python scripts/verify_daily_cycle.py` från `ai-enterprise/`. Det startar två separata CLI-processer i en tillfällig SIM-miljö utan att ärva API-nycklar eller GitHub-token. Kontrollen verifierar att dag två återupptar dag ett, att båda rapporterna finns, att revisionskedjan är hel och att instrumentpanelen bara innehåller offentliga SIM-data. Det här är ett test, inte en skarp företagskörning.
+
+GitHub Actions → company-daily → Run workflow har nu `verify_only` påslaget som standard för manuella starter. Testjobbet har inga hemligheter och använder varken företagets cache, rapport-PR eller Pages. Avmarkera bara `verify_only` när du avsiktligt vill köra den vanliga företags-/publiceringsvägen. Schemalagda körningar använder fortfarande den vanliga vägen.

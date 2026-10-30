@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — isolerad driftskontroll
+- company-daily har ett manuellt verify_only-läge (standard på) som kör två separata SIM-processer utan hemligheter, cacheändringar, rapport-PR eller Pages. Schemat och den vanliga driftvägen är oförändrade.
+- `scripts/verify_daily_cycle.py` provar återupptagning, två rapporter, revisionskedja och offentlig SIM-status i en temporär mapp. Lokalt test godkänt; GitHub-körningen dokumenteras i PR:en.
+
 ## [Unreleased] — 2026-10-30 — M3/M4: lokal modell och skattebetalningsåterförsök
 - Ollama med intern data accepterar bara loopback/localhost utan inloggningsuppgifter, query eller fragment. Felaktig remote-endpoint nekas både av leverantören och konfigurationsladdaren före transport.
 - Skattebetalningens kassapost och spår/år sparas i en transaktion. `payment_id` binder återförsök till samma betalning; äldre anrop använder spår/år/kvitto som identitet. Olika betalningar måste ha olika externa referenser eller kvitton. Ingen bankbetalning utförs av funktionen.
