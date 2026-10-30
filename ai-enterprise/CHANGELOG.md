@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — company-daily: giltig YAML
+### Rättat
+- Sammanfattningsstegets shell-grupp ligger nu i ett YAML-block (`run: |`). Tidigare tolkades klamrarna som YAML och GitHub avvisade workflowen innan något jobb startade (körning 41056471949 och tidigare).
+- Sammanfattningen klarar också en saknad cycle.txt när ett tidigare steg fallerat (`tail ... || true`), även med GitHub Actions `bash -e -o pipefail`.
+- Verifierat: alla sju workflowfiler kan parsas med Ruby/Psych; alla shell-steg i company-daily klarar `bash -n`; sammanfattningen körd med och utan cycle.txt. Inga ändrade trigger-, behörighets-, modell- eller publiceringsregler.
+
 ## [Unreleased] — 2026-10-30 — Fas 7–8: acceptans och överlämning
 ### Tillagt
 - `tests/acceptance/test_fas7.py`: §55-villkoren provas på pilotens prod-databas: budget, behörigheter, reserv, nödstopp, bokföring och mänskligt godkännande. Ett test kontrollerar att varje bevis för §62 finns.

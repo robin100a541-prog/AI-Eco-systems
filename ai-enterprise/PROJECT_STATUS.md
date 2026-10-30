@@ -215,6 +215,10 @@
 - `docs/ACCEPTANCE-55-62.md`: ja eller nej med bevis per punkt. §55 har 8 av 9 villkor uppfyllda (granskningen återstår), §62 har 15 av 16 (lagar och villkor kan inte testas).
 - `docs/FOUNDER-CHECKLIST.md`: grundarnas återstående steg i ordning, skrivna för en nybörjare.
 
+## Driftverifiering 2026-10-30 (Codex)
+- Den tidigare company-daily-workflowen var ogiltig YAML vid rad 65 och startade inga jobb (Actions 41056471949). Shell-gruppen är flyttad till ett `run: |`-block. Sju workflowfiler parsade; shellsyntax och sammanfattningssteget provade lokalt. En full schemalagd körning och Pages-publicering är inte verifierade av denna ändring.
+- Teknisk pilotgranskning finns i separat PR: `docs/reviews/REVIEW-2026-10-30.md`. Den ger inte klartecken för riktiga pengar.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
