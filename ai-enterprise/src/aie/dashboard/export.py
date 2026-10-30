@@ -74,11 +74,22 @@ def build_status(system, real_system=None, now: str | None = None) -> dict:
         "meeting": meeting > 0,
         "kill_switch": system.kill.state().engaged,
         "protected_mode": system.protected.state().protected,
+        "scout": _scout(system.db),
         "scoreboard": {"sim": _score(system, "SIM"),
                        "real": _score(real_system, real_system.currency) if real_system is not None else None},
     }
     check_public(status)
     return status
+
+
+def _scout(db) -> dict | None:
+    """Scoutens pipeline: antal möjligheter per status (bara siffror, inga källor eller texter)."""
+    if not _has(db, "scout_entries"):
+        return None
+    rows = db.connection.execute(
+        "SELECT status, COUNT(*) FROM scout_entries e WHERE version = "
+        "(SELECT MAX(version) FROM scout_entries WHERE key = e.key) GROUP BY status").fetchall()
+    return {status: n for status, n in rows}
 
 
 def _has(db, table: str) -> bool:

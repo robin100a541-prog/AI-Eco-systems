@@ -18,6 +18,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `pilot`         Fas 7: ideas (produktagent och beslutscykel), prepare, approve, status
 - `export-status` instrumentpanelens status.json, bara offentliga data (Fas 8, DR-13)
 - `daily-cycle`   en företagscykel per dygn med rapporter och notis till grundarna (Fas 8, §56)
+- `scout`         Opportunity Scout: run (en dygnscykel), rapporter i docs/opportunities/
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -188,6 +189,13 @@ def build_parser() -> argparse.ArgumentParser:
     dc.add_argument("--dashboard", type=Path, default=Path("docs/dashboard/status.json"))
     dc.add_argument("--questions", type=Path, default=Path("docs/QUESTIONS-FOR-FOUNDERS.md"))
     dc.add_argument("--kill-file", type=Path, default=Path("docs/KILL-SWITCH"))
+    sc = add("scout", "Opportunity Scout: run = en dygnscykel (research, poäng, förslag till CEO)")
+    sc.add_argument("action", choices=("run",))
+    sc.add_argument("--as", dest="founder", default="robin", help="grundaren som cykeln körs i namn av")
+    sc.add_argument("--agents", choices=("rule", "groq"), default="rule", help="rule = inga nätverksanrop")
+    sc.add_argument("--out", type=Path, default=Path("docs/opportunities"))
+    sc.add_argument("--questions", type=Path, default=Path("docs/QUESTIONS-FOR-FOUNDERS.md"))
+    sc.add_argument("--weekly", action="store_true", help="skriv veckorapporten även om det inte är måndag")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -367,6 +375,8 @@ def main(argv: list[str] | None = None) -> int:
         "simulate": lambda: _simulate(args),
         "report": lambda: _report(args),
         "pilot": lambda: _pilot(args),
+        "scout": lambda: __import__("aie.scout.cycle", fromlist=["main"]).main(
+            args.config_dir, args.founder, args.agents, args.out, args.questions, args.weekly),
         "export-status": lambda: __import__("aie.dashboard.export", fromlist=["export"]).export(args.config_dir, args.out),
         "daily-cycle": lambda: __import__("aie.dashboard.cycle", fromlist=["run"]).run(
             args.config_dir, args.founder, args.agents, args.out, args.dashboard, args.questions, args.kill_file),

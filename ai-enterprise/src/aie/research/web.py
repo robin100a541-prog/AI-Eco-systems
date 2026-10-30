@@ -174,14 +174,15 @@ class WebReader:
         self._clock = clock
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
 
-    def fetch(self, agent: str, url: str) -> WebPage:
+    def fetch(self, agent: str, url: str, secret_headers: dict[str, str] | None = None) -> WebPage:
+        """`secret_headers` (t.ex. en API-nyckel) skickas bara till adressens egen värd och sparas aldrig."""
         self._engine.require(agent, TOOL)  # PermissionDenied vid nej; nödstopp och skyddat läge ingår
         try:
             self._reserve_attempt()
             self._check_url(url)
             if not self._robots_allow(url):
                 raise WebError("robots.txt tillåter inte hämtningen")
-            final_url, response = self._follow(url)
+            final_url, response = self._follow(url, secret_headers)
         except WebError as exc:
             self._store(agent, url, None, "refused", None, None, b"", "", False, str(exc))
             raise
@@ -264,10 +265,14 @@ class WebReader:
         parser = self._robots[base]
         return parser is None or parser.can_fetch(self._limits.user_agent, url)
 
-    def _follow(self, url: str) -> tuple[str, Response]:
+    def _follow(self, url: str, secret_headers: dict[str, str] | None = None) -> tuple[str, Response]:
         current = url
+        host = urlsplit(url).hostname
         for _ in range(self._limits.max_redirects + 1):
-            response = self._get(current, self._headers(), self._limits.timeout_seconds, self._limits.max_bytes)
+            headers = self._headers()
+            if secret_headers and urlsplit(current).hostname == host:  # nyckeln följer aldrig till en annan värd
+                headers |= secret_headers
+            response = self._get(current, headers, self._limits.timeout_seconds, self._limits.max_bytes)
             if response.status in (301, 302, 303, 307, 308):
                 location = response.headers.get("location")
                 if not location:

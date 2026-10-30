@@ -234,6 +234,16 @@
 - Ingen reserv: fel hos modellen eller i researchen stoppar cykeln. RULE_IDEAS finns bara i testerna, och modellens summor används aldrig, så avrundning kan inte fälla en idé.
 - `config/research.toml`: fler offentliga marknadsplatser och Reddit.
 
+## Ändrat 2026-10-30 (Opportunity Scout)
+- Ny roll `scout` (research, nivå 4) med bara research.search, llm.complete och proposal.submit. Den mäts på förslagens kvalitet och sina prognoser, aldrig på intäkt.
+- Migration 37: möjlighetsregistret `scout_entries` (append-only). Varje version har typ, nisch, källor med URL och citat, siffror, poäng enligt 7a-mallen och status. Varje statusbyte har ett skäl, och bara grundare kan ge approved, testing och succeeded.
+- `aie scout run` och `scout.yml` (varje dygn och med knapp):
+-   - hittar och fördjupar idéer, räknar om poängen och stoppar svaga eller inaktuella idéer med skäl;
+-   - skickar de starkaste som klarar ribban till CEO, där CFO och risk bedömer och tvister öppnas vid oenighet;
+-   - lägger CEO:s beslut i godkännandekön och skriver notis i QUESTIONS-FOR-FOUNDERS.
+- API-källor (YouTube, Etsy) står i `config/pilot.toml` och används bara när nyckeln finns som hemlighet. WebReader skickar nyckeln som rubrik bara till API:ets egen värd och sparar den aldrig.
+- Rapporter: `docs/opportunities/REGISTER.md` och på måndagar `weekly-ÅÅÅÅ-VV.md`. Instrumentpanelen visar scouten och dess pipeline.
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|

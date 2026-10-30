@@ -64,6 +64,8 @@ PROFILES: dict[str, tuple[str, ...]] = {
     "researcher": ("goal_fulfillment", "forecast_precision", "compliance", "error_handling", "incidents"),
     # Utvecklaragenten (D-050): mäts på genomförda uppgifter och regelefterlevnad, aldrig på intäkt.
     "developer": ("goal_fulfillment", "compliance", "error_handling", "incidents"),
+    # Opportunity Scout: mäts på förslagens kvalitet (godkända tester) och prognosprecision, aldrig på intäkt.
+    "scout": ("goal_fulfillment", "forecast_precision", "compliance", "error_handling", "incidents"),
 }
 DEFAULT_PROFILE = ("goal_fulfillment", "forecast_precision", "compliance", "error_handling", "incidents")
 

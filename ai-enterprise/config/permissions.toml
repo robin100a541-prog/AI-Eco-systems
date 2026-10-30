@@ -76,6 +76,12 @@ level = 3
 description = "leder Research (§12)"
 tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record", "sim.spend", "sales.list", "forecast.make", "proposal.submit"]
 
+[roles.scout]
+department = "research"
+level = 4
+description = "Opportunity Scout: letar, belägger och poängsätter affärsmöjligheter varje dygn (Robin 2026-10-30)"
+tools = ["research.search", "llm.complete", "proposal.submit"]
+
 [roles.researcher]
 department = "research"
 level = 4

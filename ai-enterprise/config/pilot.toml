@@ -47,3 +47,25 @@ search_urls = [
   "https://hn.algolia.com/api/v1/search?query={q}&hitsPerPage=20",
   "https://www.etsy.com/search?q={q}",
 ]
+
+# Opportunity Scout (Robin 2026-10-30): körs varje dygn i scout.yml.
+[scout]
+max_fetches = 20        # hämtningar för ny research per körning (research.toml har dagskvoten för alla)
+deepen_top = 3          # så många av de bästa idéerna fördjupas med egna sökningar
+deepen_fetches = 2      # hämtningar per fördjupad idé
+propose_max = 2         # högst så många nya förslag till CEO per körning
+stale_days = 14         # en idé som inte setts på så många dagar stoppas som inaktuell
+
+# API-källor med nyckel ur GitHub-hemligheter. Saknas nyckeln hoppas källan över. Nyckeln skickas bara som
+# rubrik till API:ets egen värd och sparas aldrig (WebReader secret_headers).
+[[scout.apis]]
+name = "YouTube"
+env = "YOUTUBE_API_KEY"
+header = "X-goog-api-key"
+url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q={q}"
+
+[[scout.apis]]
+name = "Etsy"
+env = "ETSY_API_KEY"
+header = "x-api-key"
+url = "https://openapi.etsy.com/v3/application/listings/active?limit=20&keywords={q}"
