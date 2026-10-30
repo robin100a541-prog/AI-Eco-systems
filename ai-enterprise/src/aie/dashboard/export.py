@@ -3,7 +3,8 @@
 Bara data som får vara offentliga (DR-13) går ut, och bara genom en vitlista av fält:
 - agenterna: ID, förnamn, roll, departement, livscykelstatus och en **generisk** aktivitet
   (`ACTIVITY`, härledd ur senaste åtgärdens typ, aldrig fritext, prompter eller modellsvar),
-- om ett samråd eller en tvist pågår (då visas ett mötesbord),
+- rollplan och historisk aktivitet; faktisk livefas läggs bara på av arbetscykelns observatör,
+- antal öppna tvister, som inte i sig bevisar ett pågående möte,
 - poängtavlan: kapital, reserv och resultat, med SIM och riktig valuta var för sig.
 Varje textvärde kontrolleras mot `mask_secrets`; ett värde som ser ut som en hemlighet stoppar exporten.
 """
@@ -11,6 +12,8 @@ Varje textvärde kontrolleras mot `mask_secrets`; ett värde som ser ut som en h
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -24,7 +27,17 @@ ACTIVITY = {  # åtgärdstyp i revisionsloggen -> vad pratbubblan säger
     "forecast.made": "gör en prognos", "proposal.submitted": "lämnar förslag", "sim.action": "arbetar",
     "tool.denied": "nekad av spärrarna", "ledger.recorded": "bokför",
 }
-AGENT_FIELDS = ("id", "name", "role", "department", "state", "activity")
+ROLE_PLANS = {
+    "researcher": "Undersök marknaden och lämna belagda förslag",
+    "research_lead": "Granska förslag och prioritera nästa experiment",
+    "cfo": "Granska ekonomi när en bedömning behövs",
+    "cro": "Granska risker när en bedömning behövs",
+    "ceo": "Avgör eskalerade frågor och prioritera arbetet",
+    "compliance": "Kontrollera regler när ett ärende behöver granskas",
+    "auditor": "Granska rapporter och revisionskedjan",
+}
+AGENT_FIELDS = ("id", "name", "role", "department", "state", "activity", "work")
+WORK_FIELDS = ("phase", "current", "next", "last", "updated_at")
 
 
 def ensure_names(db, agent_ids) -> dict[str, str]:
@@ -63,15 +76,22 @@ def _score(system, currency: str) -> dict:
 def build_status(system, real_system=None, now: str | None = None) -> dict:
     agents = list(system.registry.agents())
     names = ensure_names(system.db, [a.agent_id for a in agents])
-    meeting = system.db.connection.execute(
+    timestamp = now or datetime.now(UTC).isoformat(timespec="seconds")
+    pending = system.db.connection.execute(
         "SELECT COUNT(*) FROM disputes WHERE status != 'resolved'").fetchone()[0] if _has(system.db, "disputes") else 0
     status = {
-        "generated_at": now or datetime.now(UTC).isoformat(timespec="seconds"),
+        "generated_at": timestamp,
         "classification": "public",
         "departments": sorted({a.department for a in agents}),
         "agents": [{"id": a.agent_id, "name": names[a.agent_id], "role": a.role, "department": a.department,
-                    "state": a.state.value, "activity": _activity(system, a.agent_id)} for a in agents],
-        "meeting": meeting > 0,
+                    "state": a.state.value, "activity": _activity(system, a.agent_id),
+                    "work": {"phase": "idle", "current": "Ingen arbetscykel körs just nu",
+                             "next": ROLE_PLANS.get(a.role, "Invänta tilldelad uppgift"),
+                             "last": _activity(system, a.agent_id), "updated_at": timestamp}} for a in agents],
+        "meeting": False,  # ett öppet ärende bevisar inte att ett möte pågår
+        "meetings": [],
+        "pending_discussions": pending,
+        "execution": {"state": "offline", "heartbeat_at": None, "lease_seconds": 10},
         "kill_switch": system.kill.state().engaged,
         "protected_mode": system.protected.state().protected,
         "scoreboard": {"sim": _score(system, "SIM"),
@@ -90,6 +110,8 @@ def check_public(value, path: str = "") -> None:
     if isinstance(value, dict):
         if path.endswith("agents[]") and set(value) - set(AGENT_FIELDS):
             raise ValueError(f"fält utanför vitlistan i {path}: {sorted(set(value) - set(AGENT_FIELDS))}")
+        if path.endswith(".work") and set(value) - set(WORK_FIELDS):
+            raise ValueError(f"fält utanför vitlistan i {path}")
         for k, v in value.items():
             check_public(v, f"{path}.{k}")
     elif isinstance(value, list):
@@ -102,7 +124,18 @@ def check_public(value, path: str = "") -> None:
 def write_status(status: dict, out: Path) -> Path:
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(status, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    check_public(status)
+    # Readers see either the previous complete snapshot or the next one, never half a JSON file.
+    name = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=out.parent,
+                                         prefix=f".{out.name}.", suffix=".tmp", delete=False) as stream:
+            name = stream.name
+            stream.write(json.dumps(status, ensure_ascii=False, indent=2) + "\n")
+        os.replace(name, out)
+    finally:
+        if name is not None:
+            Path(name).unlink(missing_ok=True)
     return out
 
 

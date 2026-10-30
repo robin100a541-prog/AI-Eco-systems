@@ -178,6 +178,7 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--agents", choices=("rule", "groq"), default="rule", help="rule = inga nätverksanrop")
     pl.add_argument("--usd-sek", type=_positive, default=10.5, help="antagen växelkurs USD→SEK")
     pl.add_argument("--out", type=Path, default=Path("products"), help="mapp för produkterna")
+    pl.add_argument("--dashboard", type=Path, help="live-status under discover, utan extra modellanrop")
     pl.add_argument("--report", type=Path, help="spara 7c-rapporten här")
     ex = add("export-status", "skriv instrumentpanelens status.json (bara offentliga data, DR-13)")
     ex.add_argument("--out", type=Path, default=Path("docs/dashboard/status.json"))
@@ -190,6 +191,7 @@ def build_parser() -> argparse.ArgumentParser:
     dc.add_argument("--kill-file", type=Path, default=Path("docs/KILL-SWITCH"))
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
+    sim.add_argument("--dashboard", type=Path, help="live-status under start/resume, utan extra modellanrop")
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
     sim.add_argument("--runs", type=int, help="evaluate: antal körningar (standard: min_runs i simulation.toml)")
     sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
@@ -277,7 +279,7 @@ def _simulate(args: argparse.Namespace) -> int:
     if args.days is not None and args.days < 1:
         print("FEL: --days måste vara minst 1", file=sys.stderr)
         return 1
-    return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
+    return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs, dashboard=args.dashboard)
 
 
 def _pilot(args: argparse.Namespace) -> int:
@@ -292,7 +294,7 @@ def _pilot(args: argparse.Namespace) -> int:
     if args.action == "discover":
         from .pilot.cli import discover
 
-        return discover(args.config_dir, args.founder, args.agents, args.report or Path("docs/reports/7a-opportunities.md"))
+        return discover(args.config_dir, args.founder, args.agents, args.report or Path("docs/reports/7a-opportunities.md"), dashboard=args.dashboard)
     if args.action != "ideas":
         return live(args.config_dir, args.action, args.founder, args.product, args.request_id)
     return ideas(args.config_dir, args.founder, args.agents, args.usd_sek, args.out, args.report)

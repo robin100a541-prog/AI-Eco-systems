@@ -16,7 +16,14 @@
       "role": "auditor",
       "department": "audit",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Granska rapporter och revisionskedjan",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "ceo-1",
@@ -24,7 +31,14 @@
       "role": "ceo",
       "department": "executive",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Avgör eskalerade frågor och prioritera arbetet",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "cfo-1",
@@ -32,7 +46,14 @@
       "role": "cfo",
       "department": "finance",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Granska ekonomi när en bedömning behövs",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "comp-1",
@@ -40,7 +61,14 @@
       "role": "compliance",
       "department": "compliance",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Kontrollera regler när ett ärende behöver granskas",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "cro-1",
@@ -48,7 +76,14 @@
       "role": "cro",
       "department": "risk",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Granska risker när en bedömning behövs",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "lead-1",
@@ -56,7 +91,14 @@
       "role": "research_lead",
       "department": "research",
       "state": "ACTIVE",
-      "activity": "väntar"
+      "activity": "väntar",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Granska förslag och prioritera nästa experiment",
+        "last": "väntar",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     },
     {
       "id": "res-1",
@@ -64,7 +106,14 @@
       "role": "researcher",
       "department": "research",
       "state": "ACTIVE",
-      "activity": "gör en prognos"
+      "activity": "gör en prognos",
+      "work": {
+        "phase": "idle",
+        "current": "Ingen arbetscykel körs just nu",
+        "next": "Undersök marknaden och lämna belagda förslag",
+        "last": "gör en prognos",
+        "updated_at": "2026-10-30T12:24:08+00:00"
+      }
     }
   ],
   "meeting": false,
@@ -78,5 +127,11 @@
       "result_minor": 21805
     },
     "real": null
-  }
+  },
+  "execution": {
+    "state": "offline",
+    "heartbeat_at": null,
+    "lease_seconds": 10
+  },
+  "meetings": []
 }

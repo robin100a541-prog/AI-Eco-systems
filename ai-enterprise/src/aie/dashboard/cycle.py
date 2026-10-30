@@ -89,7 +89,7 @@ def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path,
     log = io.StringIO()
     with contextlib.redirect_stdout(log):
         action = "resume" if run_ else "start"
-        code = simulate(config_dir, action, scenario if action == "start" else None, founder, 1, agents)
+        code = simulate(config_dir, action, scenario if action == "start" else None, founder, 1, agents, dashboard=dashboard)
     print(log.getvalue(), end="")
     with runtime._open(config) as db:
         run_ = stored_run(db)
@@ -107,7 +107,10 @@ def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path,
                 path = out / "periodic" / f"{start}--{days[-1]}.md"
                 path.write_text(periodic_report(system, start, days[-1]).render(), encoding="utf-8")
                 written.append(path)
-        write_status(build_status(system), dashboard)
+        # simulate owns its final session snapshot (including a quota pause).
+        # No financial work happens after it; do not overwrite its live metadata.
+        if not dashboard.is_file():
+            write_status(build_status(system), dashboard)
         changed = update_questions(questions, pending_items(system), today.isoformat())
     print(f"Nödstopp: {kill}. Simuleringen: kod {code}. Rapporter: {', '.join(map(str, written)) or 'inga'}. "
           f"Instrumentpanel: {dashboard}. Grundarnotis {'uppdaterad' if changed else 'oförändrad'}.")

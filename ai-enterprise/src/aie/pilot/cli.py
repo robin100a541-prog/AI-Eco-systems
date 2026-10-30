@@ -155,7 +155,7 @@ def import_platform_sales(config_dir: Path, founder: str, csv_path: Path, produc
     return 2 if result.mismatch else 0
 
 
-def discover(config_dir: Path, founder: str, mode: str, report: Path) -> int:
+def discover(config_dir: Path, founder: str, mode: str, report: Path, dashboard: Path | None = None) -> int:
     """`aie pilot discover`: research, minst tio idéer, poäng i kod, topp 3. Ingen vinnare väljs (Fas 7a)."""
     from ..governance.cli import build
     from ..research.web import WebReader, load_limits
@@ -178,10 +178,24 @@ def discover(config_dir: Path, founder: str, mode: str, report: Path) -> int:
             gateway = gateway_for(gov, db, mode, config_dir)
             reader = WebReader(db, gov.engine, gov.audit, load_limits(config_dir))
             stopped, signals, ideas, top, log = None, [], [], [], []
-            try:
-                signals, ideas, top, log = run(reader, gateway, settings, rules, loss // 10)
-            except AgentStopped as exc:
-                stopped = str(exc)
+            from ..dashboard.live import LiveStatus
+            from ..system import build_system
+
+            if dashboard is not None:
+                system = build_system(config, db, config_dir)
+                with LiveStatus(system, dashboard, mode) as observer:
+                    try:
+                        signals, ideas, top, log = run(observer.reader(reader), observer.gateway(gateway),
+                                                     settings, rules, loss // 10)
+                        observer.agent("res-1", "done")
+                    except AgentStopped as exc:
+                        observer.state = "paused"
+                        stopped = str(exc)
+            else:
+                try:
+                    signals, ideas, top, log = run(reader, gateway, settings, rules, loss // 10)
+                except AgentStopped as exc:
+                    stopped = str(exc)
     except (ConfigError, ValueError, OSError) as exc:
         print(f"FEL: {exc}", file=sys.stderr)
         return 1

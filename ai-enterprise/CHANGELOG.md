@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — verklig live-status utan extra AI-anrop
+- Arbetscykeln rapporterar sina faktiska steg och deltagarna i bedömningsmöten. `daily-cycle` använder kanalen; `simulate start/resume` och `pilot discover` har valbar `--dashboard`. Modell- och webbverktyg delegeras oförändrade, utan extra anrop.
+- Dashboarden visar Gör nu, Borde göra (uttrycklig rollplan) och Senaste rapport. Bara rapporterade mötesdeltagare samlas. Sparade rapporter och öppna tvister markeras inte som livearbete.
+- Atomiska JSON-skrivningar, en skrivare per målfil, cachat livstecken och tio sekunders giltighet. Efter avbrott stoppas rörelserna. Live kräver lokal tillgång till arbetsprocessens statusfil; Pages förblir en publicerad snapshot.
+- Tolv frontendtester samt tester för delegationsantal, offentlig vitlista, skrivfel, livstecken, samtidiga skrivare och en verklig skriptad konfliktcykel. Inga betal- eller Groq-anrop under verifiering.
+
 ## [Unreleased] — 2026-10-30 — Ekobyn
 - Instrumentpanelen är en tecknad by med avdelningshus, mötestorg, vandrande agenter, bestående aktivitetsbubblor, agentval och följkamera. Paus, tangentbord, minskad rörelse och mobil layout stöds.
 - Offentlig status hämtas var 15:e sekund; datatid och fel visas. Rörelser/sociala möten är uttryckligen illustrationer. Nödstopp och skyddat läge stoppar animationen; inga företagskommandon läggs till.
