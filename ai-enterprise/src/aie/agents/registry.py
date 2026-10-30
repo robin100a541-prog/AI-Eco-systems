@@ -56,14 +56,6 @@ class Agent:
             f"state={self.state!r})"
         )
 
-    def __repr__(self) -> str:
-        """Return a concise representation useful for debugging."""
-        return (
-            f"Agent(agent_id={self.agent_id!r}, role={self.role!r}, "
-            f"department={self.department!r}, manager_id={self.manager_id!r}, "
-            f"state={self.state!r})"
-        )
-
 
 @dataclass(frozen=True, slots=True)
 class StateChange:
