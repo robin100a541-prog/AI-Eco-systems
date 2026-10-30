@@ -1,0 +1,22 @@
+{
+  "id": "f-skatt-guide",
+  "title": "Guide: starta enskild firma med F-skatt steg för steg",
+  "format": "pdf-guide",
+  "target_customer": "Personer som vill börja fakturera vid sidan av jobbet",
+  "problem": "Osäkra på registrering, F-skatt, moms och bokföring första året",
+  "demand_evidence": [
+    "antagande: vanlig fråga i forum; ingen egen mätning"
+  ],
+  "demand_status": "unverified",
+  "price_cents": 1200,
+  "upfront_costs_cents": 0,
+  "expected_sales_90d": 8,
+  "time_to_first_sale_days": 30,
+  "continue_criteria": "minst 3 försäljningar inom 60 dagar",
+  "stop_criteria": "ingen försäljning på 60 dagar, eller återbetalningar över 15 %",
+  "fee_cents": 170,
+  "net_per_sale_cents": 1030,
+  "expected_net_90d_cents": 8240,
+  "max_loss_cents": 0,
+  "content_source": "model:groq/openai/gpt-oss-120b"
+}
