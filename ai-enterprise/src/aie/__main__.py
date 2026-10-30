@@ -14,6 +14,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
+- `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -154,6 +155,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
     sp.add_argument("--as", dest="founder", help="vilken grundare som beslutar")
     sp.add_argument("--note", default="", help="motivering; krävs vid reject")
+    rep = add("report", "rapporter: daily (§57), periodic (§58) eller monitor (FR-24); läser bara")
+    rep.add_argument("kind", choices=("daily", "periodic", "monitor"))
+    rep.add_argument("--day", help="daily: dagen ÅÅÅÅ-MM-DD (standard: senaste dagen i ledgern)")
+    rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
+    rep.add_argument("--to", dest="end", help="periodic: sista dagen")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
@@ -238,6 +244,12 @@ def _simulate(args: argparse.Namespace) -> int:
     return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
 
 
+def _report(args: argparse.Namespace) -> int:
+    from .reporting.cli import report  # importeras bara när kommandot används
+
+    return report(args.config_dir, args.kind, args.day, args.start, args.end)
+
+
 def _kill(args: argparse.Namespace) -> int:
     from .risk.cli import kill  # importeras bara när kommandot används
 
@@ -286,6 +298,7 @@ def main(argv: list[str] | None = None) -> int:
         "dev-agent": lambda: _dev_agent(args),
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
+        "report": lambda: _report(args),
         "spend": lambda: _spend(args),
         "results": lambda: _results(args),
         "registry": lambda: _registry(args),
