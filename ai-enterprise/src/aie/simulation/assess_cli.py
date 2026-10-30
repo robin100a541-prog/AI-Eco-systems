@@ -36,7 +36,8 @@ def assess(config_dir: Path, action: str, target: str | None = None, actor: str 
             store = system.register.assessments
             try:
                 if action == "run":
-                    a = assess_initiative(config, config_dir, system.register, target, actor, runs, days)
+                    a = assess_initiative(config, config_dir, system.register, target, actor, runs, days,
+                                          results=system.results)
                     _print(a)
                     return 0
                 if action == "list":
@@ -71,6 +72,8 @@ def _print(a, full: bool = False) -> None:
               f"netto per dag {s['daily_net_minor']}")
     for reason in r.get("reasons", []):
         print(f"  - {reason}")
+    for v in r.get("verified", []):
+        print(f"  {v}")
     print("  Antaganden: " + "; ".join(r.get("assumptions", [])))
     sens = [s for s in r.get("sensitivity", []) if "parameter" in s][:3]
     if sens:

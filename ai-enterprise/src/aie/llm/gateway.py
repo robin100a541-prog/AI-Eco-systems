@@ -35,6 +35,10 @@ class LLMGateway:
         self._engine = engine
         self._audit = audit
 
+    def calls_left(self) -> int:
+        """Anrop kvar i dag hos leverantörerna (`ProviderRouter.calls_left`)."""
+        return self._router.calls_left()
+
     def complete(self, agent_id: str, request: ChatRequest) -> ChatResponse:
         """Kastar `PermissionDenied`, `SecretInPrompt` eller `NoProviderAvailable` vid nej."""
         self._engine.require(agent_id, TOOL)

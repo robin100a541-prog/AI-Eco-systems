@@ -68,6 +68,7 @@ class Simulation:
     def __init__(self, system, config, scenario: Scenario, run_id: int, clock: SimClock) -> None:
         self._system = system
         self._config = config
+        self.config = config
         self.scenario = scenario
         self.run_id = run_id
         self.clock = clock
@@ -78,7 +79,7 @@ class Simulation:
     # --- Starta och återuppta --------------------------------------------------------------
 
     @classmethod
-    def start(cls, system, config, scenario: Scenario, founder: str, clock: SimClock) -> "Simulation":
+    def start(cls, system, config, scenario: Scenario, founder: str, clock: SimClock) -> Simulation:
         require_sim(config)
         if founder not in config.system.founders:
             raise SimulationError("en simulering startas av en grundare")
@@ -108,7 +109,7 @@ class Simulation:
         return cls(system, config, scenario, run_id, clock)
 
     @classmethod
-    def resume(cls, system, config, clock: SimClock) -> "Simulation":
+    def resume(cls, system, config, clock: SimClock) -> Simulation:
         """Fortsätter körningen i databasen med den sparade scenariodefinitionen, inte filen."""
         require_sim(config)
         run = stored_run(system.db)

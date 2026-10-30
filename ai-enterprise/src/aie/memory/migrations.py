@@ -1373,6 +1373,44 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=32,
+        name="real_results",
+        statements=(
+            # PR 10 (arbetsorder 02, D-062): utfall från verkligheten, en rad per dag och initiativ, med källa.
+            # Importeras av en grundare ur en CSV-fil. Samma rad två gånger sparas en gång (row_hash).
+            # Append-only: ett fel rättas med en ny rad som har en egen källa och en förklaring.
+            """
+            CREATE TABLE real_results (
+                id             INTEGER PRIMARY KEY,
+                day            TEXT NOT NULL,
+                initiative     TEXT NOT NULL,
+                visitors       INTEGER NOT NULL CHECK (visitors >= 0),
+                orders         INTEGER NOT NULL CHECK (orders >= 0),
+                revenue_minor  INTEGER NOT NULL CHECK (revenue_minor >= 0),
+                refunds_minor  INTEGER NOT NULL CHECK (refunds_minor >= 0),
+                fees_minor     INTEGER NOT NULL CHECK (fees_minor >= 0),
+                costs_minor    INTEGER NOT NULL CHECK (costs_minor >= 0),
+                currency       TEXT NOT NULL,
+                source         TEXT NOT NULL CHECK (length(trim(source)) > 0),
+                note           TEXT NOT NULL,
+                row_hash       TEXT NOT NULL UNIQUE,
+                file_sha256    TEXT NOT NULL,
+                imported_by    TEXT NOT NULL,
+                at             TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX real_results_by_initiative ON real_results (initiative, day)",
+            """
+            CREATE TRIGGER real_results_no_update BEFORE UPDATE ON real_results
+            BEGIN SELECT RAISE(ABORT, 'utfall skrivs aldrig om; importera en rättelse'); END
+            """,
+            """
+            CREATE TRIGGER real_results_no_delete BEFORE DELETE ON real_results
+            BEGIN SELECT RAISE(ABORT, 'utfall raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)

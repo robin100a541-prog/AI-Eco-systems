@@ -9,8 +9,16 @@ from aie.authorization import load_permissions
 from aie.config import ConfigError, load_config
 from aie.ledger import EntryType, compute_result
 from aie.memory import Database
-from aie.simulation import (EVENT_KINDS, Market, SimClock, Simulation, SimulationError, available, load_scenario,
-                            parse_scenario)
+from aie.simulation import (
+    EVENT_KINDS,
+    Market,
+    SimClock,
+    Simulation,
+    SimulationError,
+    available,
+    load_scenario,
+    parse_scenario,
+)
 from aie.system import build_system
 
 from .fixture_config import TEST_CONFIG

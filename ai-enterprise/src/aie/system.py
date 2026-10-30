@@ -34,18 +34,25 @@ from .agents import AgentRegistry
 from .audit import AuditLog
 from .authorization import AuthorizationEngine, ControlStops, load_permissions
 from .budget import BudgetEngine, SpendApprovals, load_budgets
+from .collaboration import OpportunityRegister
 from .config import Config
-from .evaluation import (ForecastLog, IncidentLog, LessonRegistry, PerformanceReview, RemovalReview,
-                         StrategyRegistry)
+from .evaluation import (
+    ForecastLog,
+    IncidentLog,
+    LessonRegistry,
+    PerformanceReview,
+    RemovalReview,
+    StrategyRegistry,
+)
 from .ledger import EntryType, Ledger, Status
 from .memory import Database
 from .monitoring import get_logger
 from .orchestration import TaskBoard
+from .registry import AssessmentStore, DependencyGuard, Register
+from .results import ResultStore
 from .risk import KillSwitch, ProtectedMode, StopLoss
 from .risk.protected import COMPONENT as PROTECTED_MODE
 from .tax import TaxEngine, load_tax_config
-from .collaboration import OpportunityRegister
-from .registry import AssessmentStore, DependencyGuard, Register
 
 SIMULATION = "system:simulation"  # D-042: får skriva i ledgern bara i sim
 
@@ -76,6 +83,7 @@ class System:
     budgets: dict = field(default_factory=dict)
     spend_approvals: object = None
     register: object = None  # plattforms- och initiativregistret (PR 4, D-056)
+    results: object = None  # utfall från verkligheten (PR 10, D-062)
     clock: object = None  # affärstid (simulering) eller None = riktig tid
     pause_after_days: int = 14  # D-058
     opportunities: object = None
@@ -179,5 +187,6 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
                     permissions=permissions, budgets=budgets, spend_approvals=spend_approvals,
-                    register=register, opportunities=opportunities, clock=clock)
+                    register=register, opportunities=opportunities, clock=clock,
+                    results=ResultStore(db, audit, founders, register))
     return system

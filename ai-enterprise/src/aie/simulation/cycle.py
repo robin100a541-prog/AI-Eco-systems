@@ -43,18 +43,41 @@ ROLE_ACTIONS = {
 
 
 class WorkCycle:
-    def __init__(self, sim: Simulation, system, gateway) -> None:
+    def __init__(self, sim: Simulation, system, gateway, data_class: DataClass = DataClass.INTERNAL) -> None:
+        """`data_class`: `public` bara för `--agents groq`, och bara i miljön sim med SIM (PR 8, D-060)."""
+        if data_class is not DataClass.INTERNAL:
+            from .run import require_sim
+
+            require_sim(sim.config)  # en simulering innehåller inga riktiga uppgifter; prod skickas aldrig ut
         self.sim = sim
         self._system = system
         self._gateway = gateway
+        self._data_class = data_class
         self._initiatives = frozenset(i.key for i in sim.scenario.initiatives)
+        self.paused: str | None = None  # varför körningen pausades, till exempel att kvoten tog slut
 
     def run(self, days: int | None = None) -> list[dict]:
+        """Kör dagar tills målet nås. Räcker inte dagens kvot hos leverantörerna till en hel dag pausas
+        körningen före dagen. Inget halvt dygn sparas, och `simulate resume` fortsätter (PR 8)."""
         target = self.sim.scenario.days if days is None else min(self.sim.scenario.days, self.sim.last_day + days)
         out = []
+        self.paused = None
         while self.sim.last_day < target:
+            needed = self._calls_needed(self.sim.last_day + 1)
+            left = self._gateway.calls_left() if hasattr(self._gateway, "calls_left") else needed
+            if left < needed:
+                self.paused = (f"kvoten hos språkmodellen räcker inte till dag {self.sim.last_day + 1} "
+                               f"({left} anrop kvar, {needed} behövs); fortsätt med simulate resume när den har "
+                               "fyllts på (UTC-dygn). Ingen betald reserv används (D-008, D-009)")
+                self._system.audit.append(SYSTEM, "simulation.paused_quota",
+                                          {"day": self.sim.last_day + 1, "calls_left": left, "calls_needed": needed})
+                break
             out.append(self.day())
         return out
+
+    def _calls_needed(self, day: int) -> int:
+        conflict = any(e.day == day and e.kind == "conflicting_assessment" for e in self.sim.scenario.events)
+        return len(ORDER) + (3 if conflict else 0)
 
     def day(self) -> dict:
         previous = self.sim.days()[-1] if self.sim.last_day else {}
@@ -230,4 +253,4 @@ class WorkCycle:
                        f"Tillåtna åtgärder för dig: {', '.join(ROLE_ACTIONS.get(agent.role, ()))}.\n" + schema_text())
         user_text = f"Dag {state['day']} ({state['date']}).\n{STATE_MARKER}\n" + json.dumps(state, ensure_ascii=False)
         return ChatRequest(messages=(Message("system", system_text), Message("user", user_text)),
-                           data_class=DataClass.INTERNAL)
+                           data_class=self._data_class)

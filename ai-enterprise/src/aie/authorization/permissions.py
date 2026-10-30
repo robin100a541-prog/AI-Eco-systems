@@ -20,7 +20,13 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from ..agents.hierarchy import LEVEL_CEO, LEVEL_CONTROL, LEVEL_HEAD, LEVEL_WORKER, ROLE_LEVELS  # noqa: F401
+from ..agents.hierarchy import (  # noqa: F401
+    LEVEL_CEO,
+    LEVEL_CONTROL,
+    LEVEL_HEAD,
+    LEVEL_WORKER,
+    ROLE_LEVELS,
+)
 from ..config import ConfigError
 from ..config.loader import is_secret_key
 

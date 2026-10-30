@@ -9,8 +9,13 @@ from .consultation import (
     RiskClass,
     required_for,
 )
-
-from .opportunities import KINDS, Opportunity, OpportunityError, OpportunityRegister, Step
+from .opportunities import (
+    KINDS,
+    Opportunity,
+    OpportunityError,
+    OpportunityRegister,
+    Step,
+)
 
 __all__ = [
     "KINDS",

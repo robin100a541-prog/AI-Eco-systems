@@ -13,6 +13,8 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
+- `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
+- `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -144,19 +146,29 @@ def build_parser() -> argparse.ArgumentParser:
     reg.add_argument("status", nargs="?", help="ny status (för status)")
     reg.add_argument("--as", dest="founder", help="vilken grundare som agerar (för import och status)")
     reg.add_argument("--note", default="", help="motivering (för status)")
+    rs = add("results", "utfall från verkligheten: import, list eller report (PR 10, D-062)")
+    rs.add_argument("action", choices=("import", "list", "report"))
+    rs.add_argument("target", nargs="?", help="CSV-filen (för import) eller initiativet (för report)")
+    rs.add_argument("--as", dest="founder", help="vilken grundare som importerar")
     sp = add("spend", "godkännanden av enskilda utgifter: list, approve eller reject (F5, D-053)")
     sp.add_argument("action", choices=("list", "approve", "reject"))
     sp.add_argument("approval_id", type=int, nargs="?", help="förfrågans nummer (för approve och reject)")
     sp.add_argument("--as", dest="founder", help="vilken grundare som beslutar")
     sp.add_argument("--note", default="", help="motivering; krävs vid reject")
+    rep = add("report", "rapporter: daily (§57), periodic (§58) eller monitor (FR-24); läser bara")
+    rep.add_argument("kind", choices=("daily", "periodic", "monitor"))
+    rep.add_argument("--day", help="daily: dagen ÅÅÅÅ-MM-DD (standard: senaste dagen i ledgern)")
+    rep.add_argument("--from", dest="start", help="periodic/monitor: första dagen")
+    rep.add_argument("--to", dest="end", help="periodic: sista dagen")
     sim = add("simulate", "affärssimulering med SIM: start, resume, status eller evaluate (Fas 6, D-042, D-043, D-048)")
     sim.add_argument("action", choices=("start", "resume", "status", "evaluate"))
     sim.add_argument("--scenario", help="scenario i config/scenarios/ (för start och evaluate)")
     sim.add_argument("--runs", type=int, help="evaluate: antal körningar (standard: min_runs i simulation.toml)")
     sim.add_argument("--as", dest="founder", help="vilken grundare som startar (för start)")
     sim.add_argument("--days", type=int, help="hur många dagar som körs nu (standard: resten av scenariot)")
-    sim.add_argument("--agents", choices=("scripted", "local"), default="scripted",
-                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama")
+    sim.add_argument("--agents", choices=("scripted", "local", "groq"), default="scripted",
+                     help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
+                          "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
     return parser
 
 
@@ -193,6 +205,18 @@ def _registry(args: argparse.Namespace) -> int:
     return registry(args.config_dir, args.action, args.kind, args.key, args.status, args.founder, args.note)
 
 
+def _results(args: argparse.Namespace) -> int:
+    from .results.cli import results  # importeras bara när kommandot används
+
+    if args.action in ("import", "report") and not args.target:
+        print("FEL: import kräver en CSV-fil och report ett initiativ", file=sys.stderr)
+        return 1
+    if args.action == "import" and not args.founder:
+        print("FEL: import kräver --as <grundare>", file=sys.stderr)
+        return 1
+    return results(args.config_dir, args.action, args.target, args.founder)
+
+
 def _spend(args: argparse.Namespace) -> int:
     from .budget.cli import spend  # importeras bara när kommandot används
 
@@ -218,6 +242,12 @@ def _simulate(args: argparse.Namespace) -> int:
         print("FEL: --days måste vara minst 1", file=sys.stderr)
         return 1
     return simulate(args.config_dir, args.action, args.scenario, args.founder, args.days, args.agents, args.runs)
+
+
+def _report(args: argparse.Namespace) -> int:
+    from .reporting.cli import report  # importeras bara när kommandot används
+
+    return report(args.config_dir, args.kind, args.day, args.start, args.end)
 
 
 def _kill(args: argparse.Namespace) -> int:
@@ -268,7 +298,9 @@ def main(argv: list[str] | None = None) -> int:
         "dev-agent": lambda: _dev_agent(args),
         "kill": lambda: _kill(args),
         "simulate": lambda: _simulate(args),
+        "report": lambda: _report(args),
         "spend": lambda: _spend(args),
+        "results": lambda: _results(args),
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
         "assess": lambda: _assess(args),

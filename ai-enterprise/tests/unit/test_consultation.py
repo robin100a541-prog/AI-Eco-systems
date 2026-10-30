@@ -7,7 +7,13 @@ from pathlib import Path
 from aie.agents import AgentRegistry, AgentState
 from aie.audit import AuditLog
 from aie.authorization import load_permissions
-from aie.collaboration import ConsultationBoard, ConsultationError, Position, RiskClass, required_for
+from aie.collaboration import (
+    ConsultationBoard,
+    ConsultationError,
+    Position,
+    RiskClass,
+    required_for,
+)
 from aie.config import Money
 from aie.memory import Database
 
