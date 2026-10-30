@@ -1,7 +1,7 @@
 # PROJECT_STATUS
 
 **Senast uppdaterad:** 2026-10-30 av Claude (Claude Code-session med Robin)
-**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter (6a, 6b-1–6b-5) byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`). Stängs formellt när en grundare godkänner. Fas 7 startas bara av grundarna.
+**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter (6a, 6b-1–6b-5) byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`). **Stängd 2026-10-30 (D-063).** Simuleringens "redo" är en hypotes på overifierade marknadsantaganden. Fas 7 startas bara av grundarna.
 **Fasstatus:** Fas 1–6 är mergade till `main`. Acceptanstester finns för §49–§54. Hela sviten: 697 OK (2026-10-30, Python 3.13 lokalt; CI kör 3.11 och 3.12). Fas 0-punkten 0.8 är öppen.
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
@@ -176,8 +176,8 @@
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
-| 1 | Godkänna att Fas 6 stängs, och ta ställning till #86 och #95 | En grundare |
-| 2 | Godkänna D-005–D-012 (0.8) och kvarvarande föreslagna beslut | En grundare |
+| 1 | Svar från Skatteverket om skattespår (Q-TAX-01, D-010) | En grundare |
+| 2 | Oberoende granskning (ny Claude-session) av PR:er med `kräver-oberoende-granskning` före Fas 7 (D-055) | Före Fas 7 |
 | 3 | Fas 7a–7c i ROADMAP: produktagent, manuell listning och beslutscykel mot Groq | När grundarna startar Fas 7 |
 
 ## Blockerare

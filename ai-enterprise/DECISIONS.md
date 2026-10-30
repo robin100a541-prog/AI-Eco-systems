@@ -8,6 +8,14 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-063 Fas 6 är stängd; simuleringens "redo" är en hypotes
+- **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-30 · **Bygger på:** D-049, D-058, §54
+- **Beslut:**
+  1. Fas 6 (affärssimulering) är stängd. Underlaget är acceptanstesterna för §54 i `tests/acceptance/test_fas6.py` (PR #111), som går igenom i CI.
+  2. Simuleringens bedömning "redo" är en **hypotes**. Den bygger på marknadsantaganden ur scenariofilerna som är **overifierade**, och blir ett belägg först när det finns riktiga försäljningsdata (D-062, PR #113).
+  3. Fas 7 startas bara av grundarna (§55, D-048).
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
+
 ### D-055 Vanlig kod slås ihop av den som skrev den; säkerhetskritisk kod granskas oberoende före Fas 7
 - **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-10-28 · **Bygger på:** D-016, D-049
 - **Beslut:**
@@ -498,7 +506,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-10-23, beslutat gemensamt på plats, registrerat av Robin)
 
 ### D-011 Agenterna undersöker själva nya kanaler och lösningar — människor godkänner
-- **Status:** Föreslagen · **Föreslagen av:** Yorgo (idé), formulerat av Claude, 2026-10-21
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (idé), formulerat av Claude, 2026-10-21
 - **Bakgrund:** Frågor som "vilka plattformar kan vi sälja på" och "hur hanteras skatten där" ska systemet kunna utreda självt.
 - **Beslut:** Research-avdelningen får en återkommande uppgiftstyp **"Utred möjlighet"** (ny kanal, intäktsväg, verktyg, gratis-API, skatte- eller regelfråga). Resultatet blir alltid en ifylld post i ett register (för kanaler: `docs/channels.md`, i systemet en databastabell) med källor och datum. Flödet:
   1. Research undersöker (endast läsande webbåtkomst, gratis modeller).
@@ -507,15 +515,15 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Grundarna godkänner innan första användning av en ny kanal eller ny skatteväg.
 - **Verifiering (§29):** ett svar från en agent registreras som *obekräftad hypotes* med källor. Öppna frågor som ännu inte utretts ligger i `research/QUESTIONS.md`. Svar som rör lag, skatt eller plattformsvillkor blir operativ regel först när Compliance kontrollerat källan **och** en grundare godkänt det.
 - **Gränser:** agenterna får föreslå, men inte själva skapa konton, godkänna villkor, välja skattespår eller tolka lagen slutgiltigt. Skattefrågor som påverkar deklarationen bekräftas av Skatteverket eller en rådgivare.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ### D-012 Allt från Claude-sessioner arkiveras i repot
-- **Status:** Föreslagen · **Föreslagen av:** Yorgo, 2026-10-21
+- **Status:** Godkänd · **Föreslagen av:** Yorgo, 2026-10-21
 - **Beslut:** Varje Claude-session som påverkar projektet sparas som en fil i `docs/conversations/` (datum, grundare, ämne). Filen är ett arkiv, inte en regel — det som gäller står fortfarande i DECISIONS.md, ARCHITECTURE.md och REQUIREMENTS.md (§2, §46). Båda grundarna följer samma rutin.
-- **Godkänd av:** Yorgo ☑ (begärt i chatten 2026-10-21) · Robin ☐
+- **Godkänd av:** Yorgo ☑ (begärt i chatten 2026-10-21) · Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ### D-010 Skatt hanteras utan att registrera aktiebolag; systemet räknar och reserverar skatt
-- **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
+- **Status:** Godkänd i delar · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
 - **Bakgrund:** Grundarna vill inte öppna ett företag men vill att skatt ska vara inkluderad. Skyldigheten att skatta försvinner inte, men det finns lagliga vägar där ni inte behöver starta aktiebolag eller registrera enskild firma. Vilken väg som gäller beror på **vad** AI:n faktiskt tjänar pengar på. Det avgör Skatteverket utifrån verksamheten, inte ett eget val. Detta är inte skatterådgivning; bekräfta med Skatteverket innan Fas 7.
 - **Beslut (förslag):** Systemet får ett **skattespår per intäktstyp** och tilldelar varje intäkt ett spår i ledgern:
 
@@ -539,17 +547,18 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
   Viktigt: plattformar rapporterar säljares intäkter till skattemyndigheten enligt EU:s DAC7 (från inkomstår 2023). Säljare av varor undantas bara under 30 försäljningar *och* under 2 000 euro per år. Skatteverket får alltså uppgifterna — systemet ska därför alltid kunna visa samma siffror.
   Kontot måste ägas och verifieras av en av grundarna (inte av AI:n). Om ni driver det tillsammans som enkelt bolag registrerar ledgern fördelningen mellan er.
+- **Godkänt 2026-10-30 (Robin):** mekanismen — skattereserv, bevakning av momsgränsen och arkiv i 7 år. **Öppet:** vilket skattespår som gäller, tills Skatteverket svarat (Q-TAX-01).
 - **Konsekvenser för systemet:** Tax Engine (ny modul) som (1) märker varje intäkt med spår, (2) reserverar beräknad skatt automatiskt som ett åtagande så att pengarna inte kan investeras, (3) bevakar momsgränsen 120 000 kr/år, (4) arkiverar underlag i 7 år, (5) genererar underlag till varje grundares deklaration. Reserverad skatt räknas aldrig som disponibelt kapital.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, mekanismen; gäller för båda enligt D-049). Valet av skattespår är öppet (Q-TAX-01).
 
 ### D-009 Betalda API:er får finansieras av realiserad vinst — enligt regel
-- **Status:** Föreslagen · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
+- **Status:** Godkänd · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
 - **Beslut:** Betalda API:er är en egen budgetkategori `API_SPEND`. Den är **0 kr tills** systemet har realiserad nettovinst (efter reserverad skatt). Därefter får högst `API_REINVEST_SHARE` av realiserad nettovinst användas till API:er. Varje nytt betalt API kräver ett affärsförslag (§12) som visar att det förväntas ge mer än det kostar, samt yttrande från CFO och CRO. Belopp över `HUMAN_APPROVAL_THRESHOLD` kräver grundarnas godkännande. Varje API-nyckel får en hård utgiftsgräns hos leverantören när sådan finns.
 - **Parametrar som grundarna sätter:** `API_REINVEST_SHARE` (förslag 20 %), `API_MONTHLY_CAP`.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ### D-008 Gratis språkmodeller från start, med flera leverantörer och lokal reserv
-- **Status:** Föreslagen · **Ersätter:** D-005 · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
+- **Status:** Godkänd · **Ersätter:** D-005 · **Föreslagen av:** Claude på Yorgos begäran, 2026-10-21
 - **Beslut:** Agenterna använder riktiga språkmodeller från Fas 2 via en `ProviderRouter` som bara anropar gratisalternativ:
   1. **Groq gratisplan** (primär): t.ex. `openai/gpt-oss-120b` och `openai/gpt-oss-20b`, Groqs tabell visar cirka 1 000 anrop/dag och 200 000 tokens/dag per modell, men anger att exakta gratisgränser kan skilja sig och visas i ert konto — `llm_smoke_test.py` skriver ut de faktiska kvothuvudena.
   2. **OpenRouter `:free`-modeller** (sekundär): 20 anrop/min, 50/dag utan köpta krediter.
@@ -557,23 +566,23 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
   4. Google Gemini gratisnivå används bara som tillägg; Google har sänkt gratisgränserna kraftigt och säger att nivån är avsedd för tidig testning.
 - **Regler i koden:** varje leverantörs dagskvot räknas i databasen; när den tar slut går routern till nästa; när alla är slut pausar agenterna (de betalar aldrig). Kunddata, personuppgifter och hemligheter skickas aldrig till gratis-API:er — gratisnivåer kan ha villkor om att data används för att förbättra tjänsten (kontrolleras per leverantör innan den aktiveras).
 - **Konsekvens:** Med några tusen anrop per dag arbetar agenterna i schemalagda arbetscykler, inte i oavbruten chatt.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ### D-005 Ingen automatisk modellanvändning från kod i MVP
 - **Status:** Ersatt av D-008
 - **Beslut:** MVP använder `rule`-provider (deterministisk). `manual`-provider (grundare kör prompten i Claude och klistrar in svaret) tillåts från Fas 3. API och automatiserad Claude Code-körning är **inte** godkända.
 - **Motivering:** Pro inkluderar inte API-krediter; API faktureras separat. Pro-gränser delas mellan chatt och Claude Code. Se ARCHITECTURE.md §3.3.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** — (ersatt av D-008, markerat av Robin 2026-10-30)
 
 ### D-006 Belopp lagras som heltal i minsta enhet + valutakod; simulering använder valutan `SIM`
-- **Status:** Föreslagen
+- **Status:** Godkänd
 - **Motivering:** Inga avrundningsfel (ER-01). `SIM` kan tekniskt inte summeras med verklig valuta (ER-15).
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ### D-007 Agenter har inga egna verktyg — allt går via kontrollkedja och Tool Gateway
-- **Status:** Föreslagen
+- **Status:** Godkänd
 - **Beslut:** Agenter returnerar `ActionRequest`. Ordning: KillSwitch/Mode → Authorization → Budget → Risk → HumanApproval → Tool Gateway. Default deny. Varje steg loggas.
-- **Godkänd av:** Yorgo ☐ · Robin ☐
+- **Godkänd av:** Robin ☑ (2026-10-30, gäller för båda enligt D-049)
 
 ---
 
@@ -581,6 +590,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 | ID | Fråga | Behövs före | Förslag från Claude |
 |---|---|---|---|
+| Q-TAX-01 | Vilket skattespår (D-010: A–D) gäller för systemets intäkter? Väntar på svar från Skatteverket. | Fas 7 (riktiga pengar) | Spår C (enkelt bolag) för digitala produkter, om Skatteverket bekräftar |
 | Q-01 | ~~Hur är beslutsmakten fördelad mellan Yorgo och Robin?~~ **Besvarad av D-019 (2026-10-23).** | Fas 3 | — |
 | Q-02 | Vilka datorer/OS har ni? (Besvaras av `check_env.py`) | Fas 1 | — |
 | Q-03 | Valuta för verkligt kapital (SEK?) | Fas 4 | SEK |
