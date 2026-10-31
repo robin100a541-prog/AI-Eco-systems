@@ -79,3 +79,9 @@ _Inga._
   2. Stryk uppgiften.
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
 - **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
+
+<!-- scout:start -->
+## Scouten väntar på grundarna (2026-10-31)
+- Etsy: ETSY_API_KEY saknas, källan hoppades över
+- researchen misslyckades: scout-1: modellen gav inget användbart svar (IdeaError: svaret innehåller ingen JSON)
+<!-- scout:end -->
