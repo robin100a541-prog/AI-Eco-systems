@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-30T12:24:08+00:00",
+  "generated_at": "2026-10-31T10:27:06+00:00",
   "classification": "public",
   "departments": [
     "audit",
@@ -64,18 +64,19 @@
       "role": "researcher",
       "department": "research",
       "state": "ACTIVE",
-      "activity": "gör en prognos"
+      "activity": "väntar"
     }
   ],
   "meeting": false,
   "kill_switch": false,
   "protected_mode": false,
+  "scout": {},
   "scoreboard": {
     "sim": {
       "currency": "SIM",
-      "capital_minor": 71805,
+      "capital_minor": 50000,
       "reserve_minor": 10000,
-      "result_minor": 21805
+      "result_minor": 0
     },
     "real": null
   }
