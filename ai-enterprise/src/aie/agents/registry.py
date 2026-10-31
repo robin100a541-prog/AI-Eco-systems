@@ -84,6 +84,7 @@ class AgentRegistry:
             raise RegistryError(f"rollen {role!r} finns inte i permissions.toml")
         if manager_id == agent_id:
             raise RegistryError("en agent kan inte vara sin egen chef")
+        # manager_id != agent_id
         _require_reason(reason)
 
         now = self._clock()
