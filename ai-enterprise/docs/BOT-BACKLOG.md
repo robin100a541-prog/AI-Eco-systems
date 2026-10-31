@@ -16,6 +16,8 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-008 (5 dokumentation) Utöka docstringen för `AgentRegistry.register` med beskrivning av `reason`‑parametern och vilka fel som kan kastas. — öppen
 - [ ] BL-009 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` kastar `RegistryError` om `guard` saknar `transition_block_reason`. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_invalid` — öppen
 - [ ] BL-010 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` accepterar `None` utan att krascha. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_none` — öppen
+- [ ] BL-011 (4 kodkvalitet) Lägg till en `return 0` i slutet av `_check_config` så funktionen alltid returnerar en exit‑kod. Klart när: `!grep src/aie/__main__.py "return 0"` — öppen
+- [ ] BL-012 (2 kravtäckning) Skriv ett enhetstest som anropar `main()` med argumentet `check-config` och verifierar att exit‑koden är 0 vid giltig konfiguration. Klart när: `test tests.unit.test_main.TestMain.test_check_config_success` — öppen
 
 ## Pågår
 
