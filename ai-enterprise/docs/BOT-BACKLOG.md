@@ -17,7 +17,6 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-009 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` kastar `RegistryError` om `guard` saknar `transition_block_reason`. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_invalid` — öppen
 - [ ] BL-010 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` accepterar `None` utan att krascha. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_none` — öppen
 - [ ] BL-011 (4 kodkvalitet) Lägg till en `return 0` i slutet av `_check_config` så funktionen alltid returnerar en exit‑kod. Klart när: `!grep src/aie/__main__.py "return 0"` — öppen
-- [ ] BL-012 (2 kravtäckning) Skriv ett enhetstest som anropar `main()` med argumentet `check-config` och verifierar att exit‑koden är 0 vid giltig konfiguration. Klart när: `test tests.unit.test_main.TestMain.test_check_config_success` — öppen
 
 ## Pågår
 
@@ -25,6 +24,7 @@ _Inget._
 
 ## Klart
 
+- [x] BL-012 (2 kravtäckning) Skriv ett enhetstest som anropar `main()` med argumentet `check-config` och verifierar att exit‑koden är 0 vid giltig konfiguration. Klart när: `test tests.unit.test_main.TestMain.test_check_config_success` — klar (2026-11-01)
 - [x] BL-007 (2 kravtäckning) I `register`‑metoden, lägg till en kontroll att `manager_id != agent_id` (en agent får inte vara sin egen chef). Klart när: `grep src/aie/agents/registry.py manager_id != agent_id` — klar (2026-10-31)
 - [x] BL-003 (2 kravtäckning) FR-14, FR-26 och DR-02, DR-04, DR-06, DR-08, DR-09, DR-10, DR-11 saknar test som nämner dem (2026-10-28). En PR per krav eller per liten grupp. Krav som hör till en fas som inte är byggd (Fas 7 eller senare) noteras här i stället Klart när: `verifies FR-14`, `verifies FR-26`, `verifies DR-02`, `verifies DR-04`, `verifies DR-06`, `verifies DR-08`, `verifies DR-09`, `verifies DR-10`, `verifies DR-11` — klar (2026-10-31)
 - [x] BL-006 (4 kodkvalitet) Lägg till en `__repr__`‑metod på `Agent` för tydligare debugging. Klart när: `grep src/aie/agents/registry.py def __repr__` — klar (2026-10-29, #104)
