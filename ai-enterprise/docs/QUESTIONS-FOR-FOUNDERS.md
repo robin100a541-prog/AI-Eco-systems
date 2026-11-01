@@ -105,7 +105,6 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 - **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
 <!-- scout:start -->
-## Scouten väntar på grundarna (2026-10-31)
+## Scouten väntar på grundarna (2026-11-01)
 - Etsy: ETSY_API_KEY saknas, källan hoppades över
-- researchen misslyckades: scout-1: modellen gav inget användbart svar (IdeaError: svaret innehåller ingen JSON)
 <!-- scout:end -->
