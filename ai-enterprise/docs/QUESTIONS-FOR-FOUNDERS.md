@@ -25,6 +25,32 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 
 ## Öppna
 
+### Q-BOT-008 Utvecklaragenten behöver hjälp: ruff:I001:src/aie/__main__.py:330
+- **Datum:** 2026-11-01
+- **Status:** Öppen
+- **Uppgift:** ruff:I001:src/aie/__main__.py:330
+- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
+- **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: check_failed.
+- **Alternativ:**
+  1. Ge en ledtråd eller lös den själv.
+  2. Stryk uppgiften.
+- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
+- **Svar (grundare, namn och datum):**
+
+
+### Q-BOT-007 Utvecklaragenten behöver hjälp: BL-011
+- **Datum:** 2026-11-01
+- **Status:** Öppen
+- **Uppgift:** BL-011
+- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
+- **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: apply_failed.
+- **Alternativ:**
+  1. Ge en ledtråd eller lös den själv.
+  2. Stryk uppgiften.
+- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
+- **Svar (grundare, namn och datum):**
+
+
 ### Q-BOT-006 Utvecklaragenten behöver hjälp: BL-010
 - **Datum:** 2026-11-01
 - **Status:** Öppen
