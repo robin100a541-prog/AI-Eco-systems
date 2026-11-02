@@ -20,6 +20,8 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-013 (2 kravtäckning) Skriv ett enhetstest som anropar `_check_config` med en giltig konfigurationskatalog och verifierar att den returnerar `0`. Klart när: `test tests.unit.test_main.test_check_config_success` — öppen
 - [ ] BL-014 (2 kravtäckning) Sätt standardvärde för `details` till tom `dict` i `append`‑signaturen och uppdatera docstringen. Klart när: `grep src/aie/audit/log.py "def append.*details: Mapping.*=\s*{}"` — öppen
 - [ ] BL-015 (5 dokumentation) Lägg till en kort beskrivning av `Verification.head_hash` i klass‑docstringen för att förklara dess roll vid trunkeringsdetektering. Klart när: `grep src/aie/audit/log.py "head_hash" -A2` — öppen
+- [ ] BL-016 (2 kravtäckning) Implementera enhetstest som verifierar att `AuditEntry.expected_hash()` returnerar samma hash som lagras i `AuditEntry.hash` för en ny rad. Klart när: `test tests.unit.test_audit_log.TestAuditLog.test_expected_hash` — öppen
+- [ ] BL-017 (5 dokumentation) Lägg till en docstring på `_canonical` som förklarar varför `allow_nan=False` används och hur sortering av nycklar garanterar deterministisk hash. Klart när: `grep src/aie/audit/log.py "Deterministisk hash"` — öppen
 
 ## Pågår
 
