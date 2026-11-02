@@ -144,6 +144,6 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 - **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
 <!-- scout:start -->
-## Scouten väntar på grundarna (2026-11-01)
+## Scouten väntar på grundarna (2026-11-02)
 - Etsy: ETSY_API_KEY saknas, källan hoppades över
 <!-- scout:end -->
