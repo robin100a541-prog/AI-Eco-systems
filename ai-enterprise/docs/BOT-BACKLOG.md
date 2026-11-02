@@ -18,6 +18,8 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-010 (2 kravtäckning) Skriv enhetstest som verifierar att `AgentRegistry.set_guard` accepterar `None` utan att krascha. Klart när: `test tests.unit.test_registry.TestAgentRegistry.test_set_guard_none` — öppen
 - [ ] BL-011 (4 kodkvalitet) Lägg till en `return 0` i slutet av `_check_config` så funktionen alltid returnerar en exit‑kod. Klart när: `!grep src/aie/__main__.py "return 0"` — öppen
 - [ ] BL-013 (2 kravtäckning) Skriv ett enhetstest som anropar `_check_config` med en giltig konfigurationskatalog och verifierar att den returnerar `0`. Klart när: `test tests.unit.test_main.test_check_config_success` — öppen
+- [ ] BL-014 (2 kravtäckning) Sätt standardvärde för `details` till tom `dict` i `append`‑signaturen och uppdatera docstringen. Klart när: `grep src/aie/audit/log.py "def append.*details: Mapping.*=\s*{}"` — öppen
+- [ ] BL-015 (5 dokumentation) Lägg till en kort beskrivning av `Verification.head_hash` i klass‑docstringen för att förklara dess roll vid trunkeringsdetektering. Klart när: `grep src/aie/audit/log.py "head_hash" -A2` — öppen
 
 ## Pågår
 
