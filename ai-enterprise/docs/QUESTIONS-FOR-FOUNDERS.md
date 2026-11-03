@@ -25,6 +25,32 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 
 ## Öppna
 
+### Q-BOT-011 Utvecklaragenten behöver hjälp: BL-014
+- **Datum:** 2026-11-03
+- **Status:** Öppen
+- **Uppgift:** BL-014
+- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
+- **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: check_failed.
+- **Alternativ:**
+  1. Ge en ledtråd eller lös den själv.
+  2. Stryk uppgiften.
+- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
+- **Svar (grundare, namn och datum):**
+
+
+### Q-BOT-010 Utvecklaragenten behöver hjälp: BL-015
+- **Datum:** 2026-11-03
+- **Status:** Öppen
+- **Uppgift:** BL-015
+- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
+- **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: apply_failed.
+- **Alternativ:**
+  1. Ge en ledtråd eller lös den själv.
+  2. Stryk uppgiften.
+- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
+- **Svar (grundare, namn och datum):**
+
+
 ### Q-BOT-009 Utvecklaragenten behöver hjälp: BL-013
 - **Datum:** 2026-11-02
 - **Status:** Öppen
