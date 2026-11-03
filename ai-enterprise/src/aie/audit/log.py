@@ -78,7 +78,12 @@ class AuditLog:
         self._clock = clock
 
     def append(self, actor: str, action: str, details: Mapping[str, Any] | None = None) -> AuditEntry:
-        """Lägger till en rad. Kastar `ValueError`/`TypeError` innan något skrivs om indata är fel."""
+        """Lägger till en rad. Kastar `ValueError`/`TypeError` innan något skrivs om indata är fel.
+
+        `details` är valfri; utan den sparas en tom tabell. Standardvärdet är `None` och inte `{}`,
+        eftersom ett föränderligt standardvärde delas mellan alla anrop. Nycklar som ser ut som
+        hemligheter avvisas (SR-10), och innehållet måste gå att koda som JSON.
+        """
         if not actor or not action:
             raise ValueError("actor och action måste anges")
         details = dict(details or {})
