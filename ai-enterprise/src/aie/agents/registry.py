@@ -74,6 +74,8 @@ class AgentRegistry:
 
         `guard.transition_block_reason(agent_id, old, new, changed_by) -> str | None`; None = tillåtet.
         """
+        if guard is not None and not hasattr(guard, "transition_block_reason"):
+            raise RegistryError("guard must implement transition_block_reason")
         self._guard = guard
 
     def register(self, agent_id: str, role: str, manager_id: str | None, registered_by: str, reason: str) -> Agent:
