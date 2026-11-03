@@ -291,6 +291,17 @@ def ideate(
     return ideas
 
 
+def _yt(idea, by_id: dict) -> str:
+    from ..research.youtube import numbers
+
+    n = numbers([by_id[i] for i in idea.signal_ids if i in by_id])
+    if n["top_views"] is None and n["new_videos_90d"] is None:
+        return "inga YouTube-siffror"
+    prices = ", ".join(f"{p / 100:.2f}" for p in n["shop_prices_cents"]) or "–"
+    return (f"toppvideo {n['top_views']} visningar, median {n['median_views']}, {n['new_videos_90d']} nya videor "
+            f"senaste 90 dagarna, butikspriser {prices}")
+
+
 def _sig(s: Signal) -> dict:
     return {
         "id": s.id,
@@ -375,10 +386,18 @@ def score(
     return idea
 
 
-def run(reader, gateway, settings: Settings, channel_rules: str, max_loss_cents: int):
-    """(signaler, alla idéer sorterade, topp 3, logg). Kastar AgentStopped utan reserv."""
+def run(reader, gateway, settings: Settings, channel_rules: str, max_loss_cents: int, youtube=None,
+        youtube_terms: int = 0):
+    """(signaler, alla idéer sorterade, topp 3, logg). Kastar AgentStopped utan reserv.
+
+    `youtube` (research.youtube.YouTubeSource) lägger till siffror från YouTube: först för de första
+    `youtube_terms` sökorden, sedan för varje idé (bara relevanta signaler kopplas).
+    """
     log: list[str] = []
     signals = research(reader, gateway, settings, log)
+    if youtube is not None:
+        for term in settings.search_terms[:youtube_terms]:
+            signals += youtube.collect(term, len(signals) + 1)
     if len(signals) < settings.min_signals:
         raise AgentStopped(
             f"researchen gav {len(signals)} belagda signaler, minst {settings.min_signals} krävs; "
@@ -389,6 +408,13 @@ def run(reader, gateway, settings: Settings, channel_rules: str, max_loss_cents:
         score(i, by_id, settings, max_loss_cents)
         for i in ideate(gateway, settings, signals, channel_rules)
     ]
+    if youtube is not None:
+        from ..research.youtube import enrich
+
+        enrich(ideas, by_id, youtube)
+        ideas = [score(i, by_id, settings, max_loss_cents) for i in ideas]
+        signals = list(by_id.values())
+        log += youtube.log
     ideas.sort(
         key=lambda i: (i.qualified, i.total, i.expected_value_cents), reverse=True
     )
@@ -452,6 +478,7 @@ def report(
             f"- Poäng {i.total}/100: "
             + ", ".join(f"{k} {v}" for k, v in i.scores.items()),
             f"- Belägg: {', '.join(i.signal_ids)}",
+                f"- YouTube: {_yt(i, {x.id: x for x in signals})}",
             f"- Motivering (modellen): {i.reasoning}",
             "",
         ]

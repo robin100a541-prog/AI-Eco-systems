@@ -39,6 +39,7 @@ from ..pilot.discovery import (
     score,
 )
 from ..pilot.product import AgentStopped, Idea
+from ..research.youtube import numbers
 from .register import TERMINAL, ScoutRegister, kind_to_type
 
 SCOUT = "scout-1"
@@ -138,6 +139,7 @@ def _data(o: Opportunity, signals: dict[str, Signal], seen: str) -> dict:
         "qualified": o.qualified,
         "why_not": o.why_not,
         "reasoning": o.reasoning,
+        "youtube": numbers([signals[i] for i in o.signal_ids if i in signals]),
         "last_seen": seen,
         "sources": [
             {
@@ -212,6 +214,14 @@ def run_cycle(
             secret_headers=headers,
             start=len(signals) + 1,
         )
+        from ..research.youtube import enrich, from_env
+
+        yt, yt_terms, yt_note = from_env(reader, SCOUT, config_dir, environ, today)
+        if yt_note:
+            out["notes"].append(yt_note)
+        if yt is not None:
+            for term in settings.search_terms[:yt_terms]:
+                signals += yt.collect(term, len(signals) + 1)
         if len(signals) < settings.min_signals:
             raise AgentStopped(
                 f"researchen gav {len(signals)} belagda signaler, minst {settings.min_signals} krävs"
@@ -242,6 +252,10 @@ def run_cycle(
                 if words & _words(f"{x.title} {x.quote}"):
                     o.signal_ids = (*o.signal_ids, x.id)
             score(o, by_id, settings, loss)
+        if yt is not None:  # YouTube-siffror per idé; bara relevanta signaler kopplas
+            enrich(ideas, by_id, yt)
+            ideas = [score(i, by_id, settings, loss) for i in ideas]
+            out["log"] += yt.log
         ideas.sort(key=lambda i: (i.qualified, i.total), reverse=True)
     except AgentStopped as exc:
         out["failed"] = str(exc)
@@ -363,14 +377,14 @@ def render_register(out: dict, today: date) -> str:
         f"- Källor som hoppades över: {'; '.join(out['notes']) or 'inga'}",
         f"- Scoutens profil: {out['profile']}",
         "",
-        "| Nyckel | Typ | Titel | Status | Poäng | Förv. värde USD | Källor | Senaste skäl |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Nyckel | Typ | Titel | Status | Poäng | Förv. värde USD | Källor | YouTube | Senaste skäl |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for e in entries:
         lines.append(
             f"| {e.key} | {e.type} | {e.title} | {e.status} | {e.data.get('total', '–')} | "
             f"{e.data.get('expected_value_cents', 0) / 100:.2f} | {len(e.data.get('sources', []))} | "
-            f"{e.reason.replace('|', '/')} |"
+            f"{_yt_text(e.data.get('youtube') or {})} | {e.reason.replace('|', '/')} |"
         )
     lines += ["", "## Källor per möjlighet", ""]
     for e in entries:
@@ -379,6 +393,13 @@ def render_register(out: dict, today: date) -> str:
                 f'- {e.key} {src["id"]} ({src["kind"]}): "{src["quote"]}" — {src["url"]}'
             )
     return "\n".join(lines) + "\n"
+
+
+def _yt_text(n: dict) -> str:
+    if not n or (n.get("top_views") is None and n.get("new_videos_90d") is None):
+        return "–"
+    return (f"topp {n.get('top_views')} visn., median {n.get('median_views')}, "
+            f"{n.get('new_videos_90d')} nya/90 d")
 
 
 def render_weekly(out: dict, today: date) -> str:

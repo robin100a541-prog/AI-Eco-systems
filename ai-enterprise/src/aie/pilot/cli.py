@@ -88,7 +88,16 @@ def live(config_dir: Path, action: str, founder: str | None, product: Path | Non
 
     from ..governance.cli import build
     from ..system import build_system
-    from .live import PilotError, approve, approval, check_stops, initiative_for, load_idea, prepare, stop_advice
+    from .live import (
+        PilotError,
+        approval,
+        approve,
+        check_stops,
+        initiative_for,
+        load_idea,
+        prepare,
+        stop_advice,
+    )
 
     try:
         pconf_dir, config = _pilot_system(config_dir, root)
@@ -97,7 +106,7 @@ def live(config_dir: Path, action: str, founder: str | None, product: Path | Non
         with runtime._open(config) as db:
             gov = build(config, db, pconf_dir)
             if action == "prepare":
-                text, request = prepare(gov, config.risk, founder.lower(), product)
+                text, _request = prepare(gov, config.risk, founder.lower(), product)
                 print(text, end="")
             elif action == "approve":
                 req = approve(gov, build_system(config, db, pconf_dir), founder, request_id)
@@ -126,7 +135,15 @@ def import_platform_sales(config_dir: Path, founder: str, csv_path: Path, produc
     from datetime import UTC, datetime
 
     from ..system import build_system
-    from .live import PilotError, approval, check_stops, import_sales, initiative_for, load_idea, stop_advice
+    from .live import (
+        PilotError,
+        approval,
+        check_stops,
+        import_sales,
+        initiative_for,
+        load_idea,
+        stop_advice,
+    )
 
     try:
         pconf_dir, config = _pilot_system(config_dir, root)
@@ -179,7 +196,15 @@ def discover(config_dir: Path, founder: str, mode: str, report: Path) -> int:
             reader = WebReader(db, gov.engine, gov.audit, load_limits(config_dir))
             stopped, signals, ideas, top, log = None, [], [], [], []
             try:
-                signals, ideas, top, log = run(reader, gateway, settings, rules, loss // 10)
+                import os
+                from datetime import UTC, datetime
+
+                from ..research.youtube import from_env
+
+                yt, yt_terms, note = from_env(reader, "res-1", config_dir, os.environ, datetime.now(UTC).date())
+                signals, ideas, top, log = run(reader, gateway, settings, rules, loss // 10, yt, yt_terms)
+                if note:
+                    log.append(note)
             except AgentStopped as exc:
                 stopped = str(exc)
     except (ConfigError, ValueError, OSError) as exc:

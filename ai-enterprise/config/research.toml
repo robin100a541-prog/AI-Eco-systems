@@ -4,7 +4,7 @@
 
 config_version = 1
 
-per_day = 50                 # högst så många hämtningar per dag, för alla agenter tillsammans
+per_day = 150                 # högst så många hämtningar per dag, för alla agenter tillsammans
 max_bytes = 500_000          # större svar kortas av och märks
 timeout_seconds = 10
 max_redirects = 3
@@ -36,3 +36,7 @@ allowed_hosts = [
   "www.skatteverket.se",
   "skatteverket.se",
 ]
+
+# Officiella API:er med nyckel (Robin 2026-10-30). robots.txt gäller sidor som kryps, inte API:er; API:ets egna
+# villkor och kvoter gäller i stället. Bara läsande anrop.
+api_hosts = ["www.googleapis.com", "openapi.etsy.com"]

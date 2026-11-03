@@ -100,7 +100,7 @@ def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
         try:
             assessments[role] = _assess(gateway, role, ideas, data_class)
             quality["roles"][role] = {"valid": True}
-        except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+        except Exception as exc:
             raise AgentStopped(f"{role} gav ingen giltig bedömning: {type(exc).__name__}: {exc}") from exc
     model_objections = sorted(k for k, (p, _) in assessments[CRO].items() if p == "against")
     quality["risk_objected"] = model_objections
@@ -124,7 +124,7 @@ def run_cycle(gov, gateway, ideas, founder: str, limits, usd_sek: float,
                    "expected_result, stop_conditions och follow_up. Ange inga belopp; koden räknar dem.", payload, data_class)
         idea, draft = _ceo_draft(raw, ideas, blocked, usd_sek)
         quality["roles"][CEO] = {"valid": True, "fields": "alla åtta fält i §20 steg 7", "numbers_consistent": True}
-    except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+    except Exception as exc:
         raise AgentStopped(f"CEO gav inget giltigt beslut: {type(exc).__name__}: {exc}") from exc
     decision = gov.queue.submit_decision(CEO, task.task_id, draft)
     return CycleResult(task.task_id, idea, decision, assessments, disputes, quality)

@@ -64,6 +64,7 @@ class WebLimits:
     max_redirects: int
     user_agent: str
     allowed_hosts: frozenset[str]
+    api_hosts: frozenset[str] = frozenset()  # officiella API:er med nyckel; robots.txt gäller sidor, inte API:er
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,12 +105,15 @@ def load_limits(config_dir: Path | str) -> WebLimits:
         errors.append(f"{RESEARCH_FILE}: user_agent saknas")
     if errors:
         raise ConfigError(errors)
+    api = data.get("api_hosts", [])
+    if not isinstance(api, list) or not set(api) <= set(hosts):
+        raise ConfigError([f"{RESEARCH_FILE}: api_hosts ska vara en lista med värdar som också finns i allowed_hosts"])
     return WebLimits(data["per_day"], data["max_bytes"], data["timeout_seconds"], data["max_redirects"],
-                     data["user_agent"], frozenset(hosts))
+                     data["user_agent"], frozenset(hosts), frozenset(api))
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102 — omdirigeringar prövas en i taget
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
 
@@ -251,6 +255,8 @@ class WebReader:
 
     def _robots_allow(self, url: str) -> bool:
         parts = urlsplit(url)
+        if parts.hostname in self._limits.api_hosts:
+            return True  # ett officiellt API med nyckel, inte en sida som kryps
         base = f"{parts.scheme}://{parts.netloc}"
         if base not in self._robots:
             response = self._get(f"{base}/robots.txt", self._headers(), self._limits.timeout_seconds, 200_000)

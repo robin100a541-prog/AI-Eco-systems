@@ -161,5 +161,5 @@ def propose(gateway, data_class: DataClass = DataClass.PUBLIC) -> tuple[tuple[Id
         if len(ideas) < 3:
             raise IdeaError(f"bara {len(ideas)} giltiga förslag av 3")
         return tuple(ideas[:3]), log
-    except Exception as exc:  # noqa: BLE001 — ingen reserv: agenten stoppar och grundarna får frågan
+    except Exception as exc:
         raise AgentStopped(f"produktagenten stoppade: {type(exc).__name__}: {exc}") from exc

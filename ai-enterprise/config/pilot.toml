@@ -59,13 +59,16 @@ stale_days = 14         # en idé som inte setts på så många dagar stoppas so
 # API-källor med nyckel ur GitHub-hemligheter. Saknas nyckeln hoppas källan över. Nyckeln skickas bara som
 # rubrik till API:ets egen värd och sparas aldrig (WebReader secret_headers).
 [[scout.apis]]
-name = "YouTube"
-env = "YOUTUBE_API_KEY"
-header = "X-goog-api-key"
-url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q={q}"
-
-[[scout.apis]]
 name = "Etsy"
 env = "ETSY_API_KEY"
 header = "x-api-key"
 url = "https://openapi.etsy.com/v3/application/listings/active?limit=20&keywords={q}"
+
+# YouTube Data API v3 (Robin 2026-10-30): nyckeln YOUTUBE_API_KEY finns som GitHub-hemlighet. Bara läsande anrop.
+[youtube]
+max_queries = 12        # sökord per körning; varje sökord kostar 201 enheter (2 × search.list + videos.list)
+daily_units = 9000      # under Googles gratiskvot på 10 000 enheter per dag
+top_videos = 5
+initial_terms = 3       # så många av founders.toml-sökorden körs före idéerna; resten används per idé
+shop_hosts = ["gumroad.com", "etsy.com", "payhip.com", "ko-fi.com", "creativemarket.com", "motionarray.com",
+              "envato.com", "lemonsqueezy.com", "shopify.com", "fiverr.com"]

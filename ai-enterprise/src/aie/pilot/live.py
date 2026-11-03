@@ -28,7 +28,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from datetime import date
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 
 from .settings import SETTINGS
@@ -100,10 +100,10 @@ def prepare(gov, limits, founder: str, product_dir: Path) -> tuple[str, object]:
         "## Pilotens ramar",
         f"- Budgettak: {cap / 100:.2f} kr (START_CAPITAL); inga förskottskostnader planeras",
         f"- Stop-loss: {stop / 100:.2f} kr förlust (MAX_SINGLE_EXPERIMENT_LOSS)",
-        f"- Stoppkriterier: {idea['stop_criteria']}; ingen försäljning på {NO_SALE_DAYS} dagar; "
-        f"återbetalningar {REFUND_STOP_RATIO[0]} av {REFUND_STOP_RATIO[1]} försäljningar",
-        f"- Godkännande: förfrågan #{getattr(request, 'request_id', '?')} i godkännandekön. "
-        f"Kör `python -m aie pilot approve {getattr(request, 'request_id', '<id>')} --as <grundare>`.",
+        (f"- Stoppkriterier: {idea['stop_criteria']}; ingen försäljning på {NO_SALE_DAYS} dagar; "
+        f"återbetalningar {REFUND_STOP_RATIO[0]} av {REFUND_STOP_RATIO[1]} försäljningar"),
+        (f"- Godkännande: förfrågan #{getattr(request, 'request_id', '?')} i godkännandekön. "
+        f"Kör `python -m aie pilot approve {getattr(request, 'request_id', '<id>')} --as <grundare>`."),
     ])
     return text + "\n", request
 

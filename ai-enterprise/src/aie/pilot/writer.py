@@ -33,7 +33,7 @@ def write_content(gateway, idea: Idea, data_class: DataClass = DataClass.PUBLIC)
         r = gateway.complete(AGENT, ChatRequest((Message("user", prompt),), data_class, 4_000))
         if len(r.text.strip()) >= MIN_CHARS:
             return r.text.strip() + "\n", f"model:{r.provider}/{r.model}"
-    except Exception as exc:  # noqa: BLE001 — ingen reserv (Robin 2026-10-30)
+    except Exception as exc:
         raise AgentStopped(f"produktagenten skrev ingen produkt: {type(exc).__name__}: {exc}") from exc
     raise AgentStopped("produktagenten skrev för lite text; ingen regelmall används")
 
