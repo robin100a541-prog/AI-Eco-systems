@@ -553,6 +553,20 @@ class TestPicker(unittest.TestCase):
             keys = [i.key for i in picker.pick(root, "", {})]
         self.assertEqual(keys, ["BL-005", "BL-004", "BL-001"])
 
+    def test_ruff_findings_and_ruff_checked_backlog_items_are_never_picked(self):
+        """Verifies D-050 (2026-11-03): lint är ingen uppgift längre; agenten fastnade på dem."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir()
+            (root / "src").mkdir()
+            (root / "src" / "a.py").write_text("import sys\nimport os\n", encoding="utf-8")
+            (root / "docs" / "BOT-BACKLOG.md").write_text(
+                "- [ ] BL-001 (4 kodkvalitet) Sortera. Klart när: `ruff src/a.py I001` — öppen\n"
+                "- [ ] BL-002 (5 dokumentation) Fixa. Klart när: `grep src/a.py y = 2` — öppen\n", encoding="utf-8")
+            lint = picker.Item("ruff:I001:src/a.py:1", "ruff", "lint", ("src/a.py",), (Check("ruff", "src/a.py I001"),))
+            with mock.patch.object(picker, "ruff_items", return_value=[lint]):
+                self.assertEqual([i.key for i in picker.pick(root, "", {})], ["BL-002"])
+
     def test_tests_before_lint_and_no_task_in_a_file_with_an_open_question(self):
         """Verifies D-050: krav/tester före lint; en fil med en öppen grundarfråga rörs inte."""
         a = picker.Item("ruff:I001:a.py:1", "ruff", "lint", ("a.py",), (Check("ruff", "a.py I001"),))

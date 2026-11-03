@@ -37,8 +37,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install ruff (optional, used only to find lint tasks)
-        run: pip install "ruff==0.16.9" || echo "ruff kunde inte installeras; agenten hoppar över lint-uppgifter"
+      # ruff installeras inte längre: lint-varningar är inga uppgifter för agenten (2026-11-03).
       # Rapporter utan ändring och tillståndet (misslyckade uppgifter) sparas mellan körningar,
       # så att en körning utan ändring inte behöver en egen PR.
       - name: Restore pending reports and state

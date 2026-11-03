@@ -2,8 +2,12 @@
 
 1. öppna punkter i `docs/BOT-BACKLOG.md`,
 2. tester som fallerar i grundkörningen,
-3. `ruff`-varningar (om ruff finns),
-4. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
+3. krav-ID:n i `REQUIREMENTS.md` som inget test nämner men som någon källfil nämner.
+
+`ruff`-varningar är inte längre uppgifter (Yorgo 2026-11-03). Agenten fastnade på dem gång på gång
+(Q-BOT-003, -004, -008, -012), och grundarna släppte dem som lågt värde. Varje ny radnummer gav en ny
+nyckel, så det hjälpte inte att stryka dem en i taget. En backloggpunkt vars kontroll är `ruff` tas inte heller.
+`ruff_items` finns kvar om någon vill köra den för hand.
 
 Varje uppgift har en kontroll (`verify.py`) som bevisar att den är klar: ruff-fyndet är borta, testet
 går igenom, eller ett test märkt `Verifies <ID>` finns och går igenom. En backloggpunkt anger sin
@@ -230,9 +234,9 @@ def pick(root: Path, test_output: str, failures: dict[str, int]) -> list[Item]:
     candidates = (
         backlog_items(root)
         + failing_test_items(root, test_output)
-        + ruff_items(root)
         + requirement_items(root)
-    )
+    )  # inga ruff-uppgifter (se modulens docstring)
+    candidates = [i for i in candidates if not any(c.kind == "ruff" for c in i.checks)]
     skip = escalated(root) | already_done(root, candidates)
     blocked = open_question_files(root, candidates)
     keep = [
