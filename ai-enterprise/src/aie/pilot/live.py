@@ -123,10 +123,17 @@ def approve(gov, system, founder: str, request_id: int):
 
 
 def approval(db, initiative: str) -> tuple[int, str] | None:
-    """(beslutets nummer, tidpunkt) när piloten godkändes, eller None."""
+    """(beslutets nummer, tidpunkt) när en grundare godkände piloten i godkännandekön, eller None.
+
+    Härleds bara ur kön (granskning N3): förfrågan ska vara av typen decision, godkänd, höra till uppgiften
+    som `prepare` skapade och ha ett beslut som utfall. Ett agentbeslut med samma text räknas aldrig.
+    """
+    idea_id = initiative.removeprefix(INITIATIVE_PREFIX)
     row = db.connection.execute(
-        "SELECT decision_id, decided_at FROM decisions WHERE chosen_action LIKE ? ORDER BY decision_id DESC LIMIT 1",
-        (f"Starta piloten {initiative}:%",)).fetchone()
+        "SELECT r.outcome_decision, r.decided_at FROM approval_requests r JOIN tasks t ON t.task_id = r.task_id "
+        "WHERE r.kind = 'decision' AND r.status = 'approved' AND r.outcome_decision IS NOT NULL "
+        "AND t.title = ? ORDER BY r.request_id DESC LIMIT 1",
+        (f"Fas 7: godkänn piloten {idea_id}",)).fetchone()
     return (row[0], row[1]) if row else None
 
 

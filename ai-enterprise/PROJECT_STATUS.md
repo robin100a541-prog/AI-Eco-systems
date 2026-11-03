@@ -244,6 +244,13 @@
 - API-källor (YouTube, Etsy) står i `config/pilot.toml` och används bara när nyckeln finns som hemlighet. WebReader skickar nyckeln som rubrik bara till API:ets egen värd och sparar den aldrig.
 - Rapporter: `docs/opportunities/REGISTER.md` och på måndagar `weekly-ÅÅÅÅ-VV.md`. Instrumentpanelen visar scouten och dess pipeline.
 
+## Ändrat 2026-10-30 (Granskningens high-fynd åtgärdade)
+- N1: en nekad utgift raderar inte längre skyddat läge, nödstopp eller incidenter.
+- N2: stop-loss gäller före varje utgift, inte bara i tick().
+- N3: pilotens godkännande kommer bara från grundarens godkännande i kön.
+- H5: en bedömning är redo bara med simuleringsbevis. Se `docs/reviews/FIXES-2026-10-30.md`.
+
+
 ## Nästa åtgärder
 | # | Vad | Vem |
 |---|---|---|
