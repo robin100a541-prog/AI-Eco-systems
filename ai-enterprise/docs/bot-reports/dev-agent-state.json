@@ -8,12 +8,14 @@
     "BL-013": 3,
     "BL-014": 3,
     "BL-015": 3,
+    "BL-016": 1,
     "BL-017": 2,
     "ruff:I001:src/aie/__main__.py:330": 3,
     "ruff:I001:src/aie/agents/__init__.py:2": 3,
     "ruff:I001:src/aie/agents/registry.py:13": 2,
     "ruff:RUF022:src/aie/agents/__init__.py:14": 3,
-    "ruff:RUF022:src/aie/agents/__init__.py:20": 2,
+    "ruff:RUF022:src/aie/agents/__init__.py:20": 3,
+    "ruff:RUF022:src/aie/authorization/__init__.py:16": 1,
     "ruff:UP017:src/aie/audit/log.py:30": 1
   }
 }
