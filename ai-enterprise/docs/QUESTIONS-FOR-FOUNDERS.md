@@ -25,7 +25,18 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 
 ## Öppna
 
-_Inga._
+### Q-BOT-013 Utvecklaragenten behöver hjälp: BL-017
+- **Datum:** 2026-11-03
+- **Status:** Öppen
+- **Uppgift:** BL-017
+- **Fråga:** Hur ska uppgiften lösas, eller ska den strykas?
+- **Varför det spelar roll:** Utvecklaragenten har misslyckats 3 gånger med uppgiften. Senast: check_failed.
+- **Alternativ:**
+  1. Ge en ledtråd eller lös den själv.
+  2. Stryk uppgiften.
+- **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
+- **Svar (grundare, namn och datum):**
+
 
 ## Besvarade
 
