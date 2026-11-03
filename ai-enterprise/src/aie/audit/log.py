@@ -65,6 +65,14 @@ def _compute_hash(
 
 @dataclass(frozen=True, slots=True)
 class Verification:
+    """Resultatet av `AuditLog.verify()`.
+
+    `head_hash` är hashen på den sista raden som kontrollerades och godkändes. Kedjan själv kan inte visa
+    att rader har tagits bort i slutet (trunkering), eftersom de rader som finns kvar fortfarande hänger
+    ihop. Sparas `head_hash` någon annanstans och jämförs vid nästa kontroll, syns en trunkering:
+    hashen blir då en tidigare rads hash.
+    """
+
     ok: bool
     checked: int  # antal rader som kontrollerades
     first_bad_seq: int | None = None
