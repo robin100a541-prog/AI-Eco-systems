@@ -32,7 +32,8 @@ test('public snapshot drives all houses, characters and exact reported activitie
   const w=await setup();assert.equal(w.nodes.get('population').textContent,fixture.agents.length);
   assert.equal(w.nodes.get('buildings').children.length,fixture.departments.length);
   assert.equal(w.nodes.get('agents').children.length,fixture.agents.length);
-  assert.equal(w.run('people.find(p=>p.a.name==="Greta").a.activity'),'gör en prognos');
+  // status.json skrivs om av den dagliga cykeln; jämför med det som faktiskt står i den
+  assert.equal(w.run('people.find(p=>p.a.name==="Greta").a.activity'),fixture.agents.find(a=>a.name==='Greta').activity);
 });
 test('selection and continuous following do not control the company',async()=>{
   const w=await setup();w.run('select("res-1");followed=true;select("res-1")');
