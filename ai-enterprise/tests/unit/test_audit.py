@@ -53,6 +53,14 @@ class TestAppend(AuditTestCase):
         (read,) = self.log.entries()
         self.assertEqual(read, written)
 
+    def test_expected_hash_matches_stored_hash(self):
+        """Verifies SR-09 (BL-016): en ny rad har samma hash som den räknas om till, både skriven och läst."""
+        written = self.log.append("agent:cfo", "budget.checked", {"belopp": 500})
+        (read,) = self.log.entries()
+        self.assertEqual(written.expected_hash(), written.hash)
+        self.assertEqual(read.expected_hash(), read.hash)
+        self.assertEqual(len(read.hash), 64)  # SHA-256 i hex
+
     def test_valid_chain_verifies(self):
         """Verifies SR-09: en orörd kedja godkänns och head_hash är sista radens hash."""
         entries = self.fill(5)
