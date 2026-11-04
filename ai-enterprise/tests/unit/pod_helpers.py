@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
+from urllib.parse import parse_qsl
 
 from aie.pod.http import Response
 
@@ -53,8 +54,10 @@ class FakeTransport:
 
     def __call__(self, method, url, headers, body, timeout):
         path = re.sub(r"^https://[^/]+", "", url).split("?", 1)[0]
+        form = "x-www-form-urlencoded" in headers.get("Content-Type", "")
+        parsed = (dict(parse_qsl(body.decode())) if form else json.loads(body)) if body else None
         self.calls.append({"method": method, "url": url, "path": path, "headers": dict(headers),
-                           "body": json.loads(body) if body else None, "timeout": timeout})
+                           "body": parsed, "form": form, "timeout": timeout})
         queue = self.routes.get((method, path))
         if not queue:
             return Response(404, {}, b'{"error": "not found in fake"}')

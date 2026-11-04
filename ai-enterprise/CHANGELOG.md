@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-04 — Etsy, Pinterest och Instagram (mockade, avstängda) och `aie connect` (D-068, föreslaget)
+### Tillagt
+- `src/aie/pod/channels.py`:
+  - `etsy.read`: sökning och recensioner som marknadssignal.
+  - `pinterest.trends`: trender, som används direkt och sparas inte.
+  - `pinterest.pin`: bara länk till Etsy, högst `max_pins_per_day`.
+  - `instagram.publish`: bild eller karusell, bara JPEG, högst 20 bilder, och aldrig över 50 per dygn.
+  - Alla är **avstängda** i `config/pod.toml` och kräver nyckel, token och verktyg.
+- Migration 38 `pod_actions`: dygnsgränserna reserveras atomärt före varje skrivande anrop, append-only.
+- `python -m aie connect etsy|pinterest|instagram`:
+  - OAuth 2 med PKCE (S256) och kontroll av `state`.
+  - En lokal callback på 127.0.0.1, eller inklistrad adress för https-krav (Etsy och Meta).
+  - Token sparas utanför repot med rättighet 600 och skrivs aldrig ut.
+- `tests/unit/test_pod_channels.py`: 9 tester, utan nätverk.
+
 ## [Unreleased] — 2026-11-04 — Printify och Etsy i registret, annons- och motivregler (D-065, D-067, föreslaget)
 ### Tillagt
 - `config/registry/printify.toml`: gratisplanen, och Premium (39 USD/mån) som en kostnad som kräver beslut. Källan är printify.com/pricing, läst 2026-11-04.

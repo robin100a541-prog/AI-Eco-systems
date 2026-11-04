@@ -1492,6 +1492,36 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        version=38,
+        name="pod_actions",
+        statements=(
+            # Arbetsorder 04 (D-068, D-069): varje skrivande anrop mot en extern tjänst (pin, inlägg, annons,
+            # utkast) reserveras här innan det skickas. Dagens antal per tjänst och åtgärd räknas och
+            # reserveras i samma transaktion, så att gränsen per dygn håller även vid samtidiga körningar.
+            # Ett misslyckat anrop räknas också. Append-only.
+            """
+            CREATE TABLE pod_actions (
+                id       INTEGER PRIMARY KEY,
+                service  TEXT NOT NULL CHECK (length(trim(service)) > 0),  -- tjänsterna står i aie.pod (D-056)
+                action   TEXT NOT NULL CHECK (length(trim(action)) > 0),
+                day      TEXT NOT NULL,
+                agent    TEXT NOT NULL,
+                ref      TEXT NOT NULL,
+                at       TEXT NOT NULL
+            ) STRICT
+            """,
+            "CREATE INDEX pod_actions_by_day ON pod_actions (service, action, day)",
+            """
+            CREATE TRIGGER pod_actions_no_update BEFORE UPDATE ON pod_actions
+            BEGIN SELECT RAISE(ABORT, 'externa åtgärder skrivs aldrig om'); END
+            """,
+            """
+            CREATE TRIGGER pod_actions_no_delete BEFORE DELETE ON pod_actions
+            BEGIN SELECT RAISE(ABORT, 'externa åtgärder raderas aldrig'); END
+            """,
+        ),
+    ),
 )
 
 validate_migrations(MIGRATIONS)
