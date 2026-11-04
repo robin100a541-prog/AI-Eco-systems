@@ -70,15 +70,20 @@ class RegisterCase(unittest.TestCase):
 
 
 class TestSeedData(RegisterCase):
-    def test_the_three_platforms_from_channels_md_are_imported_as_data(self):
-        """Verifies D-056: plattformarna kommer från config/registry/, med okända belopp som None, och importen kan upprepas."""
+    def test_the_platforms_in_config_registry_are_imported_as_data(self):
+        """Verifies D-056 och D-065: plattformarna kommer från config/registry/, med okända belopp som None, och importen kan upprepas."""
         lines = import_dir(self.register, "yorgo", ROOT / "config")
-        self.assertEqual(len(lines), 3)
+        self.assertEqual(len(lines), 4)
         platforms = {e.key: e for e in self.register.all("platform")}
-        self.assertEqual(set(platforms), {"etsy", "gumroad", "fiverr"})
+        self.assertEqual(set(platforms), {"etsy", "gumroad", "fiverr", "printify"})
         self.assertTrue(all(e.status == "investigated" for e in platforms.values()))
-        self.assertEqual((platforms["etsy"].data["fees"]["percent_bp"], platforms["etsy"].data["fees"]["per_order_minor"]),
-                         (650, None))
+        etsy, printify = platforms["etsy"].data, platforms["printify"].data
+        # Etsy verifierad 2026-11-04: 6,5 % + 4 %, 3,00 SEK ≈ 30 cent, 0,20 USD per annons, startavgiften okänd
+        self.assertEqual((etsy["fees"]["percent_bp"], etsy["fees"]["per_order_minor"], etsy["fees"]["per_listing_minor"],
+                          etsy["fees"]["setup_minor"]), (1050, 30, 20, None))
+        self.assertEqual(etsy["dependencies"], ["printify"])
+        self.assertEqual((printify["fees"]["monthly_minor"], printify["fees"]["per_order_minor"]), (0, None))
+        self.assertIn("39 USD", printify["fees"]["notes"])
         self.assertTrue(all(e.data["sources"] for e in platforms.values()))
         self.assertTrue(all("oförändrad" in line for line in import_dir(self.register, "yorgo", ROOT / "config")))
 
