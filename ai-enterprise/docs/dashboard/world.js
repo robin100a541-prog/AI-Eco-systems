@@ -14,7 +14,7 @@ const STATES = {ACTIVE:"Aktiv", TESTING:"Testas", CREATED:"Skapad", PROPOSED:"F�
 const MOBILE = new Set(["ACTIVE", "TESTING", "PROBATION"]);
 let status = null, people = [], houses = [], selected = null, followed = false;
 let paused = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let lastFrame = 0, elapsed = 0, fetching = false, error = "", shownBubbles = true, lastSnapshot = "";
+let lastFrame = 0, elapsed = 0, fetching = false, error = "", shownBubbles = true, lastSnapshot = "", lastMeetings = "";
 function svg(tag, attrs = {}, text) {
   const node = document.createElementNS(NS, tag);
   for (const [k,v] of Object.entries(attrs)) node.setAttribute(k, v);
@@ -24,6 +24,18 @@ function svg(tag, attrs = {}, text) {
 function el(tag, cls, text) { const n = document.createElement(tag); if(cls)n.className=cls; if(text !== undefined)n.textContent=text; return n; }
 function hash(s) { let h=0; for(const c of s)h=(h*31+c.charCodeAt(0))>>>0; return h; }
 function dep(id) { return DEPARTMENTS[id] || [id, "Avdelning", "#799e88", "#deead2", "⌂"]; }
+function live(data=status) {
+  const execution=data?.execution,age=Date.now()-Date.parse(execution?.heartbeat_at);
+  return execution?.state==="running"&&Number.isFinite(age)&&age>=-5000&&age<Math.min(10,execution.lease_seconds||10)*1000;
+}
+function activity(a) {
+  if(!status.execution)return "Senast: "+a.activity;
+  if(status.execution.state==="running"&&!live())return "Kontakt med körningen saknas";
+  if(!live())return status.execution.state==="paused"?"Körningen är pausad":status.execution.state==="failed"?"Körningen avbröts":"Ingen arbetscykel körs just nu";
+  return a.work?.current||"Ingen uppgift i detta arbetssteg";
+}
+function plan(a){return a.work?.next||"Invänta nästa tilldelade uppgift";}
+function inMeeting(id){return live()&&(status.meetings||[]).some(m=>m.participants.includes(id));}
 function money(n,c="SIM") { return Number.isFinite(n) ? (n/100).toLocaleString("sv-SE",{minimumFractionDigits:2,maximumFractionDigits:2})+" "+c : "–"; }
 function tree(x,y,s=1) {
   const g=svg("g",{transform:`translate(${x} ${y}) scale(${s})`});
@@ -65,13 +77,13 @@ function makePerson(a,i) {
   const seed=hash(a.id),h=houses.find(h=>h.id===a.department)||houses[0]||{x:500,y:300,top:true};
   const p={a,x:h.x-20+(i%3)*20,y:h.top?325:405,route:[],wait:i*1.2,seed,node:null,bob:0};
   const color=dep(a.department)[2],skin=["#edc297","#c98e65","#875f49","#f3d2aa"][seed%4];
-  const g=svg("g",{class:"agent",role:"button",tabindex:0,"aria-label":`${a.name}: ${a.activity}`});
+  const g=svg("g",{class:"agent",role:"button",tabindex:0,"aria-label":`${a.name}: ${activity(a)}`});
   g.append(svg("ellipse",{class:"selection",cx:0,cy:1,rx:20,ry:9}),svg("ellipse",{cx:1,cy:3,rx:12,ry:5,fill:"#355c38",opacity:".2"}));
   const body=svg("g",{class:"body"});
   body.append(svg("path",{d:"M-5-3v7m10-7v7",stroke:"#4b594b","stroke-width":5,"stroke-linecap":"round"}),svg("rect",{x:-9,y:-21,width:18,height:20,rx:7,fill:color,stroke:"#596e56","stroke-width":1.5}),svg("path",{d:"M-11-17l-3 9m25-9 3 9",stroke:skin,"stroke-width":4,"stroke-linecap":"round"}),svg("circle",{cx:0,cy:-31,r:11,fill:skin,stroke:"#6d624e","stroke-width":1}),svg("path",{d:"M-11-32q-1-16 14-11q11 2 8 15l-6-9-7 2-9-1Z",fill:["#5d4c3d","#ac8152","#424b44"][seed%3]}),svg("path",{d:"M-4-30v2m8-2v2",stroke:"#3d483d","stroke-width":2,"stroke-linecap":"round"}),svg("path",{d:"M-3-24q3 2 6 0",fill:"none",stroke:"#8c614c","stroke-width":1.2}));
   g.append(body,svg("text",{y:21,"text-anchor":"middle",class:"agent-name"},a.name));
   const bubble=svg("g",{class:"bubble",transform:"translate(0 -62)"});
-  const txt=String(a.activity||"Ingen aktivitet rapporterad"),short=txt.length>31?txt.slice(0,28)+"…":txt,w=Math.max(70,short.length*6.1+18);
+  const txt=String(activity(a)),short=txt.length>31?txt.slice(0,28)+"…":txt,w=Math.max(70,short.length*6.1+18);
   bubble.append(svg("path",{d:"M-5 10l5 7 5-7",fill:"#fffdf0",stroke:"#8b9c78","stroke-width":1}),svg("rect",{x:-w/2,y:-11,width:w,height:25,rx:8,fill:"#fffdf0",stroke:"#8b9c78","stroke-width":1}),svg("text",{y:6,"text-anchor":"middle"},short));
   g.append(bubble);const social=svg("text",{x:18,y:-30,class:"social"},"♡");social.style.display="none";g.append(social);p.social=social;p.node=g;p.body=body;p.bubble=bubble;
   g.addEventListener("click",()=>select(a.id));g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(a.id);}});
@@ -80,24 +92,27 @@ function makePerson(a,i) {
 function chooseRoute(p) {
   if(!houses.length)return;
   const h=houses[(p.seed+Math.floor(elapsed/10))%houses.length];
-  if(status.meeting){p.route=[{x:p.x,y:370},{x:460+p.seed%80,y:380+p.seed%30}];p.wait=4;return;}
+  if(inMeeting(p.a.id)){const point={x:450+p.seed%100,y:380+p.seed%25};if(Math.hypot(p.x-point.x,p.y-point.y)<2){p.wait=Infinity;return;}p.route=[{x:p.x,y:370},point];p.wait=1;return;}
+  const home=houses.find(h=>h.id===p.a.department)||h;
+  const target=p.a.work?.phase==="done"?home:h;
+  if(p.a.work?.phase==="done"&&Math.hypot(p.x-home.x,p.y-(home.top?325:405))<2){p.wait=Infinity;return;}
   // All interdepartmental walks use the town's east/west road and vertical lanes.
-  p.route=[{x:p.x,y:370},{x:h.x,y:370},{x:h.x,y:h.top?325:405}];p.wait=2+p.seed%4;
+  p.route=[{x:p.x,y:370},{x:target.x,y:370},{x:target.x,y:target.top?325:405}];p.wait=2+p.seed%4;
 }
 function active(p) { return MOBILE.has(p.a.state)&&!status.kill_switch&&!status.protected_mode; }
 function frame(now) {
   const dt=Math.min((now-lastFrame)/1000||0,.05);lastFrame=now;
-  const running=status&&!paused&&!status.kill_switch&&!status.protected_mode;
+  const running=live()&&!paused&&!status.kill_switch&&!status.protected_mode;
   if(running)elapsed+=dt;
   for(const p of people){let walking=false;
-    if(running&&active(p)){
-      if(p.route.length){const t=p.route[0],dx=t.x-p.x,dy=t.y-p.y,d=Math.hypot(dx,dy),step=25*dt;if(d<=step){p.x=t.x;p.y=t.y;p.route.shift();}else{p.x+=dx/d*step;p.y+=dy/d*step;walking=true;}}
+    if(running&&active(p)&&(inMeeting(p.a.id)||["thinking","checking","fetching","done"].includes(p.a.work?.phase))){
+      if(p.route.length){const t=p.route[0],dx=t.x-p.x,dy=t.y-p.y,d=Math.hypot(dx,dy),step=(inMeeting(p.a.id)?125:35)*dt;if(d<=step){p.x=t.x;p.y=t.y;p.route.shift();}else{p.x+=dx/d*step;p.y+=dy/d*step;walking=true;}}
       else {p.wait-=dt;if(p.wait<=0)chooseRoute(p);}
     }
     p.bob=walking?Math.sin(elapsed*12+p.seed)*1.8:0;
     p.node.setAttribute("transform",`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})`);
     p.body.setAttribute("transform",`translate(0 ${p.bob.toFixed(2)})`);
-    const near=running&&active(p)&&people.some(q=>q!==p&&active(q)&&Math.hypot(q.x-p.x,q.y-p.y)<46);
+    const near=inMeeting(p.a.id)&&people.some(q=>q!==p&&inMeeting(q.a.id)&&Math.hypot(q.x-p.x,q.y-p.y)<60);
     p.social.style.display=near?"block":"none";
   }
   if(followed){const p=people.find(p=>p.a.id===selected);if(p)camera(p);}
@@ -117,21 +132,23 @@ function select(id) {
   for(const q of people)q.node.classList.toggle("chosen",q===p);
   for(const b of $('team').children){const chosen=b.dataset.id===id;b.classList.toggle("selected",chosen);b.setAttribute("aria-pressed",String(chosen));}
   const profile=$('profile');profile.replaceChildren();const heading=el("div","profile-heading"),text=el("div");text.append(el("h2","",p.a.name),el("small","",dep(p.a.department)[1]));heading.append(avatar(p,true),text);
-  const report=el("div","reported");report.append(el("small","","SENAST RAPPORTERAD AKTIVITET"),document.createTextNode(p.a.activity||"Ingen aktivitet rapporterad"));
+  const report=el("div","reported");report.append(el("small","","GÖR NU"),document.createTextNode(activity(p.a)));
   const follow=el("button","full",followed?"◎ Sluta följa":"◎ Följ på kartan");follow.setAttribute("aria-pressed",String(followed));follow.addEventListener("click",()=>{followed=!followed;select(id);});
-  profile.append(heading,el("span","state-label",(active(p)?"● ":"○ ")+(STATES[p.a.state]||p.a.state)),report,el("p","profile-detail","Hemmabas: "+dep(p.a.department)[0]),el("p","profile-detail","Roll: "+p.a.role),follow);
+  const next=el("div","reported");next.append(el("small","","BORDE GÖRA · ROLLPLAN"),document.createTextNode(plan(p.a)));
+  const last=el("p","profile-detail","Senaste rapport: "+(p.a.work?.last||p.a.activity));
+  profile.append(heading,el("span","state-label",(active(p)?"● ":"○ ")+(STATES[p.a.state]||p.a.state)),report,next,last,el("p","profile-detail","Hemmabas: "+dep(p.a.department)[0]),el("p","profile-detail","Roll: "+p.a.role),follow);
   if(followed)camera(p);
   else $('world').setAttribute("viewBox","0 0 1000 740");
 }
 function render(data) {
   const old=new Map(people.map(p=>[p.a.id,p]));status=data;
   buildHouses(data.departments);$('agents').replaceChildren();people=data.agents.map(makePerson);
-  for(const p of people){const prev=old.get(p.a.id);if(prev&&prev.a.department===p.a.department){p.x=prev.x;p.y=prev.y;p.route=prev.route;p.wait=prev.wait;}}
+  for(const p of people){const prev=old.get(p.a.id);if(prev&&prev.a.department===p.a.department){p.x=prev.x;p.y=prev.y;p.route=prev.route;p.wait=prev.wait;if(prev.a.work?.phase!==p.a.work?.phase){p.route=[];p.wait=0;}}}
   $('population').textContent=data.agents.length;$('departments').textContent=data.departments.length;
   $('capital').textContent=money(data.scoreboard.sim?.capital_minor,data.scoreboard.sim?.currency||"SIM");$('result').textContent=money(data.scoreboard.sim?.result_minor,data.scoreboard.sim?.currency||"SIM");
   $('real').textContent=data.scoreboard.real?"Riktiga pengar · Kapital: "+money(data.scoreboard.real.capital_minor,data.scoreboard.real.currency):"Ingen pilotdata för riktiga pengar ännu.";
   $('team-count').textContent=data.agents.length;$('team').replaceChildren();$('activities').replaceChildren();
-  for(const p of people){const b=el("button","agent-button");b.dataset.id=p.a.id;const info=el("span");info.append(el("span","name",p.a.name),el("span","activity",p.a.activity||"Ingen aktivitet rapporterad"));b.append(avatar(p),info,el("span","dot"+(active(p)?"":" inactive")));b.addEventListener("click",()=>select(p.a.id));$('team').append(b);const item=el("li");item.append(el("b","",p.a.name+" · "+dep(p.a.department)[0]),document.createTextNode(p.a.activity||"Ingen aktivitet rapporterad"));$('activities').append(item);}
+  for(const p of people){const b=el("button","agent-button");b.dataset.id=p.a.id;const info=el("span");p.listActivity=el("span","activity",activity(p.a));info.append(el("span","name",p.a.name),p.listActivity);b.append(avatar(p),info,el("span","dot"+(active(p)?"":" inactive")));b.addEventListener("click",()=>select(p.a.id));$('team').append(b);const item=el("li");p.reportText=document.createTextNode(activity(p.a));item.append(el("b","",p.a.name+" · "+dep(p.a.department)[0]),p.reportText);$('activities').append(item);}
   if(!people.length){$('profile').replaceChildren(el("p","","Inga kollegor i senaste statusen."));$('activities').replaceChildren(el("li","","Inga aktiviteter rapporterade."));}
   else select(people.some(p=>p.a.id===selected)?selected:people[0].a.id);
   updateStatus();
@@ -139,24 +156,38 @@ function render(data) {
 function updateStatus(){
   if(!status)return;
   const age=Date.now()-Date.parse(status.generated_at),stale=!Number.isFinite(age)||age>24*3600*1000;
-  $('connection').textContent=error?"Kunde inte hämta ny status":stale?"Äldre ögonblicksbild":"Visar senaste ögonblicksbild";
+  const lost=status.execution?.state==="running"&&!live();
+  $('connection').textContent=error?"Kunde inte hämta ny status":live()?"● Live · "+(["scripted","rule"].includes(status.execution.mode)?"skriptad SIM":status.execution.mode==="groq"?"Groq-körning":status.execution.mode==="local"?"lokal modell":"arbetscykel pågår"):lost?"Kontakten med arbetscykeln har brutits":status.execution?.state==="paused"?"Arbetscykeln är pausad":status.execution?.state==="finished"?"Arbetscykeln är avslutad":stale?"Äldre sparad status":"Ingen aktiv arbetscykel · sparad status";
   const date=new Date(status.generated_at);$('time').textContent="Systemdata: "+(Number.isFinite(date.getTime())?date.toLocaleString("sv-SE"):"okänt datum");
-  const alerts=[];if(status.kill_switch)alerts.push("NÖDSTOPP — alla agenters rörelser är stoppade.");if(status.protected_mode)alerts.push("SKYDDAT LÄGE — världen står stilla.");if(error)alerts.push("Status kunde inte uppdateras. Senast hämtade data visas.");
+  const alerts=[];if(status.kill_switch)alerts.push("NÖDSTOPP — alla agenters rörelser är stoppade.");if(status.protected_mode)alerts.push("SKYDDAT LÄGE — världen står stilla.");if(error)alerts.push("Status kunde inte uppdateras. Senast hämtade data visas.");if(lost)alerts.push("Inga färska livstecken. Rörelser är stoppade tills kontakten återkommer.");
   $('alert').hidden=!alerts.length;$('alert').textContent=alerts.join(" ");
-  $('world-state').textContent=status.kill_switch?"Nödstopp":status.protected_mode?"Skyddat läge":paused?"Animation pausad":status.meeting?"Möte rapporterat · animerad samling på torget":"Animerad visning av sparad status";
+  for(const p of people){
+    const txt=activity(p.a),short=txt.length>31?txt.slice(0,28)+"…":txt;
+    p.bubble.querySelector("text").textContent=short;
+    p.node.setAttribute("aria-label",p.a.name+": "+txt);
+    if(p.listActivity)p.listActivity.textContent=txt;
+    if(p.reportText)p.reportText.textContent=txt;
+  }
+  if(selected){const report=$('profile').querySelector('.reported');if(report)report.lastChild.textContent=activity(people.find(p=>p.a.id===selected)?.a||{});}
+  $('world-state').textContent=status.kill_switch?"Nödstopp":status.protected_mode?"Skyddat läge":!live()?"Ingen livekörning · visar sparade resultat":paused?"Animation pausad":status.meetings?.length?"Bedömningsmöte pågår · deltagarna samlas":"Live-status · inga extra AI-anrop för visningen";
 }
 function validate(data){
   if(!data||data.classification!=="public"||!Array.isArray(data.agents)||!Array.isArray(data.departments)||!data.scoreboard)throw Error("Ogiltig offentlig status");
   if(!data.departments.every(d=>typeof d==="string")||!data.agents.every(a=>a&&["id","name","department","role","state","activity"].every(k=>typeof a[k]==="string")))throw Error("Ogiltiga agentdata");
+  if(data.meetings!==undefined&&(!Array.isArray(data.meetings)||!data.meetings.every(m=>m&&Array.isArray(m.participants)&&m.participants.every(id=>typeof id==="string"))))throw Error("Ogiltiga mötesdata");
+  if(data.agents.some(a=>a.work&&!["phase","current","next","last","updated_at"].every(k=>typeof a.work[k]==="string")))throw Error("Ogiltig arbetsstatus");
   return data;
 }
 async function refresh(){if(fetching)return;fetching=true;$('refresh').disabled=true;
-  try{const response=await fetch("status.json",{cache:"no-store",signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error("HTTP "+response.status);const data=validate(await response.json());error="";const snapshot=JSON.stringify(data);if(snapshot!==lastSnapshot){render(data);lastSnapshot=snapshot;}else updateStatus();}
+  try{const response=await fetch("status.json",{cache:"no-store",signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error("HTTP "+response.status);const data=validate(await response.json());error="";const snapshot=JSON.stringify({...data,execution:data.execution?{...data.execution,heartbeat_at:null}:undefined});if(snapshot!==lastSnapshot){render(data);lastSnapshot=snapshot;const meetings=JSON.stringify(data.meetings||[]);if(meetings!==lastMeetings){for(const p of people){p.route=[];p.wait=0;if(inMeeting(p.a.id))chooseRoute(p);}lastMeetings=meetings;}}else {status.execution=data.execution;updateStatus();}}
   catch(e){error=String(e);if(status)updateStatus();else{$('connection').textContent="Kunde inte läsa status";$('alert').hidden=false;$('alert').textContent="Statusdata kunde inte läsas. Försök med Uppdatera data.";}}
-  finally{fetching=false;$('refresh').disabled=false;}
+  finally{fetching=false;$('refresh').disabled=false;clearTimeout(pollTimer);pollTimer=setTimeout(refresh,document.hidden?15000:live()?2000:5000);}
 }
 $('refresh').addEventListener("click",refresh);
 function updatePause(){$('pause').setAttribute("aria-pressed",String(paused));$('pause').textContent=paused?"▶ Spela":"Ⅱ Pausa";updateStatus();}
 $('pause').addEventListener("click",()=>{paused=!paused;updatePause();});
 $('labels').addEventListener("click",()=>{shownBubbles=!shownBubbles;$('world').classList.toggle("hide-bubbles",!shownBubbles);$('labels').setAttribute("aria-pressed",String(shownBubbles));});
-buildLandscape();updatePause();refresh();requestAnimationFrame(frame);setInterval(refresh,15000);
+let pollTimer;
+buildLandscape();updatePause();refresh();requestAnimationFrame(frame);
+setInterval(updateStatus,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh();});
