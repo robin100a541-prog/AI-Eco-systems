@@ -1,0 +1,73 @@
+# Daglig läsning av Printifys katalog (arbetsorder 04, D-065). Varje dygn och med knappen "Run workflow".
+#
+# Säkerhet:
+# - Körs bara på schema och knapp, aldrig på pull_request eller pull_request_target. Hemligheten når därför
+#   aldrig kod från en fork. Jobbet kör dessutom bara i huvudrepot.
+# - PRINTIFY_API_TOKEN finns bara i läs-steget och skrivs aldrig ut. GitHub maskerar den i loggen.
+# - Bara läsning (`printify.read`). Utkast (`printify.draft`) är avstängt i config/pod.toml, och klienten
+#   kan aldrig publicera.
+# - Jobbet har bara läsrätt till repot. Resultatet sparas som artefakt, inte i repot.
+name: printify-catalog
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: printify-catalog
+  cancel-in-progress: false
+
+jobs:
+  catalog:
+    if: github.repository == 'robin100a541-prog/AI-Eco-systems'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bara sim
+        run: |
+          python -c "from aie.config import load_config; c = load_config('config'); assert c.system.environment == 'sim', 'bara sim'; print('miljö sim')"
+      - name: Läs katalogen
+        env:
+          PRINTIFY_API_TOKEN: ${{ secrets.PRINTIFY_API_TOKEN }}
+        run: |
+          if [ -z "$PRINTIFY_API_TOKEN" ]; then
+            echo "PRINTIFY_API_TOKEN saknas som repository secret"; exit 1
+          fi
+          python -m aie init
+          python -m aie printify catalog --agent res-1 --as yorgo --out "$RUNNER_TEMP/printify" 2>&1 | tee "$RUNNER_TEMP/printify.txt"
+          python -m aie printify shops --agent res-1 2>&1 | tee -a "$RUNNER_TEMP/printify.txt"
+      - name: Sammanfattning
+        if: always()
+        run: |
+          {
+            echo "## Printify-katalog $(date -u +%Y-%m-%d)"
+            echo '```'
+            cat "$RUNNER_TEMP/printify.txt" 2>/dev/null || echo "läsningen kördes inte"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Ladda upp katalogen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: printify-catalog-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/printify/
+            ${{ runner.temp }}/printify.txt
+          if-no-files-found: warn
+          retention-days: 30
