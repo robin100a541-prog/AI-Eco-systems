@@ -83,9 +83,15 @@ class TestSeedData(RegisterCase):
         self.assertTrue(all("oförändrad" in line for line in import_dir(self.register, "yorgo", ROOT / "config")))
 
     def test_no_platform_name_is_hard_coded_in_src(self):
-        """Verifies D-056: inget plattformsnamn står i src/; nya plattformar läggs till som data."""
+        """Verifies D-056: inget plattformsnamn står i src/; nya plattformar läggs till som data.
+
+        Undantag (D-065): `src/aie/pod/` är API-klienterna för Printify, Etsy, Pinterest och Instagram, och en
+        klient måste nämna sin plattform. Avgifter, regler och val av plattform ligger ändå i registret och
+        `config/`, och resten av `src/` får fortfarande inte nämna någon plattform."""
+        clients = ROOT / "src" / "aie" / "pod"
         hits = [str(p.relative_to(ROOT)) for p in (ROOT / "src").rglob("*.py")
-                if re.search(r"etsy|gumroad|fiverr", p.read_text(encoding="utf-8"), re.IGNORECASE)]
+                if clients not in p.parents
+                and re.search(r"etsy|gumroad|fiverr", p.read_text(encoding="utf-8"), re.IGNORECASE)]
         self.assertEqual(hits, [])
 
 

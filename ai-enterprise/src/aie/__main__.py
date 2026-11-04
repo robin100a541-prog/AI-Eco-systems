@@ -11,6 +11,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `kill`          nödstopp: status, engage, release (Fas 4e, D-030)
 - `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
+- `printify`      läs Printifys katalog och butik: shops, blueprints, snapshot, catalog (arbetsorder 04, D-065)
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
@@ -140,6 +141,14 @@ def build_parser() -> argparse.ArgumentParser:
     ass.add_argument("--note", default="", help="motivering; krävs vid reject")
     ass.add_argument("--runs", type=int, help="körningar per scenario (standard: min_runs)")
     ass.add_argument("--days", type=int, help="dagar per körning (standard: min_days)")
+    pf = add("printify", "läs Printifys katalog och butik som en agent med printify.read (arbetsorder 04, D-065)")
+    pf.add_argument("action", choices=("shops", "blueprints", "snapshot", "catalog"))
+    pf.add_argument("--agent", required=True, help="agenten som läser (måste ha printify.read)")
+    pf.add_argument("--as", dest="founder", help="registrerar organisationen i en tom databas")
+    pf.add_argument("--find", help="blueprints: sökord i titeln")
+    pf.add_argument("--blueprint", type=int, help="snapshot: blueprint-ID")
+    pf.add_argument("--provider", type=int, help="snapshot: tryckeriets ID (standard: de tre första)")
+    pf.add_argument("--out", type=Path, help="catalog: mapp för JSON-filen (standard: reports/printify)")
     res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
     res.add_argument("action", choices=("fetch", "history"))
     res.add_argument("url", nargs="?")
@@ -215,6 +224,16 @@ def _assess(args: argparse.Namespace) -> int:
         print("FEL: run, approve och reject kräver --as", file=sys.stderr)
         return 1
     return assess(args.config_dir, args.action, args.target, args.actor, args.note, args.runs, args.days)
+
+
+def _printify(args: argparse.Namespace) -> int:
+    from .pod.cli import printify  # importeras bara när kommandot används
+
+    if args.action == "snapshot" and not args.blueprint:
+        print("FEL: snapshot kräver --blueprint", file=sys.stderr)
+        return 1
+    return printify(args.config_dir, args.action, args.agent, args.founder, args.find, args.blueprint,
+                    args.provider, args.out)
 
 
 def _research(args: argparse.Namespace) -> int:
@@ -384,6 +403,7 @@ def main(argv: list[str] | None = None) -> int:
         "results": lambda: _results(args),
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
+        "printify": lambda: _printify(args),
         "assess": lambda: _assess(args),
     }
     try:

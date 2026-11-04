@@ -1,0 +1,34 @@
+# Print-on-demand (arbetsorder 04, D-065–D-069). Inga hemligheter här (SR-10): nycklar läses från
+# miljövariabler (GitHub-hemligheter i Actions) eller från token-filer utanför repot (`aie connect`).
+config_version = 1
+
+[printify]
+# Läsning av katalog och butik. Kräver PRINTIFY_API_TOKEN och verktyget printify.read.
+read_enabled = true
+# Opublicerade utkast i Printify. AV tills en grundare har godkänt D-069 (autonomi).
+draft_enabled = false
+# Länder vars standardfrakt läses varje dag. REST_OF_THE_WORLD används när ett land saknas.
+countries = ["US", "GB", "DE", "SE", "CA", "AU"]
+# Produkter (blueprint och tryckeri) som den dagliga körningen läser. Fylls på av scouten.
+catalog_watch = []
+# Sökord i katalogens titlar. Den första träffen per sökord läses varje dag (inför Q4, D-066).
+q4_search = ["unisex heavy cotton tee", "ceramic mug", "ornament", "tote bag", "crewneck sweatshirt", "poster"]
+
+[etsy]
+# Etsy Open API v3. Kräver ETSY_API_KEY (keystring:shared_secret) och, för butiken, en OAuth-token.
+enabled = false
+# Högst så många nya annonser per dag när D-069 är godkänt.
+max_new_listings_per_day = 5
+
+[pinterest]
+# Pinterest API v5. Kräver PINTEREST_APP_ID, PINTEREST_APP_SECRET och en OAuth-token.
+enabled = false
+trends_region = "US"
+max_pins_per_day = 10
+
+[instagram]
+# Instagram Graph API. Kräver INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET och en OAuth-token.
+enabled = false
+# Metas gräns är 50–100 publiceringar per 24 h (dokumentationen anger båda). Klienten stoppar alltid
+# vid 50 (HARD_DAILY_CAP); det här är vår egen, lägre gräns.
+max_posts_per_day = 10
