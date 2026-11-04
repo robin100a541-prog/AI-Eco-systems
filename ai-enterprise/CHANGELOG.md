@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-04 — Printify-klient (arbetsorder 04, D-065, föreslaget)
+### Tillagt
+- `src/aie/pod/http.py`: JSON över https med urllib. Den har egen User-Agent, tidsgräns, minsta avstånd mellan anrop och högst 3 återförsök vid 429/5xx (`Retry-After` följs). Nyckeln maskeras i felmeddelanden.
+- `src/aie/pod/printify.py`:
+  - `printify.read`: butiker, katalog, tryckerier, varianter och v2-frakt per land i cent.
+  - `printify.draft`: opublicerad produkt och bilduppladdning. Det är **av** i `config/pod.toml` tills D-069 är godkänt, och klienten kan aldrig anropa publicering.
+  - Fakta från developers.printify.com, lästa 2026-11-04, står i modulens docstring. Bland annat har katalogens varianter inget pris.
+- `python -m aie printify shops|blueprints|snapshot|catalog`, och `config/pod.toml`.
+- `tests/unit/test_printify.py`: 9 tester, utan nätverk.
+
 ## [Unreleased] — 2026-10-30 — Granskningens high-fynd åtgärdade
 ### Tillagt
 - N1: en nekad utgift raderar inte längre skyddat läge, nödstopp eller incidenter.
