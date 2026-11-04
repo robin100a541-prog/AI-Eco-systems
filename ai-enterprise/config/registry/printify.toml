@@ -1,0 +1,34 @@
+# Printify i registret (arbetsorder 04, D-065). Leverantör för print-on-demand; säljer inte själv utan
+# skickar produkterna till en kopplad butik (Etsy). Verifierat 2026-11-04. Okända belopp skrivs "null".
+
+config_version = 1
+
+[[platforms]]
+key = "printify"
+status = "investigated"
+name = "Printify"
+url = "https://printify.com"
+type = "product"
+currency = "USD"
+payment_terms = "Printify debiterar baspris och frakt när en kund beställer; inget i förväg"
+vat_responsibility = "okänt för leveranser till EU; ska utredas innan första order (Compliance)"
+dac7 = "okänt"
+ai_rules = "inget hittat i API-dokumentationen; motiven ska vara egna (aie.pod.rules)"
+automation_rules = "REST API v1 med Bearer-token och User-Agent; 600 anrop/min, 100/min mot katalogen, 200 publiceringar/30 min; 429 vid överskridande (developers.printify.com)"
+account_requirements = "kontot ägs av en grundare; token i PRINTIFY_API_TOKEN (GitHub-hemlighet)"
+payout_terms = "inga utbetalningar: Printify är leverantör"
+dependencies = ["printify"]
+risks = ["tryckeriet kan sluta med en produkt", "frakttider 2–10 dagar beroende på land", "kvalitet varierar mellan tryckerier", "Printify Premium 39 USD/mån kräver ett beslut"]
+sources = [
+  { url = "https://printify.com/pricing/", read_on = "2026-11-04" },
+  { url = "https://developers.printify.com/", read_on = "2026-11-04" },
+]
+[platforms.fees]
+per_order_minor = "null"
+percent_bp = 0
+per_listing_minor = 0
+monthly_minor = 0
+setup_minor = 0
+payout_minor = "null"
+currency = "USD"
+notes = "Gratisplanen: 0 USD/mån, 5 butiker, inga plattforms- eller listningsavgifter; Printifys marginal ligger i baspriset. Baspris och frakt varierar per produkt, tryckeri och land och läses från API:t (printify.read). Premium kostar 39 USD/mån (24,99 USD/mån årsvis) och ger upp till 20 % rabatt, men är en fast kostnad som kräver ett grundarbeslut."

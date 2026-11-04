@@ -32,3 +32,15 @@ enabled = false
 # Metas gräns är 50–100 publiceringar per 24 h (dokumentationen anger båda). Klienten stoppar alltid
 # vid 50 (HARD_DAILY_CAP); det här är vår egen, lägre gräns.
 max_posts_per_day = 10
+
+[etsy.listing_rules]
+# Kontrolleras av aie.pod.rules före varje utkast och annons (D-067).
+# Etsy kräver att tryckpartnern anges som produktionspartner för print-on-demand.
+production_partner = "Printify"
+# Etsy kräver att AI-användning anges i annonsen ("Seller-prompted AI creations", etsy.com/legal/creativity).
+require_ai_disclosure = true
+ai_disclosure_phrases = ["made with the help of AI", "AI-assisted design", "skapad med hjälp av AI"]
+# Etsys gränser för titel och taggar (Open API v3, createDraftListing). Verifieras när ETSY_API_KEY finns.
+max_title_chars = 140
+max_tags = 13
+max_tag_chars = 20

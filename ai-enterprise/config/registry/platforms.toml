@@ -11,28 +11,32 @@ name = "Etsy"
 url = "https://www.etsy.com"
 type = "product"
 currency = "USD"
-payment_terms = "okänt"
-vat_responsibility = "marketplace: Etsy tar in moms som marknadsplats där det gäller; EU-detaljer ej bekräftade"
+payment_terms = "Etsy Payments; betalningsavgiften dras före utbetalning (help.etsy.com 115015628847)"
+vat_responsibility = "marketplace: Etsy tar in moms som marknadsplats där det gäller; moms tas även ut på säljavgifterna (help.etsy.com 115014483627)"
 dac7 = "ja, om minst 30 försäljningar eller minst 2 000 euro per år"
-ai_rules = "tillåtet som 'Seller-prompted AI creations'; AI-användning måste anges i annonsen; AI-promptpaket förbjudna"
-automation_rules = "okänt: Etsy har ett API; villkoren för appgodkännande är inte lästa"
-account_requirements = "kontot ägs och verifieras av en grundare (D-010)"
+ai_rules = "tillåtet som 'Seller-prompted AI creations'; AI-användning måste anges i annonsen; AI-promptpaket förbjudna. Kontrolleras i koden (config/pod.toml [etsy.listing_rules])"
+automation_rules = "Open API v3: x-api-key keystring:shared_secret och OAuth 2 med PKCE (S256), https-redirect; access token 1 h, refresh 90 dagar. Kundmeddelanden finns inte i API:t"
+account_requirements = "kontot ägs och verifieras av en grundare (D-010); en tryckpartner (Printify) ska anges som produktionspartner i annonsen"
 payout_terms = "okänt"
-dependencies = []
-risks = ["kontoavstängning", "återbetalningar", "IP-intrång", "beroende av en plattform", "Offsite Ads 12–15 % vid sådan försäljning"]
+dependencies = ["printify"]
+risks = ["kontoavstängning", "återbetalningar", "IP-intrång", "beroende av en plattform", "Offsite Ads 15 % (12 % över 10 000 USD per år) vid sådan försäljning, högst 100 USD per order", "engångsavgift vid start varierar per land"]
 sources = [
   { url = "https://etsy.com/legal/creativity", read_on = "2026-10-21" },
-  { url = "https://checkoutpage.com/blog/etsy-fees", read_on = "2026-10-21" },
+  { url = "https://help.etsy.com/hc/en-us/articles/115014483627-What-are-the-Fees-and-Taxes-for-Selling-on-Etsy", read_on = "2026-11-04" },
+  { url = "https://help.etsy.com/hc/articles/115015628847", read_on = "2026-11-04" },
+  { url = "https://developer.etsy.com/documentation/essentials/authentication/", read_on = "2026-11-04" },
 ]
 [platforms.fees]
-per_order_minor = "null"
-percent_bp = 650
+# 30 = 3,00 SEK betalningsavgift (svensk bank) omräknat till USD-cent, avrundat uppåt. Kalkylen i
+# aie.pod.costs räknar avgifterna exakt: transaktion 6,5 % av pris + frakt, betalning 4 % av pris + frakt + moms + 3,00 SEK.
+per_order_minor = 30
+percent_bp = 1050
 per_listing_minor = 20
-monthly_minor = "null"
+monthly_minor = 0
 setup_minor = "null"
 payout_minor = "null"
 currency = "USD"
-notes = "6,5 % transaktionsavgift och 0,20 USD per annons (förnyas var 4:e månad). Betalningsavgiften finns men beloppet står inte i channels.md: okänt."
+notes = "Verifierat 2026-11-04 på help.etsy.com: 0,20 USD per annons (gäller 4 månader, förnyas för samma pris), transaktionsavgift 6,5 % av ordern inklusive frakt, betalningsavgift för säljare med svensk bank 4 % + 3,00 SEK av pris + frakt + moms. Offsite Ads 15 % (12 % från 10 000 USD per år), högst 100 USD per order. Engångsavgift vid start: 'varierar per land', visas när butiken skapas. Ingen månadsavgift."
 
 [[platforms]]
 key = "gumroad"

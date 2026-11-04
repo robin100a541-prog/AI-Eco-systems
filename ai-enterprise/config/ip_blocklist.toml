@@ -1,0 +1,22 @@
+# Spärrlista för motiv, titlar och taggar (arbetsorder 04, D-067). En träff stoppar utkastet.
+# Listan är en spärr mot uppenbara fel, ingen juridisk granskning. Fyll på när Compliance hittar fler.
+# Matchningen är skiftlägesokänslig, ignorerar accenter och kräver hela ord ("elf" stoppar inte "self").
+config_version = 1
+
+# Varumärken, filmer, serier, spel och figurer som ofta används i jul- och presentmotiv.
+trademarks = [
+  "Disney", "Pixar", "Marvel", "Star Wars", "Harry Potter", "Hogwarts", "Pokemon", "Nintendo", "Mario",
+  "Zelda", "Barbie", "Hello Kitty", "Sanrio", "Peanuts", "Snoopy", "Charlie Brown", "The Grinch", "Grinch",
+  "Rudolph the Red-Nosed Reindeer", "Frosty the Snowman", "Elf on the Shelf", "Home Alone", "Coca-Cola",
+  "Starbucks", "Nike", "Adidas", "Lego", "Minecraft", "Fortnite", "Stranger Things", "Taylor's Version",
+  "Bluey", "Paw Patrol", "Peppa Pig", "Sesame Street", "Looney Tunes", "Scooby-Doo", "SpongeBob", "Shrek",
+  "Frozen", "Olaf", "Mickey", "Minnie Mouse", "Winnie the Pooh", "NFL", "NBA", "NHL", "MLB", "FIFA",
+  "Olympic", "Super Bowl", "Black Friday™", "Cyber Monday™", "Hallmark", "IKEA", "Volvo", "ABBA", "Moomin",
+  "Mumin", "Pippi Långstrump", "Pippi Longstocking", "Astrid Lindgren",
+]
+# Kända personer: inga namn på levande eller nyligen döda personer på produkter.
+people = ["Taylor Swift", "Elvis", "Beyonce", "Harry Styles", "Elon Musk", "Trump", "Biden", "Dolly Parton", "Mariah Carey", "Michael Buble"]
+# Formuleringar som avslöjar kopiering eller lånade rättigheter.
+copy_phrases = ["in the style of", "inspired by", "fan art", "fanart", "parody of", "officially licensed", "licensed product", "dupe", "replica"]
+# Skyddsmärken.
+marks = ["™", "®", "©"]

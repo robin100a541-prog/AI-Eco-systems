@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-04 — Printify och Etsy i registret, annons- och motivregler (D-065, D-067, föreslaget)
+### Tillagt
+- `config/registry/printify.toml`: gratisplanen, och Premium (39 USD/mån) som en kostnad som kräver beslut. Källan är printify.com/pricing, läst 2026-11-04.
+- `src/aie/pod/rules.py` kontrollerar annons och motiv. Reglerna är data i `config/pod.toml [etsy.listing_rules]` och `config/ip_blocklist.toml`:
+  - Printify ska anges som produktionspartner, och AI-användning ska stå i annonsen.
+  - Titel och taggar har gränser.
+  - Varumärken, kända personer, kopiering och skyddsmärken stoppas.
+- `tests/unit/test_pod_rules.py`: 3 tester.
+### Ändrat
+- Etsy i `config/registry/platforms.toml` är verifierat 2026-11-04 på help.etsy.com:
+  - 6,5 % transaktionsavgift inklusive frakt
+  - för svensk bank 4 % + 3,00 SEK i betalningsavgift
+  - 0,20 USD per annons
+  - Offsite Ads 15/12 %, högst 100 USD per order
+  - startavgiften varierar per land
+  - beroendet `printify`
+- Registertestet räknar 4 plattformar, med Etsys nya värden.
+
 ## [Unreleased] — 2026-11-04 — Printify-klient (arbetsorder 04, D-065, föreslaget)
 ### Tillagt
 - `src/aie/pod/http.py`: JSON över https med urllib. Den har egen User-Agent, tidsgräns, minsta avstånd mellan anrop och högst 3 återförsök vid 429/5xx (`Retry-After` följs). Nyckeln maskeras i felmeddelanden.
