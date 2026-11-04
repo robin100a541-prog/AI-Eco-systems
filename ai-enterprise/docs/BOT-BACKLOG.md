@@ -23,8 +23,8 @@ Varje körning lägger till minst 3 nya punkter. Grundarna får lägga till, än
 - [ ] BL-017 (5 dokumentation) Lägg till en docstring på `_canonical` som förklarar varför `allow_nan=False` används och hur sortering av nycklar garanterar deterministisk hash. Klart när: `grep src/aie/audit/log.py "Deterministisk hash"` — öppen
 - [ ] BL-019 (2 kravtäckning) Testa att `AgentRegistry.set_guard(None)` i `src/aie/agents/registry.py` tas emot och att övergångar då tillåts utan vakt. Testet läggs i `tests/unit/test_agent_registry.py`, klass `TestSetGuard`. (Ersätter BL-010, 2026-11-03, Yorgo: kontrollen pekade på tests.unit.test_registry, som testar plattformsregistret.) Klart när: `test tests.unit.test_agent_registry.TestSetGuard.test_set_guard_none` — öppen
 - [ ] BL-020 (4 kodkvalitet) Ta bort oanvänd import `Callable` i `src/aie/audit/log.py`. Klart när: `!grep src/aie/audit/log.py "Callable"` — öppen
-- [ ] BL-021 (4 kodkvalitet) Ta bort oanvänd import `Iterator` i `src/aie/agents/registry.py`. Klart när: `!grep src/aie/agents/registry.py "Iterator"` — öppen
 - [ ] BL-022 (4 kodkvalitet) Ta bort oanvänd import `Mapping` i `src/aie/audit/log.py` (används bara i typannoteringar som kan ersättas med `dict`). Klart när: `!grep src/aie/audit/log.py "Mapping"` — öppen
+- [ ] BL-023 (2 kravtäckning) Lägg till enhetstest som verifierar att `set_guard` faktiskt sätter `_guard`‑attributet när ett giltigt guard‑objekt ges. Klart när: `test tests.unit.test_agent_registry.TestSetGuard.test_set_guard_assigns_guard` (nytt test som körs utan fel). — öppen
 
 ## Pågår
 
@@ -32,6 +32,7 @@ _Inget._
 
 ## Klart
 
+- [x] BL-021 (4 kodkvalitet) Ta bort oanvänd import `Iterator` i `src/aie/agents/registry.py`. Klart när: `!grep src/aie/agents/registry.py "Iterator"` — klar (2026-11-04)
 - [x] BL-018 (2 kravtäckning) `AgentRegistry.set_guard` i `src/aie/agents/registry.py` ska kasta `RegistryError` när `guard` inte är `None` och saknar metoden `transition_block_reason`. Lägg till kontrollen i `set_guard` och ett test i en ny fil `tests/unit/test_agent_registry.py`, klass `TestSetGuard`. (Ersätter BL-009, 2026-11-03, Yorgo: den gamla punkten bad bara om ett test för ett beteende som inte fanns, och klassen TestAgentRegistry finns inte.) Klart när: `test tests.unit.test_agent_registry.TestSetGuard.test_set_guard_invalid` — klar (2026-11-03)
 - [x] ~~BL-004 (4 kodkvalitet) `ruff check src tests` ger 78 fynd (2026-10-28), varav 35 `I001` (osorterade importer). Rätta bara `I001`, med `ruff check --select I001 --fix`. Testerna ska vara oförändrade och gröna före och efter. Övriga regler blir egna punkter~~ — struken 2026-11-03 (Yorgo): ruff-varningar är inga uppgifter längre, se `dev_agent/picker.py`
 - [x] BL-012 (2 kravtäckning) Skriv ett enhetstest som anropar `main()` med argumentet `check-config` och verifierar att exit‑koden är 0 vid giltig konfiguration. Klart när: `test tests.unit.test_main.TestMain.test_check_config_success` — klar (2026-11-01)

@@ -13,7 +13,7 @@ Databasen själv skyddar det viktigaste. Agenter kan inte raderas, roll och chef
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
@@ -115,12 +115,14 @@ class AgentRegistry:
     def get(self, agent_id: str) -> Agent | None:
         return self._fetch(self._db.connection, agent_id)
 
-    def agents(self) -> Iterator[Agent]:
+    def agents(self) -> list[Agent]:
         rows = self._db.connection.execute(
             "SELECT agent_id, role, department, manager_id, state FROM agents ORDER BY agent_id"
         )
-        for agent_id, role, department, manager_id, state in rows:
-            yield Agent(agent_id, role, department, manager_id, AgentState(state))
+        return [
+            Agent(agent_id, role, department, manager_id, AgentState(state))
+            for agent_id, role, department, manager_id, state in rows
+        ]
 
     def transition(self, agent_id: str, target: AgentState, changed_by: str, reason: str) -> Agent:
         if changed_by == agent_id:
