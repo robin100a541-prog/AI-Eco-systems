@@ -12,6 +12,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `printify`      läs Printifys katalog och butik: shops, blueprints, snapshot, catalog (arbetsorder 04, D-065)
+- `connect`       koppla ett konto för print-on-demand med OAuth; token sparas utanför repot (D-068)
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
@@ -149,6 +150,12 @@ def build_parser() -> argparse.ArgumentParser:
     pf.add_argument("--blueprint", type=int, help="snapshot: blueprint-ID")
     pf.add_argument("--provider", type=int, help="snapshot: tryckeriets ID (standard: de tre första)")
     pf.add_argument("--out", type=Path, help="catalog: mapp för JSON-filen (standard: reports/printify)")
+    cn = add("connect", "koppla ett konto med OAuth; token sparas utanför repot (arbetsorder 04, D-068)")
+    from .pod.oauth import SERVICES  # tjänsterna står i aie.pod, inte här (D-056)
+
+    cn.add_argument("service", choices=tuple(SERVICES))
+    cn.add_argument("--port", type=int, default=8765, help="lokal port för http://127.0.0.1:<port>/callback")
+    cn.add_argument("--paste", action="store_true", help="klistra in adressen från webbläsaren i stället")
     res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
     res.add_argument("action", choices=("fetch", "history"))
     res.add_argument("url", nargs="?")
@@ -234,6 +241,20 @@ def _printify(args: argparse.Namespace) -> int:
         return 1
     return printify(args.config_dir, args.action, args.agent, args.founder, args.find, args.blueprint,
                     args.provider, args.out)
+
+
+def _connect(args: argparse.Namespace) -> int:
+    import webbrowser
+
+    from .pod.oauth import connect  # importeras bara när kommandot används
+
+    try:
+        path = connect(args.service, port=args.port, paste=args.paste, open_browser=webbrowser.open)
+    except (ValueError, TimeoutError, OSError) as exc:
+        print(f"FEL: {exc}", file=sys.stderr)
+        return 1
+    print(f"Kopplat. Token sparad i {path} (utanför repot, bara läsbar för dig).")
+    return 0
 
 
 def _research(args: argparse.Namespace) -> int:
@@ -404,6 +425,7 @@ def main(argv: list[str] | None = None) -> int:
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
         "printify": lambda: _printify(args),
+        "connect": lambda: _connect(args),
         "assess": lambda: _assess(args),
     }
     try:

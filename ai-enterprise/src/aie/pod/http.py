@@ -88,15 +88,23 @@ class JsonClient:
     def post(self, path: str, payload: object):
         return self.request("POST", path, payload=payload)
 
-    def request(self, method: str, path: str, *, params: Mapping[str, object] | None = None, payload: object = None):
+    def post_form(self, path: str, form: Mapping[str, str], extra_headers: Mapping[str, str] | None = None):
+        """application/x-www-form-urlencoded, som OAuth-tokenanrop kräver."""
+        return self.request("POST", path, form=form, extra_headers=extra_headers)
+
+    def request(self, method: str, path: str, *, params: Mapping[str, object] | None = None, payload: object = None,
+                form: Mapping[str, str] | None = None, extra_headers: Mapping[str, str] | None = None):
         if not path.startswith("/") or "//" in path or ".." in path:
             raise ValueError(f"ogiltig sökväg {path!r}")
         url = self._base + path + (f"?{urlencode(params, doseq=True)}" if params else "")
         if urlsplit(url).hostname != self._host:
             raise ValueError("anropet lämnar klientens värd")
         body = None if payload is None else json.dumps(payload).encode("utf-8")
-        headers = {"User-Agent": USER_AGENT, "Accept": "application/json", **self._auth}
-        if body is not None:
+        headers = {"User-Agent": USER_AGENT, "Accept": "application/json", **self._auth, **(extra_headers or {})}
+        if form is not None:
+            body = urlencode(form).encode("utf-8")
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+        elif body is not None:
             headers["Content-Type"] = "application/json"
         wait = 1.0
         for attempt in range(self._retries + 1):
