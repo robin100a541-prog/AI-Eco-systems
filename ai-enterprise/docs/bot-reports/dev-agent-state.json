@@ -1,6 +1,6 @@
 {
   "failures": {
-    "BL-001": 1,
+    "BL-001": 3,
     "BL-002": 3,
     "BL-005": 3,
     "BL-009": 3,
@@ -12,6 +12,7 @@
     "BL-016": 1,
     "BL-017": 3,
     "BL-019": 3,
+    "BL-023": 3,
     "ruff:I001:src/aie/__main__.py:330": 3,
     "ruff:I001:src/aie/agents/__init__.py:2": 3,
     "ruff:I001:src/aie/agents/registry.py:13": 2,
