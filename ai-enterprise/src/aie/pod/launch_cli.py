@@ -44,10 +44,9 @@ def pod(config_dir: Path, action: str, founder: str | None = None, approved: boo
             print(f"{len(designs)} designer, {len(files)} filer i {folder}")
             return 0
         if action == "list":
-            prepared = json.loads((folder / PREPARED).read_text(encoding="utf-8"))
-            path = launch.write_list(prepared, designs, cfg["launch"]["usd_sek"], folder / "LISTA.md")
-            ok = [p for p in prepared["products"] if not p["struck"]]
-            print(f"{len(prepared['products'])} produkter i {path}, {len(ok)} med minst 30 % marginal")
+            from . import lista
+
+            print(f"Skriven: {lista.write(folder)}")
             return 0
         if action == "orders":
             return _orders(config_dir, cfg, founder, folder)
@@ -88,13 +87,17 @@ def _with_system(config_dir, cfg, action, founder, approved, designs, folder) ->
             if not approved:
                 print("FEL: publish kräver --approved (och raden GODKÄND i LISTA.md)", file=sys.stderr)
                 return 1
+            from . import lista
+
             text = (folder / "LISTA.md").read_text(encoding="utf-8")
-            prepared = json.loads((folder / PREPARED).read_text(encoding="utf-8"))
             published = sum(1 for p in reader.products(shop) if p.get("visible") and p.get("external"))
             publisher = PrintifyPublisher(system.engine, system.audit, AGENT_WRITE, client, shop)
-            for line in launch.publish(text, prepared, publisher, TestMode(cfg), published):
-                print(line)
-            return 0
+            done, errors = lista.publish(text, publisher, max(0, lista.LIMIT - published))
+            for product_id in done:
+                print(f"publicerad: {product_id}")
+            for error in errors:
+                print(f"FEL: {error}")
+            return 1 if errors and not done else 0
         except PermissionDenied as exc:
             print(f"FEL: {exc}", file=sys.stderr)
             return 1
