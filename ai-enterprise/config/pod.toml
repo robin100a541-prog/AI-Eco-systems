@@ -6,7 +6,7 @@ config_version = 1
 # Läsning av katalog och butik. Kräver PRINTIFY_API_TOKEN och verktyget printify.read.
 read_enabled = true
 # Opublicerade utkast i Printify. AV tills en grundare har godkänt D-069 (autonomi).
-draft_enabled = false
+draft_enabled = true  # Yorgo 2026-11-04 (LANSERING-Q4.md): opublicerade produkter i Printify
 # Länder vars standardfrakt läses varje dag. REST_OF_THE_WORLD används när ett land saknas.
 countries = ["US", "GB", "DE", "SE", "CA", "AU"]
 # Produkter (blueprint och tryckeri) som den dagliga körningen läser. Fylls på av scouten.
@@ -44,3 +44,44 @@ ai_disclosure_phrases = ["made with the help of AI", "AI-assisted design", "skap
 max_title_chars = 140
 max_tags = 13
 max_tag_chars = 20
+
+[launch]
+# Lanseringen Q4 (LANSERING-Q4.md, D-070). Butiken i Printify (inte hemligt). Den heter "My new store" och
+# kopplas till Etsy av en grundare (steg 6).
+shop_id = 7951751
+# EU-länder vars frakt räknas; den dyraste av dessa och USA används i marginalen (D-070 punkt 4).
+eu_countries = ["DE", "SE", "FR", "NL", "IT", "ES"]
+# Kurs för kronor i LISTA.md och i ledgern för ordrar. ANTAGANDE: uppdatera med dagens kurs (Riksbanken).
+usd_sek = 10.50
+
+# Produkttyper. blueprint_id från Printifys katalog (2026-11-06); search används om id saknas.
+# Priset sätts till lägsta x,99 USD med minst 30 % marginal, högst max_price; annars stryks produkten.
+[launch.products.tee]
+blueprint_id = 6
+search = "unisex heavy cotton tee"
+colors = ["White", "Sand", "Ash"]
+sizes = ["S", "M", "L", "XL"]
+min_price = 1_999
+max_price = 5_499
+print_px = [4500, 5400]
+position = "front"
+
+[launch.products.hoodie]
+blueprint_id = 77
+search = "hooded sweatshirt"
+colors = ["White", "Sport Grey", "Sand"]
+sizes = ["S", "M", "L", "XL"]
+min_price = 3_499
+max_price = 7_999
+print_px = [4500, 5400]
+position = "front"
+
+[launch.products.mug]
+blueprint_id = 68
+search = "mug 11oz"
+colors = []
+sizes = []
+min_price = 1_499
+max_price = 3_499
+print_px = [2700, 1050]
+position = "front"

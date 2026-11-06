@@ -88,6 +88,9 @@ class JsonClient:
     def post(self, path: str, payload: object):
         return self.request("POST", path, payload=payload)
 
+    def put(self, path: str, payload: object):
+        return self.request("PUT", path, payload=payload)
+
     def request(self, method: str, path: str, *, params: Mapping[str, object] | None = None, payload: object = None):
         if not path.startswith("/") or "//" in path or ".." in path:
             raise ValueError(f"ogiltig sökväg {path!r}")

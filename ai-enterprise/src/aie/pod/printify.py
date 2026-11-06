@@ -36,7 +36,7 @@ from .http import ApiError, JsonClient, Transport, urllib_transport
 
 BASE_URL = "https://api.printify.com"
 TOKEN_ENV = "PRINTIFY_API_TOKEN"
-READ, DRAFT = "printify.read", "printify.draft"
+READ, DRAFT, PUBLISH = "printify.read", "printify.draft", "printify.publish"
 IMAGE_TYPES = ("image/png", "image/jpeg")  # SVG nämns inte i dokumentationen; vi laddar bara upp PNG
 
 
@@ -73,8 +73,13 @@ class PrintifyClient:
 
     def post(self, path: str, payload):
         if "publish" in path:
-            raise ValueError("den här klienten publicerar aldrig (D-069)")
+            raise ValueError("den här klienten publicerar aldrig; bara PrintifyPublisher gör det (D-070)")
         return self._http.post(path, payload)
+
+    def put(self, path: str, payload):
+        if "publish" in path:
+            raise ValueError("den här klienten publicerar aldrig; bara PrintifyPublisher gör det (D-070)")
+        return self._http.put(path, payload)
 
 
 class PrintifyReader:
@@ -111,6 +116,11 @@ class PrintifyReader:
         data = self._get(f"/v2/catalog/blueprints/{int(blueprint_id)}/print_providers/{int(provider_id)}"
                          f"/shipping/{method}.json")
         return parse_shipping(data)
+
+    def orders(self, shop_id: int, page: int = 1) -> list[dict]:
+        """Butikens ordrar, nyast först (en sida). Grunden för `pod orders`."""
+        data = self._get(f"/v1/shops/{int(shop_id)}/orders.json", {"page": int(page), "limit": 10})
+        return data.get("data", []) if isinstance(data, dict) else data
 
     def products(self, shop_id: int) -> list[dict]:
         """Butikens produkter. Bara här finns varianternas `cost` (baspris i cent)."""
@@ -157,6 +167,28 @@ class PrintifyDrafter:
         self._audit.append(self._agent, "printify.upload", {"file_name": file_name, "id": data.get("id")})
         return data
 
+    def upload_image_base64(self, file_name: str, contents_b64: str) -> dict:
+        """Uppladdning med base64 (Printify rekommenderar URL över 5 MB; våra PNG:er är mindre)."""
+        self._require()
+        if not file_name.lower().endswith(".png"):
+            raise ValueError("bara PNG laddas upp härifrån")
+        if len(contents_b64) * 3 // 4 > 5_000_000:
+            raise ValueError("filen är över 5 MB; ladda upp med URL i stället")
+        data = self._client.post("/v1/uploads/images.json", {"file_name": file_name, "contents": contents_b64})
+        self._audit.append(self._agent, "printify.upload", {"file_name": file_name, "id": data.get("id")})
+        return data
+
+    def get_product(self, shop_id: int, product_id: str) -> dict:
+        self._require()
+        return self._client.get(f"/v1/shops/{int(shop_id)}/products/{_pid(product_id)}.json")
+
+    def set_price(self, shop_id: int, product_id: str, variants: list[dict]) -> dict:
+        """Sätter priset på en opublicerad produkt (varianternas `price` i cent)."""
+        self._require()
+        data = self._client.put(f"/v1/shops/{int(shop_id)}/products/{_pid(product_id)}.json", {"variants": variants})
+        self._audit.append(self._agent, "printify.price", {"id": product_id, "variants": len(variants)})
+        return data
+
     def create_draft(self, shop_id: int, product: dict) -> dict:
         """Skapar en produkt i Printify utan att publicera den. Titel och beskrivning prövas mot reglerna."""
         self._require()
@@ -168,6 +200,31 @@ class PrintifyDrafter:
         self._audit.append(self._agent, "printify.draft", {"shop_id": int(shop_id), "id": data.get("id"),
                                                            "title": product.get("title", "")[:80]})
         return data
+
+
+class PrintifyPublisher:
+    """`printify.publish` (D-070): publicerar en färdig produkt i Printify, som skickar den till den kopplade
+    Etsy-butiken. Det är den enda vägen till publicering. Testlägets gränser kontrolleras av `aie.pod.launch.publish`
+    innan den här anropas."""
+
+    BODY = {"title": True, "description": True, "images": True, "variants": True, "tags": True,
+            "keyFeatures": True, "shipping_template": True}
+
+    def __init__(self, engine, audit, agent_id: str, client: PrintifyClient, shop_id: int) -> None:
+        self._engine, self._audit, self._agent, self._client, self._shop = engine, audit, agent_id, client, int(shop_id)
+
+    def __call__(self, product_id: str) -> dict:
+        self._engine.require(self._agent, PUBLISH)
+        data = self._client._http.post(f"/v1/shops/{self._shop}/products/{_pid(product_id)}/publish.json", self.BODY)
+        self._audit.append(self._agent, "printify.publish", {"shop_id": self._shop, "id": product_id})
+        return data
+
+
+def _pid(product_id: str) -> str:
+    text = str(product_id)
+    if not text.isalnum():
+        raise ValueError(f"ogiltigt produkt-id {product_id!r}")
+    return text
 
 
 def parse_shipping(data) -> list[dict]:
