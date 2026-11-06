@@ -1,0 +1,173 @@
+# Q4-idéer för print-on-demand (arbetsorder 04, D-066). Utkast, inget är publicerat.
+# Kör kalkylen och spärren med:  python -m aie q4 --as yorgo   (skriver products/q4/<idé>/ och REPORT.md)
+#
+# Motiven är systemets egna: typografi med egen pixelfont eller egna geometriska mönster (aie.pod.designs).
+# Inga varumärken, figurer, kända personer eller kopierade motiv; aie.pod.rules stoppar sådant.
+# Belopp i USD-cent. Priserna är våra egna förslag.
+
+config_version = 1
+
+# Kostnader per produkttyp. ANTAGANDEN tills Printifys API ger verkliga siffror:
+# - shipping_us: standardfrakt första varan till USA. Ersätts av printify.read (v2-frakten) när verktyget finns (#172).
+# - base_cost: baspriset finns inte i katalogens API; det läses från `cost` på ett opublicerat utkast (printify.draft, D-069).
+#   Värdena är medvetet höga, så att kalkylen hellre underskattar marginalen.
+# print_px: tryckytans storlek i pixlar (300 dpi). Ersätts av katalogens `placeholders` när den är läst.
+[products.tee]
+search = "unisex heavy cotton tee"
+base_cost = 1_100
+shipping_us = 500
+print_px = [4500, 5400]
+cost_source = "antagande: övre gräns för Bella+Canvas 3001 (10,98 USD) och Gildan 5000 (8,80 USD) i tredjepartskällor 2026, inte Printifys API"
+
+[products.sweatshirt]
+search = "crewneck sweatshirt"
+base_cost = 1_900
+shipping_us = 800
+print_px = [4500, 5400]
+cost_source = "antagande utan källa: ingen verifierad siffra hittad"
+
+[products.mug]
+search = "ceramic mug"
+base_cost = 700
+shipping_us = 750
+print_px = [2700, 1050]
+cost_source = "antagande: över de 4,25–6,21 USD som tredjepartskällor anger för en 11 oz mugg, inte Printifys API"
+
+[products.ornament]
+search = "ornament"
+base_cost = 800
+shipping_us = 500
+print_px = [1200, 1200]
+cost_source = "antagande utan källa: ingen verifierad siffra hittad"
+
+[products.tote]
+search = "tote bag"
+base_cost = 1_100
+shipping_us = 550
+print_px = [3600, 3600]
+cost_source = "antagande utan källa: ingen verifierad siffra hittad"
+
+[products.poster]
+search = "poster"
+base_cost = 1_450
+shipping_us = 650
+print_px = [3600, 5400]
+cost_source = "antagande: övre gräns för en 18 × 24 matt affisch (10,20–14,50 USD) i tredjepartskällor 2026"
+
+[demand]
+# ANTAGANDE för alla idéer tills Etsy- och Pinterest-signaler finns (etsy.read, pinterest.trends).
+visitors_per_day = 10
+conversion_bp = 150
+refund_bp = 300
+source = "antagande: ingen uppmätt efterfrågan; ersätts av Etsys signaler och sedan av verkliga utfall (results import)"
+founder_hours_per_week = 0.25   # kundmeddelanden på Etsy kan inte skötas via API:t (D-069)
+
+[[ideas]]
+key = "q4-cozy-season-mug"
+product = "mug"
+theme = "jul och vinter"
+design = "text"
+text = "COZY\nSEASON"
+color = "#7a2e2e"
+title = "Cozy Season Mug, Minimalist Winter Typography Coffee Cup, Holiday Gift"
+tags = ["cozy season mug", "winter mug", "holiday gift", "minimalist mug", "christmas gift", "hot cocoa mug", "pixel typography"]
+price = 1_799
+
+[[ideas]]
+key = "q4-nordic-snowflake-mug"
+product = "mug"
+theme = "jul, nordiskt mönster"
+design = "pattern"
+pattern = "snowflake"
+colors = ["#1f3a5f", "#f4f1e8"]
+title = "Nordic Snowflake Pattern Mug, Scandinavian Winter Coffee Cup, Christmas Gift"
+tags = ["snowflake mug", "nordic mug", "scandinavian gift", "winter mug", "christmas mug", "geometric pattern"]
+price = 1_899
+
+[[ideas]]
+key = "q4-hygge-hours-sweatshirt"
+product = "sweatshirt"
+theme = "vinter, livsstil"
+design = "text"
+text = "HYGGE\nHOURS"
+color = "#2f4a3a"
+title = "Hygge Hours Sweatshirt, Cozy Minimalist Winter Crewneck, Gift for Her"
+tags = ["hygge sweatshirt", "cozy crewneck", "winter sweatshirt", "minimalist sweater", "gift for her", "nordic style"]
+price = 3_999
+
+[[ideas]]
+key = "q4-holiday-mode-tee"
+product = "tee"
+theme = "jul, kontorshumor"
+design = "text"
+text = "OUT OF OFFICE\nHOLIDAY MODE"
+color = "#1f2d2a"
+title = "Out of Office Holiday Mode T-Shirt, Funny Christmas Work Tee, Coworker Gift"
+tags = ["holiday mode shirt", "out of office tee", "coworker gift", "funny christmas", "office party shirt", "work humor"]
+price = 2_499
+
+[[ideas]]
+key = "q4-cart-full-tee"
+product = "tee"
+theme = "Black Friday"
+design = "text"
+text = "CART FULL\nWALLET EMPTY"
+color = "#1f2d2a"
+title = "Cart Full Wallet Empty T-Shirt, Funny Shopping Season Tee, Gift for Shopper"
+tags = ["shopping shirt", "funny shopper tee", "wallet empty", "sale season shirt", "funny gift", "shopaholic"]
+price = 2_499
+
+[[ideas]]
+key = "q4-first-home-ornament"
+product = "ornament"
+theme = "jul, ny bostad"
+design = "text"
+text = "OUR FIRST\nHOME\n2026"
+color = "#7a2e2e"
+title = "Our First Home 2026 Ornament, New Home Christmas Keepsake, Housewarming Gift"
+tags = ["first home ornament", "new home gift", "housewarming gift", "2026 ornament", "christmas keepsake", "new homeowner"]
+price = 1_599
+
+[[ideas]]
+key = "q4-fika-club-tote"
+product = "tote"
+theme = "nisch: svensk fika, presenter"
+design = "text"
+text = "FIKA\nCLUB"
+color = "#5a3e2b"
+title = "Fika Club Tote Bag, Swedish Coffee Break Canvas Bag, Gift for Coffee Lover"
+tags = ["fika tote", "swedish gift", "coffee lover gift", "canvas tote", "scandinavian bag", "coffee break"]
+price = 2_199
+
+[[ideas]]
+key = "q4-grading-season-mug"
+product = "mug"
+theme = "nisch: lärare, julpresent"
+design = "text"
+text = "GRADING\nSEASON\nSURVIVOR"
+color = "#2f4a3a"
+title = "Grading Season Survivor Mug, Funny Teacher Christmas Gift, Teacher Coffee Cup"
+tags = ["teacher mug", "teacher gift", "grading season", "funny teacher", "christmas teacher", "end of term gift"]
+price = 1_799
+
+[[ideas]]
+key = "q4-solstice-check-poster"
+product = "poster"
+theme = "vintersolstånd, inredning"
+design = "pattern"
+pattern = "check"
+colors = ["#243d38", "#e9e4d4"]
+title = "Winter Solstice Check Pattern Poster, Minimalist Geometric Wall Art Print"
+tags = ["geometric poster", "check pattern art", "minimalist wall art", "winter decor", "modern print", "solstice"]
+price = 2_199
+
+[[ideas]]
+key = "q4-dog-holiday-tee"
+product = "tee"
+theme = "nisch: hundägare, jul"
+design = "text"
+text = "MY DOG IS\nMY PLUS ONE"
+color = "#1f2d2a"
+title = "My Dog Is My Plus One T-Shirt, Funny Holiday Party Tee, Dog Owner Gift"
+tags = ["dog owner shirt", "dog lover gift", "holiday party tee", "funny dog shirt", "dog mom gift", "plus one shirt"]
+price = 2_499

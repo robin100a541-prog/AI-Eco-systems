@@ -12,6 +12,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `assess`        bedömning före start: run, list, show, approve, reject (PR 6, D-058)
 - `research`      läs en känd offentlig webbsida (PR 5, D-057)
 - `printify`      läs Printifys katalog och butik: shops, blueprints, snapshot, catalog (arbetsorder 04, D-065)
+- `q4`            Q4-idéer: regler, egna designer, kalkyl och spärren före start; skriver products/q4/ (D-066)
 - `registry`      plattforms- och initiativregistret: list, show, import, status, dependency (PR 4, D-056, D-059)
 - `spend`         godkännanden av enskilda utgifter: list, approve, reject (F5, D-053)
 - `results`       utfall från verkligheten: import, list, report (PR 10, D-062)
@@ -149,6 +150,13 @@ def build_parser() -> argparse.ArgumentParser:
     pf.add_argument("--blueprint", type=int, help="snapshot: blueprint-ID")
     pf.add_argument("--provider", type=int, help="snapshot: tryckeriets ID (standard: de tre första)")
     pf.add_argument("--out", type=Path, help="catalog: mapp för JSON-filen (standard: reports/printify)")
+    q4 = add("q4", "Q4-idéer för print-on-demand: regler, design, kalkyl och spärren (arbetsorder 04, D-066)")
+    q4.add_argument("--as", dest="founder", required=True, help="grundaren som kör bedömningen")
+    q4.add_argument("--dir", type=Path, default=Path("products/q4"), help="mappen med ideas.toml (standard: products/q4)")
+    q4.add_argument("--catalog", type=Path, help="en ögonblicksbild från printify catalog; ersätter antagen frakt och tryckyta")
+    q4.add_argument("--runs", type=int, help="körningar per scenario (standard: min_runs)")
+    q4.add_argument("--days", type=int, help="dagar per körning (standard: min_days)")
+    q4.add_argument("--no-gate", action="store_true", help="hoppa över spärren (bara regler, design och kalkyl)")
     res = add("research", "läs en känd offentlig webbsida som en agent med research.search (PR 5, D-057)")
     res.add_argument("action", choices=("fetch", "history"))
     res.add_argument("url", nargs="?")
@@ -234,6 +242,27 @@ def _printify(args: argparse.Namespace) -> int:
         return 1
     return printify(args.config_dir, args.action, args.agent, args.founder, args.find, args.blueprint,
                     args.provider, args.out)
+
+
+def _q4(args: argparse.Namespace) -> int:
+    from .pod.q4 import run  # importeras bara när kommandot används
+
+    try:
+        result = run(args.config_dir, args.dir, args.founder, args.catalog, args.runs, args.days, gate=not args.no_gate)
+    except (ValueError, OSError, ConfigError) as exc:
+        print(f"FEL: {exc}", file=sys.stderr)
+        return 1
+    for key in result["ranked"]:
+        r = result["results"][key]
+        gate = r.get("gate")
+        verdict = "redo" if gate and gate["ready"] else "inte redo" if gate else "ej körd"
+        print(f"{key}: vinst efter skatt {r['economics']['normal']['profit_after_tax'] / 100:.2f} USD per order, "
+              f"spärren {verdict}")
+    for key, r in result["results"].items():
+        if r["problems"]:
+            print(f"{key}: STOPPAD: {'; '.join(r['problems'])}")
+    print(f"Rapport: {args.dir / 'REPORT.md'}")
+    return 0
 
 
 def _research(args: argparse.Namespace) -> int:
@@ -404,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
         "registry": lambda: _registry(args),
         "research": lambda: _research(args),
         "printify": lambda: _printify(args),
+        "q4": lambda: _q4(args),
         "assess": lambda: _assess(args),
     }
     try:
