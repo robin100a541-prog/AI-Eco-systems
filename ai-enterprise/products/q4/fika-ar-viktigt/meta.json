@@ -14,5 +14,31 @@
     1050
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48c3b6db2ba2ef0e2ebf",
+  "shop_id": 7951751,
+  "provider": "SPOKE Custom Products",
+  "title": "Fika Är Viktigt Mug, Swedish Fika Mug, Swedish Gift, Scandinavian Coffee Lover Gift",
+  "tags": [
+    "swedish gift",
+    "fika mug",
+    "swedish mug",
+    "fika",
+    "scandinavian gift",
+    "coffee lover gift",
+    "sweden gift",
+    "swedish coffee",
+    "nordic gift",
+    "coffee break",
+    "swedish quote",
+    "gift from sweden",
+    "fika time"
+  ],
+  "base_cost_usd_cents": 644,
+  "shipping_us_usd_cents": 729,
+  "price_usd_cents": 2999,
+  "cost_usd_cents": 1373,
+  "fees_usd_cents": 330,
+  "profit_after_tax_usd_cents": 907,
+  "margin_pct": 30.2
 }

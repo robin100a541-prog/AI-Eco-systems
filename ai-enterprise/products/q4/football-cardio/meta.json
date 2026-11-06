@@ -14,5 +14,31 @@
     5400
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48820a356240530ecac6",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Football Is My Cardio Shirt, Funny Soccer Player Shirt, Gift for Football Fan, Sports Gift",
+  "tags": [
+    "football shirt",
+    "soccer shirt",
+    "football gift",
+    "soccer gift",
+    "football fan",
+    "soccer player",
+    "sports shirt",
+    "funny football",
+    "gift for him",
+    "soccer mom gift",
+    "coach gift",
+    "team gift",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
 }

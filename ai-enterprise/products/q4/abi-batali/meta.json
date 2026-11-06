@@ -14,5 +14,31 @@
     5400
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48e3f97ceea1b80b2307",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Arabic My Father My Hero Shirt, Arabic Calligraphy Gift for Dad, Arabic Quote Shirt",
+  "tags": [
+    "arabic shirt",
+    "arabic gift",
+    "gift for dad",
+    "arabic calligraphy",
+    "arabic quote",
+    "dad shirt",
+    "father gift",
+    "arabic dad gift",
+    "baba gift",
+    "arabic typography",
+    "muslim dad gift",
+    "christmas for dad",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
 }

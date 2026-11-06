@@ -14,5 +14,31 @@
     5400
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48d46d68612bd7023772",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Bästa Pappan Shirt, Swedish Gift for Dad, Christmas Gift for Father, Swedish Dad Shirt",
+  "tags": [
+    "swedish dad gift",
+    "gift for dad",
+    "dad shirt",
+    "swedish gift",
+    "father gift",
+    "christmas for dad",
+    "pappa",
+    "swedish shirt",
+    "dad birthday gift",
+    "sweden gift",
+    "gift from kids",
+    "new dad gift",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
 }

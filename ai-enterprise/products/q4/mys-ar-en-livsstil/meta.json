@@ -14,5 +14,31 @@
     5400
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48cc6d68612bd7023767",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Mys Är En Livsstil Shirt, Swedish Cozy Quote Shirt, Scandinavian Hygge Style Gift",
+  "tags": [
+    "swedish gift",
+    "swedish shirt",
+    "mys",
+    "scandinavian gift",
+    "cozy shirt",
+    "swedish quote",
+    "sweden gift",
+    "nordic style",
+    "gift from sweden",
+    "winter shirt",
+    "cozy lifestyle",
+    "unisex t-shirt",
+    "graphic tee"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
 }

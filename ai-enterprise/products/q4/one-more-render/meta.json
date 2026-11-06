@@ -14,5 +14,31 @@
     5400
   ],
   "dpi": 300,
-  "background": "transparent"
+  "background": "transparent",
+  "printify_product_id": "6aee48a24dd6846b0306b204",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Just One More Render Shirt, Video Editor Gift, Filmmaker Shirt, Content Creator Shirt",
+  "tags": [
+    "video editor gift",
+    "filmmaker gift",
+    "editor shirt",
+    "video editor",
+    "content creator",
+    "youtuber gift",
+    "film student",
+    "motion designer",
+    "creator shirt",
+    "editing shirt",
+    "gift for editor",
+    "filmmaker shirt",
+    "videographer"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
 }
