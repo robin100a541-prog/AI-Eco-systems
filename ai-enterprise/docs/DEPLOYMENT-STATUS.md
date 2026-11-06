@@ -1,43 +1,46 @@
-# Deployment status — 2026-10-30
+# Deployment status — 2026-11-06
 
 **Real-money launch remains blocked.** Passing SIM checks is not production approval.
 
-## Technical work performed by Codex
+## What is on `main`
 
-| Item | Change / evidence |
-|---|---|
-| H1, H2, H3, M2 | #126: atomic sale imports, later refunds, economic dates and repeatable reconciliation |
-| Backup and recovery rehearsal | #127: private SQLite snapshots, manifest, isolated restore and integrity checks |
-| H4, M1 | #128: serialized spending/approval consumption, original risk/category and renewed authority checks |
-| M3, M4 | #129: loopback-only internal model endpoints; atomic, idempotent tax-payment recording |
-| M5 | #130: atomic attempt quotas, including failures and interrupted requests |
-| Daily workflow smoke check | #131: isolated manual verify_only mode, no credentials/cache/PR/Pages |
+| Item | Status | Evidence |
+|---|---|---|
+| H1–H4, M1–M5 | Fixed | #126–#130 |
+| Independent review (D-055) | Done | `docs/reviews/REVIEW-2026-10-30-ny-session.md` (#133) |
+| N1 refused spend undid protected mode | Fixed | #134, `tests/unit/test_review_gates.py` |
+| N2 stop-loss not checked before spend | Fixed | #134, same test (fails without the fix) |
+| N3 pilot approval by text search | Fixed | #134, `test_n3_agent_decision_with_same_text_is_not_an_approval` |
+| **H5 readiness without simulation evidence** | **Fixed** | #134, `registry/assessments.py: evidence_errors`, `test_h5_ready_without_simulation_runs_is_refused` |
+| N4–N14 (medium/low) | Open | `docs/reviews/FIXES-2026-10-30.md` |
+| Re-review of the #134 fixes (D-055) | Not done | needs a fresh Claude session |
+| Daily report date | Fixed 2026-11-06 | file and heading use today's real date; the SIM business day is shown next to it |
+| Off-device backup | Code ready, **not connected** | `python -m aie.memory.backup offsite` (see below) |
 
-These are implementation and test results, **not independent approval** of the changes.
-Baseline regression suites passed locally and required 3.11/3.12 CI checks are recorded on each PR.
-Migration 34 preserves old registration dates; migration 35 rejects unclassified legacy approvals;
-migration 36 conservatively seeds the attempt counter from stored fetches. Back up before upgrading.
+The daily SIM business day stays at 2027-01-01 between runs. That suggests the cached database is not
+carried over between workflow runs. It is not investigated yet and does not affect real-money data.
 
-Actions run 41083637658 verified two independent daily CLI processes on the feature branch, with
-persisted SIM days 1 and 2, two daily reports, a public SIM dashboard, and an intact audit chain.
-Its cycle and pages jobs were skipped. This does not verify Groq quotas, production caches,
-report-PR merging, GitHub Pages setup, off-device backups or real sales.
+## Off-device backup: what a founder must do (once)
 
-## Next engineering task (still open)
+Real-money data lives only in `data-pilot/data/prod.db` on the founder's computer. It is never in git.
+The destination is a **private Google Drive folder**, synced by Google's own app; nothing is shared.
 
-**H5: simulation evidence must authorize readiness.** The existing public assessment store still
-accepts a caller-provided ready flag. No real-money pilot should proceed until it is replaced by
-validation of completed runs and a new independent review. See
-`proposals/2026-10-30-assessment-evidence-design.md` for a concrete implementation outline.
+1. Install **Google Drive for desktop**: https://www.google.com/drive/download/ → Download → install →
+   sign in with your Google account.
+2. Open https://drive.google.com → **New** → **New folder** → name it `AI-Eco-backup` → **Create**.
+   Do **not** click Share.
+3. On your computer, open the Google Drive folder (Mac: Finder sidebar "Google Drive"; Windows: drive
+   `G:`), go to **My Drive**, right-click `AI-Eco-backup` → **Offline access** → **Available offline**.
+4. Copy that folder's path, for example `/Users/<you>/Library/CloudStorage/GoogleDrive-<email>/My Drive/AI-Eco-backup`
+   (Mac) or `G:\My Drive\AI-Eco-backup` (Windows).
+5. In `ai-enterprise/`, after each sales import, run:
+   `PYTHONPATH=src python -m aie.memory.backup offsite --to "<the path from step 4>"`
+   It writes a verified snapshot plus manifest, keeps the 30 newest and refuses any folder inside the repo.
 
 ## Founder input that code cannot supply
 
-- Actual identity verification and accepting the selling platform's account terms.
-- Tax-authority confirmation for the real selling arrangement.
-- Reading and approving a fact-checked final product.
-- Choosing a private off-device backup destination; no destination has been connected.
-- Explicit approval of the bounded pilot, after the technical blockers are resolved.
-
-The code agent can handle implementation, tests and recovery rehearsals. The founder does not need
-to write code or manually repair these defects. `FOUNDER-CHECKLIST.md` covers the eventual human steps;
-it must not be read as permission to bypass H5 or independent review.
+- Re-review of the #134 fixes by a fresh Claude session (D-055), and a decision on N4–N14.
+- Platform account identity verification and accepting the selling platform's terms.
+- Choosing a product: no idea has passed the 7a/Scout bar yet.
+- Connecting the off-device backup folder (above).
+- Explicit approval of the bounded pilot once the above are done.

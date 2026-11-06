@@ -1,4 +1,5 @@
 """Verifies FR-03, SR-09/11: private offline backup and recovery readiness."""
+import unittest
 import hashlib
 import json
 import os
@@ -79,3 +80,34 @@ class BackupRecovery(PilotLive):
             cwd=root, env=dict(os.environ, PYTHONPATH=str(root / "src")), capture_output=True, text=True)
         self.assertEqual(process.returncode, 0, process.stderr)
         self.assertIn("Återställningsövning OK: prod", process.stdout)
+
+
+class OffsiteBackup(unittest.TestCase):
+    """Extern kopia till en privat mapp (Robin 2026-11-06)."""
+
+    def test_offsite_copy_is_verified_pruned_and_never_inside_the_repo(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+
+        from aie.memory import Database
+        from aie.memory import backup as b
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            with Database.open(tmp / "data", "prod"):
+                pass
+            db = tmp / "data" / "prod.db"
+            repo = tmp / "repo"
+            (repo / ".git").mkdir(parents=True)
+            drive = tmp / "drive"
+            drive.mkdir()
+            with patch.object(b, "KEEP", 2):
+                for _ in range(3):
+                    snap = b.offsite(db, drive, repo)
+            self.assertTrue(snap.is_file())
+            self.assertEqual(len(list(drive.glob("prod-*.db"))), 2)
+            with self.assertRaises(b.BackupError):
+                b.offsite(db, repo / "inne", repo) if (repo / "inne").mkdir() is None else None
+            with self.assertRaises(b.BackupError):
+                b.offsite(db, tmp / "finns-inte", repo)

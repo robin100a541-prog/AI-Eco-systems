@@ -113,3 +113,12 @@ class TestDailyCycle(DashboardCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReportDate(TestDailyCycle):
+    def test_daily_report_uses_the_real_date(self):
+        """Robin 2026-11-06: rapporten heter och rubriceras med dagens riktiga datum, inte SIM-datumet."""
+        self.cycle(weekday=date(2026, 11, 6))
+        path = self.dir / "rep" / "daily" / "2026-11-06.md"
+        self.assertTrue(path.is_file())
+        self.assertTrue(path.read_text().startswith("# Daglig rapport 2026-11-06 (SIM-affärsdag "))
