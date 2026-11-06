@@ -73,7 +73,10 @@ def _with_system(config_dir, cfg, action, founder, approved, designs, folder) ->
         try:
             if action == "prepare":
                 drafter = PrintifyDrafter(system.engine, system.audit, AGENT_WRITE, client, cfg)
-                results = launch.prepare(reader, drafter, shop, designs, cfg, folder)
+                old_path = folder / PREPARED
+                old = json.loads(old_path.read_text(encoding="utf-8")) if old_path.is_file() else {"products": []}
+                existing = {p["key"]: p for p in old["products"]}
+                results = launch.prepare(reader, drafter, shop, designs, cfg, folder, existing)
                 launch.save(results, folder / PREPARED)
                 ok = [r for r in results if not r.struck]
                 print(f"{len(results)} opublicerade produkter i Printify, {len(ok)} med minst 30 % marginal. "
