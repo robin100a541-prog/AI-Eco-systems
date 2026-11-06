@@ -25,5 +25,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      # D-070 punkt 8: Pillow (HPND) är det enda tillåtna beroendet, och bara i src/aie/pod/design/.
+      - name: Install Pillow (only for aie.pod.design)
+        run: pip install "pillow==12.2.0"
       - name: Run tests
         run: python -m unittest discover -s tests -v

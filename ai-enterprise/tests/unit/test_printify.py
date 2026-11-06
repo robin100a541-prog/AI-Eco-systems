@@ -143,7 +143,7 @@ class TestDraft(SystemCase):
         fake = FakeTransport({("POST", "/v1/shops/5/products.json"): [(200, {"id": "p1"}, None)]})
         with self.assertRaisesRegex(PermissionError, "avstängt"):
             self.drafter(fake, False).create_draft(5, {"title": "x"})
-        self.assertFalse(load_pod_config(self.config_dir)["printify"]["draft_enabled"])  # repots värde
+        self.assertTrue(load_pod_config(self.config_dir)["printify"]["draft_enabled"])  # påslaget av Yorgo 2026-11-04 (LANSERING-Q4)
         self.assertEqual(self.drafter(fake, True).create_draft(5, {"title": "Vinterljus"})["id"], "p1")
         with self.assertRaises(PermissionDenied):
             PrintifyDrafter(self.system.engine, self.system.audit, "res-1",

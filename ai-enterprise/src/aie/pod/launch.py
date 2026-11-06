@@ -67,7 +67,8 @@ def render_all(designs: list[dict], out_dir: Path, sizes: dict[str, list[int]]) 
         folder = out_dir / d["key"]
         spec = {"lines": d["lines"], "fonts": [d["font"]], "color": d["color"]}
         for product in d["products"]:
-            files.append(render(spec, tuple(sizes[product]), folder / f"{product}.png"))
+            ratio = {"width_ratio": 0.45} if product == "mug" else {}  # muggens tryck går runt; bara framsidan
+            files.append(render(spec | ratio, tuple(sizes[product]), folder / f"{product}.png"))
         files.append(preview(folder / f"{d['products'][0]}.png", folder / "preview.png"))
     return files
 

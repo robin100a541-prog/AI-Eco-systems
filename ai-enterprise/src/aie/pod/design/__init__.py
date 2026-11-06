@@ -50,13 +50,15 @@ def _fit(text: str, font_key: str, max_w: int, max_h: int) -> ImageFont.FreeType
 
 def render(spec: dict, size: tuple[int, int], out: Path | str) -> Path:
     """`spec`: {"lines": [...], "fonts": [...] (ett per rad eller ett för alla), "color": "#rrggbb",
-    "weights": [...] (andel av höjden per rad, valfritt)}."""
+    "weights": [...] (andel av höjden per rad, valfritt), "width_ratio": andel av bredden som texten får ta
+    (standard 0,88; en mugg använder mindre så att texten inte går runt handtaget)}."""
     width, height = size
     lines = [shape(line) if is_arabic(line) else line for line in spec["lines"]]
     fonts = spec.get("fonts") or [spec.get("font", "bebas")]
     fonts = fonts if len(fonts) == len(lines) else [fonts[0]] * len(lines)
     weights = spec.get("weights") or [1] * len(lines)
-    margin_x, margin_y, gap = int(width * 0.06), int(height * 0.08), int(height * 0.03)
+    margin_x = int(width * (1 - spec.get("width_ratio", 0.88)) / 2)
+    margin_y, gap = int(height * 0.08), int(height * 0.03)
     usable_h = height - 2 * margin_y - gap * (len(lines) - 1)
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
