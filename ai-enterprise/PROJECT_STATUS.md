@@ -2,7 +2,7 @@
 
 **Senast uppdaterad:** 2026-11-06 av Claude (Claude Code-session med Robin)
 **Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.
-**Tester:** TESTCOUNT på `main` (2026-11-06, lokalt Python 3.13; CI kör 3.11 och 3.12).
+**Tester:** 818 OK på `main` (2026-11-06, lokalt Python 3.13; CI kör 3.11 och 3.12).
 
 ## Läget 2026-11-06 (verifierat mot `main`)
 | Område | Läge |
