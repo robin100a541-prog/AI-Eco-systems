@@ -1,6 +1,8 @@
-# Möjlighetsregistret (Opportunity Scout) 2026-11-05
+# Möjlighetsregistret (Opportunity Scout) 2026-11-06
 
 Uppdateras varje dygn av `scout.yml`. Scouten skapar aldrig konton, godkänner aldrig villkor, betalar aldrig och publicerar aldrig; det gör en grundare (D-011, §6).
+
+**Researchen misslyckades i dag:** produktagenten gav 9 giltiga idéer, minst 10 krävs. Inget påhittat sparades.
 
 - Källor som hoppades över: Etsy: ETSY_API_KEY saknas, källan hoppades över
 - Scoutens profil: {'proposed': 0, 'approved': 0, 'approval_rate': None, 'forecast_error': None, 'forecasts_measured': 0}
