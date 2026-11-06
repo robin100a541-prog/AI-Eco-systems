@@ -9,10 +9,11 @@ skills = [
 languages = ["swedish", "english", "arabic", "french"]
 
 # Sökord som research-agenten använder för att hitta signaler om efterfrågan.
+# Print-on-demand inför Q4 (grundarbeslut Yorgo 2026-11-04, LANSERING-Q4.md).
 search_terms = [
-  "davinci resolve luts", "cinematic luts", "motion graphics pack", "video transitions pack",
-  "real estate video template", "football edit pack", "content creator templates",
-  "arabic social media templates", "video editing service",
+  "christmas t-shirt", "christmas mug", "gift for dad", "gift for mom", "teacher gift",
+  "football shirt gift", "swedish quote shirt", "english quote mug", "arabic calligraphy shirt",
+  "real estate agent gift", "content creator shirt", "video editor gift",
 ]
 
 [[audience]]
