@@ -1,0 +1,18 @@
+{
+  "key": "open-house",
+  "theme": "fastighetsmäklare",
+  "text": "OPEN HOUSE\nOPEN HEART",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "mug"
+  ],
+  "font": "abrilfatface/AbrilFatface-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}

@@ -1,0 +1,18 @@
+{
+  "key": "closing-deals",
+  "theme": "fastighetsmäklare",
+  "text": "CLOSING DEALS\n& DRINKING COFFEE",
+  "product_type": "mug",
+  "products": [
+    "mug",
+    "tee"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    2700,
+    1050
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}

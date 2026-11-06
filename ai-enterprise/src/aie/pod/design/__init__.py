@@ -90,3 +90,28 @@ def preview(png: Path | str, out: Path | str, width: int = 600, background: str 
     out = Path(out)
     canvas.save(out, "PNG", optimize=True)
     return out
+
+
+# Standardmått (300 dpi) när Printifys tryckyta inte är hämtad via API:t.
+SIZES = {"tee": (4500, 5400), "hoodie": (4500, 5400), "mug": (2700, 1050), "poster": (5400, 7200)}
+
+
+def save(design: dict, folder: Path | str) -> tuple[Path, Path]:
+    """`<mapp>/design.png` för designens första produkttyp och `<mapp>/meta.json` med tema, text och produkttyp.
+
+    `design`: en post ur `products/q4/designs.toml` (key, lines, font, color, products, title)."""
+    import json
+
+    folder = Path(folder)
+    product = design["products"][0]
+    spec = {"lines": design["lines"], "fonts": [design["font"]], "color": design["color"]}
+    if product == "mug":
+        spec["width_ratio"] = 0.45  # muggens tryck går runt; texten bara på framsidan
+    png = render(spec, SIZES[product], folder / "design.png")
+    meta = {"key": design["key"], "theme": design.get("theme", design["title"].split(",")[0]),
+            "text": "\n".join(design["lines"]), "product_type": product, "products": design["products"],
+            "font": FONTS[design["font"]], "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+            "size_px": list(SIZES[product]), "dpi": DPI, "background": "transparent"}
+    meta_path = folder / "meta.json"
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    return png, meta_path

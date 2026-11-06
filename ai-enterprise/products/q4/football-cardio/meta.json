@@ -1,0 +1,18 @@
+{
+  "key": "football-cardio",
+  "theme": "fotbollsälskare",
+  "text": "FOOTBALL\nIS MY CARDIO",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}

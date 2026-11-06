@@ -1,0 +1,18 @@
+{
+  "key": "qahwa-awalan",
+  "theme": "kort citat (arabiska)",
+  "text": "قهوة أولا",
+  "product_type": "mug",
+  "products": [
+    "mug",
+    "tee"
+  ],
+  "font": "amiri/Amiri-Bold.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    2700,
+    1050
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}

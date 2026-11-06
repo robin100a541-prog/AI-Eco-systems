@@ -1,0 +1,18 @@
+{
+  "key": "fika-ar-viktigt",
+  "theme": "kort citat (svenska)",
+  "text": "FIKA ÄR\nVIKTIGT",
+  "product_type": "mug",
+  "products": [
+    "mug",
+    "tee"
+  ],
+  "font": "bebasneue/BebasNeue-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    2700,
+    1050
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}

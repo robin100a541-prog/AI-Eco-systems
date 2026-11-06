@@ -1,0 +1,18 @@
+{
+  "key": "sunday-league",
+  "theme": "fotbollsälskare",
+  "text": "SUNDAY\nLEAGUE\nLEGEND",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "bebasneue/BebasNeue-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent"
+}
