@@ -1,0 +1,207 @@
+# 20 egna typografiska designer för lanseringen Q4 (LANSERING-Q4.md, D-070). Texterna är egna formuleringar
+# eller allmänna ordspråk utan upphovsrätt; inga varumärken, klubbar, kända personer eller figurer.
+# Rita dem med:  python -m aie pod designs     (kräver Pillow, D-070 punkt 8)
+# products: vilka produkttyper designen ska finnas på (se [products] i config/pod.toml).
+# tags: exakt 13, högst 20 tecken var (Etsy). title: högst 140 tecken.
+
+config_version = 1
+
+[[designs]]
+key = "cozy-season"
+lines = ["COZY", "SEASON"]
+font = "bebas"
+color = "#7a2e2e"
+products = ["tee", "hoodie"]
+title = "Cozy Season Shirt, Minimalist Winter Typography Tee, Christmas Gift, Holiday Sweater Weather Top"
+tags = ["cozy season", "winter shirt", "christmas gift", "holiday tee", "minimalist shirt", "cozy hoodie", "sweater weather", "gift for her", "gift for him", "winter vibes", "typography shirt", "xmas present", "festive top"]
+pinterest = "Cozy season is here: a clean, minimalist typography piece for the coldest months."
+
+[[designs]]
+key = "holiday-mode-on"
+lines = ["HOLIDAY MODE:", "ON"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Holiday Mode On Shirt, Funny Christmas Tee, Office Party Top, Coworker Holiday Gift"
+tags = ["holiday mode", "funny christmas", "office party", "coworker gift", "christmas shirt", "holiday tee", "xmas gift idea", "work humor", "festive shirt", "winter break", "secret santa gift", "holiday hoodie", "out of office"]
+pinterest = "Holiday mode: on. A funny, minimalist top for the office party and the long winter break."
+
+[[designs]]
+key = "dad-mode"
+lines = ["DAD MODE:", "ALWAYS ON"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Dad Mode Always On Shirt, Funny Gift for Dad, Christmas Gift for Father, New Dad Tee"
+tags = ["gift for dad", "dad shirt", "funny dad gift", "new dad gift", "christmas for dad", "father gift", "dad hoodie", "daddy shirt", "dad birthday gift", "husband gift", "dad mode", "papa shirt", "gift from kids"]
+pinterest = "For the dad who never switches off. A simple, funny gift for Christmas or his birthday."
+
+[[designs]]
+key = "mom-mode"
+lines = ["MOM MODE:", "ALWAYS ON"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Mom Mode Always On Shirt, Funny Gift for Mom, Christmas Gift for Mother, New Mom Tee"
+tags = ["gift for mom", "mom shirt", "funny mom gift", "new mom gift", "christmas for mom", "mother gift", "mom hoodie", "mama shirt", "mom birthday gift", "wife gift", "mom mode", "mum shirt", "gift from kids"]
+pinterest = "For the mom who is always on. A simple, funny gift for Christmas or her birthday."
+
+[[designs]]
+key = "grading-season"
+lines = ["GRADING", "SEASON", "SURVIVOR"]
+font = "bebas"
+color = "#2f4a3a"
+products = ["mug", "tee"]
+title = "Grading Season Survivor Mug, Funny Teacher Christmas Gift, Teacher Appreciation Coffee Cup"
+tags = ["teacher gift", "teacher mug", "grading season", "funny teacher", "christmas teacher", "teacher coffee", "end of term gift", "school staff gift", "teacher present", "educator gift", "teaching gift", "teacher life", "teacher thanks"]
+pinterest = "Every teacher has survived grading season. A small thank-you gift for the end of term."
+
+[[designs]]
+key = "teach-coffee-repeat"
+lines = ["TEACH.", "COFFEE.", "REPEAT."]
+font = "bebas"
+color = "#1f2d2a"
+products = ["mug", "tee"]
+title = "Teach Coffee Repeat Mug, Teacher Gift, Coffee Lover Teacher Cup, Christmas Gift for Teachers"
+tags = ["teacher gift", "teacher mug", "coffee teacher", "teach coffee", "christmas teacher", "teacher present", "educator gift", "school gift", "teacher coffee", "teaching gift", "teacher thanks", "coffee lover gift", "teacher life"]
+pinterest = "Teach, coffee, repeat: a minimalist mug for the teacher who runs on coffee."
+
+[[designs]]
+key = "football-cardio"
+lines = ["FOOTBALL", "IS MY CARDIO"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Football Is My Cardio Shirt, Funny Soccer Player Tee, Gift for Football Fan, Sports Gift"
+tags = ["football shirt", "soccer shirt", "football gift", "soccer gift", "football fan", "soccer player", "sports tee", "funny football", "football hoodie", "gift for him", "soccer mom gift", "coach gift", "team gift"]
+pinterest = "For everyone whose only workout is the weekly match. A funny gift for the football fan."
+
+[[designs]]
+key = "sunday-league"
+lines = ["SUNDAY", "LEAGUE", "LEGEND"]
+font = "bebas"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Sunday League Legend Shirt, Amateur Football Player Tee, Funny Soccer Gift for Him"
+tags = ["sunday league", "football shirt", "soccer shirt", "football gift", "soccer gift", "amateur football", "football player", "sports tee", "gift for him", "football hoodie", "team gift", "coach gift", "football fan"]
+pinterest = "For the legend of the local Sunday league. A clean typography gift for amateur footballers."
+
+[[designs]]
+key = "closing-deals"
+lines = ["CLOSING DEALS", "& DRINKING COFFEE"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["mug", "tee"]
+title = "Closing Deals and Drinking Coffee Mug, Real Estate Agent Gift, Realtor Christmas Gift Cup"
+tags = ["realtor gift", "real estate gift", "realtor mug", "real estate agent", "broker gift", "closing gift", "realtor coffee", "agent gift", "christmas realtor", "housing agent", "property gift", "sales gift", "office mug"]
+pinterest = "For the agent who closes deals and lives on coffee. A practical Christmas gift for realtors."
+
+[[designs]]
+key = "open-house"
+lines = ["OPEN HOUSE", "OPEN HEART"]
+font = "abril"
+color = "#2f4a3a"
+products = ["tee", "mug"]
+title = "Open House Open Heart Shirt, Real Estate Agent Tee, Realtor Gift, Broker Team Shirt"
+tags = ["realtor shirt", "real estate gift", "realtor gift", "open house shirt", "real estate agent", "broker gift", "realtor team", "agent shirt", "property gift", "christmas realtor", "housing agent", "sales team gift", "realtor tee"]
+pinterest = "Open house, open heart. A warm, minimalist piece for real estate agents and their teams."
+
+[[designs]]
+key = "one-more-render"
+lines = ["JUST ONE", "MORE RENDER"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Just One More Render Shirt, Video Editor Gift, Filmmaker Tee, Content Creator Hoodie"
+tags = ["video editor gift", "filmmaker gift", "editor shirt", "video editor", "content creator", "youtuber gift", "film student", "motion designer", "creator shirt", "editing shirt", "gift for editor", "filmmaker shirt", "videographer"]
+pinterest = "Every video editor knows it is never just one more render. A gift for editors and filmmakers."
+
+[[designs]]
+key = "cut-color-export"
+lines = ["CUT.", "COLOR.", "EXPORT."]
+font = "bebas"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Cut Color Export Shirt, Video Editor Tee, Colorist Gift, Filmmaker Christmas Gift"
+tags = ["video editor gift", "colorist gift", "filmmaker gift", "editor shirt", "color grading", "video editor", "film crew gift", "content creator", "editing shirt", "gift for editor", "post production", "videographer", "creator shirt"]
+pinterest = "Cut, color, export: the editor's workflow as a clean typography piece."
+
+[[designs]]
+key = "creator-at-work"
+lines = ["CREATOR", "AT WORK"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "hoodie"]
+title = "Creator at Work Shirt, Content Creator Gift, Influencer Tee, Small Business Owner Gift"
+tags = ["content creator", "creator shirt", "influencer gift", "youtuber gift", "creator gift", "small business", "social media gift", "blogger gift", "podcaster gift", "streamer gift", "creative gift", "entrepreneur gift", "creator hoodie"]
+pinterest = "Creator at work: a minimalist piece for content creators and small business owners."
+
+[[designs]]
+key = "merry-and-calm"
+lines = ["MERRY", "& CALM"]
+font = "abril"
+color = "#7a2e2e"
+products = ["tee", "mug"]
+title = "Merry and Calm Shirt, Minimalist Christmas Tee, Calm Holiday Gift, Winter Typography Top"
+tags = ["merry and calm", "christmas shirt", "minimalist xmas", "holiday tee", "calm christmas", "christmas gift", "winter shirt", "festive top", "xmas present", "holiday gift", "typography shirt", "gift for her", "christmas mug"]
+pinterest = "A calm, minimalist take on Christmas: merry, and calm."
+
+[[designs]]
+key = "fika-ar-viktigt"
+lines = ["FIKA ÄR", "VIKTIGT"]
+font = "bebas"
+color = "#5a3e2b"
+products = ["mug", "tee"]
+title = "Fika Är Viktigt Mug, Swedish Fika Coffee Cup, Swedish Gift, Scandinavian Coffee Lover Gift"
+tags = ["swedish gift", "fika mug", "swedish mug", "fika", "scandinavian gift", "coffee lover gift", "sweden gift", "swedish coffee", "nordic gift", "coffee break", "swedish quote", "gift from sweden", "fika time"]
+pinterest = "Fika är viktigt: the Swedish coffee break, on a mug. A gift for Sweden lovers everywhere."
+
+[[designs]]
+key = "mys-ar-en-livsstil"
+lines = ["MYS ÄR EN", "LIVSSTIL"]
+font = "bebas"
+color = "#2f4a3a"
+products = ["tee", "hoodie"]
+title = "Mys Är En Livsstil Shirt, Swedish Cozy Quote Tee, Scandinavian Hygge Style Gift"
+tags = ["swedish gift", "swedish shirt", "mys", "scandinavian gift", "cozy shirt", "swedish quote", "sweden gift", "nordic style", "cozy hoodie", "gift from sweden", "winter shirt", "swedish hoodie", "cozy lifestyle"]
+pinterest = "Mys är en livsstil: Swedish coziness as a way of life."
+
+[[designs]]
+key = "basta-pappan"
+lines = ["BÄSTA", "PAPPAN"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "mug"]
+title = "Bästa Pappan Shirt, Swedish Gift for Dad, Christmas Gift for Father, Swedish Dad Tee"
+tags = ["swedish dad gift", "gift for dad", "dad shirt", "swedish gift", "father gift", "christmas for dad", "pappa", "swedish shirt", "dad birthday gift", "dad mug", "sweden gift", "gift from kids", "new dad gift"]
+pinterest = "Bästa pappan: a Swedish gift for the best dad, for Christmas or his birthday."
+
+[[designs]]
+key = "basta-mamman"
+lines = ["BÄSTA", "MAMMAN"]
+font = "archivo"
+color = "#1f2d2a"
+products = ["tee", "mug"]
+title = "Bästa Mamman Shirt, Swedish Gift for Mom, Christmas Gift for Mother, Swedish Mom Tee"
+tags = ["swedish mom gift", "gift for mom", "mom shirt", "swedish gift", "mother gift", "christmas for mom", "mamma", "swedish shirt", "mom birthday gift", "mom mug", "sweden gift", "gift from kids", "new mom gift"]
+pinterest = "Bästa mamman: a Swedish gift for the best mom, for Christmas or her birthday."
+
+[[designs]]
+key = "abi-batali"
+lines = ["أبي بطلي"]
+font = "amiri"
+color = "#1f2d2a"
+products = ["tee", "mug"]
+title = "Arabic My Father My Hero Shirt, Arabic Calligraphy Gift for Dad, Arabic Quote Tee"
+tags = ["arabic shirt", "arabic gift", "gift for dad", "arabic calligraphy", "arabic quote", "dad shirt", "father gift", "arabic dad gift", "baba gift", "arabic typography", "muslim dad gift", "arabic mug", "christmas for dad"]
+pinterest = "أبي بطلي (my father, my hero) in Arabic typography: a gift for dad."
+
+[[designs]]
+key = "qahwa-awalan"
+lines = ["قهوة أولا"]
+font = "amiri"
+color = "#5a3e2b"
+products = ["mug", "tee"]
+title = "Arabic Coffee First Mug, Arabic Calligraphy Coffee Cup, Arabic Quote Gift for Coffee Lovers"
+tags = ["arabic mug", "arabic gift", "coffee first", "arabic calligraphy", "arabic quote", "coffee lover gift", "arabic coffee", "arabic typography", "coffee mug", "gift for her", "gift for him", "middle east gift", "arabic text mug"]
+pinterest = "قهوة أولا (coffee first): Arabic typography for coffee lovers."

@@ -1,0 +1,54 @@
+# pod-publish (LANSERING-Q4.md, D-070). Publicerar de GODKÄNDA produkterna i products/q4/LISTA.md till Etsy via Printify (LANSERING-Q4 steg 8). Bara med knappen, bara om raden GODKÄND finns, högst 20 (D-070).
+# Säkerhet: aldrig på pull_request eller pull_request_target, bara i huvudrepot. PRINTIFY_API_TOKEN finns bara i
+# steget som anropar Printify och skrivs aldrig ut. Jobbet har bara läsrätt till repot.
+name: pod-publish
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pod-publish
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.repository == 'robin100a541-prog/AI-Eco-systems'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: ai-enterprise
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Printify
+        env:
+          PRINTIFY_API_TOKEN: ${{ secrets.PRINTIFY_API_TOKEN }}
+        run: |
+          if [ -z "$PRINTIFY_API_TOKEN" ]; then echo "PRINTIFY_API_TOKEN saknas som repository secret"; exit 1; fi
+          python -m aie init
+          python -m aie pod publish --approved --as yorgo 2>&1 | tee "$RUNNER_TEMP/pod.txt"
+      - name: Sammanfattning
+        if: always()
+        run: |
+          { echo "## pod-publish $(date -u +%Y-%m-%d)"; echo '```'; cat "$RUNNER_TEMP/pod.txt" 2>/dev/null || echo "kördes inte"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Ladda upp
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pod-publish-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pod.txt
+            ai-enterprise/products/q4/LISTA.md
+          if-no-files-found: warn
+          retention-days: 30

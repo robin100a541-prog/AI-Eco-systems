@@ -256,9 +256,13 @@ class TestTamperedAuditDetected(Fas1Acceptance):
 
 class TestReproducible(Fas1Acceptance):
     def test_no_network_no_third_party_imports(self):
-        """§49 kriterium 5 (D-002): koden använder bara standardbiblioteket, så testerna kräver ingen installation."""
+        """§49 kriterium 5 (D-002): koden använder bara standardbiblioteket, så testerna kräver ingen installation.
+
+        Enda undantaget (D-070 punkt 8): Pillow (`PIL`) i `src/aie/pod/design/`, som ritar designer med typsnitt."""
         stdlib = set(sys.stdlib_module_names)
+        design = ROOT / "src" / "aie" / "pod" / "design"
         for path in (ROOT / "src").rglob("*.py"):
+            allowed = stdlib | {"aie", "__future__"} | ({"PIL"} if design in path.parents else set())
             for line in path.read_text(encoding="utf-8").splitlines():
                 words = line.split()
                 if (
@@ -267,11 +271,7 @@ class TestReproducible(Fas1Acceptance):
                     and not words[1].startswith(".")
                 ):
                     top = words[1].split(".")[0].rstrip(",")
-                    self.assertIn(
-                        top,
-                        stdlib | {"aie", "__future__"},
-                        f"{path.name}: {line.strip()}",
-                    )
+                    self.assertIn(top, allowed, f"{path.name}: {line.strip()}")
 
     def test_tests_leave_no_files_in_repo(self):
         """§49 kriterium 5: acceptanstesterna skriver bara i temporära mappar, aldrig i repot."""
