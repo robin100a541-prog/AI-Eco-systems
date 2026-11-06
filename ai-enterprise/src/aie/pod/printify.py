@@ -190,6 +190,14 @@ class PrintifyDrafter:
         self._audit.append(self._agent, "printify.update", {"id": product_id, "fields": sorted(allowed)})
         return data
 
+    def update_text(self, shop_id: int, product_id: str, title: str, description: str, tags: list[str]) -> dict:
+        """Uppdaterar titel, beskrivning och taggar på en opublicerad produkt."""
+        self._require()
+        data = self._client.put(f"/v1/shops/{int(shop_id)}/products/{_pid(product_id)}.json",
+                                {"title": title, "description": description, "tags": tags})
+        self._audit.append(self._agent, "printify.text", {"id": product_id, "title": title[:80]})
+        return data
+
     def set_price(self, shop_id: int, product_id: str, variants: list[dict]) -> dict:
         """Sätter priset på en opublicerad produkt (varianternas `price` i cent)."""
         self._require()

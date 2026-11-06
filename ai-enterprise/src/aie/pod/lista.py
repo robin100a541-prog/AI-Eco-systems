@@ -38,8 +38,10 @@ def write(folder: Path | str) -> Path:
             "| Produkt | Bild | Typ | Kostnad | Pris | Marginal | Taggar | Pinterest |", "|---|---|---|---|---|---|---|---|"]
     for path in sorted(folder.glob("*/meta.json")):
         m = json.loads(path.read_text(encoding="utf-8"))
-        if not m.get("printify_product_id"):
-            continue
+        if not m.get("printify_product_id") or m.get("struck") or (m.get("margin_pct") or 0) < 30:
+            continue  # bara produkter med minst 30 % marginal
+        if sum(1 for r in rows if r.startswith("| ") and "`" in r) >= LIMIT:
+            break  # högst 20
         row = (f"| {m['key']} `{m['printify_product_id']}` | [![{m['key']}]({m['key']}/design.png)]({m['key']}/design.png) | "
                f"{m['product_type']} | {_usd(m.get('cost_usd_cents'))} | {_usd(m.get('price_usd_cents'))} | "
                f"{_usd(m.get('profit_after_tax_usd_cents'))} ({m.get('margin_pct')} %) | {', '.join(m.get('tags', []))} | "
