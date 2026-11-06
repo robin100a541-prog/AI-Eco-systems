@@ -109,6 +109,7 @@ class Register:
         self._clock = clock
         self.assessments = assessments or AssessmentStore(db, audit, self._founders, environment="prod")
         self.dependency = None  # DependencyGuard (D-059), kopplas in av build_system
+        self.test_mode = None  # aie.pod.testmode.TestMode (D-070), kopplas in av build_system
 
     # --- Ändra -----------------------------------------------------------------------------
 
@@ -193,9 +194,22 @@ class Register:
         if platform is None or platform.status not in SPENDABLE:
             return f"plattformen för {initiative!r} är inte godkänd eller aktiv (D-054)"
         if self.assessments.valid(initiative, entry.data, platform.data) is None:
+            if self._test_mode_passes(initiative, entry.data):
+                return None  # D-070: testläget ersätter "redo" för print-on-demand
             return (f"initiativet {initiative!r} saknar en godkänd bedömning med nuvarande parametrar; "
                     "simulera före start (D-058)")
         return None
+
+    def test_mode_problems(self, key: str, data: dict) -> list[str]:
+        """Varför initiativet inte går igenom testläget (D-070), eller [] om det gör det."""
+        if self.test_mode is None or "test_mode" not in data:
+            return ["inget testläge"]
+        others = sum(1 for e in self.all("initiative")
+                     if e.key != key and e.status in SPENDABLE and "test_mode" in e.data)
+        return self.test_mode.problems(data, others)
+
+    def _test_mode_passes(self, key: str, data: dict) -> bool:
+        return not self.test_mode_problems(key, data)
 
     # --- Internt ---------------------------------------------------------------------------
 
@@ -211,8 +225,11 @@ class Register:
             if platform is None or platform.status not in SPENDABLE:
                 raise RegistryError("ett initiativ godkänns bara på en godkänd eller aktiv plattform")
             if self.assessments.valid(self._key, data, platform.data) is None:
-                raise RegistryError("initiativet saknar en godkänd bedömning med exakt de här parametrarna; "
-                                    "simulera före start (D-058)")
+                problems = self.test_mode_problems(self._key, data) if "test_mode" in data else []
+                if "test_mode" not in data or problems:
+                    raise RegistryError("initiativet saknar en godkänd bedömning med exakt de här parametrarna; "
+                                        "simulera före start (D-058)"
+                                        + (f"; testläget: {'; '.join(problems)}" if problems else ""))
             current = self.get("initiative", self._key)
             if self.dependency is not None and (current is None or current.status not in SPENDABLE):
                 reason = self.dependency.block_reason(platform.key)
@@ -220,7 +237,9 @@ class Register:
                     raise RegistryError(reason)
         if kind == "platform" and status in ("approved", "active"):
             initiatives = [(e.key, e.data) for e in self.all("initiative")]
-            if self.assessments.valid_for_platform(self._key, data, initiatives) is None:
+            in_test_mode = any(d.get("platform") == self._key and "test_mode" in d and self._test_mode_passes(k, d)
+                               for k, d in initiatives)  # D-070
+            if not in_test_mode and self.assessments.valid_for_platform(self._key, data, initiatives) is None:
                 raise RegistryError("plattformen saknar en godkänd bedömning av något initiativ på den med exakt "
                                     "de här parametrarna; simulera före start (D-058)")
         if founder:
@@ -286,7 +305,7 @@ class Register:
     @staticmethod
     def _validate_initiative(data: dict) -> list[str]:
         problems = [f"initiativet saknar {k}" for k in INITIATIVE_FIELDS if k not in data]
-        unknown = [k for k in data if k not in (*INITIATIVE_FIELDS, "assessment")]
+        unknown = [k for k in data if k not in (*INITIATIVE_FIELDS, "assessment", "test_mode")]
         if unknown:
             problems.append(f"okända fält: {', '.join(unknown)}")
         if problems:

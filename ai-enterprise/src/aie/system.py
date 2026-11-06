@@ -175,6 +175,11 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     assessments = AssessmentStore(db, audit, founders, environment=config.system.environment)
     register = Register(db, registry, permissions, audit, founders, opportunities, assessments=assessments)
     register.dependency = DependencyGuard(register, ledger, limits, **t)
+    if (Path(config_dir) / "pod.toml").is_file():  # D-070: testläget för print-on-demand
+        from .pod.printify import load_pod_config
+        from .pod.testmode import TestMode
+
+        register.test_mode = TestMode(load_pod_config(config_dir), **({"clock": clock} if clock is not None else {}))
     budget = BudgetEngine(ledger, limits, budgets, audit, gates=(stoploss, kill, protected), tax=tax,
                           approvals=spend_approvals, initiatives=register, **now)
     tasks = TaskBoard(db, registry, engine, founders=founders)
