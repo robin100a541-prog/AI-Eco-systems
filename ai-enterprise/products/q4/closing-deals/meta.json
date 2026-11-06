@@ -1,0 +1,44 @@
+{
+  "key": "closing-deals",
+  "theme": "fastighetsmäklare",
+  "text": "CLOSING DEALS\n& DRINKING COFFEE",
+  "product_type": "mug",
+  "products": [
+    "mug",
+    "tee"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    2700,
+    1050
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee48920a356240530ecad1",
+  "shop_id": 7951751,
+  "provider": "SPOKE Custom Products",
+  "title": "Closing Deals and Drinking Coffee Mug, Real Estate Agent Gift, Realtor Christmas Gift Mug",
+  "tags": [
+    "realtor gift",
+    "real estate gift",
+    "realtor mug",
+    "real estate agent",
+    "broker gift",
+    "closing gift",
+    "realtor coffee",
+    "agent gift",
+    "christmas realtor",
+    "housing agent",
+    "property gift",
+    "sales gift",
+    "office mug"
+  ],
+  "base_cost_usd_cents": 644,
+  "shipping_us_usd_cents": 729,
+  "price_usd_cents": 2999,
+  "cost_usd_cents": 1373,
+  "fees_usd_cents": 330,
+  "profit_after_tax_usd_cents": 907,
+  "margin_pct": 30.2
+}

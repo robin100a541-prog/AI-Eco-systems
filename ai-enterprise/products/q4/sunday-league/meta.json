@@ -1,0 +1,44 @@
+{
+  "key": "sunday-league",
+  "theme": "fotbollsälskare",
+  "text": "SUNDAY\nLEAGUE\nLEGEND",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "bebasneue/BebasNeue-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee488bcdc0f74a650135bd",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Sunday League Legend Shirt, Amateur Football Player Shirt, Funny Soccer Gift for Him",
+  "tags": [
+    "sunday league",
+    "football shirt",
+    "soccer shirt",
+    "football gift",
+    "soccer gift",
+    "amateur football",
+    "football player",
+    "sports shirt",
+    "gift for him",
+    "team gift",
+    "coach gift",
+    "football fan",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

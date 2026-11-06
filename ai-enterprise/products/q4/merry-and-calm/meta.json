@@ -1,0 +1,44 @@
+{
+  "key": "merry-and-calm",
+  "theme": "jul",
+  "text": "MERRY\n& CALM",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "mug"
+  ],
+  "font": "abrilfatface/AbrilFatface-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee48bd4dd6846b0306b21d",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Merry and Calm Shirt, Minimalist Christmas Shirt, Calm Holiday Gift, Winter Typography Shirt",
+  "tags": [
+    "merry and calm",
+    "christmas shirt",
+    "minimalist xmas",
+    "holiday shirt",
+    "calm christmas",
+    "christmas gift",
+    "winter shirt",
+    "festive shirt",
+    "xmas present",
+    "holiday gift",
+    "typography shirt",
+    "gift for her",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

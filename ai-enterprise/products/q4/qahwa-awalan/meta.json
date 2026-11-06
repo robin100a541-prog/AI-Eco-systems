@@ -1,0 +1,44 @@
+{
+  "key": "qahwa-awalan",
+  "theme": "kort citat (arabiska)",
+  "text": "قهوة أولا",
+  "product_type": "mug",
+  "products": [
+    "mug",
+    "tee"
+  ],
+  "font": "amiri/Amiri-Bold.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    2700,
+    1050
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee48e96d68612bd702377f",
+  "shop_id": 7951751,
+  "provider": "SPOKE Custom Products",
+  "title": "Arabic Coffee First Mug, Arabic Calligraphy Mug, Arabic Quote Gift for Coffee Lovers",
+  "tags": [
+    "arabic mug",
+    "arabic gift",
+    "coffee first",
+    "arabic calligraphy",
+    "arabic quote",
+    "coffee lover gift",
+    "arabic coffee",
+    "arabic typography",
+    "coffee mug",
+    "gift for her",
+    "gift for him",
+    "middle east gift",
+    "arabic text mug"
+  ],
+  "base_cost_usd_cents": 644,
+  "shipping_us_usd_cents": 729,
+  "price_usd_cents": 2999,
+  "cost_usd_cents": 1373,
+  "fees_usd_cents": 330,
+  "profit_after_tax_usd_cents": 907,
+  "margin_pct": 30.2
+}

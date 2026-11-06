@@ -1,0 +1,44 @@
+{
+  "key": "open-house",
+  "theme": "fastighetsmäklare",
+  "text": "OPEN HOUSE\nOPEN HEART",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "mug"
+  ],
+  "font": "abrilfatface/AbrilFatface-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee489b92b8a6f7150127ba",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Open House Open Heart Shirt, Real Estate Agent Shirt, Realtor Gift, Broker Team Shirt",
+  "tags": [
+    "realtor shirt",
+    "real estate gift",
+    "realtor gift",
+    "open house shirt",
+    "real estate agent",
+    "broker gift",
+    "realtor team",
+    "agent shirt",
+    "property gift",
+    "christmas realtor",
+    "housing agent",
+    "sales team gift",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

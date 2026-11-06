@@ -49,6 +49,6 @@ jobs:
           name: pod-prepare-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/pod.txt
-            ai-enterprise/products/q4/printify-products.json
+            ai-enterprise/products/q4/*/meta.json
           if-no-files-found: warn
           retention-days: 30

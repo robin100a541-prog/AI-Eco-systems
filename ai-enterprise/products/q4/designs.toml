@@ -8,6 +8,7 @@ config_version = 1
 
 [[designs]]
 key = "cozy-season"
+theme = "jul"
 lines = ["COZY", "SEASON"]
 font = "bebas"
 color = "#7a2e2e"
@@ -18,6 +19,7 @@ pinterest = "Cozy season is here: a clean, minimalist typography piece for the c
 
 [[designs]]
 key = "holiday-mode-on"
+theme = "jul"
 lines = ["HOLIDAY MODE:", "ON"]
 font = "archivo"
 color = "#1f2d2a"
@@ -28,6 +30,7 @@ pinterest = "Holiday mode: on. A funny, minimalist top for the office party and 
 
 [[designs]]
 key = "dad-mode"
+theme = "present till pappa"
 lines = ["DAD MODE:", "ALWAYS ON"]
 font = "archivo"
 color = "#1f2d2a"
@@ -38,6 +41,7 @@ pinterest = "For the dad who never switches off. A simple, funny gift for Christ
 
 [[designs]]
 key = "mom-mode"
+theme = "present till mamma"
 lines = ["MOM MODE:", "ALWAYS ON"]
 font = "archivo"
 color = "#1f2d2a"
@@ -48,6 +52,7 @@ pinterest = "For the mom who is always on. A simple, funny gift for Christmas or
 
 [[designs]]
 key = "grading-season"
+theme = "present till lärare"
 lines = ["GRADING", "SEASON", "SURVIVOR"]
 font = "bebas"
 color = "#2f4a3a"
@@ -58,6 +63,7 @@ pinterest = "Every teacher has survived grading season. A small thank-you gift f
 
 [[designs]]
 key = "teach-coffee-repeat"
+theme = "present till lärare"
 lines = ["TEACH.", "COFFEE.", "REPEAT."]
 font = "bebas"
 color = "#1f2d2a"
@@ -68,6 +74,7 @@ pinterest = "Teach, coffee, repeat: a minimalist mug for the teacher who runs on
 
 [[designs]]
 key = "football-cardio"
+theme = "fotbollsälskare"
 lines = ["FOOTBALL", "IS MY CARDIO"]
 font = "archivo"
 color = "#1f2d2a"
@@ -78,6 +85,7 @@ pinterest = "For everyone whose only workout is the weekly match. A funny gift f
 
 [[designs]]
 key = "sunday-league"
+theme = "fotbollsälskare"
 lines = ["SUNDAY", "LEAGUE", "LEGEND"]
 font = "bebas"
 color = "#1f2d2a"
@@ -88,6 +96,7 @@ pinterest = "For the legend of the local Sunday league. A clean typography gift 
 
 [[designs]]
 key = "closing-deals"
+theme = "fastighetsmäklare"
 lines = ["CLOSING DEALS", "& DRINKING COFFEE"]
 font = "archivo"
 color = "#1f2d2a"
@@ -98,6 +107,7 @@ pinterest = "For the agent who closes deals and lives on coffee. A practical Chr
 
 [[designs]]
 key = "open-house"
+theme = "fastighetsmäklare"
 lines = ["OPEN HOUSE", "OPEN HEART"]
 font = "abril"
 color = "#2f4a3a"
@@ -108,6 +118,7 @@ pinterest = "Open house, open heart. A warm, minimalist piece for real estate ag
 
 [[designs]]
 key = "one-more-render"
+theme = "videoredigerare"
 lines = ["JUST ONE", "MORE RENDER"]
 font = "archivo"
 color = "#1f2d2a"
@@ -118,6 +129,7 @@ pinterest = "Every video editor knows it is never just one more render. A gift f
 
 [[designs]]
 key = "cut-color-export"
+theme = "videoredigerare"
 lines = ["CUT.", "COLOR.", "EXPORT."]
 font = "bebas"
 color = "#1f2d2a"
@@ -128,6 +140,7 @@ pinterest = "Cut, color, export: the editor's workflow as a clean typography pie
 
 [[designs]]
 key = "creator-at-work"
+theme = "kreatörer"
 lines = ["CREATOR", "AT WORK"]
 font = "archivo"
 color = "#1f2d2a"
@@ -138,6 +151,7 @@ pinterest = "Creator at work: a minimalist piece for content creators and small 
 
 [[designs]]
 key = "merry-and-calm"
+theme = "jul"
 lines = ["MERRY", "& CALM"]
 font = "abril"
 color = "#7a2e2e"
@@ -148,6 +162,7 @@ pinterest = "A calm, minimalist take on Christmas: merry, and calm."
 
 [[designs]]
 key = "fika-ar-viktigt"
+theme = "kort citat (svenska)"
 lines = ["FIKA ÄR", "VIKTIGT"]
 font = "bebas"
 color = "#5a3e2b"
@@ -158,6 +173,7 @@ pinterest = "Fika är viktigt: the Swedish coffee break, on a mug. A gift for Sw
 
 [[designs]]
 key = "mys-ar-en-livsstil"
+theme = "kort citat (svenska)"
 lines = ["MYS ÄR EN", "LIVSSTIL"]
 font = "bebas"
 color = "#2f4a3a"
@@ -168,6 +184,7 @@ pinterest = "Mys är en livsstil: Swedish coziness as a way of life."
 
 [[designs]]
 key = "basta-pappan"
+theme = "present till pappa (svenska)"
 lines = ["BÄSTA", "PAPPAN"]
 font = "archivo"
 color = "#1f2d2a"
@@ -178,6 +195,7 @@ pinterest = "Bästa pappan: a Swedish gift for the best dad, for Christmas or hi
 
 [[designs]]
 key = "basta-mamman"
+theme = "present till mamma (svenska)"
 lines = ["BÄSTA", "MAMMAN"]
 font = "archivo"
 color = "#1f2d2a"
@@ -188,6 +206,7 @@ pinterest = "Bästa mamman: a Swedish gift for the best mom, for Christmas or he
 
 [[designs]]
 key = "abi-batali"
+theme = "present till pappa (arabiska)"
 lines = ["أبي بطلي"]
 font = "amiri"
 color = "#1f2d2a"
@@ -198,6 +217,7 @@ pinterest = "أبي بطلي (my father, my hero) in Arabic typography: a gift f
 
 [[designs]]
 key = "qahwa-awalan"
+theme = "kort citat (arabiska)"
 lines = ["قهوة أولا"]
 font = "amiri"
 color = "#5a3e2b"

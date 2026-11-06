@@ -1,0 +1,44 @@
+{
+  "key": "holiday-mode-on",
+  "theme": "jul",
+  "text": "HOLIDAY MODE:\nON",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee485c4dd6846b0306b1bc",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Holiday Mode On Shirt, Funny Christmas Shirt, Office Party Shirt, Coworker Holiday Gift",
+  "tags": [
+    "holiday mode",
+    "funny christmas",
+    "office party",
+    "coworker gift",
+    "christmas shirt",
+    "holiday shirt",
+    "xmas gift idea",
+    "work humor",
+    "festive shirt",
+    "winter break",
+    "secret santa gift",
+    "out of office",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

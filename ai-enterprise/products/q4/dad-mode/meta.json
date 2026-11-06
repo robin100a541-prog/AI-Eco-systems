@@ -1,0 +1,44 @@
+{
+  "key": "dad-mode",
+  "theme": "present till pappa",
+  "text": "DAD MODE:\nALWAYS ON",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee4864d5fe93e0c70172ea",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Dad Mode Always On Shirt, Funny Gift for Dad, Christmas Gift for Father, New Dad Shirt",
+  "tags": [
+    "gift for dad",
+    "dad shirt",
+    "funny dad gift",
+    "new dad gift",
+    "christmas for dad",
+    "father gift",
+    "daddy shirt",
+    "dad birthday gift",
+    "husband gift",
+    "dad mode",
+    "papa shirt",
+    "gift from kids",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

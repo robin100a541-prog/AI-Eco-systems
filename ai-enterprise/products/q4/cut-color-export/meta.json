@@ -1,0 +1,44 @@
+{
+  "key": "cut-color-export",
+  "theme": "videoredigerare",
+  "text": "CUT.\nCOLOR.\nEXPORT.",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "bebasneue/BebasNeue-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee48ac85754d4d19058877",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Cut Color Export Shirt, Video Editor Shirt, Colorist Gift, Filmmaker Christmas Gift",
+  "tags": [
+    "video editor gift",
+    "colorist gift",
+    "filmmaker gift",
+    "editor shirt",
+    "color grading",
+    "video editor",
+    "film crew gift",
+    "content creator",
+    "editing shirt",
+    "gift for editor",
+    "post production",
+    "videographer",
+    "creator shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}

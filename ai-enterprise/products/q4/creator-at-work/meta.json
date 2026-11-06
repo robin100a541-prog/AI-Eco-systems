@@ -1,0 +1,44 @@
+{
+  "key": "creator-at-work",
+  "theme": "kreatörer",
+  "text": "CREATOR\nAT WORK",
+  "product_type": "tee",
+  "products": [
+    "tee",
+    "hoodie"
+  ],
+  "font": "archivoblack/ArchivoBlack-Regular.ttf",
+  "font_license": "SIL Open Font License 1.1 (assets/fonts/)",
+  "size_px": [
+    4500,
+    5400
+  ],
+  "dpi": 300,
+  "background": "transparent",
+  "printify_product_id": "6aee48b485754d4d1905887f",
+  "shop_id": 7951751,
+  "provider": "Printify Choice",
+  "title": "Creator at Work Shirt, Content Creator Gift, Influencer Shirt, Small Business Owner Gift",
+  "tags": [
+    "content creator",
+    "creator shirt",
+    "influencer gift",
+    "youtuber gift",
+    "creator gift",
+    "small business",
+    "social media gift",
+    "blogger gift",
+    "podcaster gift",
+    "streamer gift",
+    "creative gift",
+    "entrepreneur gift",
+    "unisex t-shirt"
+  ],
+  "base_cost_usd_cents": 968,
+  "shipping_us_usd_cents": 495,
+  "price_usd_cents": 3199,
+  "cost_usd_cents": 1463,
+  "fees_usd_cents": 349,
+  "profit_after_tax_usd_cents": 970,
+  "margin_pct": 30.3
+}
