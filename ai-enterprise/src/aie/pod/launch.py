@@ -69,8 +69,37 @@ def render_all(designs: list[dict], out_dir: Path, sizes: dict[str, list[int]]) 
         for product in d["products"]:
             ratio = {"width_ratio": 0.45} if product == "mug" else {}  # muggens tryck går runt; bara framsidan
             files.append(render(spec | ratio, tuple(sizes[product]), folder / f"{product}.png"))
+        for product in d["products"]:
+            files.append(preview(folder / f"{product}.png", folder / f"{product}-preview.png"))
         files.append(preview(folder / f"{d['products'][0]}.png", folder / "preview.png"))
     return files
+
+
+# --- Titlar och taggar per produkttyp ------------------------------------------------------------
+
+_NOUN = {"tee": "Shirt", "hoodie": "Hoodie", "mug": "Mug"}
+_OTHER = {"tee": r"Coffee Cup|Mug|Cup|Hoodie|Crewneck",
+          "hoodie": r"Coffee Cup|Mug|Cup|T-Shirt|Shirt|Tee|Crewneck|Top",
+          "mug": r"Coffee Cup|T-Shirt|Shirt|Tee|Hoodie|Crewneck|Top"}
+_FILLER = {"tee": ["unisex t-shirt", "graphic tee", "gift idea"], "hoodie": ["unisex hoodie", "cozy hoodie", "gift idea"],
+           "mug": ["coffee mug", "ceramic mug", "gift idea"]}
+
+
+def adapt(title: str, tags: list[str], ptype: str) -> tuple[str, list[str]]:
+    """Designens titel och taggar för en produkttyp: en tröja heter aldrig mugg, och tvärtom."""
+    noun = _NOUN[ptype]
+    new_title = re.sub(rf"\b({_OTHER[ptype]})\b", noun, title)
+    new_tags = []
+    for tag in tags:
+        t = re.sub(rf"\b({_OTHER[ptype].lower()})\b", noun.lower(), tag)
+        if len(t) <= 20 and t not in new_tags:
+            new_tags.append(t)
+    for filler in _FILLER[ptype]:
+        if len(new_tags) >= 13:
+            break
+        if filler not in new_tags:
+            new_tags.append(filler)
+    return new_title, new_tags[:13]
 
 
 # --- Printify -----------------------------------------------------------------------------------
@@ -158,8 +187,12 @@ def best_price(base: int, us: int, eu: int, cfg: dict, tax_rate_bp: int, min_mar
     return None
 
 
-def prepare(reader, drafter, shop_id: int, designs: list[dict], pod: dict, design_dir: Path) -> list[Prepared]:
+def prepare(reader, drafter, shop_id: int, designs: list[dict], pod: dict, design_dir: Path,
+            existing: dict | None = None) -> list[Prepared]:
+    """`existing`: tidigare resultat ({nyckel: post}). En produkt som redan finns i Printify skapas inte igen;
+    titel, beskrivning och taggar uppdateras, och pris och baspris behålls."""
     launch, tm = pod["launch"], pod["test_mode"]
+    existing = existing or {}
     eu = launch["eu_countries"]
     blueprints = reader.blueprints()
     cache, results = {}, []
@@ -181,8 +214,20 @@ def prepare(reader, drafter, shop_id: int, designs: list[dict], pod: dict, desig
             match, provider, us, eu_max, variants = cache[ptype]
             key = f"{d['key']}/{ptype}"
             png = design_dir / d["key"] / f"{ptype}.png"
-            item = Prepared(key, ptype, d["title"], d["tags"], None, match["id"], provider["id"], provider.get("title", ""),
+            title, tags = adapt(d["title"], d["tags"], ptype)
+            description = f"{d.get('pinterest', '')}\n\n{AI_NOTE}"
+            item = Prepared(key, ptype, title, tags, None, match["id"], provider["id"], provider.get("title", ""),
                             [v["id"] for v in variants], None, us, eu_max, None, None, None, None, d.get("pinterest", ""))
+            old = existing.get(key)
+            if old and old.get("printify_id"):
+                drafter.update_text(shop_id, old["printify_id"], title, description, tags)
+                item.printify_id, item.base_cost_minor = old["printify_id"], old.get("base_cost_minor")
+                item.provider_id, item.provider, item.variants = old["provider_id"], old["provider"], old["variants"]
+                item.shipping_us_minor, item.shipping_eu_minor = old["shipping_us_minor"], old["shipping_eu_minor"]
+                item.price_minor, item.margin_bp = old.get("price_minor"), old.get("margin_bp")
+                item.profit_after_tax_minor, item.struck = old.get("profit_after_tax_minor"), old.get("struck")
+                results.append(item)
+                continue
             if not variants:
                 item.struck = "inga varianter med valda färger och storlekar"
                 results.append(item)
@@ -191,7 +236,7 @@ def prepare(reader, drafter, shop_id: int, designs: list[dict], pod: dict, desig
             size = _png_size(png)
             position = launch["products"][ptype].get("position", "front")
             product = {
-                "title": d["title"], "description": f"{d.get('pinterest', '')}\n\n{AI_NOTE}", "tags": d["tags"],
+                "title": title, "description": description, "tags": tags,
                 "blueprint_id": match["id"], "print_provider_id": provider["id"],
                 "variants": [{"id": v["id"], "price": launch["products"][ptype]["max_price"], "is_enabled": True}
                              for v in variants],
@@ -254,9 +299,9 @@ def write_list(prepared: dict, designs: list[dict], usd_sek: float, out: Path) -
             m = f"{kr:.0f} kr ({p['margin_bp'] / 100:.1f} %)"
         else:
             m = "–"
-        pin_title = d.get("title", p["title"]).split(",")[0]
+        pin_title = p["title"].split(",")[0]
         pinterest = f"**{pin_title}**: {p['pinterest']} Link: Etsy listing."
-        line = (f"| `{p['key']}` | ![{p['key']}]({p['key'].split('/')[0]}/preview.png) | {p['product_type']} | "
+        line = (f"| `{p['key']}` | ![{p['key']}]({p['key'].split('/')[0]}/{p['product_type']}-preview.png) | {p['product_type']} | "
                 f"{cost / 100:.2f} USD ({cost / 100 * usd_sek:.0f} kr) | "
                 f"{(p['price_minor'] or 0) / 100:.2f} USD ({(p['price_minor'] or 0) / 100 * usd_sek:.0f} kr) | {m} | "
                 f"{', '.join(p['tags'])} | {pinterest} |")

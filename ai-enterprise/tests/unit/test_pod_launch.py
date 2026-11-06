@@ -105,9 +105,9 @@ class PrintifyCase(unittest.TestCase):
         self.pod = load_pod_config(self.config_dir)
         self.pod["launch"]["products"] = {"tee": dict(self.pod["launch"]["products"]["tee"], max_price=5_999)}
         self.designs = [{"key": "cozy-season", "lines": ["COZY"], "font": "bebas", "color": "#000000", "products": ["tee"],
-                         "title": "Cozy Season Shirt", "tags": ["t"] * 13, "pinterest": "Cozy."},
+                         "title": "Cozy Season Shirt", "tags": [f"tag {i}" for i in range(13)], "pinterest": "Cozy."},
                         {"key": "dyr", "lines": ["DYR"], "font": "bebas", "color": "#000000", "products": ["tee"],
-                         "title": "Dyr", "tags": ["t"] * 13, "pinterest": "x"}]
+                         "title": "Dyr", "tags": [f"tag {i}" for i in range(13)], "pinterest": "x"}]
         for d in self.designs:
             (self.dir / "q4" / d["key"]).mkdir(parents=True)
             (self.dir / "q4" / d["key"] / "tee.png").write_bytes(
@@ -227,3 +227,30 @@ class TestDependency(unittest.TestCase):
         hits = [str(p.relative_to(ROOT)) for p in (ROOT / "src").rglob("*.py")
                 if allowed not in p.parents and re.search(r"^\s*(import PIL|from PIL)", p.read_text(encoding="utf-8"), re.M)]
         self.assertEqual(hits, [])
+
+
+class TestAdaptAndRerun(PrintifyCase):
+    def test_titles_and_tags_follow_the_product_type(self):
+        """Verifies D-067: en tröja heter aldrig mugg; alltid 13 taggar på högst 20 tecken."""
+        title, tags = launch.adapt("Arabic Coffee First Mug, Arabic Calligraphy Coffee Cup", ["arabic mug", "coffee mug"], "tee")
+        self.assertEqual(title, "Arabic Coffee First Shirt, Arabic Calligraphy Shirt")
+        self.assertEqual(tags[:2], ["arabic shirt", "coffee shirt"])
+        self.assertEqual(len(tags), 5)  # två egna och tre fyllnadstaggar; designerna har redan 13
+        self.assertNotIn("mug", " ".join(tags))
+        self.assertEqual(launch.adapt("Cozy Tee", ["cozy tee"], "hoodie")[0], "Cozy Hoodie")
+
+    def test_a_second_run_updates_existing_products_instead_of_creating_duplicates(self):
+        """Verifies D-070: pod prepare kan köras igen; finns produkten uppdateras bara titel, beskrivning och taggar."""
+        first, _ = self.prepared()
+        existing = {r.key: __import__("dataclasses").asdict(r) for r in first}
+        fake = self.fake([900, 3_000])
+        fake.routes[("PUT", "/v1/shops/5/products/p2.json")] = [(200, {}, None)]
+        client = PrintifyClient("tok", transport=fake, min_interval=0)
+        reader = PrintifyReader(self.system.engine, self.system.audit, "res-1", client)
+        drafter = PrintifyDrafter(self.system.engine, self.system.audit, "lead-1", client, self.pod)
+        again = launch.prepare(reader, drafter, 5, self.designs, self.pod, self.dir / "q4", existing)
+        self.assertEqual([r.printify_id for r in again], ["p1", "p2"])
+        self.assertFalse(any(c["method"] == "POST" for c in fake.calls))
+        puts = [c["body"] for c in fake.calls if c["method"] == "PUT"]
+        self.assertEqual(sorted(puts[0]), ["description", "tags", "title"])
+        self.assertEqual(again[0].price_minor, first[0].price_minor)
