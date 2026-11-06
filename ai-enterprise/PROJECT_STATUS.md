@@ -1,6 +1,8 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-11-06 av Claude (Claude Code-session med Robin)
+**Senast uppdaterad:** 2026-11-06 av Claude (Claude Code-session med Yorgo)
+
+> **PRIORITET 2026-11-06 (grundarbeslut Yorgo, D-049):** första försäljningen via Printify och Etsy inom 2 dagar. Planen finns i [`docs/LANSERING-Q4.md`](docs/LANSERING-Q4.md). Allt annat arbete som inte blockerar den är pausat. Printify-anropet fungerar på riktigt sedan 2026-11-06: katalogen har 3 019 produkter, och verklig frakt läses i `printify-catalog`.
 **Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.
 **Tester:** 818 OK på `main` (2026-11-06, lokalt Python 3.13; CI kör 3.11 och 3.12).
 
