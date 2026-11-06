@@ -98,13 +98,16 @@ def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path,
         written = []
         if days:
             (out / "daily").mkdir(parents=True, exist_ok=True)
-            path = out / "daily" / f"{days[-1]}.md"
-            path.write_text(daily_report(system, days[-1]).render(), encoding="utf-8")
+            # Filen och rubriken har dagens riktiga datum; simuleringens affärsdag står intill (inte i stället).
+            path = out / "daily" / f"{today.isoformat()}.md"
+            text = daily_report(system, days[-1]).render()
+            first, rest = text.split("\n", 1)
+            path.write_text(f"# Daglig rapport {today.isoformat()} (SIM-affärsdag {days[-1]})\n{rest}", encoding="utf-8")
             written.append(path)
             if today.weekday() == 0:
                 start = max(days[0], (date.fromisoformat(days[-1]) - timedelta(days=6)).isoformat())
                 (out / "periodic").mkdir(parents=True, exist_ok=True)
-                path = out / "periodic" / f"{start}--{days[-1]}.md"
+                path = out / "periodic" / f"{today.isoformat()}-sim-{start}--{days[-1]}.md"
                 path.write_text(periodic_report(system, start, days[-1]).render(), encoding="utf-8")
                 written.append(path)
         write_status(build_status(system), dashboard)

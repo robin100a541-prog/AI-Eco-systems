@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-10-30 — Rapportdatum, status och extern backup
+### Tillagt
+- Den dagliga rapporten heter och rubriceras med dagens riktiga datum, med SIM-affärsdagen bredvid.
+- `python -m aie.memory.backup offsite` gör en verifierad kopia till en privat Google Drive-mapp (`--to` eller AIE_OFFSITE_DIR). De 30 senaste kopiorna behålls, och en mapp i repot vägras.
+- PROJECT_STATUS.md och DEPLOYMENT-STATUS.md stämmer med main: H5, N1, N2 och N3 är åtgärdade i #134, och N4–N14 samt omgranskningen återstår.
 ## [Unreleased] — 2026-11-04 — Printify och Etsy i registret, annons- och motivregler (D-065, D-067, föreslaget)
 ### Tillagt
 - `config/registry/printify.toml`: gratisplanen, och Premium (39 USD/mån) som en kostnad som kräver beslut. Källan är printify.com/pricing, läst 2026-11-04.

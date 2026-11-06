@@ -132,12 +132,43 @@ def create(database: Path | str, out: Path | str) -> Path:
         tmp.unlink(missing_ok=True)
 
 
+KEEP = 30  # så många kopior behålls på den externa platsen
+
+
+def offsite(database: Path | str, to: Path | str | None, repo: Path | str | None = None) -> Path:
+    """Kopia till en privat plats utanför datorn, t.ex. en Google Drive-mapp som synkas av Drive för datorn.
+
+    Platsen anges med `--to` eller miljövariabeln `AIE_OFFSITE_DIR`. Den måste finnas (Drive skapar den),
+    och den får aldrig ligga i repot, så att riktiga pengadata aldrig hamnar i git. Äldre kopior än de
+    `KEEP` senaste tas bort; varje ny kopia verifieras med en återställningsövning.
+    """
+    target = Path(to or os.environ.get("AIE_OFFSITE_DIR") or "").expanduser()
+    if not str(target).strip() or str(target) == ".":
+        raise BackupError("ange --to <mapp> eller AIE_OFFSITE_DIR (din privata Google Drive-mapp)")
+    if not target.is_dir():
+        raise BackupError(f"{target} finns inte; skapa mappen i Google Drive och vänta tills den synkats")
+    resolved = target.resolve()
+    here = Path(repo or Path.cwd()).resolve()
+    root = next((p for p in (here, *here.parents) if (p / ".git").exists()), here)
+    if resolved == root or root in resolved.parents:
+        raise BackupError("den externa platsen får inte ligga i repot")
+    snapshot = create(database, resolved)
+    copies = sorted(resolved.glob(f"{Path(database).stem}-*.db"))
+    for old in copies[:-KEEP]:
+        old.unlink(missing_ok=True)
+        old.with_suffix(".json").unlink(missing_ok=True)
+    return snapshot
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Privat SQLite-backup och säker återställningsövning")
     commands = parser.add_subparsers(dest="command", required=True)
     save = commands.add_parser("create")
     save.add_argument("database", type=Path)
     save.add_argument("--out", type=Path, default=Path("data-pilot/backups"))
+    away = commands.add_parser("offsite", help="kopia till din privata Google Drive-mapp (AIE_OFFSITE_DIR)")
+    away.add_argument("database", type=Path, nargs="?", default=Path("data-pilot/data/prod.db"))
+    away.add_argument("--to", type=Path, help="mappen; standard är miljövariabeln AIE_OFFSITE_DIR")
     check = commands.add_parser("verify")
     check.add_argument("snapshot", type=Path)
     args = parser.parse_args()
@@ -145,6 +176,9 @@ def main() -> int:
         if args.command == "create":
             path = create(args.database, args.out)
             print(f"Backup och återställningsövning OK: {path}")
+        elif args.command == "offsite":
+            path = offsite(args.database, args.to)
+            print(f"Extern kopia och återställningsövning OK: {path}")
         else:
             result = verify(args.snapshot)
             print(f"Återställningsövning OK: {result['database']['environment']}, "

@@ -1,8 +1,22 @@
 # PROJECT_STATUS
 
-**Senast uppdaterad:** 2026-10-30 av Claude (Claude Code-session med Robin)
-**Aktuell fas:** Fas 6 — Affärssimulering: alla punkter (6a, 6b-1–6b-5) byggda och acceptanstestade (§54, `tests/acceptance/test_fas6.py`). **Stängd 2026-10-30 (D-063).** Simuleringens "redo" är en hypotes på overifierade marknadsantaganden. Fas 7 startas bara av grundarna.
-**Fasstatus:** Fas 1–6 är mergade till `main`. Acceptanstester finns för §49–§54. Hela sviten: 697 OK (2026-10-30, Python 3.13 lokalt; CI kör 3.11 och 3.12). Fas 0-punkten 0.8 är öppen.
+**Senast uppdaterad:** 2026-11-06 av Claude (Claude Code-session med Robin)
+**Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.
+**Tester:** TESTCOUNT på `main` (2026-11-06, lokalt Python 3.13; CI kör 3.11 och 3.12).
+
+## Läget 2026-11-06 (verifierat mot `main`)
+| Område | Läge |
+|---|---|
+| Oberoende granskning (D-055) | Gjord: `docs/reviews/REVIEW-2026-10-30-ny-session.md` (#133). |
+| High-fynd N1, N2, N3, **H5** | **Åtgärdade** i #134 (merge 2026-11-03), se `docs/reviews/FIXES-2026-10-30.md`. H5: en bedömning är redo bara med simuleringsbevis (`registry/assessments.py: evidence_errors`). Rättelserna är inte omgranskade. |
+| Medium/low N4–N14 | Öppna. |
+| Pilot `f-skatt-guide` | Stoppad (Robin). Listas inte. |
+| Produktavdelningen 7a | Ombyggd (#135): research med källor, poäng i kod, ingen reserv. Senaste körningen: ingen bra idé hittad. |
+| Opportunity Scout | Körs varje dygn (#138, `scout.yml`); `docs/opportunities/REGISTER.md`. YouTube-källan ligger ofärdig på grenen `claude/youtube`. |
+| Daglig drift | `company-daily.yml` varje dygn. Rapporterna heter nu efter dagens riktiga datum med SIM-affärsdagen bredvid (rättat 2026-11-06). SIM-affärsdagen står still på 2027-01-01 mellan körningar, vilket tyder på att databasen inte följer med mellan körningarna; det är inte utrett. |
+| Utvecklaragenten | Igång, högst 4 merges/dygn; senaste körningarna utan ändring (redigeringar kunde inte tillämpas). |
+| POD (Yorgo) | Printify-katalog, register och Pinterest-sidor (#170–#176). |
+| Backup | Lokal ögonblicksbild och återställningsövning (#127). Extern kopia: `python -m aie.memory.backup offsite` till en privat Google Drive-mapp (2026-11-06); en grundare måste koppla mappen, se `docs/DEPLOYMENT-STATUS.md`. |
 
 ## Läs detta först (för den som öppnar en ny Claude-konversation)
 1. Ge Claude hela repot eller åtminstone: CONSTITUTION.md, PROJECT_STATUS.md, DECISIONS.md, ARCHITECTURE.md, REQUIREMENTS.md.
@@ -250,6 +264,11 @@
 - N3: pilotens godkännande kommer bara från grundarens godkännande i kön.
 - H5: en bedömning är redo bara med simuleringsbevis. Se `docs/reviews/FIXES-2026-10-30.md`.
 
+
+## Ändrat 2026-10-30 (Rapportdatum, status och extern backup)
+- Den dagliga rapporten heter och rubriceras med dagens riktiga datum, med SIM-affärsdagen bredvid.
+- `python -m aie.memory.backup offsite` gör en verifierad kopia till en privat Google Drive-mapp (`--to` eller AIE_OFFSITE_DIR). De 30 senaste kopiorna behålls, och en mapp i repot vägras.
+- PROJECT_STATUS.md och DEPLOYMENT-STATUS.md stämmer med main: H5, N1, N2 och N3 är åtgärdade i #134, och N4–N14 samt omgranskningen återstår.
 
 ## Nästa åtgärder
 | # | Vad | Vem |
