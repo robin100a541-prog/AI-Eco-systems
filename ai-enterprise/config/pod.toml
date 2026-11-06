@@ -44,3 +44,14 @@ ai_disclosure_phrases = ["made with the help of AI", "AI-assisted design", "skap
 max_title_chars = 140
 max_tags = 13
 max_tag_chars = 20
+
+[test_mode]
+# D-070 (Yorgo 2026-11-04): högst 20 aktiva Etsy-annonser via Printify utan simuleringens "redo", om
+# marginalen per såld vara är minst 30 % (frakten ingår i priset, dyraste frakten till USA eller EU, Etsys
+# avgifter och 40 % skatt på vinsten). Slutar 30 dagar efter start. Stop-loss och nödstopp gäller.
+enabled = true
+start = "2026-11-06"
+days = 30
+max_active_listings = 20
+min_margin_bp = 3_000
+tax_rate_bp = 4_000

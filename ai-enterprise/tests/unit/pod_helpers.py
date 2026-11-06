@@ -32,10 +32,14 @@ def pod_config(tmp: Path, **pod_overrides) -> Path:
     shutil.copytree(TEST_CONFIG, config)
     perms = config / "permissions.toml"
     text = perms.read_text(encoding="utf-8")
-    text = text.replace("[tools]\n", "[tools]\n" + "".join(f'"{k}" = "{v}"\n' for k, v in POD_TOOLS.items()), 1)
+    # Repots fil har verktygen sedan #172; lägg bara till det som saknas, så att filen förblir giltig TOML.
+    catalog = text.split("[roles.", 1)[0]
+    missing = {k: v for k, v in POD_TOOLS.items() if f'"{k}"' not in catalog}
+    text = text.replace("[tools]\n", "[tools]\n" + "".join(f'"{k}" = "{v}"\n' for k, v in missing.items()), 1)
     for role, tools in GRANTS.items():
-        pattern = rf'(\[roles\.{role}\][^\[]*?tools = \[)'
-        text = re.sub(pattern, lambda m: m.group(1) + "".join(f'"{t}", ' for t in tools), text, count=1, flags=re.S)
+        pattern = rf'(\[roles\.{role}\][^\[]*?tools = \[)([^\]]*)'
+        text = re.sub(pattern, lambda m: m.group(1) + "".join(f'"{t}", ' for t in tools if f'"{t}"' not in m.group(2))
+                      + m.group(2), text, count=1, flags=re.S)
     perms.write_text(text, encoding="utf-8")
     pod = (config / "pod.toml").read_text(encoding="utf-8")
     for key, value in pod_overrides.items():
