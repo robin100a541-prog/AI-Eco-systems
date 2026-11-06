@@ -182,6 +182,14 @@ class PrintifyDrafter:
         self._require()
         return self._client.get(f"/v1/shops/{int(shop_id)}/products/{_pid(product_id)}.json")
 
+    def update(self, shop_id: int, product_id: str, fields: dict) -> dict:
+        """Uppdaterar titel, beskrivning och taggar på en opublicerad produkt."""
+        self._require()
+        allowed = {k: v for k, v in fields.items() if k in ("title", "description", "tags")}
+        data = self._client.put(f"/v1/shops/{int(shop_id)}/products/{_pid(product_id)}.json", allowed)
+        self._audit.append(self._agent, "printify.update", {"id": product_id, "fields": sorted(allowed)})
+        return data
+
     def set_price(self, shop_id: int, product_id: str, variants: list[dict]) -> dict:
         """Sätter priset på en opublicerad produkt (varianternas `price` i cent)."""
         self._require()

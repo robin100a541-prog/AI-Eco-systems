@@ -67,21 +67,23 @@ def _with_system(config_dir, cfg, action, founder, approved, designs, folder) ->
         system = build_system(config, db, config_dir)
         if founder:
             ensure_org(system.registry, founder)
-        client = PrintifyClient.from_env()
+        client = PrintifyClient.from_env(retries=1)  # högst två försök per anrop
         reader = PrintifyReader(system.engine, system.audit, AGENT_READ, client)
         shop = cfg["launch"].get("shop_id") or reader.shops()[0]["id"]
         try:
             if action == "prepare":
+                from .etsy_ready import run as ready
+
                 drafter = PrintifyDrafter(system.engine, system.audit, AGENT_WRITE, client, cfg)
-                results = launch.prepare(reader, drafter, shop, designs, cfg, folder)
-                launch.save(results, folder / PREPARED)
-                ok = [r for r in results if not r.struck]
-                print(f"{len(results)} opublicerade produkter i Printify, {len(ok)} med minst 30 % marginal. "
-                      f"Sparat i {folder / PREPARED}.")
-                for r in results:
-                    print(f"  {r.key}: {r.provider}, baspris {r.base_cost_minor}, frakt USA {r.shipping_us_minor} "
-                          f"EU {r.shipping_eu_minor}, pris {r.price_minor}, marginal "
-                          f"{'-' if r.margin_bp is None else r.margin_bp / 100}% {('STRUKEN: ' + r.struck) if r.struck else ''}")
+                s = ready(reader, drafter, cfg, folder)
+                m = s["margins_bp"]
+                print(f"Butik {s['shop_id']} ({s['shop']}, {s['sales_channel']}): {s['created']} skapade, {s['updated']} "
+                      f"uppdaterade, {s['struck']} strukna, {s['errors']} fel. Marginal "
+                      f"{(min(m) / 100) if m else '-'}–{(max(m) / 100) if m else '-'} %.")
+                for meta in sorted(folder.glob("*/meta.json")):
+                    d = json.loads(meta.read_text(encoding="utf-8"))
+                    print(f"  {d['key']}/{d['product_type']}: pris {d.get('price_usd_cents')}, marginal {d.get('margin_pct')} %"
+                          f"{'  STRUKEN: ' + d['struck'] if d.get('struck') else ''}{'  FEL: ' + d['error'] if d.get('error') else ''}")
                 return 0
             if not approved:
                 print("FEL: publish kräver --approved (och raden GODKÄND i LISTA.md)", file=sys.stderr)
