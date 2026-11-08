@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-08 — Dashboard D0b: testdata i SIM
+### Tillagt
+- `scripts/seed_sim.py` och `src/aie/simulation/seed.py` fyller en tom SIM-databas.
+  - **Simuleringen:** kör `simulate start`, med scenariot normal i 30 dagar och de skriptade agenterna.
+  - **Godkännanden:** lägger exakt 3 väntande godkännanden via kärnans kö (`ApprovalQueue.submit_decision`). CEO skapar en uppgift, research-chefen föreslår, och beloppen ligger över gränsen för mänskligt godkännande.
+  - **Inga direkta skrivningar:** ingenting skrivs direkt i tabellerna.
+  - **Vägrar köra** i prod. Det gäller både konfigurationsfelet för SIM i prod (ER-15) och `require_sim` med riktig valuta. Det vägrar också en datamapp som redan har en körning.
+- `tests/unit/test_seed_sim.py`: 5 tester för FR-29, FR-31, SR-11, ER-15 och D-042.
+### Ändrat
+- `.gitignore`: `data/reports/`, där simuleringens rapporter hamnar, kommer aldrig in i git.
+
 ## [Unreleased] — 2026-11-08 — Dashboard D0 godkänd (del A)
 ### Ändrat
 - `DECISIONS.md`: D-073–D-080 är godkända av Yorgo och Robin tillsammans.

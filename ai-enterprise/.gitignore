@@ -1,6 +1,7 @@
 # Driftdata och hemligheter hamnar aldrig i git (SR-10, ARCHITECTURE §3.4)
 data/*.db
 data/*.db-*
+data/reports/
 logs/
 .env
 *.secret
