@@ -46,10 +46,11 @@ Läs `docs/reports/7a-opportunities.md` och välj en av de tre bästa tillsamman
    `products/f-skatt-guide/listing.md`. Ladda upp `product.pdf`.
 3. Publicera. Skriv datumet i `products/f-skatt-guide/GRANSKNING.md`.
 
-## 7. Slå på instrumentpanelen (GitHub Pages)
-1. På GitHub: repot, Settings, Pages. Under "Build and deployment" väljer du Source "GitHub Actions".
-2. Kör workflowen `company-daily` en gång (Actions, company-daily, Run workflow).
-3. Panelen finns sedan på https://robin100a541-prog.github.io/AI-Eco-systems/
+## 7. Instrumentpanelen körs lokalt (ingen GitHub Pages)
+Enligt D-075 (föreslaget 2026-11-08) används inte GitHub Pages. Kommandocentralen körs som lokal server, och
+den byggs i `docs/dashboard/DASHBOARD_PLAN.md` från steg D1. Tills den finns visar du den befintliga Ekobyn lokalt med
+`python -m http.server 8765 --bind 127.0.0.1 --directory docs/dashboard` från `ai-enterprise/`, och sedan
+http://127.0.0.1:8765/.
 
 ## 8. Importera försäljningen varje vecka
 1. I Gumroad: Analytics, Sales, Export. Spara CSV-filen, till exempel `sales-v45.csv`.

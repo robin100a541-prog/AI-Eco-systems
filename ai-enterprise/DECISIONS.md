@@ -8,6 +8,98 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-083 Robins kontaktuppgifter ligger kvar när repot är privat
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin, 2026-11-08 · **Bygger på:** D-074, D-076 · **Följer upp:** D-076 (Robins val)
+- **Beslut:**
+  1. Robins namn, e-postadress och ort i rot-sidorna (`index.html`, `app.html`, `privacy.html` och `docs/`) ligger kvar när repot är privat.
+  2. Robin kan ändra sig senare med ett nytt beslut.
+- **Läget 2026-11-08:** repot är **fortfarande publikt**. Yorgos konto har bara skrivrätt och kan inte byta synlighet. Robin byter med `gh repo edit robin100a541-prog/AI-Eco-systems --visibility private --accept-visibility-change-consequences`, eller enligt stegen i D-074. Fram till dess är uppgifterna offentliga, som de varit sedan `4bbbb77`.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-082 Claude bygger alla steg i kommandocentralen; grundarna granskar och godkänner
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin, 2026-11-08 · **Besvarar:** Q-10 · **Bygger på:** D-049, D-073
+- **Beslut:**
+  1. Claude bygger alla steg D0b–D8 i `docs/dashboard/DASHBOARD_PLAN.md`, ett steg per gren och per PR.
+  2. Grundarna granskar och godkänner varje PR. Etiketten `founder-approved` sätts av en grundare, eller på en grundares uttryckliga begäran i sessionen.
+  3. Stegen claimas i `TODO.md` innan arbetet börjar, så att två sessioner inte bygger samma sak.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-081 Godkännanderegeln: en grundare räcker i simuleringen, båda krävs före Fas 7
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin, 2026-11-08 · **Besvarar:** Q-09 · **Bygger på:** D-049, D-048, §55
+- **Beslut:**
+  1. **D-049 gäller så länge allt är simulerat:** en grundare räcker för alla beslut.
+  2. **Före Fas 7** krävs båda grundarna för riktiga pengar, ändrade gränser, nya kanaler och beslut där agenter är oense. Regeln införs i kärnan och i Approvals innan Fas 7 startas, med ett eget beslut som då ersätter D-049 för de fallen.
+  3. Kommandocentralen visar "Waiting for Robin" (eller Yorgo) först när regeln i punkt 2 är införd.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-073 Kommandocentralens teknikval: lokal server med standardbiblioteket, SSE och byggfritt gränssnitt
+- **Status:** Godkänd · **Föreslagen av:** Claude (session med Yorgo), 2026-11-08 · **Bygger på:** D-002, D-012, D-049, D-055, §36, §38, §39, §42 · **Plan:** `docs/dashboard/DASHBOARD_PLAN.md` avsnitt 3
+- **Beslut (förslag):**
+  1. **Server:** Pythons `http.server` (`ThreadingHTTPServer`), i paketet `src/aie/dashboard/`, som redan finns, i stället för ett nytt `src/aie/interfaces/web/`. Kommandot är `python -m aie dashboard`. Den lyssnar bara på `127.0.0.1:8765`, och `--lan` öppnar för mobiler på samma wifi.
+  2. **Live-data:** Server-Sent Events på `/api/stream`. Siffrorna kommer från kärnan (ledger, revisionslogg, register) och räknas aldrig fram i webbläsaren.
+  3. **Gränssnitt:** vanlig HTML, CSS och JavaScript, utan ramverk, byggsteg eller npm. Det gäller samma princip och samma testkörare (`node --test`) som för den befintliga Ekobyn.
+  4. **Typsnitt:** Cormorant Garamond och Inter, båda med SIL Open Font License, sparade i `assets/fonts/` med licensen bredvid.
+  5. **Inloggning:** en åtkomstkod per grundare, sparad som hash i `.env` och aldrig i git. Sessionscookien är HttpOnly och SameSite=Strict, och varje POST kräver en CSRF-token.
+  6. **Notiser:** ntfy med generisk text, utan belopp eller namn, och Gmail SMTP med app-lösenord via `smtplib`. Inget SMS, eftersom det kostar pengar (§42).
+  7. **Designtokens** finns i `docs/dashboard/DESIGN.md`. Gränssnittet är på engelska och har bara mörkt läge.
+- **Kostnad:** 0 kr. Inga nya beroenden.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-074 Repot görs privat
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08), formulerat av Claude · **Bygger på:** D-049, ROADMAP 0.7, §6, §7 · **Underlag:** `docs/dashboard/GAP_ANALYSIS.md` avsnitt 2–3
+- **Beslut (förslag):**
+  1. **Repot ska vara privat.** I dag är det publikt, men ROADMAP 0.7 säger "privat".
+  2. **Robin byter det själv,** eftersom bara ägaren kan:
+     1. Gå till github.com/robin100a541-prog/AI-Eco-systems och sedan **Settings**.
+     2. Välj **General** och scrolla till **Danger Zone**.
+     3. Klicka på **Change repository visibility** och sedan **Make private**.
+     4. Bekräfta genom att skriva repots namn.
+  3. **Tre saker att kontrollera först (§42, kostnad):**
+     - **Actions-minuter:** för privata repon ingår ett begränsat antal minuter per månad på GitHubs gratisplan. Publika repon har obegränsat. Arbetsflödena körs i dag varje dygn (`company-daily`, `nightly`, `printify-catalog`, `pod-orders`) och på varje PR. Läs repots förbrukning under Settings, Billing innan bytet. Räcker inte minuterna måste körningarna glesas ut. Det får inte kosta pengar utan ett beslut.
+     - **GitHub Pages** kräver betald plan för privata repon. D-075 tar bort Pages ändå.
+     - **Pinterest-granskningen** pekar på sidor i repot. Byt inte förrän granskningen är klar, eller flytta sidorna först (D-077).
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-075 Ingen GitHub Pages: kommandocentralen körs lokalt
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-074
+- **Beslut (förslag):**
+  1. **Ingen Pages:** GitHub Pages används inte. Kommandocentralen körs som lokal server (D-073).
+  2. **Jobbet tas bort:** `pages`-jobbet i `.github/workflows/company-daily.yml` tas bort. Det misslyckades varje dygn, eftersom Pages aldrig slogs på. Uppladdningen av Pages-artefakten tas också bort. Cykeln och `status.json` påverkas inte.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-076 Robins kontaktuppgifter ligger kvar tills repot är privat
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-074
+- **Beslut (förslag):** Robins namn, e-postadress och ort i rot-sidorna (`index.html`, `app.html`, `privacy.html` och `docs/`, commit `4bbbb77`) ligger kvar tills repot är privat. **Robin bestämmer** sedan om de ska ligga kvar. Uppgiften står i `TODO.md`.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-077 Pinterest-sidorna i repots rot gäller; de andra är dubbletter
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-076
+- **Beslut (förslag):**
+  1. **Sidorna i repots rot gäller,** alltså `index.html`, `app.html` och `privacy.html` från commit `4bbbb77`. Det är de som Pinterest granskade.
+  2. **Dubbletter:** `ai-enterprise/docs/dashboard/app.html` och `privacy.html` (PR #176) märks som dubbletter i `TODO.md`. Kopiorna i `docs/` i rotmappen är identiska med rotens sidor. **Inget raderas.**
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-078 Kommandocentralen får styra, bara genom kärnans funktioner
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-049, §20, §35, §38
+- **Beslut (förslag):**
+  1. **Kommandocentralen får styra** genom att godkänna, avvisa, pausa och slå på nödstopp. Den gör det **bara** genom att anropa samma kärnfunktioner som CLI:t, som den inloggade grundaren, och den skriver aldrig direkt i databasen.
+  2. **Bara lokalt:** den körs bara som lokal server (D-073, D-075), aldrig på en publik adress.
+  3. **Gränser och budgetar** ändras aldrig i dashboarden. De ändras bara i `config/*.toml` via en PR.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-079 PR #137 (live-status) slås inte ihop före D1
+- **Status:** Godkänd · **Föreslagen av:** Claude efter granskning 2026-11-08, på Yorgos begäran · **Underlag:** `docs/dashboard/GAP_ANALYSIS.md` avsnitt 7
+- **Beslut (förslag):**
+  1. **Slås inte ihop före D1.** PR #137 bygger på Ekobyn, som kommandocentralen ersätter, och skriver live-status till en publik fil i ett publikt repo. Den använder `fcntl`, som inte finns på Windows.
+  2. **Idéerna återanvänds i D2:** arbetsfaserna (`PHASES`), mötesdeltagarna och observationen utan extra modellanrop.
+  3. **Robin avgör** om PR:en stängs eller hålls öppen som referens.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
+### D-080 Yorgo kör Groqs smoke-test (ROADMAP 0.10)
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-008
+- **Beslut (förslag):** Yorgo kör `scripts/llm_smoke_test.py --provider groq` på sin Windows-dator och klistrar in resultatet, utan nyckeln, i `docs/environment.md`. Kommandot står i `TODO.md`.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
+
 ### D-063 Fas 6 är stängd; simuleringens "redo" är en hypotes
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-30 · **Bygger på:** D-049, D-058, §54
 - **Beslut:**
@@ -599,3 +691,5 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 | Q-06 | Vem av er skapar gratiskonton hos Groq och OpenRouter, och har någon dator hårdvara för Ollama? | Fas 2 | Båda kör `llm_smoke_test.py`. |
 | Q-07 | Var körs produktionsdatabasen när systemet är i drift — hos vem av er, och hur säkerhetskopieras den? | Fas 7 | — |
 | Q-08 | Vilket affärsområde ska piloten testa? | Fas 6 | Väljs utifrån simuleringsresultat. |
+| Q-09 | ~~Godkänner ni regeln: en grundare räcker för kod, simulering och riskklass 1; båda krävs för riktiga pengar, gränser, nya kanaler och när agenter är oense? (`DASHBOARD_PLAN.md`)~~ **Besvarad av D-081 (2026-11-08).** | D4 (Approvals) | — |
+| Q-10 | ~~Vem bygger vilka steg? Förslaget är att Yorgo gör D1, D2 och D4, och Robin D3 och D5, och att ni sedan växlar. (`DASHBOARD_PLAN.md`)~~ **Besvarad av D-082 (2026-11-08).** | D1 | — |

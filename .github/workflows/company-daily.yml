@@ -5,7 +5,7 @@
 #   Skyddat läge och stop-loss gäller som vanligt.
 # - Skriver daglig rapport (§57), på måndagar en veckorapport (§58), status.json för instrumentpanelen och en
 #   notis i QUESTIONS-FOR-FOUNDERS.md när något väntar på en grundare. Ändringarna går in via en PR med auto-merge.
-# - Publicerar instrumentpanelen på GitHub Pages (kräver att en grundare slår på Pages med källan "GitHub Actions").
+# - Publicerar ingenting på GitHub Pages: kommandocentralen körs lokalt (D-075, 2026-11-08).
 name: company-daily
 
 on:
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       verify_only:
-        description: "Isolerat offline-test: inga nycklar, cacheändringar, PR:er eller Pages"
+        description: "Isolerat offline-test: inga nycklar, cacheändringar eller PR:er"
         type: boolean
         default: true
 
@@ -101,21 +101,3 @@ jobs:
           gh pr create --repo "$REPO" --head "$branch" --base main --title "chore: daglig cykel $(date -u +%F)" \
             --body "Automatisk daglig cykel (§56): rapporter, status.json och grundarnotis."
           gh pr merge --repo "$REPO" "$branch" --auto --merge
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ai-enterprise/docs/dashboard
-
-  pages:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.verify_only }}
-    needs: cycle
-    runs-on: ubuntu-latest
-    continue-on-error: true  # Pages måste slås på av en grundare (docs/FOUNDER-CHECKLIST.md)
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4

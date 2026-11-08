@@ -4,6 +4,8 @@
 
 Lansering Q4 pågår, se docs/LANSERING-Q4.md
 
+Dashboard "kommandocentralen": D0 klar och godkänd 2026-11-08 (PR #196). Planen finns i `docs/dashboard/DASHBOARD_PLAN.md`, besluten D-073–D-083 är godkända av båda och kraven FR-27–FR-33 tillagda. Pages-jobbet är borttaget (D-075). Repot är fortfarande publikt tills Robin gör det privat (D-074). Nästa steg: D0b, sedan D1.
+
 > **PRIORITET 2026-11-06 (grundarbeslut Yorgo, D-049):** första försäljningen via Printify och Etsy inom 2 dagar. Planen finns i [`docs/LANSERING-Q4.md`](docs/LANSERING-Q4.md). Allt annat arbete som inte blockerar den är pausat. Printify-anropet fungerar på riktigt sedan 2026-11-06: katalogen har 3 019 produkter, och verklig frakt läses i `printify-catalog`.
 **Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.
 **Tester:** 818 OK på `main` (2026-11-06, lokalt Python 3.13; CI kör 3.11 och 3.12).
