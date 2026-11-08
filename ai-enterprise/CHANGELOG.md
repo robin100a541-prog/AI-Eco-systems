@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-08 — Dashboard D0 (del 1: utan DASHBOARD_PLAN.md)
+### Tillagt
+- `docs/dashboard/GAP_ANALYSIS.md`: inventering av den befintliga dashboarden (Ekobyn, `status.json`, `export.py`, `cycle.py`, tester och PR #137), kontroll av publiceringen och av känsliga uppgifter i det som är offentligt, och listan med de 12 testfelen på Windows.
+- `docs/conversations/2026-11-08-yorgo-dashboard-d0.md` (D-012).
+### Ändrat
+- `CLAUDE.md`: projektreglerna är tillagda (bara standardbiblioteket utom Pillow i pod/design, inga npm-paket, krav-ID i testernas docstring, ärlighet om tester, skyddade config-filer, svensk dokumentation och engelskt dashboard-gränssnitt). Allt som stod där förut finns kvar.
+- `ROADMAP.md`: 0.7 och 0.8 klara enligt verkligt läge. 0.10 saknar resultatet av smoke-testet.
+- `TODO.md`: reserverar D-073, FR-27–FR-33 och Q-09–Q-10 för dashboarden, och tar upp uppgiften med testfelen på Windows.
+### Inte gjort (väntar på DASHBOARD_PLAN.md)
+- D-073 i DECISIONS.md, FR-27–FR-33 i REQUIREMENTS.md, Q-09–Q-10, DESIGN.md och mappningen av D1–D8.
+
 ## [Unreleased] — 2026-10-30 — Rapportdatum, status och extern backup
 ### Tillagt
 - Den dagliga rapporten heter och rubriceras med dagens riktiga datum, med SIM-affärsdagen bredvid.

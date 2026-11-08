@@ -12,10 +12,10 @@ Varje fas avslutas först när alla **M-krav** för fasen (REQUIREMENTS.md) har 
 | 0.4 | Miljökontrollskript `scripts/check_env.py` + tester | Claude | ✅ (testat i Claudes Linux-miljö) |
 | 0.5 | Köra `check_env.py` på **Yorgos** dator, spara resultat i `docs/environment.md` | Yorgo | ✅ (2026-10-21, Windows 11) |
 | 0.6 | Köra `check_env.py` på **Robins** dator, spara resultat i `docs/environment.md` | Robin | ✅ (2026-10-23, Claude Code i molnet, PR #3) |
-| 0.7 | Skapa privat GitHub-repo, lägga till varandra, pusha dessa filer | En grundare | ☐ |
-| 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ◐ (D-001–D-004 godkända och Q-01 besvarad av D-019, 2026-10-23; D-005–D-010 öppna) |
+| 0.7 | Skapa privat GitHub-repo, lägga till varandra, pusha dessa filer | En grundare | ✅ (repot `robin100a541-prog/AI-Eco-systems` finns och båda arbetar i det. Obs: repot är **publikt**, inte privat; konstaterat 2026-11-08, se `docs/dashboard/GAP_ANALYSIS.md`) |
+| 0.8 | Godkänna/avvisa D-001…D-010 i DECISIONS.md och besvara Q-01 | Båda | ✅ (D-001–D-004 godkända; D-005 ersatt av D-008; D-006–D-009 godkända; D-010 godkänd i delar; Q-01 besvarad av D-019. Kontrollerat i DECISIONS.md 2026-11-08) |
 | 0.9 | Gratis modellgränssnitt: `scripts/llm_smoke_test.py` + 8 tester mot falsk server | Claude | ✅ (testat lokalt; riktiga API:er kunde inte nås från Claudes miljö) |
-| 0.10 | Skapa gratiskonto hos Groq (och ev. OpenRouter), kör `llm_smoke_test.py`, klistra in resultatet i `docs/environment.md` | Minst en grundare | ☐ |
+| 0.10 | Skapa gratiskonto hos Groq (och ev. OpenRouter), kör `llm_smoke_test.py`, klistra in resultatet i `docs/environment.md` | Minst en grundare | ◐ (Groq-kontot finns: `GROQ_API_KEY` är en GitHub-hemlighet som utvecklaragenten och scouten använder. **Resultatet av `llm_smoke_test.py` saknas** i `docs/environment.md`, 2026-11-08) |
 
 **Acceptanskriterier Fas 0 (§48):**
 - [x] Arkitekturen är dokumenterad.
