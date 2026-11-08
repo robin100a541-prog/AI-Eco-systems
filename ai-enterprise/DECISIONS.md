@@ -8,6 +8,26 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-070 Testläge för print-on-demand: högst 20 Etsy-annonser utan "redo", minst 30 % marginal, 30 dagar; Pillow tillåts i pod/design
+- **Status:** Godkänd · **Föreslagen av:** Yorgo (grundarbeslut 2026-11-04), formulerat av Claude 2026-11-06 · **Bygger på:** D-049, D-055, D-058, D-062, SR-07, ER-03 · **Prompt:** `docs/prompts/05-lansering-q4.md`
+- **Beslut:**
+  1. **Ingen lagerrisk:** print-on-demand via Printify trycks först när kunden har betalat.
+  2. **Utan "redo":** testläget tillåter högst **20 aktiva Etsy-annonser** via Printify utan att simuleringen säger "redo" (D-058). Allt annat stoppas av spärren som förut.
+  3. **Största förlust:** annonsavgifterna (0,20 USD per annons) och Etsys engångsavgift för att öppna butiken. Ingen betald reklam: Offsite Ads och Etsy Ads slås inte på.
+  4. **Marginal:** varje produkt måste ha **minst 30 % marginal** per såld vara, räknat i koden (`aie.pod.testmode`):
+     - **Grund:** priset till kunden inkluderar frakten ("free shipping").
+     - **Kostnad:** Printifys verkliga baspris (`cost` på den opublicerade produkten) och den **dyraste** av Printifys standardfrakter till USA och EU.
+     - **Etsys avgifter:** 0,20 USD per annons, 6,5 % i transaktionsavgift, och 4 % + 3,00 SEK i betalningsavgift, räknat på pris och moms.
+     - **Reserverad skatt:** 40 % av vinsten (spår C i `tax.toml`).
+     - **Marginalen** är vinst efter skatt delat med priset.
+
+     En produkt under 30 % stryks.
+  5. **Grundarnas tid** räknas inte i testläget.
+  6. **Stop-loss och nödstopp** gäller som vanligt.
+  7. **Slut:** testläget slutar 30 dagar efter startdatumet i `config/pod.toml [test_mode]`. Därefter krävs "redo" igen, eller ett nytt beslut.
+  8. **Pillow** (licens HPND, gratis) tillåts som **enda** nytt beroende, och bara i `src/aie/pod/design/` för att rita designer med typsnitt. Resten av koden använder bara standardbiblioteket. Typsnitten ska ha öppen licens, och licensen ska ligga i repot.
+- **Godkänd av:** Yorgo ☑ (2026-11-04, gäller för båda enligt D-049)
+
 ### D-063 Fas 6 är stängd; simuleringens "redo" är en hypotes
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-30 · **Bygger på:** D-049, D-058, §54
 - **Beslut:**

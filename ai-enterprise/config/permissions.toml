@@ -42,6 +42,7 @@ config_version = 1
 "pinterest.trends"  = "läsa Pinterests trendande sökord (D-068); rådata sparas inte"
 "pinterest.pin"     = "skapa en pin med länk till en egen Etsy-annons (D-069), högst max_pins_per_day"
 "instagram.publish" = "publicera ett eget inlägg på Instagram (D-069), högst max_posts_per_day"
+"printify.publish"  = "publicera en färdig produkt via Printify till den kopplade Etsy-butiken (D-070): bara det som är GODKÄNT i LISTA.md, högst 20 i testläget"
 # Styrverktyg (SR-04). Står här bara för att försök ska kunna loggas med rätt namn.
 # Ingen roll kan få dem, och Authorization Engine nekar dem alltid.
 "governance.change_constitution" = "ändra konstitutionen; bara grundarna (D-001)"
@@ -82,7 +83,7 @@ tools = ["report.read", "report.write", "ledger.read", "audit.verify", "action.b
 department = "research"
 level = 3
 description = "leder Research (§12)"
-tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record", "sim.spend", "sales.list", "forecast.make", "proposal.submit", "printify.read", "printify.draft", "pinterest.pin", "instagram.publish"]
+tools = ["report.read", "report.write", "task.create", "task.assign", "research.search", "llm.complete", "decision.record", "sim.spend", "sales.list", "forecast.make", "proposal.submit", "printify.read", "printify.draft", "pinterest.pin", "instagram.publish", "printify.publish"]
 
 [roles.scout]
 department = "research"
