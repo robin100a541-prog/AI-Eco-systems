@@ -45,7 +45,7 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
 
 - [ ] **PRIORITET: Lansering Q4, första försäljningen** (`ai-enterprise/docs/LANSERING-Q4.md`, arbetsorder 05) — @yorgo-jarjous, Claude-session 2026-11-06 (yorgo/lansering-*). **Reserverat 2026-11-06: migration 41 och D-070–D-072.** Allt annat arbete som inte blockerar lanseringen är pausat (grundarbeslut Yorgo 2026-11-04).
 
-- [ ] ai-enterprise Dashboard "kommandocentralen" (`ai-enterprise/docs/dashboard/DASHBOARD_PLAN.md`) — @yorgo-jarjous, Claude-session 2026-11-08 (dashboard/*). **Använt 2026-11-08: D-073–D-080, FR-27–FR-33 och Q-09–Q-10.** D0 klar på grenen dashboard/d0-setup (PR #196); nästa steg D0b/D1 enligt planen.
+- [ ] ai-enterprise Dashboard "kommandocentralen" (`ai-enterprise/docs/dashboard/DASHBOARD_PLAN.md`) — @yorgo-jarjous, Claude-session 2026-11-08 (dashboard/*). **Använt 2026-11-08: D-073–D-080, FR-27–FR-33 och Q-09–Q-10.** D0 klar (PR #196). D0b klar (grenen dashboard/d0b-seed). D1 påbörjad (grenen dashboard/d1-server). Claude bygger och grundarna granskar (D-082).
 - [ ] ai-enterprise Windows: 12 tester faller lokalt på Windows men är gröna i CI (test_dashboard 5, test_dev_agent 3, test_dev_agent_safety 1, test_backup 1, test_periodic_report 1, test_scout 1). Trolig orsak: låsta SQLite-filer och sökvägar. Lista i `docs/dashboard/GAP_ANALYSIS.md` avsnitt 5 — oclaimad
 
 - [x] Robin: kontaktuppgifterna ligger kvar när repot är privat (D-083, 2026-11-08). Robin kan ändra sig senare.

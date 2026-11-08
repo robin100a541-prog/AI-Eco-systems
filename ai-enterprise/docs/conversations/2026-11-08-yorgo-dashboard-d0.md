@@ -62,4 +62,15 @@ Frågorna står i slutrapporten och i PR:en.
 ## Del A: godkännanden (Yorgo och Robin tillsammans)
 - **Godkända beslut:** D-073–D-080 är godkända av båda. Q-09 blev D-081, Q-10 blev D-082 och följden av D-076 blev D-083.
 - **Repot är inte privat än:** `gh repo edit robin100a541-prog/AI-Eco-systems --visibility private --accept-visibility-change-consequences` gav HTTP 404, eftersom Yorgos konto (Yorgo-jarjous) bara har rollen `write`. Robin måste göra det från sitt konto, och det står i TODO och D-083.
-- **PR #196** fick `founder-approved` på grundarnas begäran och slogs ihop när CI var grön.
+- **PR #196** fick `founder-approved` på grundarnas begäran och slogs ihop när CI var grön (7093266).
+- **Actions-minuter:** de senaste 30 dagarna (från 2026-10-09) har det gått cirka 3 000 jobbminuter, räknat per jobb och avrundat uppåt till hel minut.
+  - **Tester:** `ai-enterprise tests` stod för 2 234 minuter.
+  - **company-daily:** bara 20 minuter.
+  - **Slutsats:** ett privat repo på GitHub Free har 2 000 minuter per månad, så taket nås med dagens arbetstakt.
+
+## Del B: D0b (testdata)
+- **Byggt:** `scripts/seed_sim.py` kör simuleringen och lägger 3 väntande godkännanden via kärnans kö.
+- **Kört på riktigt i Yorgos datamapp:**
+  - `py scripts/seed_sim.py` gav "Klar: data\sim.db (30 dagar i SIM, 3 väntande godkännanden, revisionslogg OK)".
+  - `py -m aie approvals list` visar #1–#3 på 4000, 6500 och 11500 SIM.
+- **Antagande:** att datamappen redan har en körning stoppar skriptet, så kön kan aldrig få fler än 3 från skriptet. Vill man börja om tar man bort `data/sim.db`.

@@ -80,7 +80,9 @@ Den nya servern läggs i `src/aie/dashboard/` och inte i ett nytt `src/aie/inter
 - **Filer:** `DESIGN.md` och `GAP_ANALYSIS.md` finns, och FR-27 till FR-33 finns i REQUIREMENTS.md.
 - **Publicering:** `pages`-jobbet är borttaget ur `company-daily` (D-075).
 
-### D0b — Testdata i SIM (bygger på simuleringen)
+### D0b — Testdata i SIM (bygger på simuleringen) · klar 2026-11-08
+**Byggt:** `scripts/seed_sim.py`, med logiken i `src/aie/simulation/seed.py`, och testerna i `tests/unit/test_seed_sim.py`.
+
 **Inget nytt fyllskript.** `python -m aie simulate start --scenario normal --as yorgo` fyller redan en SIM-databas med agenter, ledgerposter, prognoser och blockerade handlingar, genom samma spärrar som alltid. Revisionskedjan är därför giltig.
 
 `scripts/seed_sim.py` blir ett tunt skal:
