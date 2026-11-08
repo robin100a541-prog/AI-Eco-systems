@@ -22,6 +22,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `daily-cycle`   en företagscykel per dygn med rapporter och notis till grundarna (Fas 8, §56)
 - `scout`         Opportunity Scout: run (en dygnscykel), rapporter i docs/opportunities/
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
+- `dashboard`     kommandocentralen: lokal server på 127.0.0.1:8765 (--lan för mobilen), set-code (D1, D-073)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
 gäller relativt mappen kommandot körs från.
@@ -220,6 +221,11 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local", "groq"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
                           "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
+    db = add("dashboard", "kommandocentralen: lokal server (standard) eller set-code för en grundares åtkomstkod (D1, D-073)")
+    db.add_argument("action", nargs="?", choices=("serve", "set-code"), default="serve")
+    db.add_argument("--port", type=int, default=8765, help="porten (standard: 8765)")
+    db.add_argument("--lan", action="store_true", help="lyssna på alla nätverkskort så att mobilen når servern")
+    db.add_argument("--founder", help="set-code: grundaren, till exempel Yorgo eller Robin")
     return parser
 
 
@@ -391,6 +397,17 @@ def _approvals(args: argparse.Namespace) -> int:
     return approvals(args.config_dir, args.action, args.request_id, args.founder, args.note)
 
 
+def _dashboard(args: argparse.Namespace) -> int:
+    from .dashboard import server  # importeras bara när kommandot används
+
+    if args.action == "set-code":
+        if not args.founder:
+            print("FEL: ange --founder, till exempel --founder Yorgo", file=sys.stderr)
+            return 1
+        return server.set_code_command(args.config_dir, args.founder)
+    return server.serve(args.config_dir, args.port, args.lan)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     commands = {
@@ -418,6 +435,7 @@ def main(argv: list[str] | None = None) -> int:
         "printify": lambda: _printify(args),
         "pod": lambda: _pod(args),
         "assess": lambda: _assess(args),
+        "dashboard": lambda: _dashboard(args),
     }
     try:
         return commands[args.command]()
