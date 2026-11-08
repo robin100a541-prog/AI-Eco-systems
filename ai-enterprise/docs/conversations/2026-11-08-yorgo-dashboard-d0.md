@@ -58,3 +58,8 @@ Frågorna står i slutrapporten och i PR:en.
 - **Q-09:** krockar med D-049.
 - **Pausa alla:** en kärnfunktion som pausar alla agenter saknas.
 - **D-070:** är upptaget av PR #185.
+
+## Del A: godkännanden (Yorgo och Robin tillsammans)
+- **Godkända beslut:** D-073–D-080 är godkända av båda. Q-09 blev D-081, Q-10 blev D-082 och följden av D-076 blev D-083.
+- **Repot är inte privat än:** `gh repo edit robin100a541-prog/AI-Eco-systems --visibility private --accept-visibility-change-consequences` gav HTTP 404, eftersom Yorgos konto (Yorgo-jarjous) bara har rollen `write`. Robin måste göra det från sitt konto, och det står i TODO och D-083.
+- **PR #196** fick `founder-approved` på grundarnas begäran och slogs ihop när CI var grön.

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-08 — Dashboard D0 godkänd (del A)
+### Ändrat
+- `DECISIONS.md`: D-073–D-080 är godkända av Yorgo och Robin tillsammans.
+- Tre nya godkända beslut:
+  - **D-081** besvarar Q-09: en grundare räcker i simuleringen, och båda krävs före Fas 7.
+  - **D-082** besvarar Q-10: Claude bygger stegen, och grundarna granskar.
+  - **D-083:** Robins kontaktuppgifter ligger kvar när repot är privat.
+- `TODO.md`: att göra repot privat ligger kvar hos Robin. Yorgos konto har bara skrivrätt, så `gh repo edit --visibility private` gav HTTP 404.
+
 ## [Unreleased] — 2026-11-08 — Dashboard D0 (del 2: planen, beslut och krav)
 ### Tillagt
 - `docs/dashboard/DASHBOARD_PLAN.md`, exakt som Yorgo klistrade in den (commit f84d485), och därefter med rättade nummer (D-013 blir D-073) och stegen D0–D8 omskrivna så att de bygger på Ekobyn, `export.py`, `cycle.py`, simuleringen och idéerna i PR #137.
