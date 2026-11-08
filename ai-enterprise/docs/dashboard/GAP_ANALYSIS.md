@@ -1,13 +1,7 @@
 # Gapanalys: kommandocentralen mot befintlig kod (D0, 2026-11-08)
 
-**Viktigt:** `docs/dashboard/DASHBOARD_PLAN.md` fanns inte när analysen gjordes. Jag sökte i:
-- repot, både lokalt och på alla grenar på GitHub
-- hemmappen, sex nivåer ned
-- Hämtade filer och OneDrive
-- sessionens mappar
-
-Därför kan stegen D1–D8 inte mappas här. Analysen inventerar i stället det som finns och kan återanvändas,
-och de gap som syns redan nu. När planen finns i repot kompletteras avsnitt 6 med en rad per steg.
+Den första versionen skrevs innan `DASHBOARD_PLAN.md` fanns i repot. Planen lades in senare samma dag, och avsnitt 6
+mappar nu varje steg D0–D8 mot befintlig kod. Stegen i planen är omskrivna efter den här analysen.
 
 Underlaget är `main` vid commit `4bbbb77` (2026-11-08).
 
@@ -73,7 +67,7 @@ curl https://robin100a541-prog.github.io/AI-Eco-systems/privacy.html  → 404
 company-daily, senaste körningen: cycle success, verify skipped, pages failure
 ```
 **Slutsatser:**
-- **GitHub Pages är inte påslaget.** Jobbet `pages` i `company-daily` misslyckas därför varje dygn. Dashboarden är inte publicerad via Pages.
+- **GitHub Pages är inte påslaget.** Jobbet `pages` i `company-daily` misslyckades därför varje dygn. Dashboarden är inte publicerad via Pages. **Jobbet är borttaget** enligt D-075, i samma PR.
 - **Repot är publikt.** Allt som committas kan läsas på github.com, även utan Pages: `status.json`, rapporterna, `products/q4/LISTA.md`, `meta.json` och konfigurationen. ROADMAP 0.7 säger "privat GitHub-repo". Det stämmer alltså inte med verkligheten. Det är en fråga till grundarna.
 
 ## 3. Kontroll av känsliga uppgifter i det som är offentligt
@@ -112,6 +106,33 @@ Med `py -m unittest discover -s tests` den 2026-11-08 kördes 836 tester. Det ga
 
 Trolig orsak, inte utredd: låsta SQLite-filer vid städning och sökvägar med `/` i jämförelser. Uppgiften står i `TODO.md`.
 
-## 6. Mappning mot D1–D8
-**Väntar på `DASHBOARD_PLAN.md`.** För varje steg ska det stå vad som redan finns, vad som kan återanvändas,
-vad som saknas och vilka filer som berörs.
+## 6. Mappning mot D0–D8
+| Steg | Finns redan | Återanvänds | Saknas |
+|---|---|---|---|
+| D0 | CLAUDE.md, ROADMAP och den här analysen | — | inget, D0 är klar på grenen `dashboard/d0-setup` |
+| D0b | `python -m aie simulate` fyller en SIM-databas genom spärrarna, och `require_sim` vägrar prod | hela simuleringen | ett tunt `scripts/seed_sim.py` som lägger 3 väntande godkännanden. Planens "14 agenter i 8 departement" finns inte i `permissions.toml`, där det är 6 departement |
+| D1 | inget serverkod. Gränssnittet är byggfritt med `node --test` | Ekobyns struktur, `validate()`, reducerad rörelse och testmönster | `src/aie/dashboard/server.py`, inloggning, CSRF, skalet, typsnitten Cormorant Garamond och Inter, och engelskt gränssnitt |
+| D2 | revisionsloggen och `AuditLog.verify()`; vitlistan i `export.py`, `ACTIVITY` och `check_public` | vitlistan och aktiviteterna; arbetsfaserna och mötesdeltagarna ur PR #137 | `/api/stream` (SSE) och sidan Activity log |
+| D3 | Ekobyns hus och agenter, `ensure_names`, `AgentRegistry`, `TaskBoard`, `ConsultationBoard`, `LessonRegistry` och `PerformanceReview` | husmotivet och namnen | GET-endpoints, och sidorna Departments, Department och Agent |
+| D4 | `EscalationQueue`, `SpendApprovals`, `AssessmentStore` och `DisputeBoard`, med CLI:erna `approvals`, `spend` och `assess` | alla kärnfunktioner | sidan Approvals, som samlar de tre köerna. Regeln för "båda grundarna" beror på Q-09 |
+| D5 | `compute_result`, `capital_position`, `TaxEngine`, `KillSwitch`, `ProtectedMode`, `IncidentLog` och `recompute` | allt | sidorna Finance, Risk och Home. **En kärnfunktion som pausar alla agenter saknas** |
+| D6 | `LLMGateway`, `ProviderRouter` och kvoterna | allt | chatten utan verktyg på Agent-sidan |
+| D7 | notisen i `QUESTIONS-FOR-FOUNDERS.md` från `cycle.py`; utlösarna i `KillSwitch`, `StopLoss` och `tool.denied` | utlösarna | `src/aie/notify/` med ntfy och SMTP |
+| D8 | Ekobyn fungerar i mobilbredd | layoutmönstren | `TESTING.md` och kontroll av alla nya sidor |
+
+## 7. PR #137 (live-status): granskning 2026-11-08
+**Vad PR:en gör:**
+- **Ändringarna:** 16 filer, varav en ny `src/aie/dashboard/live.py` på 185 rader, och 142 rader tester.
+- **Funktionen:** den skriver en offentlig live-ögonblicksbild till `docs/dashboard/status.json`.
+  - **Innehåll:** "Gör nu", "Borde göra", mötesdeltagare och ett livstecken med en lease på 10 sekunder.
+  - **Hur:** en hjärtslagstråd skriver bilden, och en fil-lås per målfil skyddar den.
+  - **Observerar** gatewayens och läsarens anrop utan extra modellanrop.
+- **Läget:** CI var grönt 2026-11-03 (dashboard, unittest 3.11 och 3.12, protected-files). Sedan dess har main ändrats, och GitHub visar `mergeable: UNKNOWN`.
+
+**Bedömning: slå inte ihop före D1 (D-079).**
+1. **Den bygger på Ekobyn** (`world.js`), som kommandocentralen ersätter.
+2. **Den skriver live-status till en publik fil** i ett publikt repo, men D-074 och D-075 gör repot privat och tar bort Pages.
+3. **Den använder `fcntl`,** som bara finns på POSIX. Yorgo kör Windows, och 8 av dess tester faller lokalt där.
+4. **Idéerna är bra och tas med i D2:** arbetsfaserna (`PHASES`), att bara verkliga mötesdeltagare visas, och att observera utan extra modellanrop. I kommandocentralen räknas de ur revisionsloggen och går via `/api/stream`, inte via en fil.
+
+Robin avgör om PR:en stängs med en hänvisning hit eller hålls öppen som referens.

@@ -8,6 +8,74 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-073 Kommandocentralens teknikval: lokal server med standardbiblioteket, SSE och byggfritt gränssnitt
+- **Status:** Föreslagen · **Föreslagen av:** Claude (session med Yorgo), 2026-11-08 · **Bygger på:** D-002, D-012, D-049, D-055, §36, §38, §39, §42 · **Plan:** `docs/dashboard/DASHBOARD_PLAN.md` avsnitt 3
+- **Beslut (förslag):**
+  1. **Server:** Pythons `http.server` (`ThreadingHTTPServer`), i paketet `src/aie/dashboard/`, som redan finns, i stället för ett nytt `src/aie/interfaces/web/`. Kommandot är `python -m aie dashboard`. Den lyssnar bara på `127.0.0.1:8765`, och `--lan` öppnar för mobiler på samma wifi.
+  2. **Live-data:** Server-Sent Events på `/api/stream`. Siffrorna kommer från kärnan (ledger, revisionslogg, register) och räknas aldrig fram i webbläsaren.
+  3. **Gränssnitt:** vanlig HTML, CSS och JavaScript, utan ramverk, byggsteg eller npm. Det gäller samma princip och samma testkörare (`node --test`) som för den befintliga Ekobyn.
+  4. **Typsnitt:** Cormorant Garamond och Inter, båda med SIL Open Font License, sparade i `assets/fonts/` med licensen bredvid.
+  5. **Inloggning:** en åtkomstkod per grundare, sparad som hash i `.env` och aldrig i git. Sessionscookien är HttpOnly och SameSite=Strict, och varje POST kräver en CSRF-token.
+  6. **Notiser:** ntfy med generisk text, utan belopp eller namn, och Gmail SMTP med app-lösenord via `smtplib`. Inget SMS, eftersom det kostar pengar (§42).
+  7. **Designtokens** finns i `docs/dashboard/DESIGN.md`. Gränssnittet är på engelska och har bara mörkt läge.
+- **Kostnad:** 0 kr. Inga nya beroenden.
+- **Godkänd av:** —
+
+### D-074 Repot görs privat
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08), formulerat av Claude · **Bygger på:** D-049, ROADMAP 0.7, §6, §7 · **Underlag:** `docs/dashboard/GAP_ANALYSIS.md` avsnitt 2–3
+- **Beslut (förslag):**
+  1. **Repot ska vara privat.** I dag är det publikt, men ROADMAP 0.7 säger "privat".
+  2. **Robin byter det själv,** eftersom bara ägaren kan:
+     1. Gå till github.com/robin100a541-prog/AI-Eco-systems och sedan **Settings**.
+     2. Välj **General** och scrolla till **Danger Zone**.
+     3. Klicka på **Change repository visibility** och sedan **Make private**.
+     4. Bekräfta genom att skriva repots namn.
+  3. **Tre saker att kontrollera först (§42, kostnad):**
+     - **Actions-minuter:** för privata repon ingår ett begränsat antal minuter per månad på GitHubs gratisplan. Publika repon har obegränsat. Arbetsflödena körs i dag varje dygn (`company-daily`, `nightly`, `printify-catalog`, `pod-orders`) och på varje PR. Läs repots förbrukning under Settings, Billing innan bytet. Räcker inte minuterna måste körningarna glesas ut. Det får inte kosta pengar utan ett beslut.
+     - **GitHub Pages** kräver betald plan för privata repon. D-075 tar bort Pages ändå.
+     - **Pinterest-granskningen** pekar på sidor i repot. Byt inte förrän granskningen är klar, eller flytta sidorna först (D-077).
+- **Godkänd av:** —
+
+### D-075 Ingen GitHub Pages: kommandocentralen körs lokalt
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-074
+- **Beslut (förslag):**
+  1. **Ingen Pages:** GitHub Pages används inte. Kommandocentralen körs som lokal server (D-073).
+  2. **Jobbet tas bort:** `pages`-jobbet i `.github/workflows/company-daily.yml` tas bort. Det misslyckades varje dygn, eftersom Pages aldrig slogs på. Uppladdningen av Pages-artefakten tas också bort. Cykeln och `status.json` påverkas inte.
+- **Godkänd av:** —
+
+### D-076 Robins kontaktuppgifter ligger kvar tills repot är privat
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-074
+- **Beslut (förslag):** Robins namn, e-postadress och ort i rot-sidorna (`index.html`, `app.html`, `privacy.html` och `docs/`, commit `4bbbb77`) ligger kvar tills repot är privat. **Robin bestämmer** sedan om de ska ligga kvar. Uppgiften står i `TODO.md`.
+- **Godkänd av:** —
+
+### D-077 Pinterest-sidorna i repots rot gäller; de andra är dubbletter
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-076
+- **Beslut (förslag):**
+  1. **Sidorna i repots rot gäller,** alltså `index.html`, `app.html` och `privacy.html` från commit `4bbbb77`. Det är de som Pinterest granskade.
+  2. **Dubbletter:** `ai-enterprise/docs/dashboard/app.html` och `privacy.html` (PR #176) märks som dubbletter i `TODO.md`. Kopiorna i `docs/` i rotmappen är identiska med rotens sidor. **Inget raderas.**
+- **Godkänd av:** —
+
+### D-078 Kommandocentralen får styra, bara genom kärnans funktioner
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-049, §20, §35, §38
+- **Beslut (förslag):**
+  1. **Kommandocentralen får styra** genom att godkänna, avvisa, pausa och slå på nödstopp. Den gör det **bara** genom att anropa samma kärnfunktioner som CLI:t, som den inloggade grundaren, och den skriver aldrig direkt i databasen.
+  2. **Bara lokalt:** den körs bara som lokal server (D-073, D-075), aldrig på en publik adress.
+  3. **Gränser och budgetar** ändras aldrig i dashboarden. De ändras bara i `config/*.toml` via en PR.
+- **Godkänd av:** —
+
+### D-079 PR #137 (live-status) slås inte ihop före D1
+- **Status:** Föreslagen · **Föreslagen av:** Claude efter granskning 2026-11-08, på Yorgos begäran · **Underlag:** `docs/dashboard/GAP_ANALYSIS.md` avsnitt 7
+- **Beslut (förslag):**
+  1. **Slås inte ihop före D1.** PR #137 bygger på Ekobyn, som kommandocentralen ersätter, och skriver live-status till en publik fil i ett publikt repo. Den använder `fcntl`, som inte finns på Windows.
+  2. **Idéerna återanvänds i D2:** arbetsfaserna (`PHASES`), mötesdeltagarna och observationen utan extra modellanrop.
+  3. **Robin avgör** om PR:en stängs eller hålls öppen som referens.
+- **Godkänd av:** —
+
+### D-080 Yorgo kör Groqs smoke-test (ROADMAP 0.10)
+- **Status:** Föreslagen · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-008
+- **Beslut (förslag):** Yorgo kör `scripts/llm_smoke_test.py --provider groq` på sin Windows-dator och klistrar in resultatet, utan nyckeln, i `docs/environment.md`. Kommandot står i `TODO.md`.
+- **Godkänd av:** —
+
 ### D-063 Fas 6 är stängd; simuleringens "redo" är en hypotes
 - **Status:** Godkänd · **Föreslagen av:** Robin, 2026-10-30 · **Bygger på:** D-049, D-058, §54
 - **Beslut:**
@@ -599,3 +667,5 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 | Q-06 | Vem av er skapar gratiskonton hos Groq och OpenRouter, och har någon dator hårdvara för Ollama? | Fas 2 | Båda kör `llm_smoke_test.py`. |
 | Q-07 | Var körs produktionsdatabasen när systemet är i drift — hos vem av er, och hur säkerhetskopieras den? | Fas 7 | — |
 | Q-08 | Vilket affärsområde ska piloten testa? | Fas 6 | Väljs utifrån simuleringsresultat. |
+| Q-09 | Godkänner ni regeln: en grundare räcker för kod, simulering och riskklass 1; båda krävs för riktiga pengar, gränser, nya kanaler och när agenter är oense? (`DASHBOARD_PLAN.md`) | D4 (Approvals) | Obs: regeln skiljer sig från **D-049**, där en grundare räcker överallt. Väljer ni regeln måste ett nytt beslut ersätta D-049 för de fallen. Annars visar Approvals aldrig "Waiting for Robin". |
+| Q-10 | Vem bygger vilka steg? Förslaget är att Yorgo gör D1, D2 och D4, och Robin D3 och D5, och att ni sedan växlar. (`DASHBOARD_PLAN.md`) | D1 | Kräver att `TODO.md` claimas per steg, så att två sessioner inte bygger samma sak. |

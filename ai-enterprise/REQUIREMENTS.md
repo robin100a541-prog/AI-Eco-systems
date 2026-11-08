@@ -39,6 +39,13 @@ ID-prefix: `FR` funktionella krav · `SR` säkerhetskrav · `ER` ekonomiska krav
 | FR-23 | Affärsförslag har de 11 obligatoriska fälten (kundproblem … avbrottskriterier). | 12 | 6 | M |
 | FR-25 | Uppgiftstypen "Utred möjlighet": Research fyller i en strukturerad registerpost (kanal, verktyg, skatte-/regelfråga) med källor, datum och verifieringsstatus; öppna frågor köas i `research/QUESTIONS.md`; posten går Research → Compliance → CFO → grundare (D-011). | 12, 17 | 3 | M |
 | FR-26 | Varje Claude-session sparas i `docs/conversations/` (D-012). | 30, 46 | 0 | M |
+| FR-27 | Kommandocentralen körs som lokal webbserver med bara standardbiblioteket (`python -m aie dashboard`). Den lyssnar bara på `127.0.0.1` om inte `--lan` anges, och den publiceras aldrig på internet (D-073, D-075). | 36, 39, 42 | D1 | M |
+| FR-28 | Varje grundare loggar in med en egen åtkomstkod, som sparas som hash i `.env` och aldrig i git. Sessionscookien är HttpOnly och SameSite=Strict, varje POST kräver en CSRF-token, och varje handling loggas med grundarens namn (D-073). | 2, 35, 36 | D1 | M |
+| FR-29 | Varje siffra i kommandocentralen kommer från kärnan, alltså ledgern, revisionsloggen och registren. Inget räknas fram i webbläsaren, saknade data visas som "saknas", och simulerade pengar märks "SIM" på varje sida (D-073). | 7, 22, 39 | D2–D5 | M |
+| FR-30 | Nya rader i revisionsloggen når kommandocentralen via `/api/stream` (Server-Sent Events) inom 2 sekunder. Activity log har filter och visar hashkedjans status, som kärnans audit-modul räknar fram. En bruten ström visar "Offline" och återansluter. | 16, 35, 39 | D2 | M |
+| FR-31 | Godkännanden och avslag i kommandocentralen anropar samma kärnfunktioner som CLI:t, med den inloggade grundaren som beslutsfattare. En agent kan aldrig godkänna, och samma grundare kan inte godkänna samma sak två gånger. Regeln för hur många grundare som krävs följer D-049, eller det som ersätter den efter Q-09 (D-078). | 2, 20, 21 | D4 | M |
+| FR-32 | Pausa och nödstopp i kommandocentralen anropar kärnans funktioner och kräver bekräftelse och åtkomstkod. Ett nödstopp stoppar nya transaktioner och raderar inget. Gränser och budgetar kan aldrig ändras i kommandocentralen, bara i `config/*.toml` via en PR (D-078). | 25, 26, 38, 59 | D5 | M |
+| FR-33 | Notiser skickas bara via gratiskanaler, alltså ntfy och e-post. ntfy får bara generisk text, utan belopp eller namn. Högst en notis per typ skickas var 15:e minut, och betalda kanaler som SMS kräver ett eget beslut (D-073). | 38, 42, 57 | D7 | B |
 | FR-24 | Övervakning upptäcker loopar, upprepat arbete och kostnad utan värde. | 16 | 6 | B |
 
 ## 2. Säkerhetskrav (SR)

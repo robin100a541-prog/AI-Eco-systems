@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-08 — Dashboard D0 (del 2: planen, beslut och krav)
+### Tillagt
+- `docs/dashboard/DASHBOARD_PLAN.md`, exakt som Yorgo klistrade in den (commit f84d485), och därefter med rättade nummer (D-013 blir D-073) och stegen D0–D8 omskrivna så att de bygger på Ekobyn, `export.py`, `cycle.py`, simuleringen och idéerna i PR #137.
+- `docs/dashboard/DESIGN.md`: designtokens, former, typsnitt, sidorna och det delade skalet.
+- `DECISIONS.md`: D-073 (teknikval) och D-074–D-080 (svaren på de sju frågorna), alla föreslagna. Q-09 och Q-10.
+- `REQUIREMENTS.md`: FR-27–FR-33.
+- `docs/dashboard/GAP_ANALYSIS.md`: avsnitt 6 mappar D0–D8, och avsnitt 7 granskar PR #137 (slås inte ihop före D1).
+- `TODO.md`: Robins kontaktuppgifter (D-076), att göra repot privat (D-074), dubbletterna av Pinterest-sidorna (D-077) och Groqs smoke-test med Windows-kommandot (D-080).
+### Ändrat
+- `.github/workflows/company-daily.yml`: `pages`-jobbet och uppladdningen av Pages-artefakten är borttagna (D-075). Jobbet misslyckades varje dygn eftersom Pages inte är påslaget.
+- `docs/FOUNDER-CHECKLIST.md` steg 7: GitHub Pages används inte, och Ekobyn visas lokalt.
+
 ## [Unreleased] — 2026-11-08 — Dashboard D0 (del 1: utan DASHBOARD_PLAN.md)
 ### Tillagt
 - `docs/dashboard/GAP_ANALYSIS.md`: inventering av den befintliga dashboarden (Ekobyn, `status.json`, `export.py`, `cycle.py`, tester och PR #137), kontroll av publiceringen och av känsliga uppgifter i det som är offentligt, och listan med de 12 testfelen på Windows.

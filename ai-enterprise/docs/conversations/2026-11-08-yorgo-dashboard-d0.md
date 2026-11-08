@@ -39,3 +39,22 @@ Arkiverat enligt D-012. Claude Code-session med Yorgo. Grenen är `dashboard/d0-
 
 ## Frågor till grundarna
 Frågorna står i slutrapporten och i PR:en.
+
+## Del 2: planen och de sju svaren
+1. **Planen:** Yorgo klistrade in planen. Den lades in exakt (commit f84d485) och fick sedan rättade nummer och omskrivna steg, som bygger på det som finns.
+2. **Yorgos sju svar** blev föreslagna beslut D-074–D-080:
+   - repot ska bli privat, och Robin byter i inställningarna (D-074)
+   - inget Pages, så jobbet togs bort (D-075)
+   - Robins kontaktuppgifter ligger kvar, och Robin bestämmer (D-076)
+   - Pinterest-sidorna i roten gäller och de andra är dubbletter; inget raderas (D-077)
+   - kommandocentralen får styra, men bara via kärnans funktioner (D-078)
+   - PR #137 granskades och slås inte ihop före D1, och Claude slog inte ihop den (D-079)
+   - Yorgo kör Groqs smoke-test (D-080)
+3. **Också gjort:** D-073, FR-27–FR-33, Q-09–Q-10 och DESIGN.md.
+
+**Antaganden:**
+- **Serverns plats:** servern läggs i `src/aie/dashboard/`.
+- **D0b:** återanvänder simuleringen, med 6 departement i stället för 8.
+- **Q-09:** krockar med D-049.
+- **Pausa alla:** en kärnfunktion som pausar alla agenter saknas.
+- **D-070:** är upptaget av PR #185.
