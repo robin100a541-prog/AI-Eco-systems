@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in · Command center</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="login-page">
+<main class="login card">
+  <div class="brand">AI Ecosystem<span class="muted">Command center</span></div>
+  <span class="pill warn">$label</span>
+  <h1>Log in</h1>
+  $hint
+  $error
+  <form method="post" action="/login">
+    <input type="hidden" name="csrf" value="$csrf">
+    <label for="founder">Founder</label>
+    <select id="founder" name="founder">$options</select>
+    <label for="code">Access code</label>
+    <input id="code" name="code" type="password" autocomplete="current-password" required>
+    <button type="submit" class="btn primary">Log in</button>
+  </form>
+</main>
+</body>
+</html>

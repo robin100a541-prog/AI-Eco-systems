@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$title · Command center</title>
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">AI Ecosystem<span class="muted">Command center</span></div>
+    <details class="menu" open>
+      <summary>Menu</summary>
+      <nav aria-label="Pages">$nav</nav>
+    </details>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="status">
+        <span class="live" id="live" data-state="unknown" role="status"><span class="dot" aria-hidden="true"></span><span class="live-text">Connecting</span></span>
+        <span class="pill $label_class">$label</span>
+        <time class="clock" id="clock" aria-label="Local time">--:--</time>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn" disabled title="Available in D5">Pause agents<span class="sub">Available in D5</span></button>
+        <button type="button" class="btn danger" disabled title="Available in D5">Kill switch<span class="sub">Available in D5</span></button>
+        <form method="post" action="/logout" class="logout">
+          <input type="hidden" name="csrf" value="$csrf">
+          <span class="founder">$founder</span>
+          <button type="submit" class="btn ghost">Log out</button>
+        </form>
+      </div>
+    </header>
+    <main id="content">
+      <h1>$title</h1>
+      $content
+    </main>
+  </div>
+</div>
+</body>
+</html>

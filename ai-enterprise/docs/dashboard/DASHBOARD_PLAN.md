@@ -96,7 +96,9 @@ Det vägrar köra om miljön inte är `sim` eller valutan inte är `SIM`, med sa
 
 **Tester:** skriptet vägrar prod, och `AuditLog.verify()` är OK efteråt.
 
-### D1 — Server, inloggning och sidomeny
+### D1 — Server, inloggning och sidomeny · klar 2026-11-08
+**Byggt:** `src/aie/dashboard/server.py`, `auth.py` och `web/`, med testerna i `tests/unit/test_dashboard_server.py`. Start och mobil beskrivs i `TESTING.md`.
+
 - **Servern:** `src/aie/dashboard/server.py` med `ThreadingHTTPServer` och kommandot `python -m aie dashboard`. Den startar på `127.0.0.1:8765`, och `--lan` binder till alla nätverkskort.
 - **Gränssnittet:** statiska filer i `src/aie/dashboard/web/`. De serveras av servern och ligger inte i det publika `docs/`.
 - **Inloggning:**

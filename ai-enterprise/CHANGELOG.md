@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-08 — Dashboard D1: server, inloggning och skal
+### Tillagt
+- `src/aie/dashboard/server.py`: kommandocentralen som lokal server med `ThreadingHTTPServer`.
+  - **Start:** `py -m aie dashboard` lyssnar bara på 127.0.0.1:8765. Med `--lan` binds alla nätverkskort, och adressen som mobilen ska öppna skrivs ut.
+  - **Inloggning:** före inloggning ger alla sidor 302 till `/login`.
+  - **Säkerhet:** varje POST kräver sessionens CSRF-token. Svaren har säkerhetsrubriker (CSP utan externa källor, ingen inramning och `no-store`).
+  - **Loggning:** inloggningar och misslyckade försök loggas i revisionsloggen.
+  - **Home** visar de väntande godkännandena, lästa via kärnans kö (`ApprovalQueue.pending`).
+- `src/aie/dashboard/auth.py`: en åtkomstkod per grundare.
+  - **Lagring:** koden sparas bara som PBKDF2-hash i `.env`, aldrig i git.
+  - **Kommando:** `py -m aie dashboard set-code --founder Yorgo` frågar efter koden två gånger och skriver aldrig ut den.
+  - **Sessioner:** cookien har HttpOnly och SameSite=Strict, sessionerna finns bara i minnet och gäller i 12 timmar, och CSRF-token är per session.
+  - **Spärr:** fem felaktiga försök ger 60 sekunders spärr.
+- `src/aie/dashboard/web/`: det delade skalet på engelska i mörkt läge, enligt `DESIGN.md`.
+  - **Sidomeny** med alla nio sidor.
+  - **Rubrikrad** med Live-indikator, etiketten SIM, klocka och knapparna Pause agents och Kill switch. Knapparna är inaktiva med texten "Available in D5".
+  - **Tom vy:** varje sida säger vilket steg som fyller den.
+  - **Mobilbredd (390 px):** menyn ligger överst och sidan rullar inte i sidled.
+- **Typsnitt:** Cormorant Garamond (500 och 600) och Inter (400, 500 och 600) ligger lokalt som woff2 i `web/fonts/`, med OFL-licensfiler. Källan är fontsource 5.1.0 via jsDelivr.
+- `tests/unit/test_dashboard_server.py`: 19 tester för FR-27, FR-28, FR-29, FR-31, SR-10 och D-073.
+- `docs/dashboard/TESTING.md`: hur Yorgo startar kommandocentralen på Windows och öppnar den på mobilen.
+
 ## [Unreleased] — 2026-11-08 — Dashboard D0b: testdata i SIM
 ### Tillagt
 - `scripts/seed_sim.py` och `src/aie/simulation/seed.py` fyller en tom SIM-databas.

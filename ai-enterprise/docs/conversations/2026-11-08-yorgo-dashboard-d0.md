@@ -74,3 +74,19 @@ Frågorna står i slutrapporten och i PR:en.
   - `py scripts/seed_sim.py` gav "Klar: data\sim.db (30 dagar i SIM, 3 väntande godkännanden, revisionslogg OK)".
   - `py -m aie approvals list` visar #1–#3 på 4000, 6500 och 11500 SIM.
 - **Antagande:** att datamappen redan har en körning stoppar skriptet, så kön kan aldrig få fler än 3 från skriptet. Vill man börja om tar man bort `data/sim.db`.
+- **PR #197** fick `founder-approved` och slogs ihop när CI var grön (d6c0440).
+
+## Del C: D1 (server, inloggning och skal)
+**Byggt:** `py -m aie dashboard` och `py -m aie dashboard set-code --founder Yorgo`, med servern i `src/aie/dashboard/` och gränssnittet i `src/aie/dashboard/web/`.
+
+**Kontrollerat för hand** i appens inbyggda webbläsare, mot en tillfällig kopia med testdata och en genererad testkod. Yorgos riktiga kod sattes inte.
+- **Fel kod** ger 401.
+- **Rätt kod** ger Home med 3 godkännanden.
+- **390 px** ger ingen rullning i sidled.
+
+**Antaganden:**
+- **`.env`:** ligger i `ai-enterprise/.env`, bredvid `config/`.
+- **Sessionerna** finns bara i minnet.
+- **Live-indikatorn** betyder i D1 att servern svarar. Den riktiga strömmen kommer i D2.
+- **Department och Agent** står i sidomenyn fast de egentligen är detaljsidor, eftersom skalet ska ha alla nio sidor.
+- **Typsnitten** kommer från fontsource 5.1.0 (OFL) via jsDelivr. Det är bara latinska tecken, men å, ä och ö ingår.

@@ -33,7 +33,7 @@ Tokens definieras en gång som CSS-variabler i `:root` och används överallt. I
 **Typsnitt:**
 - **Cormorant Garamond** används för rubriker och **Inter** för text.
 - Båda har SIL Open Font License och sparas i `assets/fonts/` med licensen. Inget laddas från internet (D-073).
-- Typsnitten läggs in i D1. De finns inte i repot än.
+- Typsnitten finns sedan D1 i `src/aie/dashboard/web/fonts/`: Cormorant Garamond 500 och 600, och Inter 400, 500 och 600, som woff2 med licensfilerna `OFL-*.txt`.
 
 **Statusfärgerna har alltid text bredvid,** till exempel "Blocked" och "SIM". Färgen är aldrig enda bäraren av information.
 
