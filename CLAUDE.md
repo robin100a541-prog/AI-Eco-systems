@@ -47,7 +47,7 @@ Python ≥ 3.11 med bara standardbiblioteket, SQLite (STRICT-tabeller och append
 - Record non-obvious decisions as proposals in `ai-enterprise/docs/proposals/`; an approved decision is written into `ai-enterprise/DECISIONS.md` (protected).
 
 ## Projektregler (Yorgo 2026-11-08, dashboard D0)
-- **Språk och beroenden:** Python ≥ 3.11 och bara standardbiblioteket. Det enda undantaget är Pillow i `ai-enterprise/src/aie/pod/design/` (D-070). Inga npm-paket: dashboarden är byggfri HTML, CSS och JS, och dess tester körs med Nodes inbyggda `node --test`. Undantag (D-084): GSAP och Lenis som färdigbyggda filer i `ai-enterprise/src/aie/dashboard/web/vendor/`, med licens och SHA-256 i `vendor/README.md`, laddade från den egna servern (inga CDN).
+- **Språk och beroenden:** Python ≥ 3.11 och bara standardbiblioteket. Det enda undantaget är Pillow i `ai-enterprise/src/aie/pod/design/` (D-070). Inga npm-paket: dashboarden är byggfri HTML, CSS och JS, och dess tester körs med Nodes inbyggda `node --test`. Undantag (D-084): GSAP och Lenis som färdigbyggda filer i `ai-enterprise/command-center/vendor/` (flyttad dit 2026-11-09), med licens och SHA-256 i `vendor/README.md`, laddade från den egna servern (inga CDN).
 - **Tester:** `unittest`. Varje test anger vilket krav det verifierar (krav-ID som `FR-27`, `SR-10` eller beslut som `D-070`) i sin docstring, till exempel `"""Verifies FR-27: ..."""`.
 - **Ärlighet:** påstå aldrig att något är testat eller fungerar utan att ha kört det. Ange kommandot och utdata.
 - **Skyddat:** ändra aldrig `ai-enterprise/config/*.toml`, `CONSTITUTION.md` eller riskgränser utan att en grundare uttryckligen ber om det.

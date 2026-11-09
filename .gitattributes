@@ -2,3 +2,5 @@
 ai-enterprise/src/aie/dashboard/web/vendor/** -text
 # Windows-skript behöver CRLF, annars kan goto och etiketter i cmd fela (Command Center Del 0).
 *.cmd text eol=crlf
+# Skal-skript körs på Linux-runners: alltid LF.
+*.sh text eol=lf

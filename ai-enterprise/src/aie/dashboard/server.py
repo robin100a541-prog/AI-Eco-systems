@@ -1,15 +1,16 @@
-"""Kommandocentralen: lokal server med standardbiblioteket (dashboard D1, FR-27, FR-28, D-073, D-078).
+"""Command Center lokalt: samma gränssnitt och samma API-form som på Cloudflare, utan internet (D-085, D1).
 
-    py -m aie dashboard [--port 8765] [--lan]
+    py -m aie dashboard [--port 8765] [--lan] [--open]      (eller ai-enterprise/dashboard.cmd på Windows)
     py -m aie dashboard set-code --founder Yorgo
 
 - Lyssnar bara på 127.0.0.1 om inte `--lan` anges. Med `--lan` binds alla nätverkskort, och adressen som
   mobilen ska öppna skrivs ut.
-- Alla sidor kräver inloggning med grundarens åtkomstkod (`auth.py`). Före inloggning ger varje sida 302
-  till `/login`.
+- Inloggning med grundarens åtkomstkod (`auth.py`). Före inloggning ger allt utom inloggningssidan och de
+  publika filerna i `assets/` 302 till `/login` (sidor) eller 401 (API).
 - Varje POST kräver sessionens CSRF-token.
-- Gränssnittet ligger i `web/` och serveras härifrån, aldrig från det publika `docs/`.
-- Data läses bara via kärnans funktioner. I D1 är det godkännandekön (`ApprovalQueue.pending`).
+- Gränssnittet är `ai-enterprise/command-center/` (samma filer som Cloudflare Pages publicerar). API:t
+  (`/api/snapshot`, `/api/health`, `/api/me`, `/api/github`) har samma form som `command-center/functions/api/`.
+- Data läses bara via kärnans funktioner (snapshoten).
 """
 from __future__ import annotations
 
@@ -34,25 +35,17 @@ from ..monitoring import get_logger
 from .auth import AuthError, Authenticator, set_code
 
 log = get_logger("dashboard")
-WEB = Path(__file__).resolve().parent / "web"
+WEB = Path(__file__).resolve().parent / "web"  # bara inloggningssidan
+FRONTEND = Path(__file__).resolve().parents[3] / "command-center"  # samma filer som på Cloudflare Pages
+PUBLIC_PREFIXES = ("/assets/",)  # typsnitt, ikoner och CSS: inga data, behövs av inloggningssidan
+PRIVATE_PREFIXES = ("/js/", "/vendor/")
 COOKIE = "aie_session"
 MAX_BODY = 16 * 1024
 DEFAULT_PORT = 8765
 
-# (sökväg, menynamn, steget som fyller sidan, vad sidan ska visa)
-PAGES = (
-    ("/", "Home", "D2 and D5", "Capital, realized net profit, tax reserve, reserve, departments and live activity."),
-    ("/departments", "Departments", "D3", "Every department as a building. A lit window is an agent at work."),
-    ("/department", "Department", "D3", "The house: one room per agent, the meeting room, the archive and the task queue."),
-    ("/agent", "Agent", "D3 and D6", "Status, mandate, performance, recent work and chat."),
-    ("/finance", "Finance", "D5", "From sales to net profit, profit per day, the VAT limit, tax per track and the ledger."),
-    ("/approvals", "Approvals", "D4", "The founders' queue with consultations and objections. Approve and reject."),
-    ("/risk", "Risk and rules", "D5", "Mode, blocks in the control chain, limits and incidents."),
-    ("/activity", "Activity log", "D2", "The full audit log with filters and a verified hash chain."),
-    ("/settings", "Settings", "D7", "Notifications, founders and approval rules, AI models and access."),
-)
 SECURITY_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'; base-uri 'none'",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+                               "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
@@ -108,10 +101,6 @@ def _template(name: str) -> Template:
     return Template((WEB / name).read_text(encoding="utf-8"))
 
 
-def _money(minor: int, currency: str) -> str:
-    return f"{minor / 100:,.2f} {currency}".replace(",", " ")
-
-
 class Handler(BaseHTTPRequestHandler):
     server_version = "aie-dashboard"
     sys_version = ""
@@ -153,23 +142,39 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
-        if path.startswith("/static/"):
-            return self._static(path.removeprefix("/static/"))
+        if path.startswith(PUBLIC_PREFIXES):
+            return self._file(FRONTEND, path.lstrip("/"))
         session = self.dashboard.auth.session(self._sid())
         if path == "/login":
             return self._redirect("/") if session and session.founder else self._login_page()
         if session is None or session.founder is None:
+            if path.startswith("/api/"):
+                return self._send(401, b'{"error":"unauthorized"}', "application/json")
             return self._redirect("/login")
         if path == "/api/ping":
             return self._send(200, json.dumps({"ok": True, "at": int(time.time())}).encode(), "application/json")
+        if path == "/api/me":
+            body = {"email": None, "founder": session.founder, "mode": "local", "csrf": session.csrf}
+            return self._send(200, json.dumps(body).encode(), "application/json")
         if path in ("/api/snapshot", "/api/health"):
             return self._api(path)
         if path == "/api/github":  # lokalt finns ingen läs-token; gränssnittet visar felvyn
             return self._send(503, b'{"error":"github unavailable offline"}', "application/json")
-        page = next((p for p in PAGES if p[0] == path), None)
-        if page is None:
-            return self._html(404, self._shell(session, "Not found", "<p class='empty'>This page does not exist.</p>", ""))
-        return self._html(200, self._page(session, page))
+        if path.startswith("/api/"):
+            return self._send(404, b'{"error":"not found"}', "application/json")
+        if path in ("/", "/index.html"):
+            return self._file(FRONTEND, "index.html")
+        if path.startswith(PRIVATE_PREFIXES):
+            return self._file(FRONTEND, path.lstrip("/"))
+        return self._send(404, b"not found", "text/plain; charset=utf-8")
+
+    def _file(self, root: Path, name: str) -> None:
+        target = (root / name).resolve()
+        if root.resolve() not in target.parents or not target.is_file():
+            return self._send(404, b"not found", "text/plain; charset=utf-8")
+        kind = {".woff2": "font/woff2", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
+                ".svg": "image/svg+xml", ".html": "text/html; charset=utf-8"}.get(target.suffix)             or mimetypes.guess_type(target.name)[0]
+        self._send(200, target.read_bytes(), kind or "application/octet-stream")
 
     def _api(self, path: str) -> None:
         """Samma form som Cloudflare-funktionerna (functions/api/), så att samma gränssnitt fungerar lokalt."""
@@ -183,14 +188,6 @@ class Handler(BaseHTTPRequestHandler):
         body = {"status": "ok", "version": snap["system"]["version"]["value"], "snapshot_generated_at": snap["generated_at"],
                 "snapshot_age_seconds": 0, "mode": "local"}
         return self._send(200, json.dumps(body).encode(), "application/json")
-
-    def _static(self, name: str) -> None:
-        target = (WEB / name).resolve()
-        if WEB.resolve() not in target.parents or not target.is_file() or target.suffix == ".html":
-            return self._send(404, b"not found", "text/plain; charset=utf-8")
-        kind = {".woff2": "font/woff2", ".css": "text/css; charset=utf-8",
-                ".js": "text/javascript; charset=utf-8"}.get(target.suffix) or mimetypes.guess_type(target.name)[0]
-        self._send(200, target.read_bytes(), kind or "application/octet-stream")
 
     def _login_page(self, error: str = "", status: int = 200) -> None:
         sid = self._sid()
@@ -244,50 +241,6 @@ class Handler(BaseHTTPRequestHandler):
         sid, _ = self.dashboard.auth.new_session(founder)
         self.dashboard.audit(founder, "dashboard.login", {})
         self._redirect("/", self._cookie(sid))
-
-    # --- Sidor -------------------------------------------------------------------------------
-
-    def _page(self, session, page) -> str:
-        path, name, step, purpose = page
-        content = (f"<section class='card empty'><h2>{html.escape(name)}</h2><p>{html.escape(purpose)}</p>"
-                   f"<p class='muted'>This page is filled in step {html.escape(step)}.</p></section>")
-        if path == "/":
-            content = self._home(step)
-        return self._shell(session, name, content, path)
-
-    def _home(self, step: str) -> str:
-        try:
-            pending = self.dashboard.pending_approvals()
-            rows = "".join(
-                f"<li class='approval' data-spotlight><span class='pill warn'>Pending</span>"
-                f"<span class='what'>#{p['id']} {html.escape(p['kind'].capitalize())} on task {p['task']}</span>"
-                f"<span class='amount' data-count='{p['amount_minor'] / 100:.2f}' data-decimals='2' "
-                f"data-suffix=' {html.escape(p['currency'])}'>{html.escape(_money(p['amount_minor'], p['currency']))}</span>"
-                f"<span class='muted'>from {html.escape(p['requested_by'])} · needs {p['required']} founder</span></li>"
-                for p in pending)
-            approvals = (f"<ul class='approvals' data-animated-list>{rows}</ul>" if pending
-                         else "<p class='empty'>No approvals are waiting.</p>")
-            count = len(pending)
-        except Exception as exc:  # noqa: BLE001 — sidan ska visa att data saknas, inte krascha
-            log.error("kunde inte läsa godkännandekön: %s", type(exc).__name__)
-            approvals, count = "<p class='notice bad'>The approval queue could not be read (data missing).</p>", "–"
-        count_attr = f" data-count='{count}'" if isinstance(count, int) else ""
-        cards = "".join(
-            f"<section class='card metric'><h3>{t}</h3><p class='value muted'>Missing</p>"
-            f"<p class='muted'>Filled in step D5.</p></section>"
-            for t in ("Capital", "Realized net profit", "Tax reserve", "Reserve"))
-        return (f"<div class='metrics'>{cards}</div>"
-                f"<section class='card'><h2>Pending approvals <span class='count'{count_attr}>{count}</span></h2>{approvals}"
-                f"<p class='muted'>Read from the core approval queue. Approve and reject arrive in step D4.</p></section>"
-                f"<section class='card empty'><h2>Live activity</h2><p class='muted'>Filled in step D2.</p></section>")
-
-    def _shell(self, session, title: str, content: str, current: str) -> str:
-        active = ' class="active" aria-current="page"'
-        nav = "".join(f'<a href="{p}"{active if p == current else ""}>{html.escape(n)}</a>' for p, n, _, _ in PAGES)
-        return _template("shell.html").substitute(
-            title=html.escape(title), nav=nav, content=content, label=self.dashboard.label,
-            founder=html.escape((session.founder or "").capitalize()), csrf=session.csrf,
-            label_class="warn" if self.dashboard.label == "SIM" else "bad")
 
 
 class ExclusiveServer(ThreadingHTTPServer):

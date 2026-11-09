@@ -145,3 +145,24 @@ Frågorna står i slutrapporten och i PR:en.
 - **Framsteg** registreras inte i kärnan, så det är null.
 
 **Testas bara i CI:** JS-testerna körs med Node 22 i CI, eftersom Node inte finns på Yorgos dator.
+
+## 2026-11-09: Command Center, Del 2 och 3 (design och sidor)
+**Gjort:**
+- **Designen:** designsystemet följer uppdragets tokens, med typsnitten Geist och Geist Mono och en Lucide-sprite.
+- **Sidorna:** alla tio är byggda som ES-moduler utan byggsteg. Den lokala servern serverar samma frontend.
+
+**Kontrollerat visuellt** i appens webbläsare, mot en tillfällig kopia med testdata.
+- **1440 px:** alla sidor visades.
+- **390 px:** `scrollWidth` var 390 på alla tio sidor, och den utfällbara menyn fungerade.
+
+**Fel som hittades visuellt och rättades:**
+- **Scrimen tog en kolumn:** `.scrim` tog en kolumn i rutnätet, så innehållet hamnade under sidomenyn.
+- **Menyknappen syntes på desktop.**
+- **Innehållet var blekt:** det tonades in med en CSS-animation som inte kördes i en dold flik. Innehållet beror nu aldrig på en animation.
+- **Missvisande användning:** MINIMUM_RESERVE visades med "användning" och en röd stapel över 100 %. Ett golv har ingen användning.
+
+**Antaganden:**
+- **Svensk text:** beskrivningarna från `permissions.toml` är svenska (data). Allt gränssnitt runt dem är engelskt.
+- **"Failed experiments"** registreras inte separat, så det visas som N/A.
+- **Skatt per grundare** visas bara när alla poster har samma fördelning.
+- **Run now** är skrivskyddad, eftersom kärnan saknar ett säkert sätt att köra en enskild agent.

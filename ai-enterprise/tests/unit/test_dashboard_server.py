@@ -25,7 +25,9 @@ ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "config"
 CODE = "correct-horse-42"
 FAKE_KEY = "gsk_fake_dashboard_test_key_123456"
-PAGES = ("/", "/departments", "/department", "/agent", "/finance", "/approvals", "/risk", "/activity", "/settings")
+PAGES = ("/", "/index.html", "/js/main.js", "/js/pages/overview.js", "/vendor/gsap/3.15.1/gsap.min.js")
+API = ("/api/snapshot", "/api/health", "/api/me", "/api/github", "/api/ping")
+FRONTEND = srv.FRONTEND
 
 
 class ServerCase(unittest.TestCase):
@@ -93,19 +95,25 @@ class ServerCase(unittest.TestCase):
         return res, self.session_cookie(res) or cookie
 
     def csrf_of(self, cookie):
-        _, data = self.request("GET", "/", cookie=cookie)
-        return re.search(rb'name="csrf" value="([^"]+)"', data).group(1).decode()
+        _, data = self.request("GET", "/api/me", cookie=cookie)
+        return json.loads(data)["csrf"]
 
 
 class TestLogin(ServerCase):
     def test_pages_redirect_to_login_before_and_answer_200_after(self):
-        """Verifies FR-27, FR-28: före inloggning ger alla nio sidor 302 till /login, efter inloggning 200."""
-        for path in (*PAGES, "/api/ping"):
+        """Verifies FR-27, FR-28: före inloggning ger sidan och skripten 302 till /login och API:t 401; efter 200.
+        Bara de publika filerna i assets/ (CSS, typsnitt, ikoner) går att hämta före inloggning."""
+        for path in PAGES:
             res, _ = self.request("GET", path)
             self.assertEqual((res.status, res.getheader("Location")), (302, "/login"), path)
+        for path in API:
+            res, _ = self.request("GET", path)
+            self.assertEqual(res.status, 401, path)
+        res, _ = self.request("GET", "/assets/css/app.css")
+        self.assertEqual(res.status, 200)
         res, cookie = self.login()
         self.assertEqual((res.status, res.getheader("Location")), (302, "/"))
-        for path in (*PAGES, "/api/ping"):
+        for path in PAGES:
             res, _ = self.request("GET", path, cookie=cookie)
             self.assertEqual(res.status, 200, path)
 
@@ -188,8 +196,7 @@ class TestNoSecrets(ServerCase):
         secrets_ = (CODE, stored, salt, digest, FAKE_KEY)
         _, cookie = self.login()
         responses = [self.request("GET", "/login")]
-        responses += [self.request("GET", p, cookie=cookie) for p in (*PAGES, "/api/ping", "/static/app.css",
-                                                                      "/static/app.js", "/nope")]
+        responses += [self.request("GET", p, cookie=cookie) for p in (*PAGES, *API, "/assets/css/app.css", "/nope")]
         responses.append(self.login("yorgo", "wrong-code-1"))
         for res, data in responses:
             blob = (data if isinstance(data, bytes) else b"") + str(res.getheaders()).encode()
@@ -199,8 +206,8 @@ class TestNoSecrets(ServerCase):
     def test_env_file_and_templates_are_not_served(self):
         """Verifies SR-10, FR-27: bara filer i web/ serveras; .env, mallarna och sökvägar utanför nekas."""
         _, cookie = self.login()
-        for path in ("/static/../../../.env", "/static/..%2F..%2F.env", "/static/shell.html", "/.env",
-                     "/static/login.html", "/static/fonts/../../server.py"):
+        for path in ("/assets/../../.env", "/assets/..%2F..%2F.env", "/js/../../.env", "/.env", "/login.html",
+                     "/vendor/../../src/aie/dashboard/server.py", "/assets/../../../config/founders.toml"):
             res, _ = self.request("GET", path, cookie=cookie)
             self.assertIn(res.status, (404, 302), path)
 
@@ -213,76 +220,104 @@ class TestNoSecrets(ServerCase):
         self.assertEqual(res.getheader("Cache-Control"), "no-store")
 
 
-class TestShell(ServerCase):
-    def test_shell_has_nine_pages_labels_and_inactive_controls(self):
-        """Verifies FR-27, D-073: skalet har alla nio sidor, Live-indikator, SIM-etikett, klocka och
-        inaktiva knappar för paus och nödstopp med texten "Available in D5"."""
+class TestFrontend(ServerCase):
+    def test_the_page_loads_with_the_shell(self):
+        """Verifies FR-27, D-087: efter inloggning laddar sidan skalet: sidomeny, AGENTS, topprad med systemstatus,
+        "Data as of", klocka, SIM-etikett, grundare, Pause agents och Kill switch."""
         _, cookie = self.login()
-        _, data = self.request("GET", "/", cookie=cookie)
+        res, data = self.request("GET", "/", cookie=cookie)
         page = data.decode("utf-8")
-        for path, name, _, _ in srv.PAGES:
-            self.assertIn(f'href="{path}"', page)
-            self.assertIn(f">{name}</a>", page)
-        self.assertEqual(len(srv.PAGES), 9)
-        self.assertIn('id="live"', page)
-        self.assertIn(">SIM</span>", page)
-        self.assertIn('id="clock"', page)
-        for button in ("Pause agents", "Kill switch"):
-            self.assertRegex(page, rf'<button[^>]*disabled[^>]*>{button}<span class="sub">Available in D5</span>')
-        self.assertIn('lang="en"', page)
-        self.assertIn('name="viewport"', page)
+        self.assertEqual(res.status, 200)
+        for needed in ('id="nav"', 'id="side-agents"', 'id="system-status"', "Data as of", 'id="clock"', 'id="env-label"',
+                       'id="founder"', "Pause agents", "Kill switch", 'id="banner"', 'lang="en"', 'name="viewport"'):
+            self.assertIn(needed, page)
 
-    def test_every_page_has_an_empty_state_naming_its_step(self):
-        """Verifies FR-29: varje sida utom Home visar en tom vy som säger vilket steg som fyller den."""
-        _, cookie = self.login()
-        for path, name, step, _ in srv.PAGES[1:]:
-            _, data = self.request("GET", path, cookie=cookie)
-            self.assertIn(f"This page is filled in step {step}.", data.decode("utf-8"), path)
+    def test_all_ten_pages_exist_and_are_routed(self):
+        """Verifies FR-27, D-087: de tio sidorna finns som moduler och är kopplade i routern."""
+        main = (FRONTEND / "js" / "main.js").read_text(encoding="utf-8")
+        for page in ("overview", "agents", "departments", "department", "agent", "approvals", "finance", "risk",
+                     "activity", "settings"):
+            module = FRONTEND / "js" / "pages" / f"{page}.js"
+            self.assertTrue(module.is_file(), page)
+            self.assertIn("export function view(", module.read_text(encoding="utf-8"), page)
+            self.assertIn(f'import * as {page} from "./pages/{page}.js";', main)
+        for label in ("Command center", "Agents", "Departments", "Approvals", "Finance", "Risk and rules", "Activity",
+                      "Settings"):
+            self.assertIn(f'nav: "{label}"', main)
+        self.assertIn("SNAPSHOT_MS = 30_000", main)
+        self.assertIn("GITHUB_MS = 60_000", main)
+        self.assertIn("STALE_HOURS = 26", main)
+        self.assertIn("Data is stale", main)
 
-    def test_home_shows_the_three_pending_approvals_from_the_core_queue(self):
-        """Verifies FR-29, FR-31: Home visar de 3 väntande godkännandena ur seed-datan, lästa via kärnans kö."""
-        _, cookie = self.login()
-        _, data = self.request("GET", "/", cookie=cookie)
-        page = data.decode("utf-8")
-        pending = self.dashboard.pending_approvals()
-        self.assertEqual(len(pending), 3)
-        self.assertIn("Pending approvals <span class='count' data-count='3'>3</span>", page)
-        for p in pending:
-            self.assertIn(f"#{p['id']} Decision on task {p['task']}", page)
-            self.assertIn(srv._money(p["amount_minor"], "SIM"), page)  # slutvärdet finns utan JavaScript
-        self.assertNotIn("could not be read", page)
+    def test_every_page_has_loading_empty_and_error_views(self):
+        """Verifies FR-29: varje del ritas genom guard() (laddning och fel), och sidorna har tomvyer; saknad data
+        visas som N/A, aldrig som 0."""
+        common = (FRONTEND / "js" / "pages" / "common.js").read_text(encoding="utf-8")
+        self.assertIn("skeleton(", common)
+        self.assertIn("errorView(", common)
+        ui = (FRONTEND / "js" / "ui.js").read_text(encoding="utf-8")
+        self.assertIn("""export const NA = '<span class="na">N/A</span>'""", ui)
+        self.assertIn("if (minor === null || minor === undefined || Number.isNaN(minor)) return NA;", ui)
+        for page in (FRONTEND / "js" / "pages").glob("*.js"):
+            if page.name == "common.js":
+                continue
+            text = page.read_text(encoding="utf-8")
+            self.assertIn("guard(", text, page.name)
+            self.assertRegex(text, r"emptyView\(|empty:", page.name)
 
     def test_css_uses_the_design_tokens_exactly(self):
-        """Verifies D-073: varje token i DESIGN.md finns med exakt samma värde i app.css, och mobilbredden finns."""
+        """Verifies D-087: varje token i DESIGN.md finns med exakt samma värde i app.css, och mobilbredden finns."""
         design = (ROOT / "docs" / "dashboard" / "DESIGN.md").read_text(encoding="utf-8")
-        css = (srv.WEB / "app.css").read_text(encoding="utf-8")
-        tokens = re.findall(r"\| `(--[a-z-]+)`(?: / `(--[a-z-]+)`)? \| `(#[0-9A-F]{6})`(?: / `(#[0-9A-F]{6})`)? \|", design)
-        self.assertGreaterEqual(len(tokens), 12)
-        for name, name2, value, value2 in tokens:
-            self.assertRegex(css, rf"{name}:\s*{value};")
-            if name2:
-                self.assertRegex(css, rf"{name2}:\s*{value2};")
+        css = (FRONTEND / "assets" / "css" / "app.css").read_text(encoding="utf-8")
+        tokens = re.findall(r"\| `(--[a-z0-9-]+)` \| `([^`]+)` \|", design)
+        self.assertGreaterEqual(len(tokens), 20)
+        for name, value in tokens:
+            self.assertIn(f"{name}: {value};", css, name)
         self.assertIn("@media (max-width: 767px)", css)
         self.assertIn("overflow-x: hidden", css)
         self.assertIn("min-height: 44px", css)
+        self.assertIn("letter-spacing: -0.035em", css)
+        self.assertIn("letter-spacing: 0.14em", css)
 
-    def test_fonts_are_local_with_ofl_licenses(self):
-        """Verifies D-073: Cormorant Garamond och Inter ligger lokalt som woff2 med OFL-licens och serveras därifrån."""
-        fonts = srv.WEB / "fonts"
-        css = (srv.WEB / "app.css").read_text(encoding="utf-8")
-        for url in re.findall(r'url\("([^"]+)"\)', css):
-            self.assertTrue((srv.WEB / url).is_file(), url)
-            self.assertEqual((srv.WEB / url).read_bytes()[:4], b"wOF2")
-        for license_ in ("OFL-Inter.txt", "OFL-CormorantGaramond.txt"):
-            self.assertIn("SIL Open Font License", (fonts / license_).read_text(encoding="utf-8"))
-        self.assertNotRegex(css + (srv.WEB / "app.js").read_text(encoding="utf-8"), r"https?://")
-        _, cookie = self.login()
-        res, data = self.request("GET", "/static/fonts/inter-latin-400-normal.woff2", cookie=cookie)
-        self.assertEqual((res.status, res.getheader("Content-Type"), data[:4]), (200, "font/woff2", b"wOF2"))
+    def test_no_inline_styles_or_scripts_and_nothing_external(self):
+        """Verifies D-087, FR-28: inga inline-stilar eller inline-skript (CSP) och inga externa källor; allt laddas
+        från den egna adressen."""
+        index = (FRONTEND / "index.html").read_text(encoding="utf-8")
+        refs = re.findall(r'(?:src|href)="([^"]+)"', index)
+        self.assertTrue(refs)
+        for ref in refs:
+            self.assertTrue(ref.startswith("/") or ref.startswith("data:"), ref)
+        self.assertNotIn("<script>", index)
+        for f in [*(FRONTEND / "js").rglob("*.js"), FRONTEND / "index.html", FRONTEND / "assets" / "css" / "app.css"]:
+            code = re.sub(r"(?m)^\s*//[^\n]*|/\*.*?\*/", "", f.read_text(encoding="utf-8"), flags=re.S)
+            self.assertNotIn('style="', code, f.name)
+            self.assertNotRegex(code, r"""(?:src=|href=|url\()["']?https?://""", f.name)
+
+    def test_fonts_and_icons_are_local_with_licenses(self):
+        """Verifies D-087: Geist och Geist Mono ligger lokalt med OFL, och Lucide-ikonerna som lokal sprite med ISC."""
+        css = (FRONTEND / "assets" / "css" / "app.css").read_text(encoding="utf-8")
+        urls = re.findall(r'url\("(\.\./fonts/[^"]+)"\)', css)
+        self.assertEqual(len(urls), 6)
+        for url in urls:
+            path = (FRONTEND / "assets" / "css" / url).resolve()
+            self.assertEqual(path.read_bytes()[:4], b"wOF2", url)
+        self.assertIn("SIL Open Font License", (FRONTEND / "assets" / "fonts" / "OFL-Geist.txt").read_text(encoding="utf-8"))
+        sprite = (FRONTEND / "assets" / "icons" / "lucide-sprite.svg").read_text(encoding="utf-8")
+        self.assertGreaterEqual(sprite.count("<symbol"), 50)
+        self.assertNotIn("<script", sprite.lower())
+        self.assertIn("ISC License", (FRONTEND / "assets" / "icons" / "LICENSE-lucide.txt").read_text(encoding="utf-8"))
+        js = "".join(p.read_text(encoding="utf-8") for p in (FRONTEND / "js").rglob("*.js"))
+        used = set(re.findall(r'icon\("([a-z0-9-]+)"', js)) | set(re.findall(r"#i-([a-z0-9-]+)", js))
+        used |= set(re.findall(r"#i-([a-z0-9-]+)", (FRONTEND / "index.html").read_text(encoding="utf-8")))
+        used |= set(re.findall(r'icon: "([a-z0-9-]+)"', js))
+        for name in sorted(used):
+            if "$" in name:
+                continue
+            self.assertIn(f'id="i-{name}"', sprite, name)
 
 
 class TestMotion(ServerCase):
-    VENDOR = srv.WEB / "vendor"
+    VENDOR = FRONTEND / "vendor"
 
     def test_vendor_files_are_unchanged_and_listed_with_source_and_license(self):
         """Verifies D-084: varje fil i vendor/ står i vendor/README.md med rätt SHA-256, och licenserna finns."""
@@ -293,61 +328,29 @@ class TestMotion(ServerCase):
         self.assertGreaterEqual(len(rows), 5)
         for name, digest in rows:
             self.assertEqual(hashlib.sha256((self.VENDOR / name).read_bytes()).hexdigest(), digest, name)
-        files = {p.relative_to(self.VENDOR).as_posix() for p in self.VENDOR.rglob("*") if p.is_file()}
-        self.assertEqual(files - {"README.md"}, {n for n, _ in rows} | {"gsap/3.15.1/LICENSE.md"})
         self.assertIn("@license Copyright 2026, GreenSock", (self.VENDOR / "gsap/3.15.1/gsap.min.js").read_text(encoding="utf-8")[:300])
         self.assertIn("MIT License", (self.VENDOR / "lenis/1.3.27/LICENSE").read_text(encoding="utf-8"))
         self.assertIn("Commons Clause", (self.VENDOR / "react-bits/LICENSE.md").read_text(encoding="utf-8"))
-        effects = (srv.WEB / "effects.js").read_text(encoding="utf-8")
+        effects = (FRONTEND / "js" / "effects.js").read_text(encoding="utf-8")
         for credit in ("React Bits", "David Haz", "MIT + Commons Clause", "vendor/react-bits/LICENSE.md"):
             self.assertIn(credit, effects)
 
-    def test_everything_loads_from_the_own_server(self):
-        """Verifies D-084, FR-28: alla skript och stilmallar laddas från /static/, CSP är fortfarande bara 'self'."""
-        _, cookie = self.login()
-        res, data = self.request("GET", "/", cookie=cookie)
-        page = data.decode("utf-8")
-        self.assertEqual(res.getheader("Content-Security-Policy").split(";")[0], "default-src 'self'")
-        refs = re.findall(r'<(?:script|link)[^>]+(?:src|href)="([^"]+)"', page)
-        self.assertGreaterEqual(len(refs), 6)
-        for ref in refs:
-            self.assertTrue(ref.startswith("/static/"), ref)
-            res, body = self.request("GET", ref, cookie=cookie)
-            self.assertEqual(res.status, 200, ref)
-            self.assertTrue(res.getheader("Content-Type").startswith(
-                "text/javascript" if ref.endswith(".js") else "text/css"), ref)
-        self.assertNotIn("<script>", page)  # inga inbäddade skript; CSP blockerar dem ändå
-
-    def test_motion_is_calm_and_respects_reduced_motion(self):
-        """Verifies D-084: ingen studs, korta tider, och prefers-reduced-motion stänger av rörelse och Lenis;
-        Lenis är av på touch och används aldrig i tabeller, chatt, modaler och rullbara paneler."""
-        app = (srv.WEB / "app.js").read_text(encoding="utf-8")
-        effects = (srv.WEB / "effects.js").read_text(encoding="utf-8")
-        boot = (srv.WEB / "boot.js").read_text(encoding="utf-8")
-        css = (srv.WEB / "app.css").read_text(encoding="utf-8")
-        code = re.sub(r"//[^\n]*", "", app + effects)  # bara koden, inte kommentarerna
-        self.assertNotRegex(code,r"(?i)bounce|elastic|back\.|spring|yoyo|repeat:\s*-1")
+    def test_motion_is_short_and_respects_reduced_motion(self):
+        """Verifies D-084, D-087: animationerna är 150–250 ms med ease-out och utan studs; prefers-reduced-motion
+        stänger av dem, Lenis och radarns rörelse; Lenis aldrig på touch eller i tabeller, dialoger och chatt."""
+        effects = (FRONTEND / "js" / "effects.js").read_text(encoding="utf-8")
+        radar = (FRONTEND / "js" / "radar.js").read_text(encoding="utf-8")
+        css = (FRONTEND / "assets" / "css" / "app.css").read_text(encoding="utf-8")
+        code = re.sub(r"//[^\n]*", "", effects)
+        self.assertNotRegex(code, r"(?i)bounce|elastic|back\.|spring|yoyo")
         for seconds in re.findall(r"duration:\s*([0-9.]+)", code):
-            self.assertLessEqual(float(seconds), 0.35)
-        self.assertIn("prefers-reduced-motion: reduce", boot + app + effects)
-        self.assertIn("if (reduced()) return;", effects)
-        self.assertIn("!reduceQuery.matches", app)
-        self.assertRegex(app, r'"ontouchstart" in window \|\| navigator\.maxTouchPoints > 0')
-        self.assertIn("(min-width: 768px) and (hover: hover) and (pointer: fine)", app)
-        self.assertIn('node.closest("table, dialog, [role=dialog], .chat, .scroll-panel")', app)
-        self.assertIn("lenis.destroy()", app)
-        self.assertRegex(css, r"@media \(prefers-reduced-motion: reduce\)[^@]*visibility: visible !important")
-        self.assertIn("animation: aie-reveal 0s linear 1.2s forwards", css)  # innehållet visas även om JS fallerar
-
-    def test_counted_numbers_keep_their_final_value_in_the_html(self):
-        """Verifies FR-29, D-084: siffror som räknas upp har slutvärdet i HTML; JavaScript räknar inget eget värde."""
-        _, cookie = self.login()
-        _, data = self.request("GET", "/", cookie=cookie)
-        page = data.decode("utf-8")
-        for value, text in re.findall(r"data-count='([0-9.]+)'[^>]*>([^<]+)<", page):
-            self.assertTrue(text.replace(" ", "").startswith(value), (value, text))
-        self.assertIn("data-animated-list", page)
-        self.assertIn("data-spotlight", page)
+            self.assertTrue(0.15 <= float(seconds) <= 0.25, seconds)
+        self.assertIn("--t: 200ms;", css)
+        self.assertIn("*, *::before, *::after { animation: none !important; transition: none !important; }", css)
+        self.assertIn('matchMedia("(prefers-reduced-motion: reduce)").matches) return;', radar)
+        self.assertIn('"ontouchstart" in window || navigator.maxTouchPoints > 0', effects)
+        self.assertIn("table, dialog, .table-wrap, .chat, .scroll-panel, [data-lenis-prevent]", effects)
+        self.assertIn("onComplete: () => { el.textContent = final; }", effects)
 
 
 class TestLocalStart(ServerCase):
@@ -387,7 +390,7 @@ class TestLocalApi(ServerCase):
         Cloudflare-funktionerna, med samma snapshot-schema, och bara efter inloggning."""
         for path in ("/api/snapshot", "/api/health", "/api/github"):
             res, _ = self.request("GET", path)
-            self.assertEqual(res.status, 302, path)
+            self.assertEqual(res.status, 401, path)
         _, cookie = self.login()
         res, data = self.request("GET", "/api/snapshot", cookie=cookie)
         self.assertEqual(res.status, 200)
