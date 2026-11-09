@@ -213,8 +213,3 @@ början av varje körning och använder svaret. Nya frågor läggs överst under
 - **Botens rekommendation:** alternativ 1 om uppgiften fortfarande behövs.
 - **Svar (grundare, namn och datum):** Släppt, lågt värde. Robin, 2026-10-30.
 
-<!-- scout:start -->
-## Scouten väntar på grundarna (2026-11-06)
-- Etsy: ETSY_API_KEY saknas, källan hoppades över
-- researchen misslyckades: produktagenten gav 9 giltiga idéer, minst 10 krävs
-<!-- scout:end -->
