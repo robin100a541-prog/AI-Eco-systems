@@ -81,6 +81,18 @@ class Dashboard:
                      "currency": r.currency, "required": r.required_approvals, "requested_by": r.requested_by,
                      "reason": r.reason} for r in queue.pending()]
 
+    def snapshot(self) -> dict:
+        """Samma snapshot som `py -m aie publish` laddar upp, men byggd ur den lokala databasen (Del 1)."""
+        from ..simulation.market import SimClock
+        from ..simulation.run import stored_run
+        from ..system import build_system
+        from .snapshot import build_snapshot
+
+        with self._db_lock, runtime._open(self.config) as db:
+            run = stored_run(db)
+            system = build_system(self.config, db, self.config_dir, clock=SimClock(run["start_date"]) if run else None)
+            return build_snapshot(system, self.config, self.config_dir)
+
     def audit(self, actor: str, action: str, details: dict) -> None:
         """Inloggningar loggas i revisionsloggen (FR-28, §35). Aldrig koden."""
         from ..audit import AuditLog
@@ -150,10 +162,27 @@ class Handler(BaseHTTPRequestHandler):
             return self._redirect("/login")
         if path == "/api/ping":
             return self._send(200, json.dumps({"ok": True, "at": int(time.time())}).encode(), "application/json")
+        if path in ("/api/snapshot", "/api/health"):
+            return self._api(path)
+        if path == "/api/github":  # lokalt finns ingen läs-token; gränssnittet visar felvyn
+            return self._send(503, b'{"error":"github unavailable offline"}', "application/json")
         page = next((p for p in PAGES if p[0] == path), None)
         if page is None:
             return self._html(404, self._shell(session, "Not found", "<p class='empty'>This page does not exist.</p>", ""))
         return self._html(200, self._page(session, page))
+
+    def _api(self, path: str) -> None:
+        """Samma form som Cloudflare-funktionerna (functions/api/), så att samma gränssnitt fungerar lokalt."""
+        try:
+            snap = self.dashboard.snapshot()
+        except Exception as exc:  # noqa: BLE001 — felvyn i gränssnittet, aldrig en krasch
+            log.error("snapshot kunde inte byggas lokalt: %s", type(exc).__name__)
+            return self._send(503, b'{"error":"snapshot unavailable"}', "application/json")
+        if path == "/api/snapshot":
+            return self._send(200, json.dumps(snap, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+        body = {"status": "ok", "version": snap["system"]["version"]["value"], "snapshot_generated_at": snap["generated_at"],
+                "snapshot_age_seconds": 0, "mode": "local"}
+        return self._send(200, json.dumps(body).encode(), "application/json")
 
     def _static(self, name: str) -> None:
         target = (WEB / name).resolve()

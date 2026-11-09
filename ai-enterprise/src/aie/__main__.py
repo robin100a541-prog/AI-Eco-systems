@@ -22,6 +22,8 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `daily-cycle`   en företagscykel per dygn med rapporter och notis till grundarna (Fas 8, §56)
 - `scout`         Opportunity Scout: run (en dygnscykel), rapporter i docs/opportunities/
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
+- `publish`       snapshoten till Cloudflare KV för Command Center (Del 1, D-085)
+- `state`         put/get: krypterad databaskopia till/från Cloudflare KV (Del 1, D-085)
 - `dashboard`     kommandocentralen: lokal server på 127.0.0.1:8765 (--lan för mobilen), set-code (D1, D-073)
 
 Varje körning loggas till `<log_dir>/aie.log` (FR-04). Sökvägarna i `config/system.toml`
@@ -221,6 +223,13 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--agents", choices=("scripted", "local", "groq"), default="scripted",
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
                           "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
+    pb = add("publish", "bygg snapshoten och ladda upp den till Cloudflare KV (Command Center, D-085)")
+    pb.add_argument("--out", type=Path, help="spara också snapshoten lokalt här")
+    pb.add_argument("--reports", type=Path, help="mapp med rapporter att ladda upp (de tre senaste)")
+    st = add("state", "krypterad databaskopia till eller från Cloudflare KV (Command Center, D-085)")
+    st.add_argument("action", choices=("put", "get"))
+    st.add_argument("name", help="company, pilot eller scout")
+    st.add_argument("file", type=Path, help="den redan krypterade filen")
     db = add("dashboard", "kommandocentralen: lokal server (standard) eller set-code för en grundares åtkomstkod (D1, D-073)")
     db.add_argument("action", nargs="?", choices=("serve", "set-code", "has-code"), default="serve")
     db.add_argument("--open", action="store_true", help="öppna webbläsaren när servern har startat")
@@ -439,6 +448,9 @@ def main(argv: list[str] | None = None) -> int:
         "pod": lambda: _pod(args),
         "assess": lambda: _assess(args),
         "dashboard": lambda: _dashboard(args),
+        "publish": lambda: __import__("aie.dashboard.publish", fromlist=["publish"]).publish(
+            args.config_dir, args.out, args.reports),
+        "state": lambda: __import__("aie.dashboard.publish", fromlist=["state"]).state(args.action, args.name, args.file),
     }
     try:
         return commands[args.command]()

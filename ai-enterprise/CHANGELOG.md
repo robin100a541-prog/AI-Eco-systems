@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-09 — Command Center Del 1: data, publicering och API
+### Tillagt
+- `src/aie/dashboard/snapshot.py`: snapshoten (`aie.snapshot/1`), med fälten `value`, `source` och `as_of` för varje siffra.
+  - **Innehåll:** system, ekonomi (brutto och netto var för sig), perioder, per agent, ledger, agenter med mandat, departement ur config, godkännanden med samråd, riskgränser, dagens blockeringar, händelser med unika ID:n, hashkedjan och kvoter.
+  - **Kontroll:** siffrorna är exakt revisionens `recompute`.
+- `py -m aie publish`: laddar upp snapshoten till Cloudflare KV.
+  - **Vid fel:** felet loggas, snapshoten sparas för nästa försök, och kommandot avslutar med 0.
+- `py -m aie state put|get` och `scripts/state.sh`: krypterade databaskopior i KV (D-093).
+- `command-center/functions/`:
+  - `_middleware.js`, som verifierar Access-JWT:n för hela `/api/*`
+  - `api/snapshot.js`, `api/health.js`, och `api/github.js` som cachar i 60 sekunder och bara skickar vitlistade fält
+- **Den lokala servern** har samma API-form: `/api/snapshot`, `/api/health`, och `/api/github`, som svarar 503 offline.
+- **Tester:**
+  - `tests/unit/test_snapshot.py` (10 tester)
+  - `command-center/tests/api.test.mjs` (`node --test`)
+  - den nya workflowen `command-center.yml`
+- **Beslut:** D-085–D-093 i DECISIONS.md, godkända av båda. D-085 ersätter D-075.
+### Ändrat
+- **`company-daily`:**
+  - **Inga data-PR:er längre** (D-092): rapporter, status och notis sparas som artefakt i 14 dagar.
+  - **Tillståndet:** databasen hämtas från KV om cachen saknas, och sparas krypterad i KV efter körningen.
+  - **Publicering:** snapshoten publiceras, med pilotens databas för riktig valuta.
+- **`scout`:** ingen PR med `docs/opportunities` längre, i stället en artefakt i 30 dagar. Databasen sparas krypterad i KV.
+- **`pod-orders`:** pilotens databas sparas krypterad i KV.
+- **`DATA.md`:** schemat, reglerna för brutto och netto, reglerna för agentstatus och KV-nycklarna.
+
 ## [Unreleased] — 2026-11-09 — Command Center Del 0: arkitekturrapport, lokal start och Actions-minuter
 ### Tillagt
 - `docs/command-center/DATA.md`: arkitekturrapporten. Den beskriver språk och struktur, alla agenter och var de körs, hur pengar, körningar och fel registreras, databaser, loggar och API:er, befintliga dashboard-delar, beslutet om var tillståndet ska ligga (Cloudflare KV, krypterat), och beräkningen av Actions-minuter.

@@ -4,6 +4,7 @@ from __future__ import annotations
 import contextlib
 import http.client
 import io
+import json
 import re
 import shutil
 import tempfile
@@ -378,6 +379,26 @@ class TestLocalStart(ServerCase):
         for needed in ('cd /d "%~dp0"', 'set "PYTHONPATH=%~dp0src"', "where py", "dashboard has-code",
                        "dashboard set-code", "scripts\seed_sim.py", "dashboard --open %*", "pause"):
             self.assertIn(needed, cmd)
+
+
+class TestLocalApi(ServerCase):
+    def test_local_api_has_the_same_shape_and_requires_login(self):
+        """Verifies FR-27, FR-29, D-085: den lokala servern svarar på /api/snapshot och /api/health som
+        Cloudflare-funktionerna, med samma snapshot-schema, och bara efter inloggning."""
+        for path in ("/api/snapshot", "/api/health", "/api/github"):
+            res, _ = self.request("GET", path)
+            self.assertEqual(res.status, 302, path)
+        _, cookie = self.login()
+        res, data = self.request("GET", "/api/snapshot", cookie=cookie)
+        self.assertEqual(res.status, 200)
+        snap = json.loads(data)
+        self.assertEqual(snap["schema"], "aie.snapshot/1")
+        self.assertEqual(len([a for a in snap["approvals"]["items"] if a["status"] == "pending"]), 3)
+        self.assertEqual(res.getheader("Cache-Control"), "no-store")
+        res, data = self.request("GET", "/api/health", cookie=cookie)
+        self.assertEqual(json.loads(data)["status"], "ok")
+        res, _ = self.request("GET", "/api/github", cookie=cookie)
+        self.assertEqual(res.status, 503)
 
 
 class TestSetCode(unittest.TestCase):

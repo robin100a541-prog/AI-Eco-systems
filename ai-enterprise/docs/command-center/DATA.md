@@ -133,6 +133,66 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 - **Gränsen:** taket på 1 400 hålls med **högst cirka 120 sammanslagna PR:er per månad**. Det kräver färre och större PR:er, till exempel en per del som i Command Center.
 - **Tills vidare kostar det inget:** repot är fortfarande publikt, och publika repon har obegränsade Actions-minuter.
 
+## 9. Snapshoten (Del 1, D-088)
+**Byggs av:** `py -m aie publish` i company-daily, ur företagets databas och bara med kärnans funktioner (`src/aie/dashboard/snapshot.py`).
+- **Där den ligger:** den laddas upp till KV som `snapshot:latest` och `snapshot:<datum>`, där historiken sparas i 35 dagar.
+- **Hur den läses:** `functions/api/snapshot.js` serverar den oförändrad, och den lokala servern bygger samma schema ur den lokala databasen.
+- **Om uppladdningen misslyckas:** felet loggas, snapshoten sparas i `data/publish-pending/`, och kommandot avslutar ändå med 0. Agenterna påverkas aldrig, och nästa körning försöker igen.
+
+### Schema `aie.snapshot/1`
+Varje siffra är `{"value", "source", "as_of"}`. Varje lista är `{"items", "source", "as_of"}`. Saknas data är `value` null, och gränssnittet visar "N/A".
+
+| Fält | Innehåll | Källa |
+|---|---|---|
+| `generated_at`, `environment`, `currency` | när snapshoten byggdes, och sim/SIM eller prod | konfigurationen |
+| `system` | `mode` (normal, protected eller kill switch), `kill_switch`, `protected_mode`, `last_run` och `last_run_day` (senaste `simulation.day`) samt `version` | `KillSwitch`, `ProtectedMode`, `audit_log` och `aie.__version__` plus `GITHUB_SHA` |
+| `economy` | `revenue_gross`, `refunds`, `costs`, `platform_fees`, `net_profit_realized`, `preliminary` (skäl), `tax_reserve`, `liquid`, `disposable_capital`, `protected_reserve` och `vat` (`sales`, `threshold`, `level`) | `compute_result`, `capital_position` och `TaxEngine` |
+| `economy_real` | samma fält för pilotens databas (SEK) om den finns, annars null | samma |
+| `periods.day`, `.week`, `.month` | `period`, `revenue`, `cost` (kostnader plus avgifter plus återbetalningar) och `net` | `compute_result` per period |
+| `per_agent` | `agent` (den som bokförde, alltså `recorded_by`), `revenue`, `cost` och `net` | `compute_result` per `recorded_by` |
+| `ledger` | de 500 senaste posterna: `id`, `key` (idempotensnyckeln), `type`, `amount`, `status`, `by`, `initiative`, `department`, `date` och `external_id`, plus `total` | `Ledger.entries` |
+| `agents` | `id`, `name`, `role`, `department`, `level`, `description`, `lifecycle`, `status`, `manager`, `task`, `progress` (alltid null), `model`, `last_run`, `runs`, `actions_done`, `actions_failed`, `success_rate` och `tools` (mandatet) | `AgentRegistry`, `permissions.toml`, `audit_log` och `tasks` |
+| `departments` | `id`, `roles` och `agents` | `permissions.toml` och `AgentRegistry` |
+| `approvals` | `id`, `kind`, `task`, `amount`, `status`, `required`, `votes`, `goal`, `risk_class`, `max_loss`, `stop_conditions`, `opinions` och `objections` | `approval_requests`, `approval_votes` och `consultation_opinions` |
+| `risk_limits` | `name`, `limit` och `used`. `used` finns bara där kärnan räknar användningen, annars null | `risk_limits.toml`, `capital_position` och `compute_result` per initiativ |
+| `blocks_today` | `step`, `what` och `count` | `audit_log`: `tool.denied`, `budget.blocked` och `ledger.duplicate_refused` |
+| `events` | de 300 senaste: `id` (unikt, till exempel `audit:<seq>`, `agent:<id>` eller `task:<id>`), `at`, `actor`, `action`, `type` och `hash` | `audit_log`, `agent_state_changes` och `task_events` |
+| `audit_chain` | `ok`, `length` och `first_bad_seq` | `AuditLog.verify` |
+| `quotas` | `provider`, `day`, `calls` mot `calls_limit` och `tokens` mot `tokens_limit` | `provider_usage` och `providers.toml` |
+
+### Brutto och netto
+- **Brutto (`revenue_gross`):** summan av poster av typen `revenue` med status `settled`. Avgifter och återbetalningar dras **inte** av. De är egna posttyper (ER-23).
+- **Netto (`net_profit_realized`):** brutto minus `refund`, `cost` och `fee`, bara för poster som är `settled`. `pending` räknas aldrig (ER-11), och `capital_in`, `capital_out` och `tax_payment` är varken intäkt eller kostnad.
+- **Preliminärt:** om någon post väntar, eller om ett initiativ har intäkter utan kostnader, står skälen i `economy.preliminary`. Gränssnittet visar då "Preliminary".
+- **Kontrollen:** siffrorna är exakt revisionens omräkning. Testet `test_snapshot_matches_the_audit_agents_recomputation` kör `recompute` (ER-16) mot snapshoten.
+
+### Dubbletter
+- **Poster:** varje post har `idempotency_key` (UNIQUE) och eventuellt `external_id` (UNIQUE).
+  - **Samma nyckel och samma innehåll** är ett omförsök. Det ger samma post (`ledger.replayed`), så posten räknas en gång.
+  - **En ny post med ett externt ID som redan finns** avvisas och loggas som `ledger.duplicate_refused`.
+- **Händelser:** händelsernas ID:n är unika, och revisionsloggens `seq` är unik.
+
+### Agentstatus (härledd, regeln är den här)
+| Status | När |
+|---|---|
+| `offline` | livscykeln är `suspended` eller `retired` |
+| `blocked` | agentens pågående uppgift har status `blocked` |
+| `waiting` | agenten har en förfrågan som väntar på en grundare |
+| `working` | agenten har en pågående uppgift (`assigned` eller `in_progress`) |
+| `idle` | aktiv utan uppgift |
+| `unknown` | annan livscykel, till exempel `created` eller `testing`. Visas inte som status |
+
+En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `caller`.
+- **Lyckade åtgärder** är `simulation.action` med `outcome = done`.
+- **Misslyckade** är andra utfall plus `tool.denied` för agenten.
+
+### KV-nycklar
+| Nyckel | Skrivs av | Innehåll |
+|---|---|---|
+| `snapshot:latest`, `snapshot:<YYYY-MM-DD>` | `py -m aie publish` | snapshoten |
+| `report:<fil>` | `py -m aie publish --reports` | de tre senaste dagliga rapporterna (35 dagar) |
+| `state:company`, `state:scout`, `state:pilot` | `scripts/state.sh push` | krypterad databaskopia (D-093) |
+
 ## Overifierat
 - **Pilotens databas:** pod-orders har ingen cachepost bland de 20 senaste, så om pilotens databas har några poster är inte verifierat. Den kan inte läsas utan att köra workflowen.
 - **Groq-kvoten i drift:** Groqs verkliga gratiskvot kontrolleras inte här. `provider_usage` räknar bara det som systemet självt har använt.

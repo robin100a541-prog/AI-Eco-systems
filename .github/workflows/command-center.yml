@@ -1,0 +1,37 @@
+# Command Center: JS-tester för Pages Functions och gränssnittet med Nodes inbyggda testkörare (inga npm-paket).
+# Körs bara när command-center/ ändras. Kontrollen krävs inte av grenskyddet, så sökvägsfiltret är säkert.
+name: command-center
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ai-enterprise/command-center/**"
+      - ".github/workflows/command-center.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ai-enterprise/command-center/**"
+      - ".github/workflows/command-center.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: command-center-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: ai-enterprise/command-center
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: node --test
+        run: node --experimental-default-type=module --test "tests/*.test.mjs"
