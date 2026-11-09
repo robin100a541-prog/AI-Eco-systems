@@ -90,3 +90,23 @@ Frågorna står i slutrapporten och i PR:en.
 - **Live-indikatorn** betyder i D1 att servern svarar. Den riktiga strömmen kommer i D2.
 - **Department och Agent** står i sidomenyn fast de egentligen är detaljsidor, eftersom skalet ska ha alla nio sidor.
 - **Typsnitten** kommer från fontsource 5.1.0 (OFL) via jsDelivr. Det är bara latinska tecken, men å, ä och ö ingår.
+- **PR #198** fick `founder-approved` och slogs ihop när CI var grön (21f94be).
+
+## 2026-11-09: rörelsebibliotek (D-084)
+**Begäran:** grundarna valde GSAP, Lenis och React Bits.
+
+**Gjort:**
+- **GSAP** 3.15.1 hämtades från GitHub-taggen. Ett GitHub-repo saknade släpp (API:t gav 404), så den senaste taggen som också är `latest` på npm valdes.
+- **Lenis** 1.3.27 hämtades från npm-paketet över https, eftersom GitHub-repot inte innehåller någon byggd fil.
+- **Kontroll:** båda filerna gav samma SHA-256 från två olika källor.
+- **React Bits** licens lästes: MIT + Commons Clause. CountUp, SpotlightCard och AnimatedList byggdes om utan React, fjäder eller studs.
+
+**Prövat i appens webbläsare** mot en tillfällig kopia. Panelen var dold, så requestAnimationFrame körde inte, och GSAP:s klocka stegades därför för hand med `gsap.updateRoot`.
+- **Inga fel:** inga konsolfel och inga CSP-fel.
+- **Siffrorna:** räknas jämnt till exakt 115.00 utan att gå över.
+- **Inträdet:** går från 0 till 1.
+- **Utan bildrutor:** det rätta värdet står kvar, och allt syns.
+
+**Fel som hittades och rättades:** countUp skrev "0.00" innan den första bildrutan. I en dold flik hade fel siffra då kunnat stå kvar.
+
+**Inte prövat:** hur animationerna och Lenis känns i en synlig webbläsare. Det prövar Yorgo.

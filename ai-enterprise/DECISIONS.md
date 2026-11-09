@@ -8,6 +8,20 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-084 Rörelsebibliotek i kommandocentralen: GSAP och Lenis som färdigbyggda filer, tre effekter från React Bits ombyggda
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (val av bibliotek), formulerat av Claude 2026-11-09 · **Bygger på:** D-002, D-073 · **Undantag från:** regeln om inga npm-paket i `CLAUDE.md` · **Gäller:** FR-27, FR-28
+- **Beslut:**
+  1. **GSAP 3.15.1** (`gsap.min.js`) och **Lenis 1.3.27** (`lenis.min.js` och `lenis.css`) läggs in som färdigbyggda filer med licensen. De hämtas utan npm och utan att klona repona, och läggs i `src/aie/dashboard/web/vendor/<bibliotek>/<version>/`. Varje fil står med källa, licens, syfte och SHA-256 i `vendor/README.md`, och ett test kontrollerar att filerna är oförändrade.
+  2. **Allt laddas från den egna servern.** Inga CDN används, och Content-Security-Policy förblir `default-src 'self'`.
+  3. **React Bits installeras inte.** Högst tre effekter byggs om i vanlig JavaScript och CSS i `web/effects.js`: CountUp, SpotlightCard och AnimatedList. Källan och licensen (MIT + Commons Clause) anges i en kommentar och i `vendor/README.md`, och de ombyggda effekterna sprids aldrig som ett eget paket.
+  4. **Rörelsen** är kort och använder ease-out utan studs, och inget rör sig utan att betyda något. Vid `prefers-reduced-motion` visas slutläget direkt.
+  5. **Lenis** används bara för sidans huvudscroll på desktop med mus. Det är av på touch och vid reducerad rörelse, och används aldrig i tabeller, chatt, modaler eller rullbara paneler.
+  6. **ScrollTrigger** hämtas inte förrän ett steg behöver det.
+- **Avvikelse från instruktionen:** filerna ligger i `src/aie/dashboard/web/vendor/` i stället för `ai-enterprise/command-center/vendor/`.
+  - **Skäl:** D-073 och D1 lägger hela gränssnittet i `web/`, och servern serverar bara den mappen, med skydd mot sökvägar utanför.
+  - **Konsekvens:** en andra rot skulle kräva en extra statisk route.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09, grundarnas val av bibliotek, givet i Claude Code-session)
+
 ### D-083 Robins kontaktuppgifter ligger kvar när repot är privat
 - **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin, 2026-11-08 · **Bygger på:** D-074, D-076 · **Följer upp:** D-076 (Robins val)
 - **Beslut:**

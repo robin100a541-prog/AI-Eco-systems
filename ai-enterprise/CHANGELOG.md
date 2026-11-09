@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-09 — Dashboard: rörelse med GSAP och Lenis (D-084)
+### Tillagt
+- `src/aie/dashboard/web/vendor/`: färdigbyggda filer laddade från den egna servern, och `README.md` med källa, licens, syfte och SHA-256 för varje fil.
+  - GSAP 3.15.1 (`gsap.min.js`)
+  - Lenis 1.3.27 (`lenis.min.js` och `lenis.css`, MIT)
+  - React Bits licens (MIT + Commons Clause)
+- `web/effects.js`: tre effekter från React Bits ombyggda i vanlig JavaScript.
+  - **countUp:** uppräknande siffror.
+  - **spotlight:** guldljus och kant på väntande godkännanden, och i D3 på agentkorten.
+  - **listIn och listAdd:** animerad lista, och live-flödet i D2.
+- `web/boot.js` och `app.js`: panelernas inträde, sidövergångar, statusbyte på Live/Offline och Lenis för huvudscrollen på desktop.
+  - **Reducerad rörelse:** allt respekterar `prefers-reduced-motion`.
+  - **Skydd:** innehållet syns även om animationen aldrig startar.
+- `DESIGN.md`: avsnittet "Rörelse".
+- `DECISIONS.md`: **D-084**, godkänt av båda.
+- **Tester:** 4 nya i `tests/unit/test_dashboard_server.py`. De kontrollerar vendorfilernas SHA-256 och licenser, att allt laddas från `/static/`, att rörelsen saknar studs och respekterar reducerad rörelse, och slutvärden i HTML.
+### Ändrat
+- `CLAUDE.md`: undantaget för GSAP och Lenis (D-084) är tillagt i regeln om npm-paket.
+
 ## [Unreleased] — 2026-11-08 — Dashboard D1: server, inloggning och skal
 ### Tillagt
 - `src/aie/dashboard/server.py`: kommandocentralen som lokal server med `ThreadingHTTPServer`.

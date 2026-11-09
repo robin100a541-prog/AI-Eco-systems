@@ -126,4 +126,33 @@ code { background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
   .metric { padding: .9rem; }
 }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+/* Motion (D-084, DESIGN.md "Rörelse"). boot.js sets html.motion before paint; app.js animates the content
+   in and removes the class. If that never happens, the fallback shows everything after 1.2 s. */
+html.motion #content > h1,
+html.motion #content > .card,
+html.motion #content > .metrics > .card { visibility: hidden; animation: aie-reveal 0s linear 1.2s forwards; }
+@keyframes aie-reveal { to { visibility: visible; } }
+.live, .live .dot { transition: color .25s ease-out, background-color .25s ease-out; }
+
+/* Spotlight (rebuilt from React Bits SpotlightCard, see effects.js): a soft gold light under the pointer
+   and a lit border. Only on items marked data-spotlight. */
+.spotlight { position: relative; isolation: isolate; --spot-x: 50; --spot-y: 50; }
+.spotlight::before,
+.spotlight::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  opacity: 0; transition: opacity .25s ease-out; }
+.spotlight::before { z-index: -1;
+  background: radial-gradient(220px circle at calc(var(--spot-x) * 1%) calc(var(--spot-y) * 1%),
+    color-mix(in srgb, var(--gold) 12%, transparent), transparent 70%); }
+.spotlight::after { padding: 1px;
+  background: radial-gradient(160px circle at calc(var(--spot-x) * 1%) calc(var(--spot-y) * 1%),
+    color-mix(in srgb, var(--gold-light) 55%, transparent), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.spotlight.is-lit::before, .spotlight.is-lit::after { opacity: 1; }
+.approval.spotlight { border-radius: var(--radius-btn); padding-left: .5rem; padding-right: .5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  html.motion #content > * { visibility: visible !important; }
+  .spotlight::before { display: none; }
+}

@@ -245,10 +245,10 @@ class TestShell(ServerCase):
         page = data.decode("utf-8")
         pending = self.dashboard.pending_approvals()
         self.assertEqual(len(pending), 3)
-        self.assertIn("Pending approvals <span class='count'>3</span>", page)
+        self.assertIn("Pending approvals <span class='count' data-count='3'>3</span>", page)
         for p in pending:
             self.assertIn(f"#{p['id']} Decision on task {p['task']}", page)
-            self.assertIn(srv._money(p["amount_minor"], "SIM"), page)
+            self.assertIn(srv._money(p["amount_minor"], "SIM"), page)  # slutvärdet finns utan JavaScript
         self.assertNotIn("could not be read", page)
 
     def test_css_uses_the_design_tokens_exactly(self):
@@ -278,6 +278,75 @@ class TestShell(ServerCase):
         _, cookie = self.login()
         res, data = self.request("GET", "/static/fonts/inter-latin-400-normal.woff2", cookie=cookie)
         self.assertEqual((res.status, res.getheader("Content-Type"), data[:4]), (200, "font/woff2", b"wOF2"))
+
+
+class TestMotion(ServerCase):
+    VENDOR = srv.WEB / "vendor"
+
+    def test_vendor_files_are_unchanged_and_listed_with_source_and_license(self):
+        """Verifies D-084: varje fil i vendor/ står i vendor/README.md med rätt SHA-256, och licenserna finns."""
+        import hashlib
+
+        readme = (self.VENDOR / "README.md").read_text(encoding="utf-8")
+        rows = re.findall(r"^\| `([^`]+)` \|.*\| `([0-9a-f]{64})` \|$", readme, re.M)
+        self.assertGreaterEqual(len(rows), 5)
+        for name, digest in rows:
+            self.assertEqual(hashlib.sha256((self.VENDOR / name).read_bytes()).hexdigest(), digest, name)
+        files = {p.relative_to(self.VENDOR).as_posix() for p in self.VENDOR.rglob("*") if p.is_file()}
+        self.assertEqual(files - {"README.md"}, {n for n, _ in rows} | {"gsap/3.15.1/LICENSE.md"})
+        self.assertIn("@license Copyright 2026, GreenSock", (self.VENDOR / "gsap/3.15.1/gsap.min.js").read_text(encoding="utf-8")[:300])
+        self.assertIn("MIT License", (self.VENDOR / "lenis/1.3.27/LICENSE").read_text(encoding="utf-8"))
+        self.assertIn("Commons Clause", (self.VENDOR / "react-bits/LICENSE.md").read_text(encoding="utf-8"))
+        effects = (srv.WEB / "effects.js").read_text(encoding="utf-8")
+        for credit in ("React Bits", "David Haz", "MIT + Commons Clause", "vendor/react-bits/LICENSE.md"):
+            self.assertIn(credit, effects)
+
+    def test_everything_loads_from_the_own_server(self):
+        """Verifies D-084, FR-28: alla skript och stilmallar laddas från /static/, CSP är fortfarande bara 'self'."""
+        _, cookie = self.login()
+        res, data = self.request("GET", "/", cookie=cookie)
+        page = data.decode("utf-8")
+        self.assertEqual(res.getheader("Content-Security-Policy").split(";")[0], "default-src 'self'")
+        refs = re.findall(r'<(?:script|link)[^>]+(?:src|href)="([^"]+)"', page)
+        self.assertGreaterEqual(len(refs), 6)
+        for ref in refs:
+            self.assertTrue(ref.startswith("/static/"), ref)
+            res, body = self.request("GET", ref, cookie=cookie)
+            self.assertEqual(res.status, 200, ref)
+            self.assertTrue(res.getheader("Content-Type").startswith(
+                "text/javascript" if ref.endswith(".js") else "text/css"), ref)
+        self.assertNotIn("<script>", page)  # inga inbäddade skript; CSP blockerar dem ändå
+
+    def test_motion_is_calm_and_respects_reduced_motion(self):
+        """Verifies D-084: ingen studs, korta tider, och prefers-reduced-motion stänger av rörelse och Lenis;
+        Lenis är av på touch och används aldrig i tabeller, chatt, modaler och rullbara paneler."""
+        app = (srv.WEB / "app.js").read_text(encoding="utf-8")
+        effects = (srv.WEB / "effects.js").read_text(encoding="utf-8")
+        boot = (srv.WEB / "boot.js").read_text(encoding="utf-8")
+        css = (srv.WEB / "app.css").read_text(encoding="utf-8")
+        code = re.sub(r"//[^\n]*", "", app + effects)  # bara koden, inte kommentarerna
+        self.assertNotRegex(code,r"(?i)bounce|elastic|back\.|spring|yoyo|repeat:\s*-1")
+        for seconds in re.findall(r"duration:\s*([0-9.]+)", code):
+            self.assertLessEqual(float(seconds), 0.35)
+        self.assertIn("prefers-reduced-motion: reduce", boot + app + effects)
+        self.assertIn("if (reduced()) return;", effects)
+        self.assertIn("!reduceQuery.matches", app)
+        self.assertRegex(app, r'"ontouchstart" in window \|\| navigator\.maxTouchPoints > 0')
+        self.assertIn("(min-width: 768px) and (hover: hover) and (pointer: fine)", app)
+        self.assertIn('node.closest("table, dialog, [role=dialog], .chat, .scroll-panel")', app)
+        self.assertIn("lenis.destroy()", app)
+        self.assertRegex(css, r"@media \(prefers-reduced-motion: reduce\)[^@]*visibility: visible !important")
+        self.assertIn("animation: aie-reveal 0s linear 1.2s forwards", css)  # innehållet visas även om JS fallerar
+
+    def test_counted_numbers_keep_their_final_value_in_the_html(self):
+        """Verifies FR-29, D-084: siffror som räknas upp har slutvärdet i HTML; JavaScript räknar inget eget värde."""
+        _, cookie = self.login()
+        _, data = self.request("GET", "/", cookie=cookie)
+        page = data.decode("utf-8")
+        for value, text in re.findall(r"data-count='([0-9.]+)'[^>]*>([^<]+)<", page):
+            self.assertTrue(text.replace(" ", "").startswith(value), (value, text))
+        self.assertIn("data-animated-list", page)
+        self.assertIn("data-spotlight", page)
 
 
 class TestSetCode(unittest.TestCase):
