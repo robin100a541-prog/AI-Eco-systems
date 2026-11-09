@@ -261,9 +261,21 @@ class Handler(BaseHTTPRequestHandler):
             label_class="warn" if self.dashboard.label == "SIM" else "bad")
 
 
+class ExclusiveServer(ThreadingHTTPServer):
+    """På Windows låter SO_REUSEADDR en andra server ta en port som redan används, och då hamnar anropen
+    slumpvis hos någon av dem. Här binds porten exklusivt, så att en upptagen port faktiskt ger fel (Del 0)."""
+
+    allow_reuse_address = sys.platform != "win32"
+
+    def server_bind(self) -> None:
+        if sys.platform == "win32" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
 def make_server(dashboard: Dashboard, port: int = DEFAULT_PORT, lan: bool = False) -> ThreadingHTTPServer:
     handler = type("BoundHandler", (Handler,), {"dashboard": dashboard})
-    server = ThreadingHTTPServer(("0.0.0.0" if lan else "127.0.0.1", port), handler)
+    server = ExclusiveServer(("0.0.0.0" if lan else "127.0.0.1", port), handler)
     server.daemon_threads = True
     return server
 
@@ -278,22 +290,43 @@ def lan_address() -> str:
             return socket.gethostbyname(socket.gethostname())
 
 
-def serve(config_dir: Path, port: int = DEFAULT_PORT, lan: bool = False) -> int:
+PORT_TRIES = 10
+
+
+def bind(dashboard: Dashboard, port: int, lan: bool) -> ThreadingHTTPServer:
+    """Försöker porten och de nio närmaste. En upptagen port var en orsak till att D1 inte startade (Del 0)."""
+    last: OSError | None = None
+    for candidate in range(port, port + PORT_TRIES):
+        try:
+            return make_server(dashboard, candidate, lan)
+        except OSError as exc:
+            last = exc
+    raise OSError(f"portarna {port}–{port + PORT_TRIES - 1} är upptagna ({last})")
+
+
+def serve(config_dir: Path, port: int = DEFAULT_PORT, lan: bool = False, open_browser: bool = False) -> int:
     try:
         dashboard = Dashboard(config_dir)
     except runtime.StartupError as exc:
         return runtime._fail(exc)
     try:
-        server = make_server(dashboard, port, lan)
+        server = bind(dashboard, port, lan)
     except OSError as exc:
-        print(f"FEL: kunde inte starta på port {port}: {exc}", file=sys.stderr)
+        print(f"FEL: kunde inte starta: {exc}", file=sys.stderr)
         return 1
-    print(f"Command center ({dashboard.label}) is running at http://127.0.0.1:{server.server_address[1]}/")
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    print(f"Command center ({dashboard.label}) is running at {url}")
+    if server.server_address[1] != port:
+        print(f"(port {port} was busy, so {server.server_address[1]} is used)")
     if lan:
         print(f"On your phone (same Wi-Fi): http://{lan_address()}:{server.server_address[1]}/")
     if not dashboard.auth.configured():
         print("No access code is set. Run: py -m aie dashboard set-code --founder Yorgo")
-    print("Stop with Ctrl+C.")
+    print("Keep this window open. Stop with Ctrl+C.")
+    if open_browser:
+        import webbrowser
+
+        threading.Timer(0.5, webbrowser.open, (url,)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -303,7 +336,31 @@ def serve(config_dir: Path, port: int = DEFAULT_PORT, lan: bool = False) -> int:
     return 0
 
 
-def set_code_command(config_dir: Path, founder: str, read=getpass.getpass, env_path: Path | None = None) -> int:
+def has_code(config_dir: Path, founder: str | None = None, env_path: Path | None = None) -> int:
+    """0 om en kod finns (för grundaren, eller för någon om ingen anges), annars 1. Skriver aldrig ut hashen."""
+    try:
+        config = runtime._load(Path(config_dir), console=False)
+    except runtime.StartupError as exc:
+        return runtime._fail(exc)
+    auth = Authenticator(env_path or Path(config_dir).resolve().parent / ".env", tuple(config.system.founders))
+    configured = auth.configured()
+    return 0 if (founder.strip().lower() in configured if founder else configured) else 1
+
+
+def _read_code(prompt: str) -> str:
+    """getpass döljer koden. Fungerar den inte i terminalen (t.ex. Git Bash) används vanlig inmatning med varning."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", getpass.GetPassWarning)
+        try:
+            return getpass.getpass(prompt)
+        except (getpass.GetPassWarning, EOFError, OSError):
+            print("(this terminal cannot hide input; the code will be visible while you type)")
+            return input(prompt)
+
+
+def set_code_command(config_dir: Path, founder: str, read=_read_code, env_path: Path | None = None) -> int:
     """Frågar efter koden två gånger (visas inte på skärmen) och sparar bara hashen i `.env`."""
     try:
         config = runtime._load(Path(config_dir), console=False)

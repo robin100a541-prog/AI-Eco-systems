@@ -349,6 +349,37 @@ class TestMotion(ServerCase):
         self.assertIn("data-spotlight", page)
 
 
+class TestLocalStart(ServerCase):
+    def test_busy_port_moves_to_the_next(self):
+        """Verifies FR-27: är porten upptagen startar servern på nästa lediga i stället för att stoppa (Del 0)."""
+        first = srv.bind(self.dashboard, 0, False)
+        self.addCleanup(first.server_close)
+        busy = first.server_address[1]
+        second = srv.bind(self.dashboard, busy, False)
+        self.addCleanup(second.server_close)
+        self.assertNotEqual(second.server_address[1], busy)
+        self.assertLess(second.server_address[1] - busy, srv.PORT_TRIES)
+        self.assertEqual(second.server_address[0], "127.0.0.1")
+
+    def test_has_code(self):
+        """Verifies FR-28: has-code svarar 0 när grundaren har en kod och 1 annars, utan att skriva ut något."""
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(srv.has_code(self.config_dir, "Yorgo", self.env_path), 0)
+            self.assertEqual(srv.has_code(self.config_dir, "Robin", self.env_path), 1)
+            self.assertEqual(srv.has_code(self.config_dir, None, self.env_path), 0)
+            self.assertEqual(srv.has_code(self.config_dir, None, self.dir / "missing.env"), 1)
+        self.assertEqual(out.getvalue(), "")
+
+    def test_dashboard_cmd_sets_everything_itself(self):
+        """Verifies FR-27: dashboard.cmd sätter PYTHONPATH, hittar Python, sätter koden, skapar SIM-testdata
+        och håller fönstret öppet vid fel, så att ett enda kommando räcker på Windows."""
+        cmd = (ROOT / "dashboard.cmd").read_text(encoding="utf-8")
+        for needed in ('cd /d "%~dp0"', 'set "PYTHONPATH=%~dp0src"', "where py", "dashboard has-code",
+                       "dashboard set-code", "scripts\seed_sim.py", "dashboard --open %*", "pause"):
+            self.assertIn(needed, cmd)
+
+
 class TestSetCode(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()

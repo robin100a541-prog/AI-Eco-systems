@@ -6,6 +6,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
+concurrency:  # en ny commit eller etikett på samma PR avbryter den pågående kontrollen (Actions-minuter)
+  group: protected-files-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

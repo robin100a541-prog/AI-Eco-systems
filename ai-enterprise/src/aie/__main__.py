@@ -222,7 +222,8 @@ def build_parser() -> argparse.ArgumentParser:
                      help="scripted = deterministiska agenter (standard), local = lokal modell via Ollama, "
                           "groq = Groqs gratisnivå med GROQ_API_KEY, bara simulerade data (docs/setup.md)")
     db = add("dashboard", "kommandocentralen: lokal server (standard) eller set-code för en grundares åtkomstkod (D1, D-073)")
-    db.add_argument("action", nargs="?", choices=("serve", "set-code"), default="serve")
+    db.add_argument("action", nargs="?", choices=("serve", "set-code", "has-code"), default="serve")
+    db.add_argument("--open", action="store_true", help="öppna webbläsaren när servern har startat")
     db.add_argument("--port", type=int, default=8765, help="porten (standard: 8765)")
     db.add_argument("--lan", action="store_true", help="lyssna på alla nätverkskort så att mobilen når servern")
     db.add_argument("--founder", help="set-code: grundaren, till exempel Yorgo eller Robin")
@@ -400,12 +401,14 @@ def _approvals(args: argparse.Namespace) -> int:
 def _dashboard(args: argparse.Namespace) -> int:
     from .dashboard import server  # importeras bara när kommandot används
 
+    if args.action == "has-code":
+        return server.has_code(args.config_dir, args.founder)
     if args.action == "set-code":
         if not args.founder:
             print("FEL: ange --founder, till exempel --founder Yorgo", file=sys.stderr)
             return 1
         return server.set_code_command(args.config_dir, args.founder)
-    return server.serve(args.config_dir, args.port, args.lan)
+    return server.serve(args.config_dir, args.port, args.lan, args.open)
 
 
 def main(argv: list[str] | None = None) -> int:

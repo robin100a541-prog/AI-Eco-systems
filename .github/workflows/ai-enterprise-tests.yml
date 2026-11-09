@@ -1,32 +1,63 @@
-# Kör ai-enterprise-testerna på varje PR och varje push till main (D-016: gröna tester före merge).
+# Kör ai-enterprise-testerna (D-016: gröna tester före merge). Actions-minuter (Command Center Del 0, 2026-11-09):
+# - PR mot main: båda Python-versionerna, eftersom de två kontrollerna krävs av grenskyddet.
+# - Push till main: bara 3.12. Koden är redan testad på båda i PR:en.
+# - En PR som bara ändrar dokument utan betydelse för testerna (samtalsloggar, rapporter och .md i roten) kör inga
+#   tester. Jobbet körs ändå, så att de krävda kontrollerna rapporteras, men stegen hoppas över. Filtret ligger i
+#   jobbet och inte i `on.paths`, eftersom en krävd kontroll som aldrig rapporteras blockerar merge.
+# - Concurrency: en ny commit på samma PR avbryter den pågående körningen.
+# - pip-cache för Pillow.
 name: ai-enterprise tests
 
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unittest:
     name: unittest (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ${{ github.event_name == 'push' && fromJSON('["3.12"]') || fromJSON('["3.11", "3.12"]') }}
     defaults:
       run:
         working-directory: ai-enterprise
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Behöver ändringen tester?
+        id: changes
+        working-directory: .
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          files=$(git diff --name-only "$BASE"...HEAD || echo "unknown")
+          echo "$files"
+          relevant=$(echo "$files" | grep -vE '^(ai-enterprise/docs/(conversations|reports|opportunities|bot-reports)/|[^/]+\.md$)' || true)
+          if [ -n "$relevant" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; echo "Bara dokument: inga tester behövs." >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/setup-python@v5
+        if: steps.changes.outputs.run == 'true'
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: .github/workflows/ai-enterprise-tests.yml
       # D-070 punkt 8: Pillow (HPND) är det enda tillåtna beroendet, och bara i src/aie/pod/design/.
       - name: Install Pillow (only for aie.pod.design)
+        if: steps.changes.outputs.run == 'true'
         run: pip install "pillow==12.2.0"
       - name: Run tests
+        if: steps.changes.outputs.run == 'true'
         run: python -m unittest discover -s tests -v
