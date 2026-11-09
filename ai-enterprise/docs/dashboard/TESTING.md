@@ -76,3 +76,4 @@ Gjort 2026-11-08 i appens inbyggda webbläsare, mot en tillfällig kopia med tes
 - [x] **390 px:** menyn ligger överst och kan fällas ihop, och sidan rullar inte i sidled (`scrollWidth` 390 = `clientWidth` 390).
 - [x] **Approvals** visar en tom vy med "This page is filled in step D4."
 - [ ] **En riktig mobil** på samma wifi med `--lan`. Den kontrollen görs av Yorgo.
+- [ ] **Rörelsen i en synlig webbläsare (D-084):** panelerna glider in lugnt, siffrorna räknas upp utan att gå över, mjuk scroll fungerar bara på datorn med mus, och med "Minska rörelse" påslaget i Windows (Inställningar, Hjälpmedel, Visuella effekter, Animeringseffekter av) står allt still. Den kontrollen görs av Yorgo.

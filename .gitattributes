@@ -1,0 +1,2 @@
+# Tredjepartsfiler ska vara byte för byte som de hämtades; SHA-256 kontrolleras i testerna (D-084).
+ai-enterprise/src/aie/dashboard/web/vendor/** -text

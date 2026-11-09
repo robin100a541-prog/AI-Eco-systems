@@ -58,6 +58,32 @@ Varje sida har samma skal:
 
 I mobilbredd (390 px) fälls sidomenyn ihop till en meny.
 
+## Rörelse (D-084)
+Rörelsen ska kännas lugn och precis. Den görs med GSAP, och Lenis används för scrollen. Filerna och licenserna står i `src/aie/dashboard/web/vendor/README.md`.
+
+| Rörelse | Hur | Tid | Kurva |
+|---|---|---|---|
+| Panelernas inträde | rubriken och korten tonar in och stiger 8 px, med 0,05 s mellan dem | 0,35 s | `power2.out` |
+| Sidövergång | innehållet tonar ut 4 px uppåt innan nästa sida laddas, och sedan in som ovan | 0,15 s ut | `power1.out` |
+| Uppräknande siffror (CountUp) | räknar från 0 till slutvärdet en gång när siffran syns. Slutvärdet finns i HTML och för skärmläsare | 0,6–1,1 s | `power3.out` |
+| Statusbyte (Live/Offline) | punkten krymper från 1,8 till 1 och färgen glider över | 0,25–0,35 s | `power2.out` |
+| Live-flödet (AnimatedList) | nya rader tonar in med 4 px, och listan när sidan laddas med 0,05 s mellan raderna | 0,3 s | `power2.out` |
+| Spotlight | mjukt guldljus under pekaren och upplyst kant, bara med mus. Används på väntande godkännanden och i D3 på agentkorten | 0,25 s | `power2.out` |
+| Radarn | byggs inte än. När den finns används samma regler | — | — |
+
+**Regler:**
+- **Mening:** inget rör sig utan att betyda något, och inget går i slinga.
+- **Kurvan:** bara ease-out, aldrig studs, fjäder eller `back`.
+- **`prefers-reduced-motion`:** då visas slutläget direkt, Lenis är av och spotlight-ljuset följer inte pekaren.
+- **Lenis:**
+  - **På:** bara på desktop med mus, från 768 px.
+  - **Av:** på touch.
+  - **Aldrig i** `table`, `dialog`, `.chat`, `.scroll-panel` eller element med `data-lenis-prevent`.
+- **Innehållet syns alltid:**
+  - **Före första målningen:** `boot.js` döljer innehållet bara om rörelse är tillåten.
+  - **Om animationen aldrig startar:** CSS visar allt efter 1,2 s, och en timer hoppar till slutet.
+  - **Siffror:** en siffra ändras först när animationen faktiskt går, så ett fel värde visas aldrig.
+
 ## Det som återanvänds från Ekobyn
 Se `GAP_ANALYSIS.md`:
 - **Byggfri struktur:** inget npm, och `node --test` för gränssnittet.

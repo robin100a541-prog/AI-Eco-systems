@@ -230,23 +230,25 @@ class Handler(BaseHTTPRequestHandler):
         try:
             pending = self.dashboard.pending_approvals()
             rows = "".join(
-                f"<li class='approval'><span class='pill warn'>Pending</span>"
+                f"<li class='approval' data-spotlight><span class='pill warn'>Pending</span>"
                 f"<span class='what'>#{p['id']} {html.escape(p['kind'].capitalize())} on task {p['task']}</span>"
-                f"<span class='amount'>{html.escape(_money(p['amount_minor'], p['currency']))}</span>"
+                f"<span class='amount' data-count='{p['amount_minor'] / 100:.2f}' data-decimals='2' "
+                f"data-suffix=' {html.escape(p['currency'])}'>{html.escape(_money(p['amount_minor'], p['currency']))}</span>"
                 f"<span class='muted'>from {html.escape(p['requested_by'])} · needs {p['required']} founder</span></li>"
                 for p in pending)
-            approvals = (f"<ul class='approvals'>{rows}</ul>" if pending
+            approvals = (f"<ul class='approvals' data-animated-list>{rows}</ul>" if pending
                          else "<p class='empty'>No approvals are waiting.</p>")
             count = len(pending)
         except Exception as exc:  # noqa: BLE001 — sidan ska visa att data saknas, inte krascha
             log.error("kunde inte läsa godkännandekön: %s", type(exc).__name__)
             approvals, count = "<p class='notice bad'>The approval queue could not be read (data missing).</p>", "–"
+        count_attr = f" data-count='{count}'" if isinstance(count, int) else ""
         cards = "".join(
             f"<section class='card metric'><h3>{t}</h3><p class='value muted'>Missing</p>"
             f"<p class='muted'>Filled in step D5.</p></section>"
             for t in ("Capital", "Realized net profit", "Tax reserve", "Reserve"))
         return (f"<div class='metrics'>{cards}</div>"
-                f"<section class='card'><h2>Pending approvals <span class='count'>{count}</span></h2>{approvals}"
+                f"<section class='card'><h2>Pending approvals <span class='count'{count_attr}>{count}</span></h2>{approvals}"
                 f"<p class='muted'>Read from the core approval queue. Approve and reject arrive in step D4.</p></section>"
                 f"<section class='card empty'><h2>Live activity</h2><p class='muted'>Filled in step D2.</p></section>")
 
