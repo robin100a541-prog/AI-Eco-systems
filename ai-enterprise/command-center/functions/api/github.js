@@ -26,11 +26,19 @@ export async function loadGithub(env, fetchImpl = fetch) {
     if (!res.ok) throw new Error(`github ${path.split("?")[0]} ${res.status}`);
     return res.json();
   };
-  const [commits, pulls, runs] = await Promise.all([
+  const month = new Date().toISOString().slice(0, 7);
+  const [commits, pulls, runs, monthRuns] = await Promise.all([
     get("commits?per_page=15"),
     get("pulls?state=all&per_page=15&sort=updated&direction=desc"),
     get("actions/runs?per_page=20"),
+    get(`actions/runs?per_page=100&created=%3E%3D${month}-01`),
   ]);
+  // Uppskattning: körtid per körning (start till slut), avrundad uppåt till hel minut, för månadens första 100 körningar.
+  // Fakturerade jobbminuter kräver adminrätt; därför märks värdet "est." i gränssnittet.
+  const minutes = (monthRuns.workflow_runs || []).reduce((n, r) => {
+    const ms = Date.parse(r.updated_at) - Date.parse(r.run_started_at || r.created_at);
+    return n + (Number.isFinite(ms) && ms > 0 ? Math.ceil(ms / 60000) : 0);
+  }, 0);
   return {
     generated_at: new Date().toISOString(),
     commits: pick(commits, {
@@ -41,6 +49,8 @@ export async function loadGithub(env, fetchImpl = fetch) {
       id: (p) => `pr:${p.number}`, number: (p) => p.number, title: (p) => p.title.slice(0, 140), state: (p) => (p.merged_at ? "merged" : p.state),
       author: (p) => p.user && p.user.login, at: (p) => p.updated_at, url: (p) => p.html_url,
     }),
+    actions_month: { month, runs: (monthRuns.workflow_runs || []).length, total_runs: monthRuns.total_count ?? null,
+      minutes_estimate: minutes, source: "GitHub API actions/runs (run time, not billed job minutes)" },
     runs: pick(runs.workflow_runs, {
       id: (r) => `run:${r.id}`, name: (r) => r.name, status: (r) => r.status, conclusion: (r) => r.conclusion,
       branch: (r) => r.head_branch, event: (r) => r.event, at: (r) => r.updated_at, url: (r) => r.html_url,

@@ -91,7 +91,7 @@ test("SR-10: the GitHub feed sends the token only to api.github.com and returns 
     seen.push({ url, auth: init.headers.Authorization });
     if (url.includes("/commits")) return Response.json([{ sha: "0123456789abcdef", html_url: "u", author: { login: "yorgo" }, commit: { message: "feat: x\n\nbody secret", author: { name: "Y", date: "2026-11-09T00:00:00Z" } } }]);
     if (url.includes("/pulls")) return Response.json([{ number: 7, title: "t", state: "closed", merged_at: "2026-11-09", user: { login: "robin" }, updated_at: "2026-11-09", html_url: "u", body: "private" }]);
-    return Response.json({ workflow_runs: [{ id: 1, name: "company-daily", status: "completed", conclusion: "success", head_branch: "main", event: "schedule", updated_at: "2026-11-09", html_url: "u" }] });
+    return Response.json({ total_count: 1, workflow_runs: [{ id: 1, name: "company-daily", status: "completed", conclusion: "success", head_branch: "main", event: "schedule", run_started_at: "2026-11-09T10:00:00Z", updated_at: "2026-11-09T10:02:30Z", html_url: "u" }] });
   };
   const out = await loadGithub({ GITHUB_READ_TOKEN: "ghp_secret_test" }, fake);
   assert.ok(seen.every((s) => s.url.startsWith("https://api.github.com/") && s.auth === "Bearer ghp_secret_test"));
@@ -101,4 +101,5 @@ test("SR-10: the GitHub feed sends the token only to api.github.com and returns 
   assert.equal(out.commits[0].id, "commit:0123456789abcdef");
   assert.equal(out.pulls[0].state, "merged");
   assert.equal(out.runs[0].id, "run:1");
+  assert.equal(out.actions_month.minutes_estimate, 3);  // 2,5 minuter avrundat uppåt
 });

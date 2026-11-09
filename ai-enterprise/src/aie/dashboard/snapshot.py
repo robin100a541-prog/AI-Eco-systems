@@ -12,6 +12,7 @@ Regler (docs/command-center/DATA.md):
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter, defaultdict
 from datetime import UTC, date, datetime, timedelta
 
@@ -82,6 +83,24 @@ def build_snapshot(system, config, config_dir, *, now: str | None = None, real_s
         "audit_chain": {"ok": audit.ok, "length": audit.checked if hasattr(audit, "checked") else _count(db, "audit_log"),
                         "first_bad_seq": audit.first_bad_seq, "source": "AuditLog.verify", "as_of": at},
         "quotas": _quotas(db, config_dir, at),
+        "tasks": _tasks(db, agents, at),
+        "consultations": _consultations(db, at),
+        "lessons": _rows(db, at, "lessons", "SELECT lesson_id, statement, scope, proposed_by, at FROM lessons "
+                         "ORDER BY lesson_id DESC LIMIT 50", ("id", "statement", "scope", "by", "at")),
+        "incidents": _rows(db, at, "incidents", "SELECT incident_id, source, title, reported_by, opened_at FROM incidents "
+                           "ORDER BY incident_id DESC LIMIT 50", ("id", "source", "title", "by", "at")),
+        "tax": _tax(system, currency, at),
+        "rules": {
+            "founders": sorted(config.system.founders),
+            "approval_threshold": config.risk.human_approval_threshold.amount_minor
+            if config.risk.human_approval_threshold is not None else None,
+            "governance_tools": sorted(t for t in permissions.tools if t.startswith("governance.")),
+            "source": "config/system.toml, config/risk_limits.toml, config/permissions.toml", "as_of": at,
+        },
+        # Bara om en kanal är konfigurerad (hemligheten finns i miljön), aldrig värdet (D-091).
+        "notifications": {"ntfy": bool(os.environ.get("NTFY_TOPIC")),
+                          "email": bool(os.environ.get("GMAIL_USER") and os.environ.get("GMAIL_APP_PASSWORD")),
+                          "source": "miljön där snapshoten byggdes", "as_of": at},
     }
     check_snapshot(snap)
     return snap
@@ -104,6 +123,7 @@ def _system(system, db, at: str, commit: str | None) -> dict:
         "last_run": metric(last[0] if last else None, "audit_log: simulation.day", at),
         "last_run_day": metric(json.loads(last[1]).get("day") if last else None, "audit_log: simulation.day", at),
         "version": metric(__version__ + (f"+{commit[:7]}" if commit else ""), "aie.__version__, GITHUB_SHA", at),
+        "database_bytes": metric(db.path.stat().st_size if db.path.exists() else None, "storlek på databasfilen", at),
     }
 
 
@@ -223,6 +243,8 @@ def _agents(system, db, agents, names, permissions, at: str) -> dict:
             "actions_done": done, "actions_failed": failed,
             "success_rate": round(done / (done + failed), 4) if done + failed else None,
             "tools": sorted(mandate.tools) if mandate else [],
+            "recent_runs": [{"at": t, "model": f"{d.get('provider')}/{d.get('model')}", "tokens": d.get("tokens"),
+                             "data_class": d.get("data_class")} for t, d in calls[a.agent_id][-20:]][::-1],
         })
     return {"items": rows, "source": "AgentRegistry, audit_log (llm.call, simulation.action, tool.denied), tasks",
             "as_of": at}
@@ -289,8 +311,7 @@ def _limits(limits, system, entries, at: str) -> dict:
         by_init[e.initiative].append(e)
     if by_init:
         worst = min(compute_result(tuple(v), limits.currency).net_minor for v in by_init.values())
-    used = {
-        "minimum_reserve": pos.liquid_minor if pos else None,
+    used = {  # MINIMUM_RESERVE är ett golv, inte ett tak: ingen "användning" visas för den
         "max_committed_capital": pos.committed_minor if pos else None,
         "max_single_experiment_loss": max(0, -worst) if worst is not None else None,
     }
@@ -370,6 +391,60 @@ def _quotas(db, config_dir, at: str) -> dict:
              "calls_limit": p.get("daily_calls"), "tokens": usage.get(p["name"], (0, 0))[1],
              "tokens_limit": p.get("daily_tokens")} for p in providers]
     return {"items": rows, "source": "provider_usage, config/providers.toml", "as_of": at}
+
+
+def _rows(db, at: str, table: str, sql: str, fields: tuple[str, ...]) -> dict:
+    items = [dict(zip(fields, r)) for r in db.connection.execute(sql)] if _has(db, table) else []
+    for item in items:
+        for k, v in item.items():
+            if isinstance(v, str):
+                item[k] = mask_secrets(v)[:300]
+    return {"items": items, "source": table, "as_of": at}
+
+
+def _tasks(db, agents, at: str) -> dict:
+    dept = {a.agent_id: a.department for a in agents}
+    rows = [{"id": i, "title": mask_secrets(t)[:200], "owner": o, "department": dept.get(o), "status": st, "updated_at": u}
+            for i, t, o, st, u in db.connection.execute(
+                "SELECT task_id, title, owner_id, status, updated_at FROM tasks ORDER BY task_id DESC LIMIT 100")]
+    return {"items": rows, "source": "tasks", "as_of": at}
+
+
+def _consultations(db, at: str) -> dict:
+    if not _has(db, "consultations"):
+        return {"items": [], "source": "consultations", "as_of": at}
+    rows = []
+    for cid, subject, opened_by, risk, opened_at in db.connection.execute(
+            "SELECT consultation_id, subject, opened_by, risk_class, opened_at FROM consultations "
+            "ORDER BY consultation_id DESC LIMIT 50"):
+        opinions = [{"by": a, "role": r, "position": p} for a, r, p in db.connection.execute(
+            "SELECT agent_id, role, position FROM consultation_opinions WHERE consultation_id = ? ORDER BY id", (cid,))]
+        rows.append({"id": cid, "subject": mask_secrets(subject)[:200], "opened_by": opened_by, "risk_class": risk,
+                     "opened_at": opened_at, "opinions": opinions})
+    return {"items": rows, "source": "consultations, consultation_opinions", "as_of": at}
+
+
+def _tax(system, currency: str, at: str) -> dict:
+    position = system.tax.position(currency)
+    rows = [{"track": r.track, "year": r.year, "basis": r.gross_minor, "rate_bp": r.rate_bp,
+             "liability": r.liability_minor, "paid": r.paid_minor, "reserved": r.reserved_minor} for r in position.rows]
+    owners = Counter()
+    for owners_text, n in system.db.connection.execute(
+            "SELECT owners, COUNT(*) FROM tax_assignments GROUP BY owners") if _has(system.db, "tax_assignments") else []:
+        owners[owners_text or "unassigned"] += n
+    # Skatt per grundare: bara när alla poster har samma fördelning (baspunkter per grundare i tax_assignments),
+    # annars None. Ingen fördelning gissas.
+    per_founder = None
+    if len(owners) == 1:
+        try:
+            split = json.loads(next(iter(owners)))
+            total = sum(r["reserved"] for r in rows)
+            per_founder = [{"founder": f, "share_bp": bp, "reserved": total * bp // 10_000} for f, bp in sorted(split.items())]
+        except (ValueError, AttributeError):
+            per_founder = None
+    return {"items": rows, "per_founder": per_founder,
+            "owners": [{"owners": o, "entries": n} for o, n in owners.most_common()],
+            "untracked_entries": len(position.untracked), "source": "TaxEngine.position, tax_assignments", "as_of": at}
 
 
 def check_snapshot(value, path: str = "") -> None:

@@ -1,92 +1,85 @@
-# DESIGN: kommandocentralen
+# DESIGN: Command Center
 
-- **Källa:** `DASHBOARD_PLAN.md` avsnitt 2 och 3, och designytan "AI-Ecosystem — startsida" i Yorgos Claude-konto. Det är en klickbar prototyp med 10 sidor, och den finns inte i repot.
-- **Beslut:** D-073 (teknikval), föreslaget.
+- **Stil:** mörkt "agentic OS" (uppdraget Command Center 2026-11-09, D-087).
 - **Språk:** gränssnittet är på engelska. Bara mörkt läge.
+- **Följs exakt:** `ai-enterprise/command-center/assets/css/app.css` definierar varje token en gång i `:root`. Testet `test_css_uses_the_design_tokens_exactly` kontrollerar att värdena nedan finns exakt så i CSS:en.
+- **Ersätter** den tidigare designen från D1, med guld och Cormorant Garamond.
 
-## Designtokens
-Tokens definieras en gång som CSS-variabler i `:root` och används överallt. Inga färger hårdkodas i komponenterna.
-
+## Färger
 | Token | Värde | Används till |
 |---|---|---|
-| `--bg` | `#0E0D0B` | sidans bakgrund |
-| `--sidebar` | `#12110E` | sidomenyn |
-| `--card` | `#15130F` | kort och paneler |
-| `--line` | `#2A251C` | kantlinjer (1px) |
-| `--gold` | `#C9A24A` | accent: aktiv menypunkt, primärknapp, fokus |
-| `--gold-light` | `#E3C77E` | hover på accent, viktiga siffror |
-| `--text` | `#EDE6D6` | brödtext |
-| `--heading` | `#F3ECDC` | rubriker |
-| `--muted` | `#A39A88` | dämpad text, etiketter och tidsstämplar |
-| `--ok-fg` / `--ok-bg` | `#8FD9A3` / `#16301F` | grönt läge: aktiv, godkänd, kedjan verifierad |
-| `--warn-fg` / `--warn-bg` | `#EBC870` / `#3A2E12` | gult läge: väntar, preliminärt, SIM |
-| `--bad-fg` / `--bad-bg` | `#FFB4AA` / `#3A1512` | rött läge: blockerad, nödstopp, kedjan bruten |
+| `--bg` | `#070B14` | sidans bakgrund, med en svag radial ljuskägla upptill (`--glow`) |
+| `--glow` | `rgba(56, 97, 180, 0.20)` | ljuskäglan upptill |
+| `--panel` | `rgba(15, 22, 38, 0.72)` | paneler, med `backdrop-filter: blur(14px)` |
+| `--line` | `rgba(148, 163, 184, 0.12)` | kantlinjer (1px) |
+| `--text` | `#E6EAF2` | text |
+| `--muted` | `#8A94A8` | dämpad text |
+| `--label` | `#7DB3FF` | etiketter i Geist Mono med versaler |
+| `--accent` | `#7DB3FF` | länkar, fokusring och primärknapp |
+| `--working` | `#34D399` | status working |
+| `--waiting` | `#FBBF24` | status waiting och SIM-etiketten |
+| `--idle` | `#64748B` | status idle (pricken) |
+| `--failed` | `#F87171` | status failed eller blocked, och nödstopp |
+| `--offline` | `#475569` | status offline (pricken) |
+| `--idle-text` | `#A3AEC2` | texten i pillerna idle och offline, ljusare så att kontrasten blir minst 4,5:1 |
+| `--dept-executive` | `#A78BFA` | CEO och executive: violett |
+| `--dept-research` | `#22D3EE` | Research: cyan |
+| `--dept-sales` | `#FBBF24` | Sales: bärnsten. Departementet finns inte i config än och visas inte |
+| `--dept-engineering` | `#34D399` | Engineering: smaragd. Departementet finns inte i config än och visas inte |
+| `--dept-finance` | `#60A5FA` | Finance: blå |
+| `--dept-control` | `#F472B6` | kontrollfunktionerna risk, compliance och audit: rosa |
 
-| Form | Värde |
-|---|---|
-| Hörn på kort | 12px |
-| Hörn på knappar | 8px |
-| Kantlinjer | 1px `--line` |
-| Knappar | minst 44px höga (pekskärm) |
-| Kontrast | minst 4,5:1 för text mot bakgrund (D8) |
+## Form, typografi och rörelse
+| Token | Värde | Används till |
+|---|---|---|
+| `--r-panel` | `16px` | hörn på paneler |
+| `--r-card` | `12px` | hörn på kort |
+| `--r-btn` | `8px` | hörn på knappar |
+| `--s1` | `8px` | 8-punkters rutnät (`--s1` till `--s6` = 8–48 px) |
+| `--t` | `200ms` | övergångar (150–250 ms) |
 
-**Typsnitt:**
-- **Cormorant Garamond** används för rubriker och **Inter** för text.
-- Båda har SIL Open Font License och sparas i `assets/fonts/` med licensen. Inget laddas från internet (D-073).
-- Typsnitten finns sedan D1 i `src/aie/dashboard/web/fonts/`: Cormorant Garamond 500 och 600, och Inter 400, 500 och 600, som woff2 med licensfilerna `OFL-*.txt`.
+- **Rubriker:** Geist 700 med spärrning `-0.035em`. Stora titlar slutar med punkt, till exempel "Command center.".
+- **Etiketter:** Geist Mono, versaler, spärrning `.14em`, 11–12 px, färg `--label`.
+- **Siffror:** tabulära (`font-variant-numeric: tabular-nums`).
+- **Knappar:** minst 44 px höga, med synlig fokusring (2 px `--accent`). Kontrasten är minst 4,5:1.
+- **Typsnitt:** Geist och Geist Mono ligger lokalt i `assets/fonts/` med `OFL-Geist.txt`.
+- **Ikoner:** Lucide som lokal SVG-sprite (`assets/icons/lucide-sprite.svg`, ISC, `LICENSE-lucide.txt`).
+- **Inget av detta:** emojis, gradienttext och generiska mallkomponenter.
 
-**Statusfärgerna har alltid text bredvid,** till exempel "Blocked" och "SIM". Färgen är aldrig enda bäraren av information.
+## Status
+Status visas alltid som en pill med prick och text, aldrig bara som färg:
+- **Färger:** working, waiting, idle, failed eller blocked, och offline.
+- **Regeln** för hur status härleds står i `docs/command-center/DATA.md` avsnitt 9.
+- **Okänd status** (`unknown`) visas inte.
+
+## Rörelse (D-084, D-087)
+- **Längd och kurva:** 150–250 ms med ease-out. Inget studsar.
+- **Radarn:** prickarna rör sig långsamt (ett varv på 90–240 s), och aktiva agenter pulserar.
+- **Uppräknande siffror:** 250 ms. Slutvärdet står alltid i HTML.
+- **Live-flödet:** nya rader tonar in med 4 px.
+- **Spotlight:** finns på kort, bara med mus.
+- **Lenis:** mjuk huvudscroll, bara på desktop med mus.
+- **`prefers-reduced-motion`:** stänger av all animation, radarns rörelse och Lenis.
+- **Innehållet** är aldrig beroende av en animation för att synas.
+
+## Skalet
+- **Sidomeny:** logotyp, sidorna, och under rubriken **AGENTS** alla agenter med statuspill.
+- **Topprad:** verklig systemstatus (normal, protected eller kill switch), "Data as of <tid>", klocka, etiketten SIM eller REAL, inloggad grundare, Pause agents och Kill switch.
+- **Banner:** är snapshoten äldre än 26 timmar visas en gul banner: "Data is stale".
+- **Mobil (390 px):** menyn blir en utfällbar panel, och sidan rullar aldrig i sidled. Det är kontrollerat på alla tio sidor.
 
 ## Sidorna
-| Sida | Visar | Knappar | Steg |
-|---|---|---|---|
-| Home | kapital, realiserad nettovinst, skattereserv, reserv, väntande beslut, departement och live-händelser | Pause agents, Kill switch | D2, D5 |
-| Departments | varje departement som en byggnad; ett tänt fönster är en agent som arbetar | — | D3 |
-| Department (huset) | planritning med ett rum per agent, mötesrum (samråd), arkiv (lärdomar) och uppgiftskö | Pause department, New task | D3 |
-| Agent | status, mandat, prestation, senaste arbete och chatt | Pause, Put on probation, Chat | D3, D6 |
-| Finance | från försäljning till nettovinst, vinst per dag, momsgräns, skatt per spår och ledger | Export tax basis | D5 |
-| Approvals | kön och beslutsposten med samråd och invändningar | Approve, Reject | D4 |
-| Risk and rules | läge, kontrollkedjans blockeringar, gränser och incidenter | — | D5 |
-| Activity log | hela revisionsloggen med filter och verifierad hashkedja | Filter | D2 |
-| Settings | notiser, grundare och godkännanderegler, AI-modeller och åtkomst | slå av och på notiskanaler | D7 |
+| Sida | Innehåll |
+|---|---|
+| Command center | nyckeltal, radar, Current directive, Context window, statsrad i mono, diagram, System health, Chat with an agent och Live activity |
+| Agents | nätverksträd: CEO överst, linjer till chefer och agenter. Kontrollfunktionerna streckade, eftersom de rapporterar till grundarna (§8) |
+| Departments | ett kort per departement i config, ritat som en byggnad där tända fönster är agenter som arbetar |
+| Department | planritning med ett glasrum per agent, mötesrum, arkiv och uppgiftskö |
+| Agent | profil, mandat (själv, kräver godkännande, aldrig), prestation, körhistorik, pengar, senaste arbete, kontroller och chatt |
+| Approvals | glaskort med filtret In review, Approved och Rejected, detaljvy och knapparna Review och Approve |
+| Finance | från brutto till netto, dag, vecka och månad, per agent, moms och skatt, och fliken Transactions |
+| Risk and rules | läge, kontrollkedjan med dagens blockeringar, gränser med användning och incidenter |
+| Activity | Live och Logs, med filter och verifierad hashkedja |
+| Settings | notiskanaler, grundare och regler, modeller och åtkomst. Gränserna ändras aldrig här |
 
-## Delat skal (D1)
-Varje sida har samma skal:
-- **sidomeny** med sidorna ovan
-- **rubrikrad** med Live- eller Offline-indikator, etiketten **SIM** eller **REAL**, klocka och inloggad grundare
-- **knapparna Pause agents och Kill switch,** som är inaktiva tills D5
-
-I mobilbredd (390 px) fälls sidomenyn ihop till en meny.
-
-## Rörelse (D-084)
-Rörelsen ska kännas lugn och precis. Den görs med GSAP, och Lenis används för scrollen. Filerna och licenserna står i `src/aie/dashboard/web/vendor/README.md`.
-
-| Rörelse | Hur | Tid | Kurva |
-|---|---|---|---|
-| Panelernas inträde | rubriken och korten tonar in och stiger 8 px, med 0,05 s mellan dem | 0,35 s | `power2.out` |
-| Sidövergång | innehållet tonar ut 4 px uppåt innan nästa sida laddas, och sedan in som ovan | 0,15 s ut | `power1.out` |
-| Uppräknande siffror (CountUp) | räknar från 0 till slutvärdet en gång när siffran syns. Slutvärdet finns i HTML och för skärmläsare | 0,6–1,1 s | `power3.out` |
-| Statusbyte (Live/Offline) | punkten krymper från 1,8 till 1 och färgen glider över | 0,25–0,35 s | `power2.out` |
-| Live-flödet (AnimatedList) | nya rader tonar in med 4 px, och listan när sidan laddas med 0,05 s mellan raderna | 0,3 s | `power2.out` |
-| Spotlight | mjukt guldljus under pekaren och upplyst kant, bara med mus. Används på väntande godkännanden och i D3 på agentkorten | 0,25 s | `power2.out` |
-| Radarn | byggs inte än. När den finns används samma regler | — | — |
-
-**Regler:**
-- **Mening:** inget rör sig utan att betyda något, och inget går i slinga.
-- **Kurvan:** bara ease-out, aldrig studs, fjäder eller `back`.
-- **`prefers-reduced-motion`:** då visas slutläget direkt, Lenis är av och spotlight-ljuset följer inte pekaren.
-- **Lenis:**
-  - **På:** bara på desktop med mus, från 768 px.
-  - **Av:** på touch.
-  - **Aldrig i** `table`, `dialog`, `.chat`, `.scroll-panel` eller element med `data-lenis-prevent`.
-- **Innehållet syns alltid:**
-  - **Före första målningen:** `boot.js` döljer innehållet bara om rörelse är tillåten.
-  - **Om animationen aldrig startar:** CSS visar allt efter 1,2 s, och en timer hoppar till slutet.
-  - **Siffror:** en siffra ändras först när animationen faktiskt går, så ett fel värde visas aldrig.
-
-## Det som återanvänds från Ekobyn
-Se `GAP_ANALYSIS.md`:
-- **Byggfri struktur:** inget npm, och `node --test` för gränssnittet.
-- **Validering av data** innan den visas (`validate()` i `world.js`), och den senaste giltiga ögonblicksbilden behålls vid fel.
-- **Reducerad rörelse** respekteras.
-- **Husen och agenterna** i Ekobyn är förlagan till Departments och Department (huset) i D3, men med tokens från den här filen.
+Varje del har en laddningsvy (skeleton), en tomvy och en felvy. Saknad data visas som "N/A".

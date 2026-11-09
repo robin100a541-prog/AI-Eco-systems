@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Command center</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/assets/css/app.css">
+<script src="/vendor/gsap/3.15.1/gsap.min.js" defer></script>
+<script src="/vendor/lenis/1.3.27/lenis.min.js" defer></script>
+<script type="module" src="/js/main.js"></script>
+</head>
+<body>
+<div class="shell" id="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Navigation">
+    <div class="logo"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="/assets/icons/lucide-sprite.svg#i-radar"></use></svg></span>Command center</div>
+    <nav class="nav" id="nav" aria-label="Pages"></nav>
+    <div class="side-agents">
+      <div class="label">Agents</div>
+      <div id="side-agents"><div class="skeleton sk-line"></div><div class="skeleton sk-line"></div><div class="skeleton sk-line"></div></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <header class="topbar" id="topbar">
+      <div class="left">
+        <button class="btn ghost menu-btn" id="menu-btn" type="button" aria-controls="sidebar" aria-expanded="false">
+          <svg class="icon" aria-hidden="true"><use href="/assets/icons/lucide-sprite.svg#i-menu"></use></svg><span>Menu</span>
+        </button>
+        <span id="system-status" class="pill"><span class="dot"></span>Loading</span>
+        <span class="muted mono hide-sm" id="data-as-of">Data as of N/A</span>
+      </div>
+      <div class="right">
+        <time class="mono muted hide-sm" id="clock"></time>
+        <span class="pill sim" id="env-label">SIM</span>
+        <span class="muted hide-sm" id="founder"></span>
+        <button class="btn sm" id="btn-pause" type="button">Pause agents</button>
+        <button class="btn sm danger" id="btn-kill" type="button">Kill switch</button>
+      </div>
+    </header>
+    <div id="banner"></div>
+    <main class="content" id="content" tabindex="-1"></main>
+  </div>
+</div>
+<div id="toast-root" aria-live="polite"></div>
+</body>
+</html>

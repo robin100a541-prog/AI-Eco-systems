@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-09 — Command Center Del 2 och 3: design, skal och de tio sidorna
+### Tillagt
+- `command-center/`: frontend utan byggsteg, npm eller ramverk (D-087).
+  - `index.html`, `assets/css/app.css` (designsystemet), `js/main.js` (router och uppdatering), `js/ui.js` (komponenterna), `js/charts.js` (egna SVG-diagram), `js/radar.js`, `js/effects.js` och `js/controls.js`.
+  - **Sidorna** i `js/pages/`: Command center, Agents, Departments, Department, Agent, Approvals, Finance, Risk and rules, Activity och Settings.
+  - **Uppdatering:** snapshoten hämtas var 30:e sekund och GitHub var 60:e. Bara delar vars data ändrats ritas om.
+  - **Tillstånd:** varje del har laddnings-, tom- och felvy, och saknad data visas som "N/A".
+- **Typsnitt och ikoner:** Geist och Geist Mono (fontsource 5.3.0, OFL), och Lucide 1.70.0 som lokal SVG-sprite med 53 ikoner och ISC-licens.
+- **Snapshoten** har fått fler fält: `tasks`, `consultations`, `lessons`, `incidents`, `tax` (per spår, och per grundare när fördelningen är entydig), `rules`, `notifications`, `system.database_bytes` och agenternas `recent_runs`.
+- **Nya API:er och funktioner:**
+  - `functions/api/me.js`
+  - Actions-minuter för månaden (uppskattning) i `api/github.js`
+- **Tester:** `command-center/tests/ui.test.mjs` och nya frontendtester i `tests/unit/test_dashboard_server.py`.
+### Ändrat
+- **`docs/dashboard/DESIGN.md`:** omskriven till mörkt "agentic OS" med tokens, status, rörelse, skal och sidor.
+- **Den lokala servern** serverar `command-center/` med samma API-form som Cloudflare, och API:t svarar 401 före inloggning. D1:s serverritade sidor är borttagna.
+- **`vendor/`** (GSAP, Lenis och React Bits licens) är flyttad till `command-center/vendor/`.
+### Borttaget
+- `src/aie/dashboard/web/shell.html`, `app.js`, `app.css`, `boot.js`, `effects.js` och `fonts/`. De ersätts av `command-center/`. Bara inloggningssidan `web/login.html` finns kvar, för den lokala servern.
+
 ## [Unreleased] — 2026-11-09 — Command Center Del 1: data, publicering och API
 ### Tillagt
 - `src/aie/dashboard/snapshot.py`: snapshoten (`aie.snapshot/1`), med fälten `value`, `source` och `as_of` för varje siffra.
