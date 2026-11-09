@@ -110,3 +110,22 @@ Frågorna står i slutrapporten och i PR:en.
 **Fel som hittades och rättades:** countUp skrev "0.00" innan den första bildrutan. I en dold flik hade fel siffra då kunnat stå kvar.
 
 **Inte prövat:** hur animationerna och Lenis känns i en synlig webbläsare. Det prövar Yorgo.
+
+## 2026-11-09: Command Center, Del 0
+**Begäran:** uppdraget kom från Yorgo och Robin tillsammans, och alla delar är godkända av båda. Command Center ska ligga på Cloudflare Pages och Access, och läsa data från KV.
+
+**Gjort:**
+- **Arkitekturrapporten** finns i `docs/command-center/DATA.md` och bygger bara på det som är verifierat i kod och i GitHubs API.
+  - **Tillståndet:** företagets databas finns i dag bara i Actions-cachen (`company-`, 28 KB). Den kan försvinna efter 7 dagar utan användning.
+  - **Scout** har en egen SIM-databas.
+  - **Yorgos dator:** inget finns bara där.
+  - **Beslut:** KV är den auktoritativa platsen, med krypterade databaskopior. Det byggs i Del 1.
+- **Diagnosen av D1:** `.env` saknades och revisionsloggen hade ingen `dashboard.login`. Den troliga orsaken var att `PYTHONPATH` sattes med PowerShell-syntax i ett bash-block.
+  - **Fix:** `dashboard.cmd`, som provkördes med port 8765 upptagen och svarade 200 på 8766.
+  - **Hittat på vägen:** på Windows kunde två servrar dela samma port. Det är rättat med exklusiv bindning, och testet fångade det.
+- **Actions-minuter:** testerna gick från 2 351 till cirka 1 484 minuter med samma körningar. Hela beräkningen landar på cirka 1 700 i månaden vid förra månadens takt, och under 1 400 vid högst cirka 120 PR:er i månaden.
+  - **nightly** körs nu en gång i veckan.
+
+**Antaganden:**
+- **nightly** är en utvärdering och ingen agent, så schemat får ändras.
+- **Testerna läser `.github/`,** så sådana ändringar räknas som relevanta.

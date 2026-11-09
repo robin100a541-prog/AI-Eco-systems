@@ -1,5 +1,5 @@
 # Nattlig körning (arbetsorder 02, PR 9, D-061): tester, hälsokontroll och bedömning med skriptade agenter.
-# Varje natt och med knappen "Run workflow". Allt körs i miljön sim med valutan SIM.
+# En gång i veckan (söndag natt) och med knappen "Run workflow". Var varje natt till 2026-11-09. Allt körs i miljön sim med valutan SIM.
 #
 # Säkerhet:
 # - Inga riktiga pengar och inga externa publiceringar. Steget "Bara sim" stoppar körningen om config inte är sim/SIM.
@@ -11,7 +11,7 @@ name: nightly
 
 on:
   schedule:
-    - cron: "41 2 * * *"
+    - cron: "41 2 * * 0"  # en gång i veckan (söndagar) sedan 2026-11-09: Actions-minuter för privat repo (Command Center Del 0)
   workflow_dispatch:
     inputs:
       groq:

@@ -2,52 +2,28 @@
 
 Den här filen beskriver hur kommandocentralen startas och prövas för hand. Den fylls på för varje steg, och D8 lägger till hela mobilchecklistan. De automatiska testerna körs med `py -m unittest discover -s tests` och finns i `tests/unit/test_dashboard_server.py` (D1) och `tests/unit/test_seed_sim.py` (D0b).
 
-## Starta på Windows (Yorgo)
-
-Allt körs i **PowerShell**. Ingenting installeras och ingenting kostar något.
-
-### 1. Gå till mappen och hämta det senaste
-```powershell
-cd "$HOME\Desktop\Ai Eco-system\ai-enterprise"
-git checkout main
-git pull
-$env:PYTHONPATH = "src"
+## Starta på Windows (Yorgo): ett kommando
+Dubbelklicka på `ai-enterprise\dashboard.cmd` i Utforskaren, eller kör den från valfri terminal:
 ```
-`$env:PYTHONPATH = "src"` gäller bara det här terminalfönstret. Öppnar du ett nytt fönster kör du raden igen.
-
-### 2. Sätt din åtkomstkod (en gång)
-```powershell
-py -m aie dashboard set-code --founder Yorgo
+"%USERPROFILE%\Desktop\Ai Eco-systemi-enterprise\dashboard.cmd"
 ```
-- **Koden:** skriv den två gånger, minst 8 tecken. Den syns inte när du skriver.
-- **Var den sparas:** bara en hash sparas i `ai-enterprise\.env`. Filen kommer aldrig in i git.
-- **Robin** gör samma sak med `--founder Robin` på sin dator.
-- **Byta kod:** kör kommandot igen. Den gamla hashen ersätts.
+**Vad skriptet gör av sig självt:**
+1. **Python:** går till rätt mapp, sätter `PYTHONPATH` och hittar Python (`py -3` eller `python`).
+2. **Åtkomstkoden:** finns ingen frågar det vem du är, och du skriver koden två gånger. Bara en hash sparas, i `ai-enterprise\.env`.
+3. **Testdata:** saknas lokal SIM-data skapas testdata med `scripts\seed_sim.py`.
+4. **Start:** startar servern och öppnar webbläsaren på http://127.0.0.1:8765/. Är porten upptagen används nästa lediga, och adressen skrivs ut.
+5. **Fel:** stannar med "Press any key" vid fel, så att du hinner läsa felet.
 
-### 3. Testdata (en gång, redan gjort på Yorgos dator 2026-11-08)
-```powershell
-py scripts\seed_sim.py
+**Varför D1 inte startade hos Yorgo (diagnos 2026-11-09):**
+- **Ingen kod sattes:** `ai-enterprise\.env` fanns inte, och revisionsloggen hade ingen `dashboard.login`. Yorgo kom alltså aldrig förbi att sätta koden.
+- **Fel skal:** instruktionen satte `PYTHONPATH` med PowerShell-syntax (`$env:PYTHONPATH = "src"`) i ett kodblock märkt som bash. Kört i Git Bash misslyckas raden, och då ger `py -m aie` felet "No module named aie".
+- **Andra hinder:**
+  - Fönstret stängdes vid fel.
+  - På Windows kunde två servrar dessutom dela port 8765 (SO_REUSEADDR). Nu binds porten exklusivt, och en upptagen port leder till nästa.
+
+### Öppna på mobilen (samma wifi)
 ```
-- **Väntat:** `Klar: data\sim.db (30 dagar i SIM, 3 väntande godkännanden, revisionslogg OK)`.
-- **Om datamappen redan har en körning** stoppar skriptet. Det är avsiktligt. Vill du börja om tar du bort `data\sim.db` och kör igen.
-
-### 4. Starta på datorn
-```powershell
-py -m aie dashboard
-```
-- **Öppna:** http://127.0.0.1:8765/ i webbläsaren och logga in som Yorgo med din kod.
-- **Det här ska synas:**
-  - Home med de 3 väntande godkännandena (40.00, 65.00 och 115.00 SIM)
-  - etiketten **SIM**
-  - en grön **Live**-punkt
-  - klockan
-  - knapparna Pause agents och Kill switch, gråa med texten "Available in D5"
-- **Utan `--lan`** når bara datorn själv servern.
-- **Stoppa:** tryck **Ctrl+C** i terminalen.
-
-### 5. Öppna på mobilen (samma wifi)
-```powershell
-py -m aie dashboard --lan
+"%USERPROFILE%\Desktop\Ai Eco-system\ai-enterprise\dashboard.cmd" --lan
 ```
 1. **Adressen:** terminalen skriver ut raden `On your phone (same Wi-Fi): http://192.168.x.x:8765/`.
 2. **Brandväggen:** första gången frågar Windows brandvägg om Python får ta emot anslutningar. Kryssa bara i **Privata nätverk**, aldrig Offentliga, och välj Tillåt.
@@ -62,9 +38,9 @@ py -m aie dashboard --lan
 ### Felsökning
 | Det som syns | Gör så här |
 |---|---|
-| `No module named aie` | Du glömde `$env:PYTHONPATH = "src"`, eller står i fel mapp. |
-| `No access code is set` | Kör steg 2. |
-| `kunde inte starta på port 8765` | Porten är upptagen. Kör `py -m aie dashboard --port 8766` och öppna den porten. |
+| `No module named aie` | Starta med `dashboard.cmd`, som sätter `PYTHONPATH` själv. |
+| `No access code is set` | Starta `dashboard.cmd` igen. Den frågar efter koden. |
+| `portarna 8765–8774 är upptagna` | Stäng andra fönster med Command Center, eller starta om datorn. |
 | Mobilen når inte sidan | Kontrollera att servern startades med `--lan`, att mobilen är på samma wifi, att nätverksprofilen är Privat och att brandväggen tillåter Python i privata nätverk. |
 | "Offline" i rubrikraden | Servern svarar inte, så starta den igen. |
 | Du loggas ut | Sessionen gäller i 12 timmar och försvinner när servern startas om. |

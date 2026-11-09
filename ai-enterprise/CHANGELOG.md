@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-09 — Command Center Del 0: arkitekturrapport, lokal start och Actions-minuter
+### Tillagt
+- `docs/command-center/DATA.md`: arkitekturrapporten. Den beskriver språk och struktur, alla agenter och var de körs, hur pengar, körningar och fel registreras, databaser, loggar och API:er, befintliga dashboard-delar, beslutet om var tillståndet ska ligga (Cloudflare KV, krypterat), och beräkningen av Actions-minuter.
+- `ai-enterprise/dashboard.cmd`: startar den lokala dashboarden med ett enda kommando på Windows.
+  - **Sätter upp själv:** `PYTHONPATH`, hittar Python, sätter koden och skapar SIM-testdata vid behov.
+  - **Öppnar** webbläsaren, och håller fönstret öppet vid fel.
+- `py -m aie dashboard has-code` och `--open`.
+### Ändrat
+- **Den lokala servern:** porten binds exklusivt på Windows. Tidigare kunde två servrar dela 8765, eftersom SO_REUSEADDR tillät det. Är porten upptagen används nästa av tio.
+- **`set-code`:** faller tillbaka till synlig inmatning med en varning om terminalen inte kan dölja den.
+- **`ai-enterprise-tests.yml`:**
+  - **Versioner:** en Python-version vid push till main och båda på PR.
+  - **Bara dokument:** en PR som bara ändrar dokument kör inga tester.
+  - **Övrigt:** cancel-in-progress och pip-cache.
+- **`protected-files.yml`:** cancel-in-progress.
+- **`nightly.yml`:** körs en gång i veckan.
+- **`docs/dashboard/TESTING.md`:** start med `dashboard.cmd`, och diagnosen av varför D1 inte startade hos Yorgo.
+
 ## [Unreleased] — 2026-11-09 — Dashboard: rörelse med GSAP och Lenis (D-084)
 ### Tillagt
 - `src/aie/dashboard/web/vendor/`: färdigbyggda filer laddade från den egna servern, och `README.md` med källa, licens, syfte och SHA-256 för varje fil.
