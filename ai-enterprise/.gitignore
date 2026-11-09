@@ -2,6 +2,7 @@
 data/*.db
 data/*.db-*
 data/reports/
+data/publish-pending/
 logs/
 .env
 *.secret

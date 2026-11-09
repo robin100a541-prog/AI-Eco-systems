@@ -129,3 +129,19 @@ Frågorna står i slutrapporten och i PR:en.
 **Antaganden:**
 - **nightly** är en utvärdering och ingen agent, så schemat får ändras.
 - **Testerna läser `.github/`,** så sådana ändringar räknas som relevanta.
+
+## 2026-11-09: Command Center, Del 1 (data)
+**Gjort:**
+- **Snapshoten** byggs bara med kärnans funktioner och är exakt lika med `recompute`.
+- **`publish`:** misslyckas uppladdningen avslutar den ändå med 0. Ett test kör nästa simulerade dag efter ett misslyckat försök.
+- **Tillståndskopiorna** är krypterade och ligger i KV.
+- **Funktionerna:** Access-JWT verifieras med Web Crypto, och det finns snapshot, health och github.
+- **Inga data-PR:er** längre från company-daily och scout.
+- **Besluten D-085–D-093** är införda.
+
+**Antaganden:**
+- **Samråd** knyts till en förfrågan bara när ämnet är `task:<id>`.
+- **Per agent** betyder per `recorded_by`. I SIM bokför `system:simulation`, och det visas som det är.
+- **Framsteg** registreras inte i kärnan, så det är null.
+
+**Testas bara i CI:** JS-testerna körs med Node 22 i CI, eftersom Node inte finns på Yorgos dator.

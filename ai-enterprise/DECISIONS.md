@@ -8,6 +8,83 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-093 Systemets tillstånd: Cloudflare KV är den auktoritativa platsen, med krypterade databaskopior
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-085, D-088, D-092 · **Underlag:** `docs/command-center/DATA.md` avsnitt 7
+- **Beslut:**
+  1. Efter varje körning laddar company-daily, scout och pod-orders upp en krypterad kopia av sin databas till KV (`state:company`, `state:scout`, `state:pilot`). Krypteringen är openssl AES-256-CBC med PBKDF2, och nyckeln ligger i GitHub-hemligheten `STATE_KEY`.
+  2. Före en körning används Actions-cachen först. Saknas den hämtas kopian ur KV. Saknas den också skapas en ny databas, och det blir en varning i körningen.
+  3. Ingen agent flyttas. Bara platsen där databasfilen sparas mellan körningar ändras. Scouts egen databas behålls som den är.
+  4. Utan Cloudflare-hemligheterna fungerar allt som tidigare med bara cachen.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-092 Inget data och inga knapptryck committas till repot
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-085
+- **Beslut:**
+  1. Repots historik innehåller bara kod och dokumentation.
+  2. company-daily och scout slutar öppna PR:er med rapporter, `status.json`, `docs/opportunities/` och grundarnotiser. Det sparas i stället som Actions-artefakter och i KV.
+  3. Knapptryck och chattloggar ligger bara i KV.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-091 Notiser: ntfy och Gmail SMTP, gratis, inget SMS
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-073
+- **Beslut:**
+  1. ntfy, med ett slumpat ämne som ligger i en hemlighet. Meddelandet har bara generisk text, aldrig belopp eller namn.
+  2. Gmail SMTP med app-lösenord.
+  3. Saknas en hemlighet hoppas kanalen över utan fel.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-090 Chatt med agenter via Groqs gratis-API, utan verktyg
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-008, D-078
+- **Beslut:**
+  1. Chatten kan förklara men aldrig godkänna, ändra gränser eller skapa en åtgärd.
+  2. Gränsen är 30 meddelanden per grundare och timme.
+  3. Loggarna sparas i KV i 30 dagar.
+  4. Förslag märks "Hypothesis — not verified".
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-089 Knappar ändrar aldrig något direkt
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-078, D-081
+- **Beslut:**
+  1. En knapp lägger ett beslut i en kö i KV.
+  2. Motorn utför beslutet i workflowen `control-ingest` via kärnans funktioner, och loggar det i revisionsloggen med grundarens mejl.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-088 Backend: Cloudflare Pages Functions och Cloudflare KV
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-002
+- **Beslut:**
+  1. Funktionerna ligger i `ai-enterprise/command-center/functions/` och är vanlig JavaScript utan paket.
+  2. KV håller snapshoten, kön, chattloggarna och tillståndskopiorna (D-093).
+  3. Systemets ledger och revisionslogg är den enda sanningskällan. KV håller bara kopior och vyer av dem.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-087 Frontend: vanlig HTML, CSS och JavaScript-moduler
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-073, D-084
+- **Beslut:**
+  1. Inget byggsteg, ingen npm och inget ramverk.
+  2. Diagrammen är egna SVG-komponenter.
+  3. Ikonerna är Lucide som en lokal SVG-sprite (ISC).
+  4. Typsnitten är Geist och Geist Mono, lokalt och med OFL-licensfil.
+  5. Gränssnittet är på engelska.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-086 Åtkomst: Cloudflare Access med engångskod till exakt två mejladresser
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-073
+- **Beslut:**
+  1. Access (Zero Trust, gratisnivån) skyddar produktionen och alla preview-adresser.
+  2. Inloggning sker med engångskod till två mejladresser. Adresserna ligger som hemlighet (`ALLOWED_EMAILS`), aldrig i koden.
+  3. Ingen registrering är möjlig, och varje grundare är en egen identitet.
+  4. Funktionerna verifierar dessutom Access-JWT:n: signatur, audience, utfärdare och vitlista.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
+### D-085 Hosting: Cloudflare Pages kopplat till GitHub-repot, med adressen *.pages.dev
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Ersätter:** D-075 (ingen Pages, bara lokalt) · **Bygger på:** D-073, D-074
+- **Beslut:**
+  1. Command Center publiceras från `ai-enterprise/command-center/` på Cloudflare Pages. Ingen egen domän behövs, och en merge till main publiceras automatiskt.
+  2. Railway och Supabase används inte. De kostar pengar eller pausar gratisprojekt, och en andra databas skulle ge två sanningar om pengarna.
+  3. Kostnaden är 0 kr.
+  4. Den lokala servern från D1 finns kvar och serverar samma gränssnitt utan internet.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
+
 ### D-084 Rörelsebibliotek i kommandocentralen: GSAP och Lenis som färdigbyggda filer, tre effekter från React Bits ombyggda
 - **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (val av bibliotek), formulerat av Claude 2026-11-09 · **Bygger på:** D-002, D-073 · **Undantag från:** regeln om inga npm-paket i `CLAUDE.md` · **Gäller:** FR-27, FR-28
 - **Beslut:**
@@ -75,7 +152,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-08, godkänt tillsammans i Claude Code-session)
 
 ### D-075 Ingen GitHub Pages: kommandocentralen körs lokalt
-- **Status:** Godkänd · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-074
+- **Status:** Ersatt av D-085 (2026-11-09) · **Föreslagen av:** Yorgo (svar 2026-11-08) · **Bygger på:** D-073, D-074
 - **Beslut (förslag):**
   1. **Ingen Pages:** GitHub Pages används inte. Kommandocentralen körs som lokal server (D-073).
   2. **Jobbet tas bort:** `pages`-jobbet i `.github/workflows/company-daily.yml` tas bort. Det misslyckades varje dygn, eftersom Pages aldrig slogs på. Uppladdningen av Pages-artefakten tas också bort. Cykeln och `status.json` påverkas inte.

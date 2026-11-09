@@ -1,11 +1,16 @@
 # Fas 8 (masterprompten 2026-10-30): en företagscykel per dygn (§56), gratis.
 # - Kör en simulerad dag (SIM) med Groq-agenter om GROQ_API_KEY finns, annars skriptade agenter.
-#   Groqs kvot räknas i databasen (sparas mellan körningar i cachen); när den är slut pausas agenterna.
+#   Groqs kvot räknas i databasen; när den är slut pausas agenterna.
 # - Nödstopp: finns ai-enterprise/docs/KILL-SWITCH slås nödstoppet på i databasen och agenterna gör ingenting.
 #   Skyddat läge och stop-loss gäller som vanligt.
-# - Skriver daglig rapport (§57), på måndagar en veckorapport (§58), status.json för instrumentpanelen och en
-#   notis i QUESTIONS-FOR-FOUNDERS.md när något väntar på en grundare. Ändringarna går in via en PR med auto-merge.
-# - Publicerar ingenting på GitHub Pages: kommandocentralen körs lokalt (D-075, 2026-11-08).
+# - Command Center (Del 1, D-085, 2026-11-09):
+#   * Tillståndet: databasen hämtas ur cachen; saknas den hämtas den krypterade kopian ur Cloudflare KV
+#     (scripts/state.sh). Efter körningen sparas den i båda. KV är den auktoritativa platsen (DATA.md avsnitt 7).
+#   * Snapshoten publiceras till KV (`python -m aie publish`). Misslyckas det loggas det och nästa körning försöker
+#     igen; cykeln räknas inte som misslyckad.
+#   * Inget data committas till repot (beslut 8): rapporter, status och grundarnotis sparas som artefakt (14 dagar)
+#     och i KV. Tidigare öppnades en daglig PR med docs/reports, status.json och QUESTIONS-FOR-FOUNDERS.md.
+# - Publicerar ingenting på GitHub Pages (D-075).
 name: company-daily
 
 on:
@@ -67,6 +72,20 @@ jobs:
           path: ai-enterprise/data
           key: company-${{ github.run_id }}
           restore-keys: company-
+      - name: Hämta från KV om cachen saknas
+        env:
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: bash scripts/state.sh pull company data/sim.db
+      - name: Pilotens databas (riktig valuta) till snapshoten, bara läsning
+        env:
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: bash scripts/state.sh pull pilot data-pilot/data/prod.db
       - name: Företagscykel
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -74,7 +93,25 @@ jobs:
           agents=scripted
           if [ -n "$GROQ_API_KEY" ]; then agents=groq; fi
           python -m aie init
-          python -m aie daily-cycle --as robin --agents "$agents" 2>&1 | tee "$RUNNER_TEMP/cycle.txt"
+          mkdir -p "$RUNNER_TEMP/out"
+          python -m aie daily-cycle --as robin --agents "$agents" --out "$RUNNER_TEMP/out/reports" \
+            --dashboard "$RUNNER_TEMP/out/status.json" --questions "$RUNNER_TEMP/out/QUESTIONS-FOR-FOUNDERS.md" \
+            2>&1 | tee "$RUNNER_TEMP/cycle.txt"
+      - name: Publicera snapshoten till Command Center
+        if: always()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: python -m aie publish --reports "$RUNNER_TEMP/out/reports" 2>&1 | tee -a "$RUNNER_TEMP/cycle.txt" || true
+      - name: Spara den krypterade kopian i KV
+        if: always()
+        env:
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: bash scripts/state.sh push company data/sim.db
       - name: Spara företagets databas
         if: always()
         uses: actions/cache/save@v4
@@ -85,19 +122,13 @@ jobs:
         if: always()
         run: |
           { echo '```'; tail -n 5 "$RUNNER_TEMP/cycle.txt" 2>/dev/null || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-      - name: PR med rapporter och status
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          if [ -z "$BOT_TOKEN" ]; then echo "BOT_TOKEN saknas; ingen PR"; exit 0; fi
-          git add docs/reports docs/dashboard/status.json docs/QUESTIONS-FOR-FOUNDERS.md
-          if git diff --cached --quiet; then echo "inget nytt"; exit 0; fi
-          branch="claude/daily-$(date -u +%Y%m%d)"
-          git -c user.name="ai-enterprise-bot" -c user.email="bot@users.noreply.github.com" \
-            commit -q -m "chore: daglig cykel $(date -u +%F) (rapporter och status)"
-          git -c core.hooksPath=/dev/null push -q "https://x-access-token:${BOT_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${branch}"
-          export GH_TOKEN="$BOT_TOKEN"
-          gh pr create --repo "$REPO" --head "$branch" --base main --title "chore: daglig cykel $(date -u +%F)" \
-            --body "Automatisk daglig cykel (§56): rapporter, status.json och grundarnotis."
-          gh pr merge --repo "$REPO" "$branch" --auto --merge
+      - name: Rapporter som artefakt (inget data i repot)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: company-daily-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/out/
+            ${{ runner.temp }}/cycle.txt
+          if-no-files-found: warn
+          retention-days: 14

@@ -39,6 +39,13 @@ jobs:
           path: ai-enterprise/data-pilot
           key: pod-orders-${{ github.run_id }}
           restore-keys: pod-orders-
+      - name: Hämta från KV om cachen saknas
+        env:
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: bash scripts/state.sh pull pilot data-pilot/data/prod.db
       - name: Printify
         env:
           PRINTIFY_API_TOKEN: ${{ secrets.PRINTIFY_API_TOKEN }}
@@ -46,6 +53,14 @@ jobs:
           if [ -z "$PRINTIFY_API_TOKEN" ]; then echo "PRINTIFY_API_TOKEN saknas som repository secret"; exit 1; fi
           python -m aie init
           python -m aie pod orders --as yorgo 2>&1 | tee "$RUNNER_TEMP/pod.txt"
+      - name: Spara den krypterade kopian i KV
+        if: always()
+        env:
+          STATE_KEY: ${{ secrets.STATE_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: bash scripts/state.sh push pilot data-pilot/data/prod.db
       - name: Spara pilotens databas
         if: always()
         uses: actions/cache/save@v4
