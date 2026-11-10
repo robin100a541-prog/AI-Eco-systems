@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-10 — Command Center Del 5: notiser
+### Tillagt
+- `src/aie/notify/`: notiser med ntfy och Gmail SMTP, bara med standardbiblioteket.
+  - **Larm** (`py -m aie notify run`): nödstopp, skyddat läge, nådd riskgräns, blockerad handling, beslut som väntat över 1 timme och slut gratiskvot.
+  - **ntfy** får bara sex fasta meningar, aldrig belopp, namn eller ID:n. E-posten får detaljerna.
+  - **Inget aviseras två gånger:** det som skickats loggas som `notify.sent` i revisionsloggen. Samma typ skickas högst var 15:e minut.
+  - **Saknade hemligheter:** kanalen hoppas över utan fel.
+- `py -m aie notify daily` och workflowen `notify-daily.yml`: dagens sammanfattning med e-post 20:00 UTC, byggd ur snapshoten i KV.
+- **Tester:** `tests/unit/test_notify.py` (7 tester).
+### Ändrat
+- `control-ingest.yml` och `company-daily.yml` kör `notify run` före publiceringen.
+
 ## [Unreleased] — 2026-11-10 — Command Center Del 4: kontroller och chatt
 ### Tillagt
 - `command-center/functions/api/action.js`: tar emot knapptryck och lägger ett beslut i KV-kön.

@@ -58,6 +58,14 @@ jobs:
         run: |
           python -m aie init
           python -m aie control ingest 2>&1 | tee "$RUNNER_TEMP/ingest.txt"
+      - name: Notiser
+        if: always()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+        run: python -m aie notify run || true
       - name: Publicera snapshoten
         if: always()
         env:
