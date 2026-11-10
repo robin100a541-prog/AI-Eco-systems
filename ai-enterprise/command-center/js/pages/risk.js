@@ -36,6 +36,11 @@ function limits(s) {
   s.risk_limits.items) + '<p class="muted">Limits are shown here and never changed here. They change only in config/risk_limits.toml with both founders (D-019).</p>';
 }
 
+function stops(s) {
+  return table([{ label: "ID", html: (r) => `<span class="mono">${esc(r.id)}</span>` }, { key: "scope", label: "Scope" }, { label: "Target", html: (r) => `<span class="mono">${esc(r.target)}</span>` },
+    { key: "reason", label: "Reason" }, { key: "placed_by", label: "Placed by" }, { key: "placed_at", label: "Since" }], s.stops.items, { empty: "No active stops. Paused agents appear here." });
+}
+
 function incidents(s) {
   return table([{ label: "ID", html: (r) => `<span class="mono">${esc(r.id)}</span>` }, { key: "title", label: "Incident" }, { key: "source", label: "Source" }, { key: "by", label: "Reported by" }, { key: "at", label: "Opened" }],
     s.incidents.items, { empty: "No incidents recorded." });
@@ -48,11 +53,13 @@ export function view() {
       <div class="span-12"><section class="panel"><div class="panel-head"><h2>Mode</h2></div><div data-part="mode"></div></section></div>
       <div class="span-5"><section class="panel"><div class="panel-head"><h2>Control chain today</h2></div><div data-part="chain"></div></section></div>
       <div class="span-7"><section class="panel"><div class="panel-head"><h2>Limits and usage</h2></div><div data-part="limits"></div></section></div>
+      <div class="span-12"><section class="panel"><div class="panel-head"><h2>Active stops</h2></div><div data-part="stops"></div></section></div>
       <div class="span-12"><section class="panel"><div class="panel-head"><h2>Incidents</h2></div><div data-part="incidents"></div></section></div></div>`,
     parts: {
       mode: { select: (c) => c.snapshot && c.snapshot.system, draw: (c) => guard(c, mode, 1) },
       chain: { select: (c) => c.snapshot && c.snapshot.blocks_today, draw: (c) => guard(c, chain, 6) },
       limits: { select: (c) => c.snapshot && c.snapshot.risk_limits, draw: (c) => guard(c, limits, 8) },
+      stops: { select: (c) => c.snapshot && c.snapshot.stops, draw: (c) => guard(c, stops) },
       incidents: { select: (c) => c.snapshot && c.snapshot.incidents, draw: (c) => guard(c, incidents) },
     },
   };

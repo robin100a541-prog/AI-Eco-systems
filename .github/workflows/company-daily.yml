@@ -89,10 +89,16 @@ jobs:
       - name: Företagscykel
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
         run: |
           agents=scripted
           if [ -n "$GROQ_API_KEY" ]; then agents=groq; fi
           python -m aie init
+          # Grundarnas beslut som ligger kvar i kön utförs före dagens cykel (D-089). Ett fel här stoppar inte cykeln.
+          python -m aie control ingest || true
           mkdir -p "$RUNNER_TEMP/out"
           python -m aie daily-cycle --as robin --agents "$agents" --out "$RUNNER_TEMP/out/reports" \
             --dashboard "$RUNNER_TEMP/out/status.json" --questions "$RUNNER_TEMP/out/QUESTIONS-FOR-FOUNDERS.md" \

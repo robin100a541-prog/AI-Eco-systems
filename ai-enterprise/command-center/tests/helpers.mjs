@@ -3,7 +3,7 @@ export const TEAM = "aie-test.cloudflareaccess.com";
 export const AUD = "aud-command-center-test";
 export const YORGO = "yorgo@example.com";
 export const ROBIN = "robin@example.com";
-export const ENV_BASE = { ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD, ALLOWED_EMAILS: `${YORGO}, ${ROBIN}` };
+export const ENV_BASE = { ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD, ALLOWED_EMAILS: `yorgo=${YORGO}, robin=${ROBIN}` };
 
 const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64url");
 

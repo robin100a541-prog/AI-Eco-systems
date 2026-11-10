@@ -50,6 +50,20 @@ class KV:
             if res.status >= 300:
                 raise OSError(f"KV svarade {res.status}")
 
+    def keys(self, prefix: str) -> list[str]:
+        """Nycklarna med prefixet, sorterade (högst 1000, vilket räcker för kön)."""
+        url = self._url("x").rsplit("/values/", 1)[0] + "/keys?prefix=" + urllib.parse.quote(prefix, safe="")
+        request = urllib.request.Request(url, headers={"Authorization": f"Bearer {self._token}"})
+        with self._open(request, timeout=TIMEOUT) as res:
+            body = json.loads(res.read() or b"{}")
+        return sorted(item["name"] for item in body.get("result") or [])
+
+    def delete(self, key: str) -> None:
+        request = urllib.request.Request(self._url(key), method="DELETE",
+                                         headers={"Authorization": f"Bearer {self._token}"})
+        with self._open(request, timeout=TIMEOUT):
+            pass
+
     def get(self, key: str) -> bytes | None:
         request = urllib.request.Request(self._url(key), headers={"Authorization": f"Bearer {self._token}"})
         try:

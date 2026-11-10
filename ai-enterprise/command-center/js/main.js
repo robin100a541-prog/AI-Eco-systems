@@ -1,9 +1,9 @@
 // Command Center: skal, routing och uppdatering. Snapshoten hämtas var 30:e sekund, GitHub var 60:e,
 // och bara de delar vars data ändrats ritas om (varje sida delar sig i "parts" med en egen select()).
-import { fetchGithub, fetchMe, fetchSnapshot, postAction } from "./api.js";
+import { fetchGithub, fetchMe, fetchSnapshot, postAction, setCsrf } from "./api.js";
 import { applyWidths, ago, esc, icon, pill, toast } from "./ui.js";
 import { enhance, syncLenis } from "./effects.js";
-import { confirmKill, confirmAction } from "./controls.js";
+import { confirmKill, confirmAction, confirmRelease } from "./controls.js";
 import * as overview from "./pages/overview.js";
 import * as agents from "./pages/agents.js";
 import * as departments from "./pages/departments.js";
@@ -121,8 +121,8 @@ function renderShell() {
     banner.innerHTML = "";
   }
   const killOn = s && s.system.kill_switch.value;
-  document.getElementById("btn-kill").textContent = killOn ? "Kill switch is on" : "Kill switch";
-  document.getElementById("btn-kill").disabled = !s || killOn;
+  document.getElementById("btn-kill").textContent = killOn ? "Release kill switch" : "Kill switch";
+  document.getElementById("btn-kill").disabled = !s;
   document.getElementById("btn-pause").disabled = !s || killOn;
 }
 
@@ -151,7 +151,8 @@ async function loadGithub() {
 async function runAction(body, label) {
   try {
     const res = await postAction(body);
-    toast(`${label}: queued (${res.id}). The engine applies it in the next control run.`);
+    toast(res.applied ? `${label}: applied through the core and logged.` : `${label}: queued (${res.id}). The engine applies it in the next control run.`);
+    if (res.applied) loadSnapshot();
     return res;
   } catch (e) {
     toast(`${label} failed: ${e.message}`);
@@ -179,10 +180,15 @@ function boot() {
   document.getElementById("btn-pause").addEventListener("click", () =>
     confirmAction("Pause all agents", "All active agents are paused through the core. Nothing is deleted, and you can resume each agent.",
       () => runAction({ type: "pause_all" }, "Pause agents")));
-  document.getElementById("btn-kill").addEventListener("click", () =>
-    confirmKill(() => runAction({ type: "kill", confirm: "KILL" }, "Kill switch")));
+  document.getElementById("btn-kill").addEventListener("click", () => {
+    if (state.snapshot && state.snapshot.system.kill_switch.value) {
+      confirmRelease((note) => runAction({ type: "kill_release", confirm: "RELEASE", note }, "Release kill switch"));
+    } else {
+      confirmKill(() => runAction({ type: "kill", confirm: "KILL" }, "Kill switch"));
+    }
+  });
   window.addEventListener("hashchange", render);
-  fetchMe().then((me) => { state.me = me; document.getElementById("founder").textContent = me.email || me.founder || ""; }).catch(() => {});
+  fetchMe().then((me) => { state.me = me; setCsrf(me.csrf); document.getElementById("founder").textContent = me.email || me.founder || ""; }).catch(() => {});
   tick();
   setInterval(tick, 15_000);
   render();

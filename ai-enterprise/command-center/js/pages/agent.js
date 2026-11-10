@@ -16,8 +16,8 @@ function profile(s, a) {
       <dt>Department</dt><dd><a href="#/department/${encodeURIComponent(a.department)}">${esc(deptName(a.department))}</a></dd><dt>Reports to</dt><dd>${a.manager ? `<a href="#/agent/${encodeURIComponent(a.manager)}">${esc(a.manager)}</a>` : "the founders"}</dd>
       <dt>Model</dt><dd class="mono">${esc(a.model || "N/A")}</dd><dt>Task</dt><dd>${a.task ? esc(a.task.title) : NA}</dd></dl></section>
       <section class="panel"><div class="panel-head"><h2>Controls</h2></div><div class="row">
-        <button class="btn" data-act="pause_agent" ${a.lifecycle !== "active" ? "disabled" : ""}>${icon("pause", "sm")}Pause</button>
-        <button class="btn" data-act="resume_agent" ${a.lifecycle !== "suspended" ? "disabled" : ""}>${icon("play", "sm")}Resume</button>
+        <button class="btn" data-act="pause_agent" ${a.paused || !["active", "probation"].includes(a.lifecycle) ? "disabled" : ""}>${icon("pause", "sm")}Pause</button>
+        <button class="btn" data-act="resume_agent" ${a.paused ? "" : "disabled"}>${icon("play", "sm")}Resume</button>
         <button class="btn" disabled title="The engine has no safe way to run one agent on demand">${icon("refresh-cw", "sm")}Run now</button></div>
         <p class="muted">Run now is read-only: agents run in the daily cycle, and the core has no safe single-agent run (see DATA.md).</p></section></div>
     <div class="span-8 stack"><section class="panel"><div class="panel-head"><div><div class="label">Mandate</div><h2>What this agent may do</h2></div></div>
@@ -57,7 +57,7 @@ export function view(ctx) {
       profile: { select: (c) => c.snapshot && [pick(c.snapshot), c.snapshot.per_agent, c.snapshot.rules], draw: (c) => guard(c, (s) => (pick(s) ? profile(s, pick(s)) : emptyView(`No agent "${id}" is registered.`)), 8),
         after: (el, c) => el.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
           const type = b.dataset.act;
-          confirmAction(type === "pause_agent" ? `Pause ${id}` : `Resume ${id}`, type === "pause_agent" ? "The agent is suspended through the core and does nothing until resumed." : "The agent goes back to active through the core.",
+          confirmAction(type === "pause_agent" ? `Pause ${id}` : `Resume ${id}`, type === "pause_agent" ? "A control stop is placed on the agent through the core. It can use no tools until a founder lifts the stop. Nothing is deleted." : "The control stop on the agent is lifted through the core.",
             () => c.act({ type, agent: id }, type === "pause_agent" ? "Pause agent" : "Resume agent"));
         })) },
       work: { select: (c) => c.snapshot && pick(c.snapshot) && [c.snapshot.events.items.slice(0, 80).map((e) => e.id), c.snapshot.blocks_today], draw: (c) => guard(c, (s) => (pick(s) ? work(s, pick(s)) : ""), 4) },
@@ -75,7 +75,7 @@ export function view(ctx) {
             ta.value = ""; status.textContent = "Thinking...";
             try {
               const res = await postChat({ agent: id, message: text });
-              log.insertAdjacentHTML("beforeend", `<li><span class="src github">${icon("bot", "sm")}</span><span class="what">${esc(res.reply)}</span><span class="when">${esc(res.model || "")}</span></li>`);
+              log.insertAdjacentHTML("beforeend", `<li><span class="src github">${icon("bot", "sm")}</span><span class="what"><span class="pill waiting"><span class="dot"></span>${esc(res.label || "Hypothesis — not verified")}</span><br>${esc(res.reply)}</span><span class="when">${esc(res.model || "")}</span></li>`);
               status.textContent = `${res.remaining ?? "?"} messages left this hour`;
             } catch (e) {
               status.textContent = e.data && e.data.code === "quota" ? "Waiting for quota" : `Chat unavailable: ${e.message}`;

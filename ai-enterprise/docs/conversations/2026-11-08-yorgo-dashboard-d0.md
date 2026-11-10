@@ -166,3 +166,19 @@ Frågorna står i slutrapporten och i PR:en.
 - **"Failed experiments"** registreras inte separat, så det visas som N/A.
 - **Skatt per grundare** visas bara när alla poster har samma fördelning.
 - **Run now** är skrivskyddad, eftersom kärnan saknar ett säkert sätt att köra en enskild agent.
+
+## 2026-11-10: Command Center, Del 4 (kontroller och chatt)
+**Gjort:**
+- **Kön:** `action.js` lägger beslut i KV, och `py -m aie control ingest` utför dem via kärnan och loggar med mejl.
+- **Chatten:** går via Groq utan verktyg.
+- **Lokalt:** den lokala servern utför beslut direkt med samma kod.
+
+**Upptäckt under arbetet:** det första försöket pausade en agent genom att sätta livscykeln till `SUSPENDED`. Kärnan nekade det: en avstängning kräver ett beslutat ärende (SR-17). Testet fångade felet.
+- **Rättat:** paus görs nu med kontrollstopp (`ControlStops`), som redan fanns i kärnan för just det syftet.
+- **Ny kärnfunktion:** `ControlStops.place_all`.
+
+**Antaganden:**
+- **`ALLOWED_EMAILS`** skrivs som `namn=mejl`, och samma värde läggs både i Cloudflare och som GitHub-hemlighet.
+- **Samma concurrency-grupp:** `control-ingest` delar grupp med company-daily, eftersom de ändrar samma databas. Faller dagens cykel bort startas den om i sista steget.
+- **Chatten** skickar bara simulerade siffror till Groq.
+- **Återstart efter nödstopp** fanns inte i uppdragets lista, men lades till som `kill_release`. Databasen ligger i molnet, så utan den hade ett nödstopp från Command Center inte gått att häva.

@@ -18,11 +18,20 @@ function decodePart(s) {
   return JSON.parse(new TextDecoder().decode(b64urlToBytes(s)));
 }
 
+// ALLOWED_EMAILS = "yorgo=a@x.se,robin=b@y.se". Namnet före "=" är grundarens namn i kärnan (config/system.toml)
+// och krävs för knapparna. En adress utan namn släpps in men kan inte lägga beslut i kön.
+export function founderEmails(env) {
+  const out = new Map();
+  for (const part of String(env.ALLOWED_EMAILS || "").split(",")) {
+    const [a, b] = part.split("=").map((x) => x.trim().toLowerCase());
+    if (b) out.set(b, a);
+    else if (a) out.set(a, null);
+  }
+  return out;
+}
+
 export function allowedEmails(env) {
-  return String(env.ALLOWED_EMAILS || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  return [...founderEmails(env).keys()];
 }
 
 async function certs(env, fetchImpl) {
@@ -79,5 +88,5 @@ export async function verifyAccess(request, env, { fetchImpl = fetch, now = Date
   if (typeof payload.nbf === "number" && payload.nbf > seconds + 60) throw new Error("not yet valid");
   const email = String(payload.email || "").toLowerCase();
   if (!allowed.includes(email)) throw new Error("email not allowed");
-  return { email };
+  return { email, founder: founderEmails(env).get(email) || null };
 }

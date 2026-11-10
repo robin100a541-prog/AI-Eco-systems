@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-10 — Command Center Del 4: kontroller och chatt
+### Tillagt
+- `command-center/functions/api/action.js`: tar emot knapptryck och lägger ett beslut i KV-kön.
+  - **Kontroller:** verifierad Access-identitet, samma ursprung, egen header, högst 20 anrop per grundare och timme, och strikt validering av typ och fält.
+  - **Start av motorn:** workflowen `control-ingest` startas med `workflow_dispatch`.
+- `py -m aie control ingest` (`src/aie/dashboard/control.py`) och workflowen `control-ingest.yml`.
+  - **Vad den gör:** läser och tömmer kön, validerar igen, anropar kärnans funktioner, loggar med grundarens mejl och publicerar en ny snapshot.
+  - **Dubbletter:** en post som redan är behandlad utförs aldrig två gånger.
+  - **company-daily** tömmer också kön före dagens cykel.
+- **Ny kärnfunktion:** `ControlStops.place_all`, som pausar alla agenter med kontrollstopp. Bara grundarna får använda den.
+- `command-center/functions/api/chat.js`: chatt via Groq utan verktyg, med 30 meddelanden per grundare och timme, loggar i 30 dagar och märkningen "Hypothesis — not verified".
+- **Den lokala servern:** `POST /api/action` utför beslutet direkt med samma kod, och kräver session, egen header och CSRF-token.
+- **Snapshoten:** `stops` (aktiva kontrollstopp), `agents[].paused` och `quotas[].model`.
+- **Tester:** `tests/unit/test_control.py` (9 tester) och `command-center/tests/control.test.mjs`.
+### Ändrat
+- **Paus är ett kontrollstopp** (`ControlStops.place` och `lift`), inte en ändring av livscykeln. Kärnan nekar en avstängning utan ett beslutat ärende (SR-17).
+- `ALLOWED_EMAILS` har formen `namn=mejl`, så att varje identitet hör till en grundare i kärnan.
+- `System` har fältet `stops`, samma instans som `AuthorizationEngine` använder.
+
 ## [Unreleased] — 2026-11-09 — Command Center Del 2 och 3: design, skal och de tio sidorna
 ### Tillagt
 - `command-center/`: frontend utan byggsteg, npm eller ramverk (D-087).

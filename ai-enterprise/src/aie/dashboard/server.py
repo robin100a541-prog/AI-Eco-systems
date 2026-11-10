@@ -86,6 +86,22 @@ class Dashboard:
             system = build_system(self.config, db, self.config_dir, clock=SimClock(run["start_date"]) if run else None)
             return build_snapshot(system, self.config, self.config_dir)
 
+    def act(self, founder: str, body: dict) -> dict:
+        """Ett knapptryck lokalt: samma validering och samma kärnanrop som kön i molnet (control.process)."""
+        import secrets
+        from datetime import UTC
+
+        from . import control
+
+        email = f"{founder}@local"
+        item = {**{k: v for k, v in body.items() if k not in ("id", "email", "founder", "at")},
+                "id": f"local-{secrets.token_hex(8)}", "email": email, "founder": founder,
+                "at": datetime.now(UTC).isoformat()}
+        with self._db_lock, runtime._open(self.config) as db:
+            system, gov = control.open_core(self.config, db, self.config_dir)
+            return control.process(system, gov, [(item["id"], json.dumps(item).encode("utf-8"))], self.founders,
+                                   {email: founder})
+
     def audit(self, actor: str, action: str, details: dict) -> None:
         """Inloggningar loggas i revisionsloggen (FR-28, §35). Aldrig koden."""
         from ..audit import AuditLog
@@ -212,9 +228,12 @@ class Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         if length > MAX_BODY:
             return self._send(413, b"too large", "text/plain; charset=utf-8")
-        form = {k: v[0] for k, v in parse_qs(self.rfile.read(length).decode("utf-8", "replace")).items()}
+        raw = self.rfile.read(length)
         sid = self._sid()
         session = self.dashboard.auth.session(sid)
+        if path.startswith("/api/"):
+            return self._api_post(path, raw, session)
+        form = {k: v[0] for k, v in parse_qs(raw.decode("utf-8", "replace")).items()}
         if session is None or not form.get("csrf") or form.get("csrf") != session.csrf:
             log.warning("POST %s utan giltig CSRF-token nekades", path)
             return self._send(403, b"Forbidden: missing or invalid CSRF token", "text/plain; charset=utf-8")
@@ -227,6 +246,39 @@ class Handler(BaseHTTPRequestHandler):
             self.dashboard.audit(session.founder, "dashboard.logout", {})
             return self._redirect("/login", {"Set-Cookie": f"{COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"})
         return self._send(404, b"not found", "text/plain; charset=utf-8")
+
+    def _api_post(self, path: str, raw: bytes, session) -> None:
+        """Samma form som functions/api/action.js och chat.js. Lokalt finns ingen kö: beslutet valideras och
+        utförs direkt med samma kod som `aie control ingest` (kärnans funktioner, revisionsloggen)."""
+        def reply(status: int, body: dict) -> None:
+            self._send(status, json.dumps(body, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+
+        if session is None or session.founder is None:
+            return reply(401, {"error": "unauthorized"})
+        origin = self.headers.get("Origin")
+        if origin and urlsplit(origin).netloc != self.headers.get("Host"):
+            return reply(403, {"error": "cross-origin request refused"})
+        if self.headers.get("X-Command-Center") != "1" or self.headers.get("X-CSRF-Token") != session.csrf:
+            log.warning("POST %s utan giltig header eller CSRF-token nekades", path)
+            return reply(403, {"error": "missing header or CSRF token"})
+        if path == "/api/chat":
+            return reply(503, {"error": "chat needs the cloud deployment (Groq); it is not available offline"})
+        if path != "/api/action":
+            return reply(404, {"error": "not found"})
+        try:
+            body = json.loads(raw or b"null")
+            if not isinstance(body, dict):
+                raise ValueError
+        except ValueError:
+            return reply(400, {"error": "invalid json"})
+        try:
+            result = self.dashboard.act(session.founder, body)
+        except Exception as exc:  # noqa: BLE001
+            log.error("lokal åtgärd misslyckades: %s", type(exc).__name__)
+            return reply(500, {"error": "the action could not be applied"})
+        if result["rejected"]:
+            return reply(400, {"error": result["rejected"][0]["reason"]})
+        return reply(202, {"id": result["applied"][0]["id"], "queued": False, "applied": True})
 
     def _login(self, old_sid: str | None, form: dict) -> None:
         address = self.client_address[0]
