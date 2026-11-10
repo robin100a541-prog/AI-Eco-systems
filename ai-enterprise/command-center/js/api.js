@@ -17,11 +17,16 @@ export const fetchGithub = () => getJson("/api/github");
 export const fetchHealth = () => getJson("/api/health");
 export const fetchMe = () => getJson("/api/me");
 
+// Den lokala servern kräver dessutom sessionens CSRF-token (från /api/me). I molnet finns ingen sådan.
+let csrf = null;
+export function setCsrf(token) { csrf = token || null; }
+const postHeaders = () => ({ "Content-Type": "application/json", "X-Command-Center": "1", ...(csrf ? { "X-CSRF-Token": csrf } : {}) });
+
 // Knapptryck: läggs i kön (Del 4). Kräver same-origin och en egen header.
 export async function postAction(body) {
   const res = await fetch("/api/action", {
     method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { "Content-Type": "application/json", "X-Command-Center": "1" },
+    headers: postHeaders(),
     body: JSON.stringify(body),
   });
   let data = {};
@@ -33,7 +38,7 @@ export async function postAction(body) {
 export async function postChat(body) {
   const res = await fetch("/api/chat", {
     method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { "Content-Type": "application/json", "X-Command-Center": "1" },
+    headers: postHeaders(),
     body: JSON.stringify(body),
   });
   let data = {};

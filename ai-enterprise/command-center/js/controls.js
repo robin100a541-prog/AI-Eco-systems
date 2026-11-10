@@ -19,6 +19,23 @@ export function confirmAction(title, text, onConfirm, { confirmLabel = "Queue de
   d.addEventListener("close", () => { if (d.returnValue === "ok") onConfirm(); });
 }
 
+// Återstart efter nödstopp: kräver ordet RELEASE och ett skäl. Kärnan kontrollerar revisionskedjan (D-030).
+export function confirmRelease(onConfirm) {
+  const d = dialog(`<form method="dialog" class="stack">
+    <div class="label">Emergency stop</div><h2>Release the kill switch</h2>
+    <p class="muted">Agents may act again from the next run. The core refuses the release if the audit chain is broken.</p>
+    <label for="rel-note">Why is it safe to restart?</label><input id="rel-note" type="text" maxlength="300" autocomplete="off">
+    <label for="rel-confirm">Type <b class="mono">RELEASE</b> to confirm</label><input id="rel-confirm" type="text" autocomplete="off" spellcheck="false">
+    <div class="row between"><button class="btn" value="cancel">Cancel</button>
+    <button class="btn primary" value="ok" id="rel-ok" disabled>Release kill switch</button></div></form>`);
+  const note = d.querySelector("#rel-note"), input = d.querySelector("#rel-confirm"), ok = d.querySelector("#rel-ok");
+  const check = () => { ok.disabled = input.value.trim() !== "RELEASE" || !note.value.trim(); };
+  note.addEventListener("input", check);
+  input.addEventListener("input", check);
+  note.focus();
+  d.addEventListener("close", () => { if (d.returnValue === "ok" && !ok.disabled) onConfirm(note.value.trim()); });
+}
+
 // Kill kräver att man skriver KILL i rutan.
 export function confirmKill(onConfirm) {
   const d = dialog(`<form method="dialog" class="stack">

@@ -108,6 +108,18 @@ class ControlStops:
         })
         return stop
 
+    def place_all(self, actor: str, reason: str) -> tuple[Stop, ...]:
+        """Pausar alla agenter: ett stopp per agent som får agera och inte redan har ett aktivt agentstopp.
+
+        Bara grundarna (FR-32, D-089). Stoppen hävs ett i taget med `lift`; inget raderas, och agenternas
+        livscykel rörs inte (en avstängning kräver ett beslutat ärende, SR-17).
+        """
+        if actor not in self._founders:
+            raise StopError("bara grundarna kan pausa alla agenter (FR-32)")
+        stopped = {s.scope_value for s in self.active() if s.scope_kind == "agent"}
+        return tuple(self.place(actor, "agent", agent.agent_id, reason) for agent in self._registry.agents()
+                     if agent.state in ACTING_STATES and agent.agent_id not in stopped)
+
     def lift(self, actor: str, stop_id: int, reason: str) -> Stop:
         if not reason.strip():
             raise StopError("att häva ett stopp kräver en motivering")

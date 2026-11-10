@@ -403,6 +403,46 @@ class TestLocalApi(ServerCase):
         res, _ = self.request("GET", "/api/github", cookie=cookie)
         self.assertEqual(res.status, 503)
 
+    def post_json(self, path, body, cookie=None, headers=None):
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        h = {"Content-Type": "application/json", **(headers or {})}
+        if cookie:
+            h["Cookie"] = cookie
+        conn.request("POST", path, body=json.dumps(body), headers=h)
+        res = conn.getresponse()
+        data = res.read()
+        conn.close()
+        return res, json.loads(data or b"{}")
+
+    def test_local_actions_need_session_header_and_csrf_and_go_through_the_core(self):
+        """Verifies FR-28, FR-31, D-089: lokalt kräver /api/action session, egen header och CSRF-token; beslutet
+        valideras och utförs med samma kod som kön i molnet och loggas i revisionsloggen. Chatten är inte tillgänglig
+        utan internet."""
+        res, _ = self.post_json("/api/action", {"type": "pause_agent", "agent": "comp-1"})
+        self.assertEqual(res.status, 401)
+        _, cookie = self.login()
+        csrf = self.csrf_of(cookie)
+        ok = {"X-Command-Center": "1", "X-CSRF-Token": csrf}
+        for headers in ({}, {"X-Command-Center": "1"}, {"X-CSRF-Token": csrf}, {"X-Command-Center": "1", "X-CSRF-Token": "x"},
+                        {**ok, "Origin": "https://evil.example"}):
+            res, _ = self.post_json("/api/action", {"type": "pause_agent", "agent": "comp-1"}, cookie, headers)
+            self.assertEqual(res.status, 403, headers)
+        res, body = self.post_json("/api/action", {"type": "shell", "cmd": "dir"}, cookie, ok)
+        self.assertEqual(res.status, 400)
+        res, body = self.post_json("/api/action", {"type": "kill"}, cookie, ok)
+        self.assertEqual(res.status, 400)
+        res, body = self.post_json("/api/action", {"type": "pause_agent", "agent": "comp-1", "founder": "robin"}, cookie, ok)
+        self.assertEqual((res.status, body.get("applied")), (202, True))
+        snap = self.dashboard.snapshot()
+        comp = next(a for a in snap["agents"]["items"] if a["id"] == "comp-1")
+        self.assertTrue(comp["paused"])
+        self.assertEqual(snap["stops"]["items"][0]["placed_by"], "yorgo")  # inloggad grundare, inte fältet i begäran
+        res, body = self.post_json("/api/action", {"type": "resume_agent", "agent": "comp-1"}, cookie, ok)
+        self.assertEqual(res.status, 202)
+        self.assertEqual(self.dashboard.snapshot()["stops"]["items"], [])
+        res, body = self.post_json("/api/chat", {"agent": "comp-1", "message": "hi"}, cookie, ok)
+        self.assertEqual(res.status, 503)
+
 
 class TestSetCode(unittest.TestCase):
     def setUp(self):

@@ -2,5 +2,5 @@
 import { json } from "../_lib/http.js";
 
 export async function onRequestGet({ data }) {
-  return json({ email: data.identity ? data.identity.email : null, mode: "cloudflare" });
+  return json({ email: data.identity ? data.identity.email : null, founder: data.identity ? data.identity.founder : null, mode: "cloudflare" });
 }

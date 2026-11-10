@@ -18,8 +18,8 @@ beforeEach(async () => {
 const verify = (token, env = ENV_BASE) => verifyAccess(request("/api/health", { token }), env, { fetchImpl: certsFetch(pair) });
 
 test("FR-28: a valid Access JWT for an allowed founder passes", async () => {
-  assert.deepEqual(await verify(await sign(pair)), { email: YORGO });
-  assert.deepEqual(await verify(await sign(pair, { email: ROBIN.toUpperCase() })), { email: ROBIN });
+  assert.deepEqual(await verify(await sign(pair)), { email: YORGO, founder: "yorgo" });
+  assert.deepEqual(await verify(await sign(pair, { email: ROBIN.toUpperCase() })), { email: ROBIN, founder: "robin" });
 });
 
 test("FR-28: missing, forged, wrong audience, wrong issuer, expired and wrong email are all refused", async () => {

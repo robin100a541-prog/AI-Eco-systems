@@ -36,7 +36,8 @@ EVENT_TYPES = {
     "kill.engaged": "kill switch", "kill.released": "kill switch",
     "mode.protected_entered": "protected mode", "mode.protected_exited": "protected mode",
     "simulation.day": "run completed", "system.start": "system", "system.stop": "system",
-    "control.applied": "founder control",
+    "control.applied": "founder control", "control.rejected": "founder control",
+    "stop.placed": "agent stopped", "stop.lifted": "agent started",
 }
 
 
@@ -83,6 +84,10 @@ def build_snapshot(system, config, config_dir, *, now: str | None = None, real_s
         "audit_chain": {"ok": audit.ok, "length": audit.checked if hasattr(audit, "checked") else _count(db, "audit_log"),
                         "first_bad_seq": audit.first_bad_seq, "source": "AuditLog.verify", "as_of": at},
         "quotas": _quotas(db, config_dir, at),
+        "stops": {"items": [{"id": s.stop_id, "scope": s.scope_kind, "target": s.scope_value,
+                             "reason": mask_secrets(s.reason)[:200], "placed_by": s.placed_by, "placed_at": s.placed_at}
+                            for s in (system.stops.active() if getattr(system, "stops", None) is not None else ())],
+                  "source": "ControlStops.active", "as_of": at},
         "tasks": _tasks(db, agents, at),
         "consultations": _consultations(db, at),
         "lessons": _rows(db, at, "lessons", "SELECT lesson_id, statement, scope, proposed_by, at FROM lessons "
@@ -222,6 +227,9 @@ def _agents(system, db, agents, names, permissions, at: str) -> dict:
             "ORDER BY updated_at"):
         tasks[owner] = {"id": task_id, "title": title, "status": status}
     waiting = {r for (r,) in conn.execute("SELECT requested_by FROM approval_requests WHERE status = 'pending'")}
+    stops = system.stops.active() if getattr(system, "stops", None) is not None else ()
+    stopped_agents = {s.scope_value for s in stops if s.scope_kind == "agent"}
+    stopped_departments = {s.scope_value for s in stops if s.scope_kind == "department"}
     rows = []
     for a in agents:
         mandate = permissions.roles.get(a.role)
@@ -233,7 +241,9 @@ def _agents(system, db, agents, names, permissions, at: str) -> dict:
             "level": mandate.level if mandate else None,
             "description": mandate.description if mandate else None,
             "lifecycle": a.state.value.lower(),
-            "status": _status(a.state.value.lower(), task, a.agent_id in waiting),
+            "paused": a.agent_id in stopped_agents or a.department in stopped_departments,
+            "status": "offline" if a.agent_id in stopped_agents or a.department in stopped_departments
+            else _status(a.state.value.lower(), task, a.agent_id in waiting),
             "manager": a.manager_id,
             "task": task,
             "progress": None,  # framsteg registreras inte i kärnan; visas som N/A
@@ -246,7 +256,7 @@ def _agents(system, db, agents, names, permissions, at: str) -> dict:
             "recent_runs": [{"at": t, "model": f"{d.get('provider')}/{d.get('model')}", "tokens": d.get("tokens"),
                              "data_class": d.get("data_class")} for t, d in calls[a.agent_id][-20:]][::-1],
         })
-    return {"items": rows, "source": "AgentRegistry, audit_log (llm.call, simulation.action, tool.denied), tasks",
+    return {"items": rows, "source": "AgentRegistry, ControlStops, audit_log (llm.call, simulation.action, tool.denied), tasks",
             "as_of": at}
 
 
@@ -387,7 +397,7 @@ def _quotas(db, config_dir, at: str) -> dict:
     today = db.connection.execute("SELECT MAX(day) FROM provider_usage").fetchone()[0] if _has(db, "provider_usage") else None
     usage = {p: (c, t) for p, c, t in db.connection.execute(
         "SELECT provider, calls, tokens FROM provider_usage WHERE day = ?", (today,))} if today else {}
-    rows = [{"provider": p["name"], "day": today, "calls": usage.get(p["name"], (0, 0))[0],
+    rows = [{"provider": p["name"], "model": p.get("model"), "day": today, "calls": usage.get(p["name"], (0, 0))[0],
              "calls_limit": p.get("daily_calls"), "tokens": usage.get(p["name"], (0, 0))[1],
              "tokens_limit": p.get("daily_tokens")} for p in providers]
     return {"items": rows, "source": "provider_usage, config/providers.toml", "as_of": at}

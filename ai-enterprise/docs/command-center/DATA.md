@@ -193,6 +193,51 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 | `report:<fil>` | `py -m aie publish --reports` | de tre senaste dagliga rapporterna (35 dagar) |
 | `state:company`, `state:scout`, `state:pilot` | `scripts/state.sh push` | krypterad databaskopia (D-093) |
 
+## 10. Kontroller och chatt (Del 4, D-089, D-090)
+**Flödet för ett knapptryck:**
+1. **Webbläsaren** anropar `POST /api/action` med samma ursprung och headern `X-Command-Center: 1`.
+2. **`functions/api/action.js`** kontrollerar den verifierade Access-identiteten, validerar strikt och lägger en post i KV-kön. Sedan startar den workflowen `control-ingest` med `workflow_dispatch`.
+3. **`py -m aie control ingest`** läser och tömmer kön, validerar varje post igen, anropar kärnans funktioner och loggar `control.applied` eller `control.rejected` i revisionsloggen med grundarens mejl. Därefter publiceras en ny snapshot.
+4. **company-daily** tömmer också kön före dagens cykel, så att ett beslut aldrig blir liggande om starten av workflowen misslyckades.
+
+**Köposten** (`queue:<tid>:<id>`, sparas högst 7 dagar):
+
+| Fält | Innehåll |
+|---|---|
+| `id` | unikt id (UUID). En post med ett id som redan är behandlat hoppas över |
+| `type` | `approve`, `reject`, `pause_agent`, `resume_agent`, `pause_all`, `kill` eller `kill_release` |
+| `email`, `founder` | ur den verifierade Access-JWT:n och `ALLOWED_EMAILS` (`namn=mejl`). Aldrig ur webbläsarens begäran |
+| `at` | när posten lades i kön |
+| `note` | högst 300 tecken. Krävs för `reject` |
+| `request` | förfrågans nummer, för `approve` och `reject` |
+| `agent` | agentens ID, för `pause_agent` och `resume_agent` |
+| `confirm` | måste vara `KILL` för `kill` och `RELEASE` för `kill_release` |
+
+**Vad varje åtgärd gör i kärnan:**
+
+| Åtgärd | Kärnfunktion | Anmärkning |
+|---|---|---|
+| `approve`, `reject` | `ApprovalQueue.approve` och `reject` | en grundare räcker i simuleringen (D-081) |
+| `pause_agent` | `ControlStops.place(grundare, "agent", id, skäl)` | ett kontrollstopp (SR-05) som nekar agentens alla verktyg |
+| `resume_agent` | `ControlStops.lift` | häver agentens aktiva stopp |
+| `pause_all` | `ControlStops.place_all` (ny kärnfunktion) | ett stopp per agent som får agera. Bara grundarna |
+| `kill` | `KillSwitch.engage` | stoppar verktyg och nya transaktioner. Inget raderas |
+| `kill_release` | `KillSwitch.vote_release` | återstart. Kräver `RELEASE` och ett skäl, och kärnan nekar om revisionskedjan är trasig (D-030). Tillagd eftersom databasen ligger i molnet, så `python -m aie kill release` går inte att köra lokalt mot den |
+
+- **Paus är ett stopp, inte en avstängning.** Kärnan tillåter inte att en agents livscykel sätts till `SUSPENDED` utan ett beslutat ärende med dokumenterade kriterier (SR-17, `RemovalReview`). Därför pausar Command Center med kontrollstopp, som är gjorda för just det. Agentens livscykel rörs inte.
+- **`run_agent_now` finns inte.** Agenterna körs i den dagliga cykeln, och kärnan har inget säkert sätt att köra en enskild agent. Knappen "Run now" visas därför skrivskyddad med en förklaring.
+- **Lokalt** finns ingen kö. Den lokala servern validerar och utför beslutet direkt med samma kod (`control.process`), och kräver session, egen header och CSRF-token.
+
+**Chatten** (`functions/api/chat.js`):
+- **Inga verktyg:** begäran till Groq saknar `tools`, och funktionen skriver aldrig i kön. Svaret är bara text.
+- **Kontext:** agentens roll, mandat, status och uppgift, och företagets simulerade nyckeltal. Riktig valuta (`economy_real`) skickas aldrig till en extern modell (DR-13).
+- **Modell:** Groq-modellen i `config/providers.toml`, som följer med i snapshoten (`quotas[].model`). Variabeln `GROQ_MODEL` kan ersätta den.
+- **Gränser:** 30 meddelanden per grundare och timme. Vid slut kvot, eller när Groq svarar 429, visas "Waiting for quota".
+- **Loggar:** `chat:<mejl>:<agent>:<tid>` i KV, i 30 dagar.
+- **Märkning:** varje svar märks "Hypothesis — not verified".
+
+**Fler KV-nycklar:** `queue:*` (kön), `chat:*` (chattloggar) och `rate:*` (räknare per grundare och timme).
+
 ## Overifierat
 - **Pilotens databas:** pod-orders har ingen cachepost bland de 20 senaste, så om pilotens databas har några poster är inte verifierat. Den kan inte läsas utan att köra workflowen.
 - **Groq-kvoten i drift:** Groqs verkliga gratiskvot kontrolleras inte här. `provider_usage` räknar bara det som systemet självt har använt.

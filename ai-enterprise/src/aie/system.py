@@ -87,6 +87,7 @@ class System:
     clock: object = None  # affärstid (simulering) eller None = riktig tid
     pause_after_days: int = 14  # D-058
     opportunities: object = None
+    stops: object = None  # kontrollstoppen (SR-05); Command Center pausar agenter med dem (D-089)
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -192,6 +193,6 @@ def build_system(config: Config, db: Database, config_dir: Path | str, clock=Non
     system = System(audit, registry, engine, ledger, budget, kill, protected, stoploss, tax, tasks, incidents,
                     forecasts, lessons, strategies, performance, removal, limits.currency, db=db,
                     permissions=permissions, budgets=budgets, spend_approvals=spend_approvals,
-                    register=register, opportunities=opportunities, clock=clock,
+                    register=register, opportunities=opportunities, clock=clock, stops=stops,
                     results=ResultStore(db, audit, founders, register))
     return system
