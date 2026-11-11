@@ -124,13 +124,14 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 | printify-catalog och pod-orders (dagligen) | cirka 60 |
 | command-center-tester (nytt, bara PR:er som rör `command-center/`) | cirka 60 |
 | dev-agent, dev-agent-guard, nightly, scout och manuella körningar | cirka 120 |
-| **Summa** | **cirka 1 700** |
+| notify-daily (nytt i Del 5, dagligen, cirka 1 minut) | cirka 30 |
+| **Summa** | **cirka 1 730** |
 
 **Slutsats:**
 - **Över taket i dag:** med förra månadens takt, som var en byggmånad med cirka 190 sammanslagna PR:er, hamnar förbrukningen över 1 400.
 - **Kostnad per PR:** varje sammanslagen PR kostar cirka 9 minuter. Det är tester på två versioner, en version vid push och protected-files.
-- **Grundlasten:** utan PR:er är grundlasten cirka 285 minuter.
-- **Gränsen:** taket på 1 400 hålls med **högst cirka 120 sammanslagna PR:er per månad**. Det kräver färre och större PR:er, till exempel en per del som i Command Center.
+- **Grundlasten:** utan PR:er är grundlasten cirka 315 minuter.
+- **Gränsen:** taket på 1 400 hålls med **högst cirka 115 sammanslagna PR:er per månad**. Det kräver färre och större PR:er, till exempel en per del som i Command Center.
 - **Tills vidare kostar det inget:** repot är fortfarande publikt, och publika repon har obegränsade Actions-minuter.
 
 ## 9. Snapshoten (Del 1, D-088)
@@ -237,6 +238,26 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 - **Märkning:** varje svar märks "Hypothesis — not verified".
 
 **Fler KV-nycklar:** `queue:*` (kön), `chat:*` (chattloggar) och `rate:*` (räknare per grundare och timme).
+
+## 11. Notiser (Del 5, D-091)
+**Kanaler:** ntfy (push till mobilen) och Gmail SMTP (e-post). Båda är gratis, och inget SMS används.
+- **`py -m aie notify run`** körs av `control-ingest` och `company-daily`, och skickar larm.
+- **`py -m aie notify daily`** körs av `notify-daily` 20:00 UTC, alltså 21:00 svensk vintertid och 22:00 sommartid. Den skickar dagens sammanfattning med e-post, byggd bara ur snapshoten i KV.
+
+| Larm | Utlöses av | Källa |
+|---|---|---|
+| nödstopp | `kill.engaged` | `audit_log` |
+| skyddat läge | `mode.protected_entered` | `audit_log` |
+| nådd riskgräns | `stoploss.tripped` | `audit_log` |
+| blockerad handling | `tool.denied` och `budget.blocked` | `audit_log` |
+| beslut som väntat över 1 timme | en förfrågan med status `pending` som är äldre än 1 timme | `approval_requests` |
+| slut gratiskvot | `simulation.paused_quota`, `dev.quota_exhausted` och `llm.unavailable` | `audit_log` |
+
+- **ntfy får bara generisk text.** Det är sex fasta meningar (`GENERIC` i `notify/triggers.py`) utan belopp, namn eller ID:n. Den som kan ämnet kan läsa notiserna, och därför ligger ämnet i en hemlighet och texten är ofarlig.
+- **E-posten** får detaljerna, och går till grundarnas adresser i `ALLOWED_EMAILS`.
+- **Inget aviseras två gånger.** När något har skickats loggas `notify.sent` i revisionsloggen, med sista lästa raden och vilka förfrågningar som aviserats. Samma typ skickas högst var 15:e minut.
+- **Saknas en hemlighet** hoppas kanalen över utan fel, och larmet ligger kvar tills en kanal finns.
+- **Ett fel i en kanal** loggas, och kommandot avslutar ändå med 0. Notiser stoppar aldrig agenterna.
 
 ## Overifierat
 - **Pilotens databas:** pod-orders har ingen cachepost bland de 20 senaste, så om pilotens databas har några poster är inte verifierat. Den kan inte läsas utan att köra workflowen.

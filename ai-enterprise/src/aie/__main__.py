@@ -24,6 +24,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 - `publish`       snapshoten till Cloudflare KV för Command Center (Del 1, D-085)
 - `state`         put/get: krypterad databaskopia till/från Cloudflare KV (Del 1, D-085)
+- `notify`        run (larm) eller daily (sammanfattning): ntfy och Gmail, gratis (Del 5, D-091)
 - `control`       ingest: utför grundarnas knapptryck ur KV-kön via kärnan (Del 4, D-089)
 - `dashboard`     kommandocentralen: lokal server på 127.0.0.1:8765 (--lan för mobilen), set-code (D1, D-073)
 
@@ -231,6 +232,8 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("action", choices=("put", "get"))
     st.add_argument("name", help="company, pilot eller scout")
     st.add_argument("file", type=Path, help="den redan krypterade filen")
+    nt = add("notify", "notiser till grundarna: run = larm sedan förra gången, daily = dagens sammanfattning (D-091)")
+    nt.add_argument("action", choices=("run", "daily"))
     ct = add("control", "ingest: läs och töm kön med grundarnas beslut och utför dem via kärnan (Command Center, D-089)")
     ct.add_argument("action", choices=("ingest",))
     db = add("dashboard", "kommandocentralen: lokal server (standard) eller set-code för en grundares åtkomstkod (D1, D-073)")
@@ -451,6 +454,7 @@ def main(argv: list[str] | None = None) -> int:
         "pod": lambda: _pod(args),
         "assess": lambda: _assess(args),
         "dashboard": lambda: _dashboard(args),
+        "notify": lambda: getattr(__import__("aie.notify.cli", fromlist=["run"]), args.action)(args.config_dir),
         "control": lambda: __import__("aie.dashboard.control", fromlist=["ingest"]).ingest(args.config_dir),
         "publish": lambda: __import__("aie.dashboard.publish", fromlist=["publish"]).publish(
             args.config_dir, args.out, args.reports),

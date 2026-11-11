@@ -103,12 +103,23 @@ jobs:
           python -m aie daily-cycle --as robin --agents "$agents" --out "$RUNNER_TEMP/out/reports" \
             --dashboard "$RUNNER_TEMP/out/status.json" --questions "$RUNNER_TEMP/out/QUESTIONS-FOR-FOUNDERS.md" \
             2>&1 | tee "$RUNNER_TEMP/cycle.txt"
+      - name: Notiser till grundarna
+        if: always()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+        run: python -m aie notify run || true
       - name: Publicera snapshoten till Command Center
         if: always()
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: python -m aie publish --reports "$RUNNER_TEMP/out/reports" 2>&1 | tee -a "$RUNNER_TEMP/cycle.txt" || true
       - name: Spara den krypterade kopian i KV
         if: always()

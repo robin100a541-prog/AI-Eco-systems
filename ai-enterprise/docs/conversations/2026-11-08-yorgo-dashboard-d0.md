@@ -182,3 +182,12 @@ Frågorna står i slutrapporten och i PR:en.
 - **Samma concurrency-grupp:** `control-ingest` delar grupp med company-daily, eftersom de ändrar samma databas. Faller dagens cykel bort startas den om i sista steget.
 - **Chatten** skickar bara simulerade siffror till Groq.
 - **Återstart efter nödstopp** fanns inte i uppdragets lista, men lades till som `kill_release`. Databasen ligger i molnet, så utan den hade ett nödstopp från Command Center inte gått att häva.
+
+## 2026-11-10: Command Center, Del 5 (notiser)
+**Gjort:** `src/aie/notify/` med ntfy och Gmail SMTP, larm ur revisionsloggen och en daglig sammanfattning ur snapshoten.
+
+**Antaganden:**
+- **Klockan 21** tolkas som svensk tid. GitHubs schema följer inte sommartid, så sammanfattningen kommer 21:00 på vintern och 22:00 på sommaren.
+- **Vad som är aviserat** sparas i revisionsloggen (`notify.sent`) i stället för i en ny tabell.
+- **Första körningen** tittar bara 24 timmar bakåt, så att gammal historik inte ger en hög med larm.
+- **Den dagliga sammanfattningen** går bara med e-post, eftersom den innehåller belopp.
