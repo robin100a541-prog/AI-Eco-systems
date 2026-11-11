@@ -169,6 +169,8 @@ class TestDuplicates(SnapshotCase):
         """Verifies SR-10, DR-13: ett värde som ser ut som en hemlighet stoppar snapshoten."""
         with self.assertRaises(ValueError):
             check_snapshot({"agents": {"items": [{"description": "api_key=" + "a" * 40}]}})
+        with self.assertRaises(ValueError):
+            check_snapshot({"agents": {"items": [{"id": "x", "prompt": "utanför vitlistan"}]}})
 
 
 class TestPublish(SnapshotCase):

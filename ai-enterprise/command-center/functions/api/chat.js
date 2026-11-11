@@ -5,8 +5,8 @@
 //   valuta (economy_real) skickas aldrig till en extern modell (DR-13).
 // - Gräns: 30 meddelanden per grundare och timme. Loggar sparas 30 dagar i KV.
 // - Varje svar märks "Hypothesis — not verified": ett modellsvar är alltid en hypotes (§29).
-import { error, json } from "../_lib/http.js";
-import { checkPost, rateLimit, readJson } from "../_lib/guard.js";
+import { error, json } from "../../lib/http.js";
+import { checkPost, rateLimit, readJson } from "../../lib/guard.js";
 
 export const LIMIT_PER_HOUR = 30;
 export const LABEL = "Hypothesis — not verified";

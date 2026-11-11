@@ -1,6 +1,6 @@
 # TESTING: kommandocentralen
 
-Den här filen beskriver hur kommandocentralen startas och prövas för hand. Den fylls på för varje steg, och D8 lägger till hela mobilchecklistan. De automatiska testerna körs med `py -m unittest discover -s tests` och finns i `tests/unit/test_dashboard_server.py` (D1) och `tests/unit/test_seed_sim.py` (D0b).
+Den här filen beskriver hur kommandocentralen startas och prövas för hand. Den fylls på för varje steg, och D8 lägger till hela mobilchecklistan. De automatiska testerna står i tabellen längst ned.
 
 ## Starta på Windows (Yorgo): ett kommando
 Dubbelklicka på `ai-enterprise\dashboard.cmd` i Utforskaren, eller kör den från valfri terminal:
@@ -45,11 +45,19 @@ Dubbelklicka på `ai-enterprise\dashboard.cmd` i Utforskaren, eller kör den fr�
 | "Offline" i rubrikraden | Servern svarar inte, så starta den igen. |
 | Du loggas ut | Sessionen gäller i 12 timmar och försvinner när servern startas om. |
 
-## Kontroll för hand (D1)
-Gjort 2026-11-08 i appens inbyggda webbläsare, mot en tillfällig kopia med testdata och en genererad testkod:
-- [x] **Fel kod:** "Wrong founder or access code." och HTTP 401.
-- [x] **Rätt kod** ger Home med 3 väntande godkännanden, SIM, Live, klocka och inaktiva knappar.
-- [x] **390 px:** menyn ligger överst och kan fällas ihop, och sidan rullar inte i sidled (`scrollWidth` 390 = `clientWidth` 390).
-- [x] **Approvals** visar en tom vy med "This page is filled in step D4."
-- [ ] **En riktig mobil** på samma wifi med `--lan`. Den kontrollen görs av Yorgo.
-- [ ] **Rörelsen i en synlig webbläsare (D-084):** panelerna glider in lugnt, siffrorna räknas upp utan att gå över, mjuk scroll fungerar bara på datorn med mus, och med "Minska rörelse" påslaget i Windows (Inställningar, Hjälpmedel, Visuella effekter, Animeringseffekter av) står allt still. Den kontrollen görs av Yorgo.
+## Kontroll för hand (Command Center, 2026-11-09)
+Gjort i appens inbyggda webbläsare, mot den lokala servern med en tillfällig kopia av testdata och en genererad testkod:
+- [x] **1440 px:** alla tio sidor visades med data.
+- [x] **390 px:** `scrollWidth` 390 = `clientWidth` 390 på alla tio sidor, och den utfällbara menyn fungerar.
+- [x] **Inga fel:** inga konsolfel och inga CSP-fel.
+- [ ] **En riktig mobil.** Den kontrollen görs av Yorgo och Robin.
+- [ ] **Den driftsatta sidan** på Cloudflare, efter `docs/command-center/DEPLOY.md`: inloggning med engångskod, att en tredje mejladress nekas, att en knapp ger en post i kön och att `py scripts\check_deploy.py <adress>` går igenom.
+- [ ] **Chatten** mot Groq och **notiserna** (ntfy och Gmail). De kräver grundarnas nycklar.
+
+## Automatiska tester
+| Vad | Kommando |
+|---|---|
+| Allt i Python | `py -m unittest discover -s tests` |
+| Snapshot, kö, notiser, lokal server och driftsättning | `py -m unittest tests.unit.test_snapshot tests.unit.test_control tests.unit.test_notify tests.unit.test_dashboard_server tests.unit.test_deploy` |
+| Funktionerna och gränssnittets komponenter (körs i CI, kräver Node 22) | `node --experimental-default-type=module --test "tests/*.test.mjs"` i `command-center/` |
+| Hela dygnskedjan i en tom mapp | `py scripts\verify_daily_cycle.py` |

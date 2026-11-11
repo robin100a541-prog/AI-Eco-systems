@@ -1,1 +1,1 @@
-"""Instrumentpanelen (Fas 8): status.json med bara offentliga data (DR-13) och den dagliga cykeln."""
+"""Command Center: snapshoten, publiceringen till KV, kontrollerna, den lokala servern och den dagliga cykeln."""

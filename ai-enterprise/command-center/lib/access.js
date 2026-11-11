@@ -81,7 +81,9 @@ export async function verifyAccess(request, env, { fetchImpl = fetch, now = Date
     new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
   if (!ok) throw new Error("bad signature");
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(env.ACCESS_AUD)) throw new Error("bad audience");
+  // Cloudflare skapar en Access-applikation för *.pages.dev och en för förhandsvisningarna, med var sin AUD.
+  const accepted = String(env.ACCESS_AUD).split(",").map((x) => x.trim()).filter(Boolean);
+  if (!aud.some((a) => accepted.includes(a))) throw new Error("bad audience");
   if (payload.iss !== `https://${env.ACCESS_TEAM_DOMAIN}`) throw new Error("bad issuer");
   const seconds = Math.floor(now / 1000);
   if (typeof payload.exp !== "number" || payload.exp < seconds) throw new Error("expired");

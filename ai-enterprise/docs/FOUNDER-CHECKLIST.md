@@ -46,11 +46,10 @@ Läs `docs/reports/7a-opportunities.md` och välj en av de tre bästa tillsamman
    `products/f-skatt-guide/listing.md`. Ladda upp `product.pdf`.
 3. Publicera. Skriv datumet i `products/f-skatt-guide/GRANSKNING.md`.
 
-## 7. Instrumentpanelen körs lokalt (ingen GitHub Pages)
-Enligt D-075 (föreslaget 2026-11-08) används inte GitHub Pages. Kommandocentralen körs som lokal server, och
-den byggs i `docs/dashboard/DASHBOARD_PLAN.md` från steg D1. Tills den finns visar du den befintliga Ekobyn lokalt med
-`python -m http.server 8765 --bind 127.0.0.1 --directory docs/dashboard` från `ai-enterprise/`, och sedan
-http://127.0.0.1:8765/.
+## 7. Command Center
+Command Center är systemets enda dashboard (D-085–D-093).
+- **I molnet:** en gemensam adress på Cloudflare Pages som bara ni två når. Så sätter ni upp den: `docs/command-center/DEPLOY.md`.
+- **Lokalt utan internet:** dubbelklicka på `ai-enterprise\dashboard.cmd`. Se `docs/dashboard/TESTING.md`.
 
 ## 8. Importera försäljningen varje vecka
 1. I Gumroad: Analytics, Sales, Export. Spara CSV-filen, till exempel `sales-v45.csv`.

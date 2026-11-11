@@ -1,7 +1,7 @@
 // GET /api/github: senaste commits, PR:er och Actions-körningar, via en finkornig token som bara kan läsa
 // (GITHUB_READ_TOKEN). Svaret cachas 60 sekunder i Cloudflares cache, så GitHubs gräns nås aldrig.
 // Bara vitlistade fält går vidare till webbläsaren; tokenen lämnar aldrig funktionen.
-import { error, json } from "../_lib/http.js";
+import { error, json } from "../../lib/http.js";
 
 const CACHE_SECONDS = 60;
 

@@ -1,7 +1,7 @@
 // node --test: inloggning, snapshot, health och GitHub-flödet (Command Center Del 1, D-085).
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { verifyAccess, resetCertsCache } from "../functions/_lib/access.js";
+import { verifyAccess, resetCertsCache } from "../lib/access.js";
 import { onRequest as middleware } from "../functions/_middleware.js";
 import { onRequestGet as snapshotGet } from "../functions/api/snapshot.js";
 import { onRequestGet as healthGet } from "../functions/api/health.js";
@@ -38,6 +38,21 @@ test("FR-28: missing, forged, wrong audience, wrong issuer, expired and wrong em
   for (const [reason, token] of Object.entries(cases)) {
     await assert.rejects(verify(token), (e) => e.message === reason, reason);
   }
+});
+
+test("D-086: ACCESS_AUD may list the production and preview applications, and nothing else", async () => {
+  const env = { ...ENV_BASE, ACCESS_AUD: "aud-preview-app, aud-command-center-test" };
+  assert.equal((await verify(await sign(pair), env)).email, YORGO);
+  assert.equal((await verify(await sign(pair, { aud: ["aud-preview-app"] }), env)).email, YORGO);
+  await assert.rejects(verify(await sign(pair, { aud: ["aud-other-app"] }), env), /bad audience/);
+});
+
+test("FR-28: API responses are never cached, whatever the handler sets", async () => {
+  globalThis.fetch = certsFetch(pair);
+  const handler = async () => new Response("{}", { headers: { "Cache-Control": "public, max-age=600" } });
+  const res = await callApi(middleware, handler, request("/api/health", { token: await sign(pair) }), { ...ENV_BASE });
+  assert.equal(res.headers.get("Cache-Control"), "no-store");
+  assert.equal(res.headers.get("X-Content-Type-Options"), "nosniff");
 });
 
 test("FR-28: without configuration nothing is allowed", async () => {

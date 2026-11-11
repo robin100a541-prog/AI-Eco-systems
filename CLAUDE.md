@@ -47,7 +47,7 @@ Python ≥ 3.11 med bara standardbiblioteket, SQLite (STRICT-tabeller och append
 - Record non-obvious decisions as proposals in `ai-enterprise/docs/proposals/`; an approved decision is written into `ai-enterprise/DECISIONS.md` (protected).
 
 ## Projektregler (Yorgo 2026-11-08, dashboard D0)
-- **Språk och beroenden:** Python ≥ 3.11 och bara standardbiblioteket. Det enda undantaget är Pillow i `ai-enterprise/src/aie/pod/design/` (D-070). Inga npm-paket: dashboarden är byggfri HTML, CSS och JS, och dess tester körs med Nodes inbyggda `node --test`. Undantag (D-084): GSAP och Lenis som färdigbyggda filer i `ai-enterprise/command-center/vendor/` (flyttad dit 2026-11-09), med licens och SHA-256 i `vendor/README.md`, laddade från den egna servern (inga CDN).
+- **Språk och beroenden:** Python ≥ 3.11 och bara standardbiblioteket. Det enda undantaget är Pillow i `ai-enterprise/src/aie/pod/design/` (D-070). Inga npm-paket: dashboarden är byggfri HTML, CSS och JS, och dess tester körs med Nodes inbyggda `node --test`. Undantag (D-084): GSAP och Lenis som färdigbyggda filer i `ai-enterprise/command-center/public/vendor/` (flyttad dit 2026-11-09), med licens och SHA-256 i `vendor/README.md`, laddade från den egna servern (inga CDN).
 - **Tester:** `unittest`. Varje test anger vilket krav det verifierar (krav-ID som `FR-27`, `SR-10` eller beslut som `D-070`) i sin docstring, till exempel `"""Verifies FR-27: ..."""`.
 - **Ärlighet:** påstå aldrig att något är testat eller fungerar utan att ha kört det. Ange kommandot och utdata.
 - **Skyddat:** ändra aldrig `ai-enterprise/config/*.toml`, `CONSTITUTION.md` eller riskgränser utan att en grundare uttryckligen ber om det.
@@ -56,6 +56,7 @@ Python ≥ 3.11 med bara standardbiblioteket, SQLite (STRICT-tabeller och append
 - **Nycklar:** sätt aldrig `ANTHROPIC_API_KEY`.
 - **Arbetssätt (§47):** ange för varje uppgift mål, filer, kommandon, förväntat resultat, tester och hur det verifieras.
 - **Sessionerna arkiveras** i `ai-enterprise/docs/conversations/` (D-012).
+- **Command Center** (D-085–D-093): gränssnittet ligger i `ai-enterprise/command-center/public/`, funktionerna i `command-center/functions/`. Inget data och inga knapptryck committas till repot (D-092). Läs `ai-enterprise/docs/command-center/DATA.md` innan du ändrar något där.
 - **Repot är publikt** på github.com. Allt som committas kan läsas av vem som helst, så committa inga belopp i riktig valuta, personuppgifter eller hemligheter.
 
 ## Don't touch

@@ -1,5 +1,5 @@
 // GET /api/health: status, version och snapshotens ålder. Kräver inloggning som resten av API:t.
-import { ageSeconds, json } from "../_lib/http.js";
+import { ageSeconds, json } from "../../lib/http.js";
 
 export const STALE_SECONDS = 26 * 3600;
 

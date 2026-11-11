@@ -76,6 +76,8 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 - **Externa API:er:** Groq (LLM, gratis), Printify, YouTube och Etsy. Nycklarna finns som GitHub-hemligheter.
 
 ## 6. Befintliga dashboard-delar (före Command Center)
+**Läget 2026-11-11:** Ekobyn, D1:s sidor och Pinterest-dubbletterna är borttagna i Del 6. Listan nedan visar vad som fanns när arbetet började.
+
 - **Ekobyn:** `docs/dashboard/index.html`, `world.js`, `world.css` och `status.json`. `status.json` skrivs av `export-status` och `daily-cycle` och committas via PR.
 - **D1:s lokala server:** `src/aie/dashboard/server.py`, `auth.py` och `web/`, plus rörelsen från D-084.
 - **Pinterest-sidor:** `docs/dashboard/app.html` och `privacy.html` är dubbletter enligt D-077.
@@ -135,7 +137,7 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 - **Tills vidare kostar det inget:** repot är fortfarande publikt, och publika repon har obegränsade Actions-minuter.
 
 ## 9. Snapshoten (Del 1, D-088)
-**Byggs av:** `py -m aie publish` i company-daily, ur företagets databas och bara med kärnans funktioner (`src/aie/dashboard/snapshot.py`).
+**Byggs av:** `py -m aie publish` i company-daily, ur företagets databas och bara med kärnans funktioner (`src/aie/dashboard/snapshot.py`). Vitlistan för agentfält och kontrollen mot hemligheter ligger i `export.py` (`AGENT_FIELDS` och `check_public`).
 - **Där den ligger:** den laddas upp till KV som `snapshot:latest` och `snapshot:<datum>`, där historiken sparas i 35 dagar.
 - **Hur den läses:** `functions/api/snapshot.js` serverar den oförändrad, och den lokala servern bygger samma schema ur den lokala databasen.
 - **Om uppladdningen misslyckas:** felet loggas, snapshoten sparas i `data/publish-pending/`, och kommandot avslutar ändå med 0. Agenterna påverkas aldrig, och nästa körning försöker igen.

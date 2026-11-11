@@ -20,7 +20,7 @@ from .. import __version__
 from ..ledger import EntryType, compute_result
 from ..ledger.ledger import Status
 from ..monitoring import mask_secrets
-from .export import ensure_names
+from .export import check_public, ensure_names, scout_counts
 
 SCHEMA = "aie.snapshot/1"
 MAX_LEDGER = 500
@@ -95,6 +95,7 @@ def build_snapshot(system, config, config_dir, *, now: str | None = None, real_s
         "incidents": _rows(db, at, "incidents", "SELECT incident_id, source, title, reported_by, opened_at FROM incidents "
                            "ORDER BY incident_id DESC LIMIT 50", ("id", "source", "title", "by", "at")),
         "tax": _tax(system, currency, at),
+        "scout": {"counts": scout_counts(db), "source": "scout_entries (senaste versionen per möjlighet)", "as_of": at},
         "rules": {
             "founders": sorted(config.system.founders),
             "approval_threshold": config.risk.human_approval_threshold.amount_minor
@@ -457,16 +458,9 @@ def _tax(system, currency: str, at: str) -> dict:
             "untracked_entries": len(position.untracked), "source": "TaxEngine.position, tax_assignments", "as_of": at}
 
 
-def check_snapshot(value, path: str = "") -> None:
-    """Som `export.check_public`: ett textvärde som ser ut som en hemlighet stoppar snapshoten."""
-    if isinstance(value, dict):
-        for k, v in value.items():
-            check_snapshot(v, f"{path}.{k}")
-    elif isinstance(value, list):
-        for v in value:
-            check_snapshot(v, f"{path}[]")
-    elif isinstance(value, str) and mask_secrets(value) != value:
-        raise ValueError(f"{path} ser ut att innehålla en hemlighet; snapshoten stoppas (SR-10, DR-13)")
+def check_snapshot(value) -> None:
+    """Vitlistan för agentfält och kontrollen mot hemligheter i `export.py` (DR-13, SR-10)."""
+    check_public(value)
 
 
 def age_hours(snapshot: dict, now: datetime | None = None) -> float:

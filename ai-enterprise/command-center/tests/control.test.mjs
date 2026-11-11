@@ -2,7 +2,7 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resetCertsCache } from "../functions/_lib/access.js";
+import { resetCertsCache } from "../lib/access.js";
 import { onRequest as middleware } from "../functions/_middleware.js";
 import { onRequestPost as actionPost, buildItem, LIMIT_PER_HOUR, TYPES } from "../functions/api/action.js";
 import { onRequestPost as chatPost, buildContext, LABEL, LIMIT_PER_HOUR as CHAT_LIMIT } from "../functions/api/chat.js";
