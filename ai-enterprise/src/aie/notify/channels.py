@@ -49,10 +49,9 @@ class Channels:
 
     @classmethod
     def from_env(cls, environ=os.environ) -> "Channels":
-        from ..dashboard.control import parse_emails
-
         user = environ.get("GMAIL_USER", "").strip()
-        recipients = tuple(sorted(parse_emails(environ.get("ALLOWED_EMAILS")))) or ((user,) if user else ())
+        listed = tuple(sorted({a.strip() for a in environ.get("NOTIFY_TO", "").split(",") if "@" in a}))
+        recipients = listed or ((user,) if user else ())  # utan NOTIFY_TO går e-posten till avsändaren själv
         return cls(environ.get("NTFY_TOPIC", "").strip(), user, environ.get("GMAIL_APP_PASSWORD", "").strip(), recipients)
 
     @property

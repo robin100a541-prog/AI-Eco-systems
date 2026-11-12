@@ -22,8 +22,8 @@ Ett lokalt, hierarkiskt multiagentsystem som organiserar AI-agenter som ett för
 | `docs/prompts/` | Färdiga instruktioner att klistra in i Claude Code |
 
 ## DEPLOYMENT
-Command Center, systemets dashboard, publiceras från `command-center/` på Cloudflare Pages och skyddas av Cloudflare Access (D-085, D-086).
-- **Första gången:** följ `docs/command-center/DEPLOY.md` steg för steg (konto, Pages-projekt, Access med två mejladresser, KV, tokens och variabler).
+Command Center, systemets dashboard, publiceras från `command-center/` på Cloudflare Pages och skyddas av en egen inloggning med en åtkomstkod per grundare (D-085, D-094).
+- **Första gången:** följ `docs/command-center/DEPLOY.md` steg för steg (konto, Pages-projekt, åtkomstkoder, KV, tokens och variabler).
 - **Därefter:** en merge till `main` publiceras automatiskt inom någon minut.
 - **Kontroll:** `py scripts\check_deploy.py https://<projekt>.pages.dev` visar att sidan kräver inloggning.
 - **Lokalt:** `dashboard.cmd` startar samma gränssnitt utan internet.

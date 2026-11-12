@@ -35,6 +35,11 @@ export async function postAction(body) {
   return data;
 }
 
+// Loggar ut: sessionscookien tas bort på servern.
+export async function postLogout() {
+  await fetch("/logout", { method: "POST", credentials: "same-origin", cache: "no-store", headers: postHeaders(), body: "{}" });
+}
+
 export async function postChat(body) {
   const res = await fetch("/api/chat", {
     method: "POST", credentials: "same-origin", cache: "no-store",

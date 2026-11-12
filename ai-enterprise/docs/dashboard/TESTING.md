@@ -51,7 +51,7 @@ Gjort i appens inbyggda webbläsare, mot den lokala servern med en tillfällig k
 - [x] **390 px:** `scrollWidth` 390 = `clientWidth` 390 på alla tio sidor, och den utfällbara menyn fungerar.
 - [x] **Inga fel:** inga konsolfel och inga CSP-fel.
 - [ ] **En riktig mobil.** Den kontrollen görs av Yorgo och Robin.
-- [ ] **Den driftsatta sidan** på Cloudflare, efter `docs/command-center/DEPLOY.md`: inloggning med engångskod, att en tredje mejladress nekas, att en knapp ger en post i kön och att `py scripts\check_deploy.py <adress>` går igenom.
+- [ ] **Den driftsatta sidan** på Cloudflare, efter `docs/command-center/DEPLOY.md`: inloggning med åtkomstkod, att fel kod nekas och att fem fel låser i 15 minuter, att en knapp ger en post i kön och att `py scripts\check_deploy.py <adress>` går igenom.
 - [ ] **Chatten** mot Groq och **notiserna** (ntfy och Gmail). De kräver grundarnas nycklar.
 
 ## Automatiska tester

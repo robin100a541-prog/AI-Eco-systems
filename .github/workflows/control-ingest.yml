@@ -53,8 +53,6 @@ jobs:
           STATE_KEY: ${{ secrets.STATE_KEY }}
         run: bash scripts/state.sh pull company data/sim.db
       - name: Utför besluten i kön
-        env:
-          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
         run: |
           python -m aie init
           python -m aie control ingest 2>&1 | tee "$RUNNER_TEMP/ingest.txt"
@@ -64,7 +62,7 @@ jobs:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
         run: python -m aie notify run || true
       - name: Publicera snapshoten
         if: always()

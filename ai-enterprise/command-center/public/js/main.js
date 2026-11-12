@@ -1,6 +1,6 @@
 // Command Center: skal, routing och uppdatering. Snapshoten hämtas var 30:e sekund, GitHub var 60:e,
 // och bara de delar vars data ändrats ritas om (varje sida delar sig i "parts" med en egen select()).
-import { fetchGithub, fetchMe, fetchSnapshot, postAction, setCsrf } from "./api.js";
+import { fetchGithub, fetchMe, fetchSnapshot, postAction, postLogout, setCsrf } from "./api.js";
 import { applyWidths, ago, esc, icon, pill, toast } from "./ui.js";
 import { enhance, syncLenis } from "./effects.js";
 import { confirmKill, confirmAction, confirmRelease } from "./controls.js";
@@ -187,8 +187,11 @@ function boot() {
       confirmKill(() => runAction({ type: "kill", confirm: "KILL" }, "Kill switch"));
     }
   });
+  document.getElementById("btn-logout").addEventListener("click", async () => {
+    try { await postLogout(); } finally { location.href = "/login"; }
+  });
   window.addEventListener("hashchange", render);
-  fetchMe().then((me) => { state.me = me; setCsrf(me.csrf); document.getElementById("founder").textContent = me.email || me.founder || ""; }).catch(() => {});
+  fetchMe().then((me) => { state.me = me; setCsrf(me.csrf); document.getElementById("founder").textContent = me.founder || ""; }).catch(() => {});
   tick();
   setInterval(tick, 15_000);
   render();

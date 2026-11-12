@@ -24,8 +24,8 @@ export async function readJson(request, maxBytes = 4096) {
 }
 
 // Räknare per grundare och timme. KV är inte atomär, så gränsen är ungefärlig, vilket räcker för två personer.
-export async function rateLimit(kv, scope, email, limit, now = Date.now()) {
-  const key = `rate:${scope}:${email}:${new Date(now).toISOString().slice(0, 13)}`;
+export async function rateLimit(kv, scope, founder, limit, now = Date.now()) {
+  const key = `rate:${scope}:${founder}:${new Date(now).toISOString().slice(0, 13)}`;
   const used = parseInt((await kv.get(key)) || "0", 10) || 0;
   if (used >= limit) return { ok: false, remaining: 0 };
   await kv.put(key, String(used + 1), { expirationTtl: 2 * 3600 });

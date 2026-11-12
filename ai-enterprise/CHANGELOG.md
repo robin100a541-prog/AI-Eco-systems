@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — Command Center: egen inloggning i stället för Cloudflare Access (D-094)
+### Tillagt
+- `command-center/lib/session.js`, `functions/login.js` och `functions/logout.js`: inloggning med en åtkomstkod per grundare.
+  - **Koden** lagras bara som PBKDF2-SHA256-hash med salt och 210 000 iterationer, i `FOUNDER_CODE_HASHES`.
+  - **Sessionen** är en HMAC-signerad cookie (HttpOnly, Secure, SameSite=Strict, 12 timmar).
+  - **Låsning:** 5 fel från samma IP eller mot samma grundare ger 15 minuter. Varje försök loggas i KV.
+- `py -m aie command-center make-code --founder Yorgo` och `make-secret` (`src/aie/dashboard/cc_auth.py`).
+- **Knappen Log out** i toppraden.
+- **Tester:** `tests/unit/test_cc_auth.py`, omskrivna JS-tester, och gemensamma testvektorer som kontrollerar att Python och funktionerna ger samma hash.
+- `DECISIONS.md`: **D-094**, godkänt av båda. D-086 är ersatt.
+### Ändrat
+- `functions/_middleware.js` skyddar alla sökvägar, också statiska filer och `/api/health`. Saknas hemligheterna svarar allt 503 "Not configured".
+- **Grundarens identitet** i köposter, chattloggar och revisionsloggen kommer från sessionen. Köposten har inget `email`-fält.
+- `scripts/check_deploy.py`: utan cookie ska allt ge 302 till `/login` eller 401, och 503 rapporteras som "inte konfigurerad".
+- **Notiserna** går till adresserna i `NOTIFY_TO` (valfri), annars till avsändaren.
+### Borttaget
+- `command-center/lib/access.js` och all kontroll av Access-JWT.
+- Variablerna `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` och `ALLOWED_EMAILS`.
+
 ## [Unreleased] — 2026-11-11 — Command Center Del 6: säkerhet, driftsättning och städning
 ### Tillagt
 - `docs/command-center/DEPLOY.md`: driftsättningen steg för steg, med var varje variabel ska ligga.

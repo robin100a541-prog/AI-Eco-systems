@@ -1,6 +1,6 @@
 // POST /api/action: tar emot ett knapptryck och lägger ett beslut i KV-kön (D-089). Ingenting ändras här.
 // Motorn utför beslutet i workflowen control-ingest (`py -m aie control ingest`) via kärnans funktioner.
-// Kontroller: verifierad Access-identitet (middleware), samma ursprung, egen header, gräns per timme och
+// Kontroller: inloggad session (middleware, D-094), samma ursprung, egen header, gräns per timme och
 // strikt validering. Inga skalkommandon, serveruppgifter eller fria körningar går att nå härifrån:
 // bara åtgärdstyperna i TYPES, med fasta fält.
 import { error, json } from "../../lib/http.js";
@@ -18,7 +18,7 @@ export function buildItem(body, identity, now = new Date()) {
   const allowed = { approve: ["request", "note"], reject: ["request", "note"], pause_agent: ["agent", "note"],
     resume_agent: ["agent", "note"], pause_all: ["note"], kill: ["confirm", "note"], kill_release: ["confirm", "note"] }[type];
   for (const key of Object.keys(body)) if (key !== "type" && !allowed.includes(key)) throw new Error(`unexpected field ${key}`);
-  const item = { id: crypto.randomUUID(), type, email: identity.email, founder: identity.founder, at: now.toISOString(),
+  const item = { id: crypto.randomUUID(), type, founder: identity.founder, at: now.toISOString(),
     note: typeof body.note === "string" ? body.note.slice(0, 300) : "" };
   if (type === "approve" || type === "reject") {
     if (!Number.isInteger(body.request) || body.request < 1) throw new Error("request must be a request number");
@@ -58,14 +58,14 @@ export async function onRequestPost({ request, env, data }) {
   if (refused) return refused;
   if (!env.KV) return error(503, "KV binding missing");
   const identity = data.identity;
-  if (!identity || !identity.founder) return error(403, "this identity has no founder name in ALLOWED_EMAILS");
+  if (!identity || !identity.founder) return error(401, "unauthorized");
   let item;
   try {
     item = buildItem(await readJson(request), identity);
   } catch (e) {
     return error(400, e.message);
   }
-  const rate = await rateLimit(env.KV, "action", identity.email, LIMIT_PER_HOUR);
+  const rate = await rateLimit(env.KV, "action", identity.founder, LIMIT_PER_HOUR);
   if (!rate.ok) return error(429, "too many actions this hour");
   await env.KV.put(`queue:${item.at}:${item.id}`, JSON.stringify(item), { expirationTtl: QUEUE_TTL });
   let dispatched = false;

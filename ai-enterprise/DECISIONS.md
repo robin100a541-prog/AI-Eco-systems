@@ -8,6 +8,19 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 
 ## Fas 3 — beslut
 
+### D-094 Egen inloggning i Command Center i stället för Cloudflare Access
+- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin, 2026-11-12 · **Ersätter:** D-086 · **Bygger på:** D-085, D-088
+- **Skäl:** Cloudflare Zero Trust (Access) kräver betalkort, och Command Center ska kosta 0 kr utan kort.
+- **Beslut:**
+  1. **Cloudflare Access används inte.** `functions/_middleware.js` skyddar alla sökvägar, också statiska filer och `/api/health`. Bara `/login` och dess stilmall är öppna.
+  2. **Åtkomstkod per grundare.** Koderna lagras bara som PBKDF2-SHA256-hash med slumpat salt och 210 000 iterationer, i hemligheten `FOUNDER_CODE_HASHES`. De finns aldrig i klartext. Hashen skapas med `py -m aie command-center make-code`.
+  3. **Sessionen** är en cookie signerad med HMAC-SHA256 och `SESSION_SECRET`: HttpOnly, Secure, SameSite=Strict och giltig i 12 timmar. Utloggning finns i toppraden.
+  4. **Låsning:** 5 felaktiga försök från samma IP eller mot samma grundare ger 15 minuters låsning (i KV). Varje inloggning och varje misslyckat försök loggas i KV i 30 dagar.
+  5. **Saknas `FOUNDER_CODE_HASHES` eller `SESSION_SECRET`** svarar varje sökväg 503 "Not configured". Sidan visas aldrig öppen.
+  6. **Grundarens identitet** i köposter och loggar kommer från sessionen. `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` och `ALLOWED_EMAILS` är borttagna.
+- **Teknisk anmärkning:** Cloudflare tillåter högst 100 000 PBKDF2-iterationer per anrop. De 210 000 iterationerna görs därför i tre steg om 70 000 i kedja, där utdata från ett steg är lösenordet till nästa. Python-kommandot och funktionerna räknar likadant, och ett test med gemensamma testvektorer kontrollerar det.
+- **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-12)
+
 ### D-093 Systemets tillstånd: Cloudflare KV är den auktoritativa platsen, med krypterade databaskopior
 - **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-085, D-088, D-092 · **Underlag:** `docs/command-center/DATA.md` avsnitt 7
 - **Beslut:**
@@ -68,7 +81,7 @@ Ett beslut räknas som **Godkänt** först när den/de som har beslutsrätt har 
 - **Godkänd av:** Yorgo ☑ · Robin ☑ (2026-11-09)
 
 ### D-086 Åtkomst: Cloudflare Access med engångskod till exakt två mejladresser
-- **Status:** Godkänd · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-073
+- **Status:** Ersatt av D-094 (2026-11-12) · **Föreslagen av:** Yorgo och Robin (uppdraget Command Center), 2026-11-09 · **Bygger på:** D-073
 - **Beslut:**
   1. Access (Zero Trust, gratisnivån) skyddar produktionen och alla preview-adresser.
   2. Inloggning sker med engångskod till två mejladresser. Adresserna ligger som hemlighet (`ALLOWED_EMAILS`), aldrig i koden.

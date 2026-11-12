@@ -24,6 +24,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `publish`       snapshoten till Cloudflare KV för Command Center (Del 1, D-085)
 - `state`         put/get: krypterad databaskopia till/från Cloudflare KV (Del 1, D-085)
 - `notify`        run (larm) eller daily (sammanfattning): ntfy och Gmail, gratis (Del 5, D-091)
+- `command-center` make-code, make-secret: hemligheterna för Command Centers inloggning (D-094)
 - `control`       ingest: utför grundarnas knapptryck ur KV-kön via kärnan (Del 4, D-089)
 - `dashboard`     kommandocentralen: lokal server på 127.0.0.1:8765 (--lan för mobilen), set-code (D1, D-073)
 
@@ -230,6 +231,9 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("file", type=Path, help="den redan krypterade filen")
     nt = add("notify", "notiser till grundarna: run = larm sedan förra gången, daily = dagens sammanfattning (D-091)")
     nt.add_argument("action", choices=("run", "daily"))
+    cc = add("command-center", "make-code = hash av en grundares åtkomstkod, make-secret = slumpat SESSION_SECRET (D-094)")
+    cc.add_argument("action", choices=("make-code", "make-secret"))
+    cc.add_argument("--founder", help="make-code: Yorgo eller Robin")
     ct = add("control", "ingest: läs och töm kön med grundarnas beslut och utför dem via kärnan (Command Center, D-089)")
     ct.add_argument("action", choices=("ingest",))
     db = add("dashboard", "kommandocentralen: lokal server (standard) eller set-code för en grundares åtkomstkod (D1, D-073)")
@@ -409,6 +413,17 @@ def _approvals(args: argparse.Namespace) -> int:
     return approvals(args.config_dir, args.action, args.request_id, args.founder, args.note)
 
 
+def _command_center(args: argparse.Namespace) -> int:
+    from .dashboard import cc_auth
+
+    if args.action == "make-secret":
+        return cc_auth.make_secret()
+    if not args.founder:
+        print("FEL: ange --founder, till exempel --founder Yorgo", file=sys.stderr)
+        return 1
+    return cc_auth.make_code(args.founder)
+
+
 def _dashboard(args: argparse.Namespace) -> int:
     from .dashboard import server  # importeras bara när kommandot används
 
@@ -449,6 +464,7 @@ def main(argv: list[str] | None = None) -> int:
         "pod": lambda: _pod(args),
         "assess": lambda: _assess(args),
         "dashboard": lambda: _dashboard(args),
+        "command-center": lambda: _command_center(args),
         "notify": lambda: getattr(__import__("aie.notify.cli", fromlist=["run"]), args.action)(args.config_dir),
         "control": lambda: __import__("aie.dashboard.control", fromlist=["ingest"]).ingest(args.config_dir),
         "publish": lambda: __import__("aie.dashboard.publish", fromlist=["publish"]).publish(

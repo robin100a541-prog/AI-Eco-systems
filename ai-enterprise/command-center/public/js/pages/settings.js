@@ -26,10 +26,9 @@ function models(s) {
 }
 
 function access(c) {
-  return `<dl class="kv"><dt>Signed in as</dt><dd>${esc((c.me && (c.me.email || c.me.founder)) || "N/A")}</dd>
-    <dt>Protection</dt><dd>${c.me && c.me.mode === "local" ? "Local server: access code per founder (D1)" : "Cloudflare Access: one-time code to exactly two email addresses (D-086)"}</dd>
-    <dt>Sign-up</dt><dd>Not possible. Only the two founders can sign in.</dd></dl>
-    ${c.me && c.me.mode === "local" ? `<form method="post" action="/logout" class="mt-2"><input type="hidden" name="csrf" value="${esc(c.me.csrf || "")}"><button class="btn" type="submit">${icon("door-open", "sm")}Sign out</button></form>` : ""}`;
+  return `<dl class="kv"><dt>Signed in as</dt><dd>${esc((c.me && c.me.founder) || "N/A")}</dd>
+    <dt>Protection</dt><dd>${c.me && c.me.mode === "local" ? "Local server: access code per founder (D1)" : "Own sign-in: one access code per founder, stored only as a hash; session for 12 hours (D-094)"}</dd>
+    <dt>Sign-up</dt><dd>Not possible. Only the two founders can sign in.</dd></dl>`;
 }
 
 export function view() {

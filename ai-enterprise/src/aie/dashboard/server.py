@@ -93,14 +93,11 @@ class Dashboard:
 
         from . import control
 
-        email = f"{founder}@local"
-        item = {**{k: v for k, v in body.items() if k not in ("id", "email", "founder", "at")},
-                "id": f"local-{secrets.token_hex(8)}", "email": email, "founder": founder,
-                "at": datetime.now(UTC).isoformat()}
+        item = {**{k: v for k, v in body.items() if k not in ("id", "founder", "at")},
+                "id": f"local-{secrets.token_hex(8)}", "founder": founder, "at": datetime.now(UTC).isoformat()}
         with self._db_lock, runtime._open(self.config) as db:
             system, gov = control.open_core(self.config, db, self.config_dir)
-            return control.process(system, gov, [(item["id"], json.dumps(item).encode("utf-8"))], self.founders,
-                                   {email: founder})
+            return control.process(system, gov, [(item["id"], json.dumps(item).encode("utf-8"))], self.founders)
 
     def audit(self, actor: str, action: str, details: dict) -> None:
         """Inloggningar loggas i revisionsloggen (FR-28, §35). Aldrig koden."""
@@ -233,6 +230,11 @@ class Handler(BaseHTTPRequestHandler):
         session = self.dashboard.auth.session(sid)
         if path.startswith("/api/"):
             return self._api_post(path, raw, session)
+        if path == "/logout" and session and session.founder and self.headers.get("X-CSRF-Token") == session.csrf:
+            self.dashboard.auth.end(sid)  # knappen "Log out" i toppraden (samma anrop som i molnet)
+            self.dashboard.audit(session.founder, "dashboard.logout", {})
+            return self._send(200, b'{"ok":true}', "application/json",
+                              {"Set-Cookie": f"{COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"})
         form = {k: v[0] for k, v in parse_qs(raw.decode("utf-8", "replace")).items()}
         if session is None or not form.get("csrf") or form.get("csrf") != session.csrf:
             log.warning("POST %s utan giltig CSRF-token nekades", path)

@@ -11,7 +11,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REPO = ROOT.parent
 CC = ROOT / "command-center"
-ACCESS = "https://aie.cloudflareaccess.com/cdn-cgi/access/login/x.pages.dev?kid=abc"
 
 
 def load_script():
@@ -25,29 +24,48 @@ class TestCheckDeploy(unittest.TestCase):
     def setUp(self):
         self.script = load_script()
 
-    def test_everything_must_redirect_to_access_and_never_answer_200(self):
-        """Verifies FR-28, D-086: utan inloggning ska varje adress, också /api/health, omdirigera till Cloudflare
-        Access eller nekas; ett 200-svar eller en omdirigering någon annanstans räknas som fel."""
-        closed = self.script.check("https://x.pages.dev/", lambda url, method: (302, ACCESS))
-        self.assertTrue(all(ok for _, ok, _ in closed))
-        names = [name for name, _, _ in closed]
-        for needed in ("GET /", "GET /api/health", "GET /api/snapshot", "GET /js/main.js", "POST /api/action", "POST /api/chat"):
+    @staticmethod
+    def closed(url, method):
+        path = "/" + url.split("/", 3)[3]
+        if path in ("/login", "/login/login.css"):
+            return 200, "", "<html>"
+        if path.startswith("/api/"):
+            return 401, "", '{"error":"unauthorized"}'
+        return 302, "/login", ""
+
+    def test_without_a_cookie_everything_is_302_to_login_or_401_and_never_200(self):
+        """Verifies FR-28, D-094: utan sessionscookie ger varje sida och fil 302 till /login och API:t 401; bara
+        inloggningssidan svarar 200. Ett 200-svar med data, eller en omdirigering någon annanstans, är fel."""
+        results = self.script.check("https://x.pages.dev/", self.closed)
+        self.assertTrue(all(ok for _, ok, _ in results), [r for r in results if not r[1]])
+        names = [name for name, _, _ in results]
+        for needed in ("GET /", "GET /js/main.js", "GET /assets/css/app.css", "GET /api/health", "GET /api/snapshot",
+                       "POST /api/action", "POST /api/chat", "POST /logout", "GET /login"):
             self.assertIn(needed, names)
 
         def health_open(url, method):
-            return (200, "") if url.endswith("/api/health") else (302, ACCESS)
+            return (200, "", '{"status":"ok"}') if url.endswith("/api/health") else self.closed(url, method)
 
         results = dict((name, ok) for name, ok, _ in self.script.check("https://x.pages.dev", health_open))
         self.assertFalse(results["GET /api/health"])
         self.assertTrue(results["GET /"])
-        self.assertEqual(self.script.judge(200, ""), (False, "200: öppen utan inloggning"))
-        self.assertFalse(self.script.judge(302, "https://evil.example/login")[0])
-        self.assertFalse(self.script.judge(302, "https://cloudflareaccess.com.evil.example/")[0])
-        self.assertTrue(self.script.judge(401, "")[0])
-        self.assertFalse(self.script.judge(500, "")[0])
+        self.assertFalse(self.script.judge("page", 200, "", "<html>")[0])
+        self.assertFalse(self.script.judge("page", 302, "https://evil.example/login")[0])
+        self.assertFalse(self.script.judge("api", 302, "/login")[0])
+        self.assertFalse(self.script.judge("open", 404, "")[0])
+
+    def test_missing_secrets_show_as_503_not_configured(self):
+        """Verifies D-094: saknas hemligheterna svarar allt 503 "Not configured"; skriptet säger det och avslutar med 3."""
+        self.assertEqual(self.script.judge("page", 503, "", "Not configured"), (False, "503 Not configured: hemligheterna saknas"))
+        self.script.fetch, real = (lambda url, method="GET": (503, "", "Not configured")), self.script.fetch
+        self.addCleanup(setattr, self.script, "fetch", real)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(self.script.main(["https://x.pages.dev"]), 3)
+        self.assertIn("inte konfigurerad", out.getvalue())
 
     def test_exit_codes_and_unreachable_site(self):
-        """Verifies D-086: skriptet avslutar med 1 när något är öppet eller inte går att nå, och kräver https."""
+        """Verifies D-094: skriptet avslutar med 1 när något är öppet eller inte går att nå, och kräver https."""
         def down(url, method):
             raise OSError("no route")
 
@@ -78,11 +96,12 @@ class TestPublished(unittest.TestCase):
         """Verifies SR-10, D-085: det som publiceras ligger i command-center/public; tester, hjälpkod och funktioner
         ligger utanför, och ingen hemlighet eller token står i webbläsarens filer."""
         public = {p.name for p in (CC / "public").iterdir()}
-        self.assertEqual(public, {"index.html", "_headers", "assets", "js", "vendor"})
+        self.assertEqual(public, {"index.html", "_headers", "assets", "js", "vendor", "login"})
+        self.assertEqual({p.name for p in (CC / "public" / "login").iterdir()}, {"login.css"})  # det enda som är öppet
         self.assertEqual({p.name for p in CC.iterdir()}, {"public", "functions", "lib", "tests"})
-        self.assertEqual({p.name for p in (CC / "functions").iterdir()}, {"_middleware.js", "api"})
-        names = ("GITHUB_READ_TOKEN", "GITHUB_DISPATCH_TOKEN", "GROQ_API_KEY", "CLOUDFLARE_API_TOKEN", "ACCESS_AUD",
-                 "ALLOWED_EMAILS", "NTFY_TOPIC", "GMAIL_APP_PASSWORD", "STATE_KEY")
+        self.assertEqual({p.name for p in (CC / "functions").iterdir()}, {"_middleware.js", "api", "login.js", "logout.js"})
+        names = ("GITHUB_READ_TOKEN", "GITHUB_DISPATCH_TOKEN", "GROQ_API_KEY", "CLOUDFLARE_API_TOKEN", "SESSION_SECRET",
+                 "FOUNDER_CODE_HASHES", "NTFY_TOPIC", "GMAIL_APP_PASSWORD", "STATE_KEY")
         for f in [*(CC / "public" / "js").rglob("*.js"), CC / "public" / "index.html"]:
             text = f.read_text(encoding="utf-8")
             for name in names:
@@ -101,7 +120,11 @@ class TestPublished(unittest.TestCase):
         for name, value in names:
             self.assertEqual(value.strip(), "", name)
             self.assertIn(name.removesuffix("_YORGO").removesuffix("_ROBIN"), code, name)
-        self.assertNotIn("ANTHROPIC_API_KEY", example)
+        for gone in ("ANTHROPIC_API_KEY", "ACCESS_TEAM_DOMAIN", "ACCESS_AUD", "ALLOWED_EMAILS"):
+            self.assertNotIn(gone, example)
+        all_text = code + "".join(p.read_text(encoding="utf-8", errors="replace") for p in (CC / "public" / "js").rglob("*.js"))
+        for gone in ("ACCESS_TEAM_DOMAIN", "ACCESS_AUD", "ALLOWED_EMAILS", "Cf-Access-Jwt-Assertion", "cloudflareaccess"):
+            self.assertNotIn(gone, all_text, gone)  # D-094: Cloudflare Access används inte
         self.assertRegex((ROOT / ".gitignore").read_text(encoding="utf-8"), r"(?m)^\.env$")
 
     def test_ekobyn_and_duplicates_are_gone_and_root_pages_remain(self):

@@ -210,3 +210,14 @@ Frågorna står i slutrapporten och i PR:en.
 - **Knappnamnen i `DEPLOY.md`** är kontrollerade mot Cloudflares dokumentation 2026-11-11 där det gick. De som inte gick att kontrollera är märkta "(ungefär)".
 - **Ingen driftsättning är gjord:** den kräver Robins konton. Koden är testad mot efterbildningar av Cloudflares och GitHubs API:er.
 - **`ntfy`-ämnet** väljer grundarna själva, eftersom de måste kunna det för att prenumerera.
+
+## 2026-11-12: nytt uppdrag i sex delar, Del 1 (egen inloggning)
+**Begäran:** Yorgo och Robin tillsammans. Cloudflare Zero Trust kräver betalkort, så Access ersätts med en egen inloggning. Därefter Actions-minuter, hemligheter och DEPLOY.md, bibliotek, en databas och Windows-felen, i den prioritetsordningen.
+
+**Gjort i Del 1:** inloggning med åtkomstkod per grundare, signerad sessionscookie, låsning i KV, 503 utan hemligheter, och kommandona `make-code` och `make-secret`. All Access-kod är borttagen. Beslut D-094.
+
+**Antaganden:**
+- **210 000 iterationer i tre steg:** Cloudflare tillåter högst 100 000 PBKDF2-iterationer per anrop. Kravet uppfylls med tre steg om 70 000 i kedja.
+- **`ALLOWED_EMAILS` är borttagen.** Den användes också för mottagare av e-postnotiser. Mottagarna står nu i den valfria `NOTIFY_TO`.
+- **Inloggningsloggen** ligger i KV i 30 dagar, inte i revisionsloggen, eftersom funktionerna inte når databasen.
+- **Inte prövat mot Cloudflare:** gratisplanens gräns för processortid per anrop är låg, och en inloggning räknar 210 000 iterationer. Det syns först vid den riktiga driftsättningen.

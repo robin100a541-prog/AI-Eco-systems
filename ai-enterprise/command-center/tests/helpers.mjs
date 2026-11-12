@@ -1,33 +1,16 @@
-// Testhjälp: riktiga RSA-nycklar och signerade Access-JWT:er, en falsk KV och ett Pages-liknande context.
-export const TEAM = "aie-test.cloudflareaccess.com";
-export const AUD = "aud-command-center-test";
-export const YORGO = "yorgo@example.com";
-export const ROBIN = "robin@example.com";
-export const ENV_BASE = { ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD, ALLOWED_EMAILS: `yorgo=${YORGO}, robin=${ROBIN}` };
+// Testhjälp: hemligheter för testerna (inga riktiga), sessionscookies, en falsk KV och ett Pages-liknande context.
+import { readFileSync } from "node:fs";
+import { createSession, COOKIE } from "../lib/session.js";
 
-const enc = (obj) => Buffer.from(JSON.stringify(obj)).toString("base64url");
+export const VECTORS = JSON.parse(readFileSync(new URL("./fixtures/code-hash.json", import.meta.url), "utf8"));
+export const ORIGIN = "https://aie-command-center.pages.dev";
+export const ENV_BASE = {
+  FOUNDER_CODE_HASHES: `${VECTORS.yorgo.line}, ${VECTORS.robin.line}`,
+  SESSION_SECRET: "test-session-secret-0123456789abcdef0123456789abcdef",
+};
 
-export async function keyPair(kid = "k1") {
-  const pair = await crypto.subtle.generateKey(
-    { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
-    true, ["sign", "verify"]);
-  const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
-  return { ...pair, jwk: { ...jwk, kid, alg: "RS256", use: "sig" }, kid };
-}
-
-export async function sign(pair, claims = {}, header = {}) {
-  const now = Math.floor(Date.now() / 1000);
-  const h = enc({ alg: "RS256", kid: pair.kid, typ: "JWT", ...header });
-  const p = enc({ aud: [AUD], iss: `https://${TEAM}`, email: YORGO, exp: now + 600, iat: now, ...claims });
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", pair.privateKey, new TextEncoder().encode(`${h}.${p}`));
-  return `${h}.${p}.${Buffer.from(sig).toString("base64url")}`;
-}
-
-export function certsFetch(...pairs) {
-  return async (url) => {
-    if (url === `https://${TEAM}/cdn-cgi/access/certs`) return new Response(JSON.stringify({ keys: pairs.map((p) => p.jwk) }));
-    throw new Error(`unexpected fetch ${url}`);
-  };
+export async function cookieFor(founder = "yorgo", env = ENV_BASE, now = Date.now()) {
+  return `${COOKIE}=${await createSession(env, founder, now)}`;
 }
 
 export class FakeKV {
@@ -38,14 +21,21 @@ export class FakeKV {
   async list({ prefix = "" } = {}) { return { keys: [...this.map.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })) }; }
 }
 
-export function request(path, { token, method = "GET", headers = {}, body } = {}) {
+export function request(path, { cookie, method = "GET", headers = {}, body } = {}) {
   const h = new Headers(headers);
-  if (token) h.set("Cf-Access-Jwt-Assertion", token);
-  return new Request(`https://command-center.pages.dev${path}`, { method, headers: h, body });
+  if (cookie) h.set("Cookie", cookie);
+  return new Request(`${ORIGIN}${path}`, { method, headers: h, body });
 }
 
-// Kör middleware och sedan handlern, som Pages gör.
+// Kör middleware och sedan handlern, som Pages gör. `handler` får samma context (med data.identity).
 export async function callApi(middleware, handler, req, env) {
-  const context = { request: req, env, data: {}, next: async () => handler({ request: req, env, data: context.data }) };
+  const context = { request: req, env, data: {} };
+  context.next = async () => handler(context);
   return middleware(context);
+}
+
+export function loginForm(founder, code, { origin = ORIGIN, ip = "203.0.113.7" } = {}) {
+  const headers = { "Content-Type": "application/x-www-form-urlencoded", "CF-Connecting-IP": ip };
+  if (origin) headers.Origin = origin;
+  return request("/login", { method: "POST", headers, body: new URLSearchParams({ founder, code }).toString() });
 }
