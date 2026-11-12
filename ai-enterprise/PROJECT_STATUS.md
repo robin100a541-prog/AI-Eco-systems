@@ -11,7 +11,8 @@ Uppdraget 2026-11-12 (egen inloggning, Actions-minuter, driftsättning, bibliote
 - **Del 1 (PR #211): klar.** Egen inloggning i stället för Cloudflare Access (D-094).
 - **Del 2 (PR #212): klar.** Tester på en Python-version även på PR. Beräknat cirka 1 310 Actions-minuter per månad. Robin kan göra repot privat.
 - **Del 3 (PR #213): klar.** `CLOUDFLARE_ACCOUNT_ID` och `KV_NAMESPACE_ID` satta, och DEPLOY.md omskriven utan Access.
-- **Del 4 (PR #214): klar.** GSAP, Lenis och tre ombyggda React Bits-effekter ligger i `vendor/` utan npm och CDN. Alla tio sidor är kontrollerade i 1440 px och 390 px. Återstår: Del 5 (en databas) och Del 6 (Windows-testerna).
+- **Del 4 (PR #214): klar.** GSAP, Lenis och tre ombyggda React Bits-effekter ligger i `vendor/` utan npm och CDN. Alla tio sidor är kontrollerade i 1440 px och 390 px. 
+- **Del 5 (PR #215): klar.** Scouten skriver i företagets databas, och det gamla registret flyttas in med `py -m aie scout merge`. Återstår: Del 6 (Windows-testerna), och att kontrollera raden `scout merge:` i nästa körning av `scout`.
 
 > **PRIORITET 2026-11-06 (grundarbeslut Yorgo, D-049):** första försäljningen via Printify och Etsy inom 2 dagar. Planen finns i [`docs/LANSERING-Q4.md`](docs/LANSERING-Q4.md). Allt annat arbete som inte blockerar den är pausat. Printify-anropet fungerar på riktigt sedan 2026-11-06: katalogen har 3 019 produkter, och verklig frakt läses i `printify-catalog`.
 **Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.

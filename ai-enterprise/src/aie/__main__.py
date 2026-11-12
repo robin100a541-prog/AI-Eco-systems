@@ -19,7 +19,7 @@ Kommandon (kod 0 = lyckades, kod 1 = fel som är utskrivet och loggat):
 - `report`        rapporter: daily (§57), periodic (§58), monitor (FR-24)
 - `pilot`         Fas 7: ideas (produktagent och beslutscykel), prepare, approve, status
 - `daily-cycle`   en företagscykel per dygn med rapporter och notis till grundarna (Fas 8, §56)
-- `scout`         Opportunity Scout: run (en dygnscykel), rapporter i docs/opportunities/
+- `scout`         Opportunity Scout: run (en dygnscykel), rapporter i docs/opportunities/; merge (flytta gamla registret)
 - `simulate`      affärssimulering med SIM: start, resume, status, evaluate (Fas 6, D-042, D-043, D-048)
 - `publish`       snapshoten till Cloudflare KV för Command Center (Del 1, D-085)
 - `state`         put/get: krypterad databaskopia till/från Cloudflare KV (Del 1, D-085)
@@ -207,7 +207,8 @@ def build_parser() -> argparse.ArgumentParser:
     dc.add_argument("--questions", type=Path, default=Path("docs/QUESTIONS-FOR-FOUNDERS.md"))
     dc.add_argument("--kill-file", type=Path, default=Path("docs/KILL-SWITCH"))
     sc = add("scout", "Opportunity Scout: run = en dygnscykel (research, poäng, förslag till CEO)")
-    sc.add_argument("action", choices=("run",))
+    sc.add_argument("action", choices=("run", "merge"))
+    sc.add_argument("--from", dest="source", type=Path, help="merge: scoutens gamla databasfil")
     sc.add_argument("--as", dest="founder", default="robin", help="grundaren som cykeln körs i namn av")
     sc.add_argument("--agents", choices=("rule", "groq"), default="rule", help="rule = inga nätverksanrop")
     sc.add_argument("--out", type=Path, default=Path("docs/opportunities"))
@@ -452,8 +453,10 @@ def main(argv: list[str] | None = None) -> int:
         "simulate": lambda: _simulate(args),
         "report": lambda: _report(args),
         "pilot": lambda: _pilot(args),
-        "scout": lambda: __import__("aie.scout.cycle", fromlist=["main"]).main(
-            args.config_dir, args.founder, args.agents, args.out, args.questions, args.weekly),
+        "scout": lambda: (
+            __import__("aie.scout.merge", fromlist=["main"]).main(args.config_dir, args.founder, args.source)
+            if args.action == "merge" else __import__("aie.scout.cycle", fromlist=["main"]).main(
+                args.config_dir, args.founder, args.agents, args.out, args.questions, args.weekly)),
         "daily-cycle": lambda: __import__("aie.dashboard.cycle", fromlist=["run"]).run(
             args.config_dir, args.founder, args.agents, args.out, args.questions, args.kill_file),
         "spend": lambda: _spend(args),

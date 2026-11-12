@@ -38,7 +38,7 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 | Workflow | När | Vad | Tillstånd mellan körningar |
 |---|---|---|---|
 | `company-daily` | dagligen 04:23 UTC | `daily-cycle`: en SIM-dag med de 7 agenterna i `ORG`, rapporter och notis | `actions/cache`, prefix `company-` (`ai-enterprise/data`, cirka 28 KB) |
-| `scout` | måndagar | `scout run` | `actions/cache`, prefix `scout-`. Det är en **egen** SIM-databas, skild från `company-` |
+| `scout` | måndagar | `scout run` | **företagets databas** (`company-`), samma som `company-daily` (Del 5, 2026-11-12). Samma concurrency-grupp, så de körs aldrig samtidigt |
 | `dev-agent` | onsdagar | utvecklaragenten | `actions/cache`, prefix `dev-agent-`, med bara väntande rapporter och en JSON-fil |
 | `pod-orders` | dagligen | läser ordrar från Printify och bokför dem i **pilotens ledger (SEK, prod)** | `actions/cache`, prefix `pod-orders-` (`ai-enterprise/data-pilot`) |
 | `printify-catalog` | dagligen | läser katalogen | ingen databas sparas. Artefakt |
@@ -86,7 +86,7 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
 **Problem:**
 - **Cachen kan försvinna:** företagets databas finns bara i Actions-cachen. GitHub tar bort en cachepost som inte använts på 7 dagar, och tar bort äldre poster när repots tak på 10 GB nås. Försvinner cachen startar `python -m aie init` en ny tom databas utan varning, och historiken är borta.
 - **Data i git:** `company-daily` committar rapporter, `status.json` och grundarnotisen till repot. Det strider mot beslut 8 (inget data i git).
-- **Två SIM-databaser:** scout har en egen SIM-databas (`scout-`), skild från företagets.
+- **Två SIM-databaser:** scout hade en egen SIM-databas (`scout-`), skild från företagets. **Löst 2026-11-12:** se "En SIM-databas" nedan.
 
 **Ingenting finns bara på Yorgos dator.** Den lokala `data/sim.db` är testdata från D0b.
 
@@ -192,7 +192,21 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 |---|---|---|
 | `snapshot:latest`, `snapshot:<YYYY-MM-DD>` | `py -m aie publish` | snapshoten |
 | `report:<fil>` | `py -m aie publish --reports` | de tre senaste dagliga rapporterna (35 dagar) |
-| `state:company`, `state:scout`, `state:pilot` | `scripts/state.sh push` | krypterad databaskopia (D-093) |
+| `state:company`, `state:pilot` | `scripts/state.sh push` | krypterad databaskopia (D-093) |
+| `state:scout` | `scout`-workflowen | **arkiv:** scoutens gamla databas, oförändrad sedan flytten 2026-11-12 |
+
+### En SIM-databas (Del 5, 2026-11-12)
+Scouten skriver nu i företagets databas. Det finns en enda SIM-databas, och snapshotens scoutsiffror, godkännandekön och revisionsloggen kommer från samma källa.
+
+- **Flytten:** `py -m aie scout merge --from <gamla filen>` kopierar registret `scout_entries` rad för rad, med samma nyckel, version, tid och aktör.
+  - **Kan köras flera gånger:** en rad som redan finns med samma innehåll hoppas över.
+  - **Krock:** finns en rad med annat innehåll avbryts allt innan något skrivs.
+  - **Loggas:** flytten skrivs som `scout.merged` i företagets revisionslogg, med källfilens SHA-256.
+- **Väntande förslag:** ett förslag som väntade på en grundare i den gamla databasen pekade på en begäran som bara fanns där. Det flyttas tillbaka till `scored`, med den gamla begärans nummer sparat som `old_request_id`, och scouten föreslår det på nytt i företagets kö.
+- **Det som inte flyttas:** den gamla databasens revisionslogg, modellanrop och godkännandekö. Revisionsloggen är en egen hashkedja och kan inte vävas in i företagets utan att skriva om historik. Den gamla filen sparas oförändrad som `state:scout` i KV, när `CLOUDFLARE_API_TOKEN` är satt.
+- **När det sker:** `scout`-workflowen hämtar den gamla databasen ur cachen (`scout-`) eller KV, flyttar registret och kör sedan cykeln mot företagets databas. Den gamla cachen sparas inte längre.
+- **Kvoter:** scoutens modellanrop räknas nu mot samma dygnskvoter som företagets agenter.
+- **Inte kontrollerat:** flytten är testad med två testdatabaser. Den riktiga flytten sker första gången `scout` körs efter den här ändringen. Kontrollera raden `scout merge:` i körningens logg.
 
 ## 10. Kontroller och chatt (Del 4, D-089, D-090)
 **Flödet för ett knapptryck:**

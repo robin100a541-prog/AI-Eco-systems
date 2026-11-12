@@ -242,3 +242,12 @@ Frågorna står i slutrapporten och i PR:en.
 **Antaganden:**
 - **ScrollTrigger** hämtades inte, eftersom ingen sida har scrollstyrda animationer.
 - **Kontrollen** gjordes i den inbyggda webbläsaren med simulerad data, inte på en riktig telefon.
+
+## 2026-11-12: Del 5 (en SIM-databas)
+**Gjort:** scouten skriver i företagets databas. Det gamla registret flyttas in av `py -m aie scout merge`, som `scout`-workflowen kör före cykeln.
+
+**Antaganden:**
+- **Bara registret flyttas.** Den gamla revisionsloggen är en egen hashkedja och kan inte vävas in i företagets. Den gamla filen sparas oförändrad som arkiv i KV (`state:scout`), så inget går förlorat.
+- **Väntande förslag ställs om** till `scored` och föreslås på nytt, eftersom deras begäran bara fanns i den gamla kön. Annars kunde ett nummer peka på fel begäran i företagets kö.
+- **Samma concurrency-grupp** som `company-daily`. GitHub behåller bara en väntande körning per grupp, så en väntande scoutkörning kan falla bort om en annan körning köas. Den körs då nästa måndag eller med knappen.
+- **Arkivet i KV** kräver `CLOUDFLARE_API_TOKEN` (DEPLOY.md steg e). Tills dess finns den gamla databasen bara i Actions-cachen, som försvinner efter 7 dagar utan användning. Scouten läser den varje måndag.

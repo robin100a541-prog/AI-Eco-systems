@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — En SIM-databas: scouten skriver i företagets databas
+### Tillagt
+- `py -m aie scout merge --from <fil>` (`src/aie/scout/merge.py`): flyttar scoutens register till företagets databas. Varje version kopieras oförändrad, flytten kan köras flera gånger, och den loggas som `scout.merged`.
+- `tests/unit/test_scout_merge.py`: 10 tester (FR-34, SR-02, SR-06).
+### Ändrat
+- `.github/workflows/scout.yml`: läser och sparar företagets databas (`company-`), delar concurrency-grupp med `company-daily`, och flyttar in den gamla scoutdatabasen före cykeln. Den gamla filen sparas som arkiv i KV (`state:scout`).
+- `docs/command-center/DATA.md`: avsnittet "En SIM-databas".
+
 ## [Unreleased] — 2026-11-12 — Bibliotek och animationer kontrollerade
 ### Ändrat
 - `command-center/public/js/effects.js`: Lenis stängs av direkt när fönstret blir smalare än 768 px, utan omladdning.
