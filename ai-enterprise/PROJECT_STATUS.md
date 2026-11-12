@@ -9,7 +9,8 @@ Lansering Q4 pågår, se docs/LANSERING-Q4.md
 ### Command Center — framsteg
 Uppdraget 2026-11-12 (egen inloggning, Actions-minuter, driftsättning, bibliotek, en databas och Windows-felen).
 - **Del 1 (PR #211): klar.** Egen inloggning i stället för Cloudflare Access (D-094).
-- **Del 2 (PR #212): klar.** Tester på en Python-version även på PR. Beräknat cirka 1 310 Actions-minuter per månad. Robin kan göra repot privat. Återstår: Del 3–6.
+- **Del 2 (PR #212): klar.** Tester på en Python-version även på PR. Beräknat cirka 1 310 Actions-minuter per månad. Robin kan göra repot privat.
+- **Del 3 (PR #213): klar.** `CLOUDFLARE_ACCOUNT_ID` och `KV_NAMESPACE_ID` satta, och DEPLOY.md omskriven utan Access. Återstår: Del 4–6.
 
 > **PRIORITET 2026-11-06 (grundarbeslut Yorgo, D-049):** första försäljningen via Printify och Etsy inom 2 dagar. Planen finns i [`docs/LANSERING-Q4.md`](docs/LANSERING-Q4.md). Allt annat arbete som inte blockerar den är pausat. Printify-anropet fungerar på riktigt sedan 2026-11-06: katalogen har 3 019 produkter, och verklig frakt läses i `printify-catalog`.
 **Aktuell fas:** Fas 6 stängd (D-063). Fas 7 (kontrollerad pilot med riktiga pengar) är **byggd men blockerad**: se `docs/DEPLOYMENT-STATUS.md`. Fas 8 (daglig drift i SIM) körs varje dygn.
