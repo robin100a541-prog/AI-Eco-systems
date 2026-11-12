@@ -101,8 +101,7 @@ jobs:
           python -m aie control ingest || true
           mkdir -p "$RUNNER_TEMP/out"
           python -m aie daily-cycle --as robin --agents "$agents" --out "$RUNNER_TEMP/out/reports" \
-            --dashboard "$RUNNER_TEMP/out/status.json" --questions "$RUNNER_TEMP/out/QUESTIONS-FOR-FOUNDERS.md" \
-            2>&1 | tee "$RUNNER_TEMP/cycle.txt"
+            --questions "$RUNNER_TEMP/out/QUESTIONS-FOR-FOUNDERS.md" 2>&1 | tee "$RUNNER_TEMP/cycle.txt"
       - name: Notiser till grundarna
         if: always()
         env:

@@ -4,14 +4,14 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { money, num, pct, pill, esc, segments, bar, NA } from "../js/ui.js";
+import { money, num, pct, pill, esc, segments, bar, NA } from "../public/js/ui.js";
 
 function files(dir) {
   return readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? files(join(dir, f)) : [join(dir, f)]));
 }
 
 test("D-087: every frontend and function module parses", () => {
-  const all = [...files("js"), ...files("functions")].filter((f) => f.endsWith(".js"));
+  const all = [...files("public/js"), ...files("functions"), ...files("lib")].filter((f) => f.endsWith(".js"));
   assert.ok(all.length >= 20);
   for (const f of all) execFileSync(process.execPath, ["--experimental-default-type=module", "--check", f]);
 });

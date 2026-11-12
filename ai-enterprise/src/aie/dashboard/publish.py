@@ -141,7 +141,7 @@ def publish(config_dir: Path, out: Path | None = None, reports_dir: Path | None 
     if out is not None:
         Path(out).parent.mkdir(parents=True, exist_ok=True)
         Path(out).write_text(json.dumps(snapshot, ensure_ascii=False, indent=1), encoding="utf-8")
-    reports = sorted(Path(reports_dir).glob("*.md"))[-3:] if reports_dir and Path(reports_dir).is_dir() else []
+    reports = sorted(Path(reports_dir).rglob("*.md"))[-3:] if reports_dir and Path(reports_dir).is_dir() else []
     result = publish_snapshot(snapshot, KV.from_env(), Path(config.system.data_dir) / "publish-pending", reports)
     print(f"Snapshot {snapshot['generated_at']}: {result} ({len(snapshot['agents']['items'])} agenter, "
           f"revisionskedja {'OK' if snapshot['audit_chain']['ok'] else 'TRASIG'})")

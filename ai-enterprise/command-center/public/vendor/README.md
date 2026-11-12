@@ -1,9 +1,9 @@
 # vendor: tredjepartsfiler i kommandocentralen (D-084)
 
 Grundarna valde biblioteken 2026-11-09. Filerna hämtades som färdigbyggda filer, utan npm och utan att klona repona.
-- **Varifrån de laddas:** från serverns egen adress (`/vendor/...`). Inget laddas från ett CDN, så Content-Security-Policy förblir `default-src 'self'`. Sedan Command Center (2026-11-09) ligger mappen i `ai-enterprise/command-center/vendor/` och laddas från `/vendor/...`.
+- **Varifrån de laddas:** från serverns egen adress (`/vendor/...`). Inget laddas från ett CDN, så Content-Security-Policy förblir `default-src 'self'`. Sedan Command Center (2026-11-09) ligger mappen i `ai-enterprise/command-center/public/vendor/` och laddas från `/vendor/...`.
 - **Oförändrade:** filerna är exakt som de hämtades. SHA-256 står nedan, och testet `tests/unit/test_dashboard_server.py` kontrollerar att de stämmer.
-- **Uppdatera ett bibliotek:** lägg den nya versionen i en ny versionsmapp, uppdatera sökvägen i `command-center/index.html` och tabellen nedan, och ta bort den gamla mappen i samma PR.
+- **Uppdatera ett bibliotek:** lägg den nya versionen i en ny versionsmapp, uppdatera sökvägen i `command-center/public/index.html` och tabellen nedan, och ta bort den gamla mappen i samma PR.
 
 | Fil | Bibliotek och version | Källa | Licens | Syfte | SHA-256 |
 |---|---|---|---|---|---|
@@ -16,7 +16,7 @@ Grundarna valde biblioteken 2026-11-09. Filerna hämtades som färdigbyggda file
 
 ## Det som inte används
 - **GSAP:s ScrollTrigger** hämtades inte. Sidorna har inga scrollstyrda animationer, och panelerna kommer in när sidan laddas. Den hämtas om ett senare steg behöver den.
-- **React Bits installeras inte,** eftersom vi inte använder React. Tre effekter är ombyggda i vanlig JavaScript och CSS i `command-center/js/effects.js` och `command-center/assets/css/app.css`. Källan och licensen står i en kommentar överst i filen.
+- **React Bits installeras inte,** eftersom vi inte använder React. Tre effekter är ombyggda i vanlig JavaScript och CSS i `command-center/public/js/effects.js` och `command-center/public/assets/css/app.css`. Källan och licensen står i en kommentar överst i filen.
   - **CountUp** (`src/content/TextAnimations/CountUp/CountUp.jsx`) blev `countUp`. Siffror räknas upp en gång när de syns, med ease-out och utan fjädring. Skärmläsare får slutvärdet.
   - **SpotlightCard** (`src/content/Components/SpotlightCard/SpotlightCard.jsx`) blev `spotlight`. Ett mjukt guldljus följer pekaren och lyser upp kanten. Det fungerar bara med mus, och används på väntande godkännanden nu och på agentkorten i D3.
   - **AnimatedList** (`src/content/Components/AnimatedList/AnimatedList.jsx`, varianten "fade") blev `listIn` och `listAdd`. Raderna tonar in med 4 px rörelse. `listAdd` är till för live-flödet i D2.

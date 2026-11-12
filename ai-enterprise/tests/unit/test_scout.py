@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from aie.config import load_config
-from aie.dashboard.export import build_status
+from aie.dashboard.snapshot import build_snapshot
 from aie.governance.cli import build
 from aie.llm.providers import ChatResponse
 from aie.memory import Database
@@ -127,14 +127,14 @@ class TestRegister(ScoutCase):
     def test_dashboard_and_questions(self):
         out = self.cycle()
         system = build_system(self.config, self.db, TEST_CONFIG)
-        status = build_status(system, now="2026-11-02T00:00:00+00:00")
-        self.assertEqual(status["scout"]["proposed"], 2)
-        self.assertIn("scout-1", [a["id"] for a in status["agents"]])
+        snap = build_snapshot(system, self.config, TEST_CONFIG, now="2026-11-02T00:00:00+00:00")
+        self.assertEqual(snap["scout"]["counts"]["proposed"], 2)
+        self.assertIn("scout-1", [a["id"] for a in snap["agents"]["items"]])
         with tempfile.TemporaryDirectory() as tmp:
             q = Path(tmp) / "q.md"
-            q.write_text("# F\n")
+            q.write_text("# F\n", encoding="utf-8")
             update_questions(q, ["godkänn eller avvisa förslaget x"], "2026-11-02")
-            self.assertIn("Scouten väntar", q.read_text())
+            self.assertIn("Scouten väntar", q.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

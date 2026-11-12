@@ -153,6 +153,7 @@ Arbetspunkter (Fas 7 startad av Robin 2026-10-30, masterprompten). Oberoende gra
 Återkommande cykel enligt §56, statusrapport per cykel.
 
 - [x] **Daglig drift** (`company-daily.yml`, `aie daily-cycle`): en cykel per dygn, rapporter §57/§58, nödstopp via fil, notis till grundarna (byggt 2026-10-30).
-- [x] **Instrumentpanel** (`docs/dashboard/`, `aie export-status`): pixelkontor via GitHub Pages; Pages slås på av en grundare (byggt 2026-10-30).
+- [x] **Instrumentpanel** (`docs/dashboard/`, `aie export-status`): pixelkontor via GitHub Pages; Pages slås på av en grundare (byggt 2026-10-30). **Ersatt 2026-11-11 av Command Center:** Ekobyn, `status.json` och `aie export-status` är borttagna.
+- [x] **Command Center** (`command-center/`, D-085–D-093): snapshot till Cloudflare KV, tio sidor, kontroller via kö, chatt och notiser (byggt 2026-11-09–11). Kvar för grundarna: driftsättningen enligt `docs/command-center/DEPLOY.md`.
 - [x] **Utvecklaragentens säkerhet:** högst 4 merges per dygn, automatisk revert vid röd main, veckosammanfattning (byggt 2026-10-30).
 - [ ] **8a Plattformsgränser till fullt läge (D-059):** när Fas 8 startar ändras `config/risk_limits.toml` till `MIN_ACTIVE_PLATFORMS = 2` och `MAX_PLATFORM_REVENUE_SHARE = 60` (PR med `founder-approved`).

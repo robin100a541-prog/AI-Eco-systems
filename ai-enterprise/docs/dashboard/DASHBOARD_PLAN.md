@@ -1,5 +1,11 @@
 # DASHBOARD_PLAN — kommandocentralen
 
+> **Läget 2026-11-11: planen är genomförd på ett annat sätt än den beskriver.** Grundarnas uppdrag Command Center (2026-11-09, besluten D-085–D-093) ersatte stegen D2–D8.
+> - **Byggt:** Command Center i `ai-enterprise/command-center/`, med Cloudflare Pages, Access och KV i stället för bara en lokal server. Den lokala servern från D1 finns kvar och visar samma gränssnitt.
+> - **Motsvarar planens steg:** D2 (händelser), D3 (departement och agenter), D4 (godkännanden), D5 (ekonomi, risk och nödstopp), D6 (chatt), D7 (notiser) och D8 (mobil).
+> - **Avvikelser:** händelserna hämtas var 30:e sekund i stället för SSE, eftersom Pages Functions inte håller öppna strömmar gratis. Typsnitten är Geist i stället för Cormorant Garamond och Inter. Ekobyn är borttagen.
+> - **Aktuell dokumentation:** `docs/command-center/DATA.md`, `docs/command-center/DEPLOY.md` och `DESIGN.md`. Texten nedan är kvar som historik.
+
 **Skapad:** 2026-11-08 av Claude (session med Yorgo) · **Status:** Förslag, kräver beslut D-073 (föreslaget 2026-11-08) · **Uppdaterad:** 2026-11-08: nummer rättade (teknikvalet heter nu D-073) och stegen D0–D8 omskrivna så att de bygger på det som finns, se `GAP_ANALYSIS.md`. Originaltexten finns i git-historiken (commit f84d485).
 **Design:** designytan "AI-Ecosystem — startsida" i Yorgos Claude-konto (10 sidor, klickbar prototyp)
 

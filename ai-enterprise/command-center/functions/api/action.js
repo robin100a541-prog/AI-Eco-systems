@@ -3,8 +3,8 @@
 // Kontroller: verifierad Access-identitet (middleware), samma ursprung, egen header, gräns per timme och
 // strikt validering. Inga skalkommandon, serveruppgifter eller fria körningar går att nå härifrån:
 // bara åtgärdstyperna i TYPES, med fasta fält.
-import { error, json } from "../_lib/http.js";
-import { checkPost, rateLimit, readJson } from "../_lib/guard.js";
+import { error, json } from "../../lib/http.js";
+import { checkPost, rateLimit, readJson } from "../../lib/guard.js";
 
 export const TYPES = ["approve", "reject", "pause_agent", "resume_agent", "pause_all", "kill", "kill_release"];
 export const LIMIT_PER_HOUR = 20;

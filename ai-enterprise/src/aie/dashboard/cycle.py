@@ -1,5 +1,7 @@
 """`aie daily-cycle`: en företagscykel per dygn (§56), körs av GitHub Actions (Fas 8).
 
+Command Center läser snapshoten som `aie publish` bygger efter cykeln; cykeln skriver ingen status.json längre.
+
 1. **Nödstopp:** finns filen `--kill-file` (t.ex. `docs/KILL-SWITCH`) slås nödstoppet på i databasen, med
    skälet i filen. Då gör agenterna ingenting, men rapporterna skrivs ändå. Tas filen bort släpps ett
    nödstopp som filen har satt (skälet börjar med `repo:`); ett nödstopp som en grundare satt släpps aldrig här.
@@ -8,8 +10,7 @@
    gäller. Groqs kvot räknas i databasen; när den är slut pausas agenterna (ingen betald reserv).
 3. **Rapporter:** daglig rapport (§57) i `<out>/daily/`, och på måndagar en periodisk rapport (§58) för
    veckan i `<out>/periodic/`.
-4. **Instrumentpanelen:** `status.json` (bara offentliga data).
-5. **Grundarna:** väntar något på ett grundarbeslut skrivs en kort notis i `QUESTIONS-FOR-FOUNDERS.md`.
+4. **Grundarna:** väntar något på ett grundarbeslut skrivs en kort notis i `QUESTIONS-FOR-FOUNDERS.md`.
 """
 
 from __future__ import annotations
@@ -70,7 +71,7 @@ def update_questions(path: Path, items: list[str], today: str) -> bool:
     return False
 
 
-def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path, questions: Path,
+def run(config_dir: Path, founder: str, agents: str, out: Path, questions: Path,
         kill_file: Path | None, scenario: str = "normal", today: date | None = None) -> int:
     from ..reporting.daily import daily_report
     from ..reporting.periodic import periodic_report
@@ -78,7 +79,6 @@ def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path,
     from ..simulation.market import SimClock
     from ..simulation.run import stored_run
     from ..system import build_system
-    from .export import build_status, write_status
 
     today = today or datetime.now(UTC).date()
     config = runtime._load(config_dir, console=False)
@@ -110,8 +110,7 @@ def run(config_dir: Path, founder: str, agents: str, out: Path, dashboard: Path,
                 path = out / "periodic" / f"{today.isoformat()}-sim-{start}--{days[-1]}.md"
                 path.write_text(periodic_report(system, start, days[-1]).render(), encoding="utf-8")
                 written.append(path)
-        write_status(build_status(system), dashboard)
         changed = update_questions(questions, pending_items(system), today.isoformat())
     print(f"Nödstopp: {kill}. Simuleringen: kod {code}. Rapporter: {', '.join(map(str, written)) or 'inga'}. "
-          f"Instrumentpanel: {dashboard}. Grundarnotis {'uppdaterad' if changed else 'oförändrad'}.")
+          f"Grundarnotis {'uppdaterad' if changed else 'oförändrad'}.")
     return code

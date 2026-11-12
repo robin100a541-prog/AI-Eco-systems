@@ -1,5 +1,12 @@
 # Gapanalys: kommandocentralen mot befintlig kod (D0, 2026-11-08)
 
+> **Läget 2026-11-11:** analysen beskriver läget före Command Center. Sedan dess gäller:
+> - **Borttaget:** Ekobyn (`index.html`, `world.js`, `world.css`, `status.json`), `aie export-status` och testet `dashboard_world.cjs`.
+> - **Kvar ur `export.py`:** vitlistan, `check_public` och de fasta agentnamnen. De används av snapshoten.
+> - **PR #137** är stängd (avsnitt 7).
+> - **"Pausa alla agenter"** finns nu som `ControlStops.place_all` (avsnitt 6 sa att funktionen saknades).
+> - **Aktuell beskrivning:** `docs/command-center/DATA.md`.
+
 Den första versionen skrevs innan `DASHBOARD_PLAN.md` fanns i repot. Planen lades in senare samma dag, och avsnitt 6
 mappar nu varje steg D0–D8 mot befintlig kod. Stegen i planen är omskrivna efter den här analysen.
 
@@ -136,3 +143,14 @@ Trolig orsak, inte utredd: låsta SQLite-filer vid städning och sökvägar med 
 4. **Idéerna är bra och tas med i D2:** arbetsfaserna (`PHASES`), att bara verkliga mötesdeltagare visas, och att observera utan extra modellanrop. I kommandocentralen räknas de ur revisionsloggen och går via `/api/stream`, inte via en fil.
 
 Robin avgör om PR:en stängs med en hänvisning hit eller hålls öppen som referens.
+
+## 8. Uppföljning 2026-11-11: vad som blev av gapen
+| Gap i analysen | Vad som hände |
+|---|---|
+| GitHub Pages var inte påslaget | Cloudflare Pages används i stället (D-085) |
+| Repot är publikt | Fortfarande publikt. Robin gör det privat enligt `docs/command-center/DEPLOY.md` steg 1 |
+| `status.json` committades varje dygn | Inget data committas längre (D-092). Snapshoten ligger i Cloudflare KV |
+| PR #137 (live-status) | Stängd 2026-11-11. Agenternas status och samråd visas ur snapshoten |
+| Pinterest-dubbletterna | Borttagna: `docs/dashboard/app.html` och `privacy.html`, och kopian i rotens `docs/`. Sidorna i repots rot finns kvar (D-077) |
+| En kärnfunktion som pausar alla agenter saknades | `ControlStops.place_all` |
+| 12 tester föll på Windows | 6 är rättade (`test_dashboard` 5 och `test_scout` 1): de läste filer utan `encoding="utf-8"`. 6 återstår |

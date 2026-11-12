@@ -2,7 +2,7 @@
 
 - **Stil:** mörkt "agentic OS" (uppdraget Command Center 2026-11-09, D-087).
 - **Språk:** gränssnittet är på engelska. Bara mörkt läge.
-- **Följs exakt:** `ai-enterprise/command-center/assets/css/app.css` definierar varje token en gång i `:root`. Testet `test_css_uses_the_design_tokens_exactly` kontrollerar att värdena nedan finns exakt så i CSS:en.
+- **Följs exakt:** `ai-enterprise/command-center/public/assets/css/app.css` definierar varje token en gång i `:root`. Testet `test_css_uses_the_design_tokens_exactly` kontrollerar att värdena nedan finns exakt så i CSS:en.
 - **Ersätter** den tidigare designen från D1, med guld och Cormorant Garamond.
 
 ## Färger

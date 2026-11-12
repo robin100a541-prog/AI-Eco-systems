@@ -1,6 +1,6 @@
 // GET /api/snapshot: den senaste snapshoten ur KV, exakt som `py -m aie publish` laddade upp den.
 // Samma data för båda grundarna; inget räknas om här (FR-29, D-085).
-import { error, json } from "../_lib/http.js";
+import { error, json } from "../../lib/http.js";
 
 export async function onRequestGet({ env }) {
   if (!env.KV) return error(503, "KV binding missing");

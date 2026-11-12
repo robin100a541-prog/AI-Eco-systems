@@ -191,3 +191,22 @@ Frågorna står i slutrapporten och i PR:en.
 - **Vad som är aviserat** sparas i revisionsloggen (`notify.sent`) i stället för i en ny tabell.
 - **Första körningen** tittar bara 24 timmar bakåt, så att gammal historik inte ger en hög med larm.
 - **Den dagliga sammanfattningen** går bara med e-post, eftersom den innehåller belopp.
+
+## 2026-11-11: Command Center, Del 6 (säkerhet, driftsättning och städning)
+**Gjort:**
+- **Strukturen:** det som publiceras ligger i `command-center/public/`, och hjälpkoden i `lib/`.
+- **Säkerhet:** `_headers` med strikt CSP, och no-store på alla API-svar.
+- **Driftsättning:** `DEPLOY.md`, sektionen DEPLOYMENT i README, `check_deploy.py` och `.env.example`.
+- **Hemligheter:** `STATE_KEY` sattes med `gh secret set`. Yorgos konto fick sätta hemligheter trots att det bara har skrivrätt.
+- **Städning:** Ekobyn, `export-status`, Pinterest-dubbletterna och workflowen `dashboard-world` är borttagna. PR #137 är stängd.
+
+**Hittat på vägen:**
+- **`verify_daily_cycle.py` var redan trasigt** sedan 2026-11-06: det letade efter rapporter med SIM-datum i namnet. Rättat.
+- **Rapporterna laddades aldrig upp** av `publish --reports`, eftersom de ligger i undermappar. Rättat.
+- **Sex av de tolv Windows-felen** berodde på att testerna läste filer utan `encoding="utf-8"`. Rättade, vilket gjorde att ändringarna i den dagliga cykeln gick att verifiera lokalt.
+- **Två Access-applikationer:** Cloudflare skapar en för produktionen och en för förhandsvisningarna, med var sin AUD-tagg. `ACCESS_AUD` får därför vara en lista.
+
+**Antaganden:**
+- **Knappnamnen i `DEPLOY.md`** är kontrollerade mot Cloudflares dokumentation 2026-11-11 där det gick. De som inte gick att kontrollera är märkta "(ungefär)".
+- **Ingen driftsättning är gjord:** den kräver Robins konton. Koden är testad mot efterbildningar av Cloudflares och GitHubs API:er.
+- **`ntfy`-ämnet** väljer grundarna själva, eftersom de måste kunna det för att prenumerera.

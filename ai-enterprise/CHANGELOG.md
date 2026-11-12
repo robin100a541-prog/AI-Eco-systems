@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-11 — Command Center Del 6: säkerhet, driftsättning och städning
+### Tillagt
+- `docs/command-center/DEPLOY.md`: driftsättningen steg för steg, med var varje variabel ska ligga.
+- `README.md`: sektionen DEPLOYMENT.
+- `scripts/check_deploy.py`: kontrollerar att en driftsatt adress kräver inloggning. Varje adress, också `/api/health`, ska omdirigera till Cloudflare Access och aldrig svara 200.
+- `command-center/public/_headers`: strikt Content-Security-Policy utan externa källor, X-Frame-Options DENY, Referrer-Policy och no-store på API-svar. Middleware sätter dessutom no-store på varje API-svar.
+- `.env.example`: bara de variabler som faktiskt används, utan värden.
+- **GitHub-hemligheten `STATE_KEY`** är satt (slumpad, aldrig utskriven).
+- **Tester:** `tests/unit/test_deploy.py` (6 tester), och JS-tester för flera AUD-taggar och no-store.
+### Ändrat
+- **Strukturen i `command-center/`:** det som publiceras ligger i `public/`. Hjälpkoden är flyttad från `functions/_lib/` till `lib/`, så att den inte blir egna adresser. Testerna ligger utanför det som publiceras.
+- **`ACCESS_AUD`** får vara en lista, eftersom Cloudflare skapar en Access-applikation för produktionen och en för förhandsvisningarna.
+- **`export.py`** innehåller bara det som fortfarande används: vitlistan `AGENT_FIELDS`, `check_public` och de fasta agentnamnen. Snapshoten använder dem.
+- **Den dagliga cykeln** skriver ingen `status.json` längre. `daily-cycle` har inte flaggan `--dashboard`.
+- **Snapshoten** har fått `scout` (scoutens pipeline, som tidigare stod i `status.json`).
+- **`publish --reports`** hittar rapporterna i undermapparna `daily/` och `periodic/`.
+- **`scripts/verify_daily_cycle.py`:** kontrollen av dagsrapporten var kvar på SIM-datumet och föll sedan 2026-11-06. Den är rättad, och skriptet kontrollerar snapshoten i stället för `status.json`.
+- **6 av de 12 kända Windows-felen är rättade:** `test_dashboard` (5) och `test_scout` (1) läste filer utan `encoding="utf-8"`.
+### Borttaget
+- **Ekobyn:** `docs/dashboard/index.html`, `world.js`, `world.css`, `status.json` och `README.md`, testet `tests/dashboard_world.cjs` och workflowen `dashboard-world.yml`. Command Center ersätter den.
+- **Pinterest-dubbletterna:** `docs/dashboard/app.html` och `privacy.html`, och den identiska kopian i rotens `docs/` (`index.html`, `app.html`, `privacy.html`). Sidorna i repots rot finns kvar (D-077).
+- **Kommandot `aie export-status`** och funktionerna `build_status`, `write_status` och `export`, som bara skrev `status.json`.
+- **PR #137** är stängd med en kommentar om att Command Center ersätter den.
+
 ## [Unreleased] — 2026-11-10 — Command Center Del 5: notiser
 ### Tillagt
 - `src/aie/notify/`: notiser med ntfy och Gmail SMTP, bara med standardbiblioteket.

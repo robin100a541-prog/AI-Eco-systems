@@ -38,10 +38,10 @@ def main() -> None:
         for key, value in (("data_dir", data), ("log_dir", logs)):
             text = re.sub(rf'(?m)^{key} = .*$', lambda m: f'{key} = {json.dumps(str(value))}', text)
         path.write_text(text, encoding="utf-8")
-        reports, dashboard = work / "reports", work / "dashboard" / "status.json"
+        reports, snapshot = work / "reports", work / "snapshot.json"
         command = [sys.executable, "-m", "aie", "daily-cycle", "--config-dir", str(cfg),
                    "--as", sorted(config.system.founders)[0], "--agents", "scripted", "--out", str(reports),
-                   "--dashboard", str(dashboard), "--questions", str(work / "questions.md"),
+                   "--questions", str(work / "questions.md"),
                    "--kill-file", str(work / "KILL-SWITCH")]
         for n in (1, 2):
             result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=90)
@@ -56,13 +56,18 @@ def main() -> None:
                 raise AssertionError("audit chain failed")
             if db.connection.execute("SELECT DISTINCT currency FROM ledger_entries").fetchall() != [("SIM",)]:
                 raise AssertionError("currency isolation failed")
-        for _, day in days:
-            if not (reports / "daily" / f"{day}.md").is_file():
-                raise AssertionError(f"daily report missing for {day}")
-        status = json.loads(dashboard.read_text(encoding="utf-8"))
-        if status["classification"] != "public" or status["scoreboard"]["real"] is not None:
-            raise AssertionError("dashboard classification/currency isolation failed")
-        print("PASS: two resumed days, both reports, public SIM dashboard and intact audit; no working state changed")
+        # Rapporten heter efter dagens riktiga datum sedan 2026-11-06 (inte SIM-dagen), så båda körningarna
+        # skriver samma fil. Kontrollen var kvar på SIM-datumet och föll därför; rättad 2026-11-11.
+        if not list((reports / "daily").glob("*.md")):
+            raise AssertionError("daily report missing")
+        result = subprocess.run([sys.executable, "-m", "aie", "publish", "--config-dir", str(cfg), "--out", str(snapshot)],
+                                cwd=work, env=env, capture_output=True, text=True, timeout=90)
+        if result.returncode:
+            raise RuntimeError(f"publish failed:\n{result.stdout}\n{result.stderr}")
+        snap = json.loads(snapshot.read_text(encoding="utf-8"))
+        if snap["currency"] != "SIM" or snap["economy_real"] is not None or not snap["audit_chain"]["ok"]:
+            raise AssertionError("snapshot currency isolation or audit chain failed")
+        print("PASS: two resumed days, both reports, SIM snapshot and intact audit; no working state changed")
 
 
 if __name__ == "__main__":

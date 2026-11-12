@@ -36,7 +36,7 @@ from .auth import AuthError, Authenticator, set_code
 
 log = get_logger("dashboard")
 WEB = Path(__file__).resolve().parent / "web"  # bara inloggningssidan
-FRONTEND = Path(__file__).resolve().parents[3] / "command-center"  # samma filer som på Cloudflare Pages
+FRONTEND = Path(__file__).resolve().parents[3] / "command-center" / "public"  # samma filer som Cloudflare Pages publicerar
 PUBLIC_PREFIXES = ("/assets/",)  # typsnitt, ikoner och CSS: inga data, behövs av inloggningssidan
 PRIVATE_PREFIXES = ("/js/", "/vendor/")
 COOKIE = "aie_session"
