@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — Actions-minuter: en Python-version även på PR
+### Ändrat
+- `.github/workflows/ai-enterprise-tests.yml`: testerna körs på Python 3.12 både på PR och vid push till main. Kontrollen "unittest (Python 3.11)", som grenskyddet fortfarande kräver, rapporteras som överhoppad och kostar inga minuter.
+- `docs/command-center/DATA.md` avsnitt 8: ny beräkning, cirka 1 310 minuter per månad vid förra månadens takt (målet är under 1 400).
+
 ## [Unreleased] — 2026-11-12 — Command Center: egen inloggning i stället för Cloudflare Access (D-094)
 ### Tillagt
 - `command-center/lib/session.js`, `functions/login.js` och `functions/logout.js`: inloggning med en åtkomstkod per grundare.
