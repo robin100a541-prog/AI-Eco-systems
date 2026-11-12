@@ -221,3 +221,8 @@ Frågorna står i slutrapporten och i PR:en.
 - **`ALLOWED_EMAILS` är borttagen.** Den användes också för mottagare av e-postnotiser. Mottagarna står nu i den valfria `NOTIFY_TO`.
 - **Inloggningsloggen** ligger i KV i 30 dagar, inte i revisionsloggen, eftersom funktionerna inte når databasen.
 - **Inte prövat mot Cloudflare:** gratisplanens gräns för processortid per anrop är låg, och en inloggning räknar 210 000 iterationer. Det syns först vid den riktiga driftsättningen.
+
+## 2026-11-12: Del 2 (Actions-minuter)
+**Gjort:** testerna körs på en Python-version även på PR. Ny beräkning: cirka 1 310 minuter per månad vid förra månadens takt.
+
+**Antagande:** grenskyddet kräver kontrollen "unittest (Python 3.11)", och Yorgos konto kan inte ändra grenskyddet. Jobbet med det namnet hoppas därför alltid över, vilket räknas som godkänt och kostar inget. PR:en för den här delen visar att det fungerar.

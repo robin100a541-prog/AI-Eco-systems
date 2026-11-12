@@ -101,40 +101,38 @@ Alla körningar sker i GitHub Actions. Ingenting körs schemalagt på Yorgos ell
    - Scouts egna databas behålls som den är. Att slå ihop den med företagets är en fråga till grundarna, och den ändras inte här.
 5. **Utan Cloudflare:** så länge `CLOUDFLARE_API_TOKEN` och `KV_NAMESPACE_ID` saknas fungerar allt som i dag, och steget hoppas över med en varning i körningens sammanfattning.
 
-## 8. Actions-minuter (Del 0)
-**Mätt:** de senaste 30 dagarna, 2026-10-10 till 2026-11-09, gick det 2 351 jobbminuter för `ai-enterprise tests`. Det är 438 körningar: 190 vid push till main och 248 på PR. Allt räknat per jobb och avrundat uppåt till hel minut, via `gh api .../actions/runs/{id}/jobs`.
+## 8. Actions-minuter
+**Mätt:** under 30 dagar, 2026-10-10 till 2026-11-09, gick det 2 351 jobbminuter för `ai-enterprise tests` (438 körningar: 190 vid push till main och 248 på PR). Allt räknat per jobb och avrundat uppåt till hel minut, via `gh api .../actions/runs/{id}/jobs`.
 
-**Ändrat:**
-- **`ai-enterprise-tests.yml`:**
-  - **Push till main:** bara Python 3.12.
-  - **PR mot main:** 3.11 och 3.12, eftersom de krävs av grenskyddet.
-  - **Bara dokument:** en PR som bara ändrar samtalsloggar, rapporter och `.md` i roten hoppar över testerna. Jobbet körs ändå, så att de krävda kontrollerna rapporteras.
-  - **Concurrency:** en ny commit avbryter en pågående körning (cancel-in-progress).
-  - **Cache:** pip-cache för Pillow.
-- **`protected-files.yml`:** concurrency med cancel-in-progress.
-- **`nightly.yml`:** körs en gång i veckan i stället för varje natt. Den är en utvärdering, inte en agent.
-- **Inga data-PR:er (beslut 8):** company-daily och scout slutar öppna dagliga PR:er med data (Del 1). Det tar bort cirka 34 PR:er och lika många push-körningar per månad.
+**Åtgärder:**
+- **En Python-version (3.12)** både på PR och vid push till main (2026-11-12). Tidigare kördes två versioner på PR.
+- **Bara dokument:** en PR som bara ändrar samtalsloggar, rapporter och `.md` i roten kör inga tester.
+- **Concurrency:** en ny commit avbryter en pågående körning.
+- **`nightly`** körs en gång i veckan.
+- **Inga data-PR:er:** company-daily och scout öppnar inga dagliga PR:er (D-092). Det tog bort cirka 34 PR:er och lika många push-körningar per månad.
+- **`dashboard-world`** är borttagen tillsammans med Ekobyn.
 
-**Beräknat per månad**, med samma regler tillämpade på förra månadens körningar:
+**Beräknat per månad** vid förra månadens takt, cirka 156 sammanslagna PR:er (en byggmånad):
 
-| Workflow | Minuter |
+| Post | Minuter |
 |---|---|
-| ai-enterprise tests (cirka 156 PR:er, alltså förra månadens takt utan bot-PR:erna) | cirka 1 220 |
-| protected-files | cirka 150 |
-| company-daily (dagligen, med publicering) | cirka 75 |
-| control-ingest (nytt, cirka 30 knapptryck) | cirka 30 |
+| Tester på PR, en version (cirka 2,4 per PR, med avbrutna körningar inräknade) | cirka 375 |
+| Tester vid push till main (cirka 3 per PR) | cirka 470 |
+| protected-files (cirka 1 per PR) | cirka 150 |
+| company-daily (dagligen, med publicering och notiser) | cirka 75 |
 | printify-catalog och pod-orders (dagligen) | cirka 60 |
-| command-center-tester (nytt, bara PR:er som rör `command-center/`) | cirka 60 |
-| dev-agent, dev-agent-guard, nightly, scout och manuella körningar | cirka 120 |
-| notify-daily (nytt i Del 5, dagligen, cirka 1 minut) | cirka 30 |
-| **Summa** | **cirka 1 730** |
+| command-center-tester (bara PR:er som rör `command-center/`) | cirka 60 |
+| control-ingest (cirka 30 knapptryck) | cirka 30 |
+| notify-daily (dagligen) | cirka 30 |
+| dev-agent, dev-agent-guard, nightly, scout och manuella körningar | cirka 60 |
+| **Summa** | **cirka 1 310** |
 
 **Slutsats:**
-- **Över taket i dag:** med förra månadens takt, som var en byggmånad med cirka 190 sammanslagna PR:er, hamnar förbrukningen över 1 400.
-- **Kostnad per PR:** varje sammanslagen PR kostar cirka 9 minuter. Det är tester på två versioner, en version vid push och protected-files.
-- **Grundlasten:** utan PR:er är grundlasten cirka 315 minuter.
-- **Gränsen:** taket på 1 400 hålls med **högst cirka 115 sammanslagna PR:er per månad**. Det kräver färre och större PR:er, till exempel en per del som i Command Center.
-- **Tills vidare kostar det inget:** repot är fortfarande publikt, och publika repon har obegränsade Actions-minuter.
+- **Under målet:** cirka 1 310 minuter per månad, mot målet 1 400 och taket 2 000 för ett privat repo på GitHub Free.
+- **Kostnad per PR:** cirka 6,4 minuter (tester på PR, tester vid push och protected-files). Grundlasten utan PR:er är cirka 315 minuter.
+- **Marginalen:** målet 1 400 håller upp till cirka 170 sammanslagna PR:er per månad, och taket 2 000 upp till cirka 265.
+- **Osäkerhet:** siffran bygger på en enda månad. En månad med fler PR:er än 170 går över målet men inte över taket.
+- **Grenskyddet:** kontrollen "unittest (Python 3.11)" krävs fortfarande på main. Den rapporteras som överhoppad och kostar inget. Robin kan ta bort den ur grenskyddet (Settings > Branches), och därefter kan jobbet `python-311` i `ai-enterprise-tests.yml` tas bort.
 
 ## 9. Snapshoten (Del 1, D-088)
 **Byggs av:** `py -m aie publish` i company-daily, ur företagets databas och bara med kärnans funktioner (`src/aie/dashboard/snapshot.py`). Vitlistan för agentfält och kontrollen mot hemligheter ligger i `export.py` (`AGENT_FIELDS` och `check_public`).
