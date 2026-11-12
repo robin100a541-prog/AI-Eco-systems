@@ -226,3 +226,10 @@ Frågorna står i slutrapporten och i PR:en.
 **Gjort:** testerna körs på en Python-version även på PR. Ny beräkning: cirka 1 310 minuter per månad vid förra månadens takt.
 
 **Antagande:** grenskyddet kräver kontrollen "unittest (Python 3.11)", och Yorgos konto kan inte ändra grenskyddet. Jobbet med det namnet hoppas därför alltid över, vilket räknas som godkänt och kostar inget. PR:en för den här delen visar att det fungerar.
+
+## 2026-11-12: Del 3 (hemligheter och DEPLOY.md)
+**Gjort:** `CLOUDFLARE_ACCOUNT_ID` och `KV_NAMESPACE_ID` sattes med `gh secret set`. DEPLOY.md skrevs om i ordningen a–h, utan Access.
+
+**Antaganden:**
+- **Tokens före projektet:** steg d lägger in `GITHUB_READ_TOKEN` och `GITHUB_DISPATCH_TOKEN`, som skapas i steg f. Guiden säger därför att steg f kan göras först, eller att variablerna läggs in efteråt.
+- **`NOTIFY_TO`** är en valfri fjärde hemlighet för mottagare av e-post.

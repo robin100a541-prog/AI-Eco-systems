@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — Hemligheter och ny DEPLOY.md
+### Ändrat
+- `docs/command-center/DEPLOY.md` är omskriven utan Access-steg, i ordningen a–h: privat repo, åtkomstkoder och sessionsnyckel, GitHub-appen, Pages-projektet med hemligheter och KV-bindning, Cloudflare-token, GitHub-tokens, notiser, och första körningen med `check_deploy.py`.
+- **GitHub-hemligheterna** `CLOUDFLARE_ACCOUNT_ID` och `KV_NAMESPACE_ID` är satta.
+
 ## [Unreleased] — 2026-11-12 — Actions-minuter: en Python-version även på PR
 ### Ändrat
 - `.github/workflows/ai-enterprise-tests.yml`: testerna körs på Python 3.12 både på PR och vid push till main. Kontrollen "unittest (Python 3.11)", som grenskyddet fortfarande kräver, rapporteras som överhoppad och kostar inga minuter.
