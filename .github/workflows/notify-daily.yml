@@ -39,5 +39,5 @@ jobs:
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          ALLOWED_EMAILS: ${{ secrets.ALLOWED_EMAILS }}
+          NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
         run: python -m aie notify daily

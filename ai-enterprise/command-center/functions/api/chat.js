@@ -41,6 +41,7 @@ export async function onRequestPost({ request, env, data }, fetchImpl = fetch) {
   if (!env.KV) return error(503, "KV binding missing");
   if (!env.GROQ_API_KEY) return error(503, "GROQ_API_KEY missing");
   const identity = data.identity;
+  if (!identity || !identity.founder) return error(401, "unauthorized");
   let body;
   try {
     body = await readJson(request);
@@ -57,7 +58,7 @@ export async function onRequestPost({ request, env, data }, fetchImpl = fetch) {
   }
   const agent = snapshot && snapshot.agents.items.find((a) => a.id === body.agent);
   if (!agent) return error(404, "unknown agent");
-  const rate = await rateLimit(env.KV, "chat", identity.email, LIMIT_PER_HOUR);
+  const rate = await rateLimit(env.KV, "chat", identity.founder, LIMIT_PER_HOUR);
   if (!rate.ok) return json({ error: "Waiting for quota", code: "quota" }, 429);
   const groq = (snapshot.quotas.items.find((q) => q.provider === "groq") || {}).model;
   const model = env.GROQ_MODEL || groq;
@@ -79,7 +80,7 @@ export async function onRequestPost({ request, env, data }, fetchImpl = fetch) {
   const reply = String((((out.choices || [])[0] || {}).message || {}).content || "").slice(0, 4000);
   if (!reply) return error(502, "empty model answer");
   const at = new Date().toISOString();
-  await env.KV.put(`chat:${identity.email}:${agent.id}:${at}`, JSON.stringify({ at, agent: agent.id, model, question: message, answer: reply }),
+  await env.KV.put(`chat:${identity.founder}:${agent.id}:${at}`, JSON.stringify({ at, agent: agent.id, model, question: message, answer: reply }),
     { expirationTtl: LOG_TTL });
   return json({ reply, label: LABEL, model, remaining: rate.remaining });
 }

@@ -13,7 +13,7 @@ function dialog(html) {
 export function confirmAction(title, text, onConfirm, { confirmLabel = "Queue decision", danger = false } = {}) {
   const d = dialog(`<form method="dialog" class="stack">
     <div class="label">Founder decision</div><h2>${esc(title)}</h2><p class="muted">${esc(text)}</p>
-    <p class="muted">The decision is queued and applied by the engine through core functions, and it is logged with your email.</p>
+    <p class="muted">The decision is queued and applied by the engine through core functions, and it is logged with your name.</p>
     <div class="row between"><button class="btn" value="cancel">Cancel</button>
     <button class="btn ${danger ? "danger" : "primary"}" value="ok">${esc(confirmLabel)}</button></div></form>`);
   d.addEventListener("close", () => { if (d.returnValue === "ok") onConfirm(); });

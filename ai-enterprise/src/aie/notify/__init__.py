@@ -4,7 +4,7 @@
 - `py -m aie notify daily`  den dagliga sammanfattningen med e-post (körs 21:00 svensk vintertid av notify-daily)
 
 Hemligheter läses bara ur miljön och skrivs aldrig ut: `NTFY_TOPIC`, `GMAIL_USER`, `GMAIL_APP_PASSWORD` och
-`ALLOWED_EMAILS` (mottagarna). Saknas en hemlighet hoppas kanalen över utan fel.
+`NOTIFY_TO` (mottagarna, valfri; annars går e-posten till `GMAIL_USER`). Saknas en hemlighet hoppas kanalen över utan fel.
 """
 from .channels import Channels, send_email, send_ntfy
 from .triggers import GENERIC, Alert, collect

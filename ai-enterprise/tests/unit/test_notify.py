@@ -180,9 +180,9 @@ class TestChannels(NotifyCase):
         self.assertIn("ntfy failed, e-post failed", out)
 
     def test_channels_from_env(self):
-        """Verifies FR-33: kanalerna läses ur miljön; mottagarna är grundarnas adresser i ALLOWED_EMAILS."""
+        """Verifies FR-33: kanalerna läses ur miljön; mottagarna står i NOTIFY_TO, annars går e-posten till avsändaren."""
         c = Channels.from_env({"NTFY_TOPIC": "t", "GMAIL_USER": "bot@example.com", "GMAIL_APP_PASSWORD": "p",
-                               "ALLOWED_EMAILS": "yorgo=y@example.com,robin=r@example.com"})
+                               "NOTIFY_TO": "y@example.com, r@example.com, not-an-address"})
         self.assertTrue(c.has_ntfy and c.has_email)
         self.assertEqual(c.recipients, ("r@example.com", "y@example.com"))
         self.assertEqual(Channels.from_env({"GMAIL_USER": "bot@example.com", "GMAIL_APP_PASSWORD": "p"}).recipients,

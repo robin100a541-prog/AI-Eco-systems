@@ -1,0 +1,11 @@
+{
+  "_comment": "Testvektorer, inga riktiga koder. Skapade med aie.dashboard.cc_auth.hash_line och fasta salter.",
+  "yorgo": {
+    "code": "correct-horse-battery",
+    "line": "yorgo=pbkdf2_sha256$210000$000102030405060708090a0b0c0d0e0f$db4af7a90d23c48331377f083f1df0b6120e782c9feb5c150d5c1c8d402ae582"
+  },
+  "robin": {
+    "code": "second-founder-code-42",
+    "line": "robin=pbkdf2_sha256$210000$f0e0d0c0b0a090807060504030201000$af5dc793eea5a3d4420a45948233c562fcd029f8e7e3112161148fc672f20738"
+  }
+}

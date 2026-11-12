@@ -24,7 +24,6 @@ from aie.simulation.seed import seed
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "config"
 FIXTURE = ROOT / "command-center" / "tests" / "fixtures" / "queue-item.json"
-EMAILS = {"yorgo@example.com": "yorgo", "robin@example.com": "robin"}
 
 
 class Response:
@@ -67,7 +66,7 @@ class FakeCloudflare:
 
 def item(kind="approve", **fields):
     base = {"id": f"test-{kind}-{len(fields)}-{fields.get('request', fields.get('agent', 'x'))}", "type": kind,
-            "email": "yorgo@example.com", "founder": "yorgo", "at": datetime.now(UTC).isoformat(), "note": ""}
+            "founder": "yorgo", "at": datetime.now(UTC).isoformat(), "note": ""}
     base.update(fields)
     return base
 
@@ -97,7 +96,7 @@ class ControlCase(unittest.TestCase):
     def ingest(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
-            code = control.ingest(self.config_dir, self.kv, EMAILS)
+            code = control.ingest(self.config_dir, self.kv)
         shutdown_logging()
         return code, out.getvalue()
 
@@ -114,8 +113,8 @@ class ControlCase(unittest.TestCase):
 
 class TestIngest(ControlCase):
     def test_approve_and_reject_go_through_the_core_queue_and_are_logged_with_the_email(self):
-        """Verifies FR-31, D-089, D-081: godkännande och avslag utförs via ApprovalQueue, loggas med grundarens mejl,
-        och kön töms. En grundare räcker i simuleringen."""
+        """Verifies FR-31, D-089, D-081, D-094: godkännande och avslag utförs via ApprovalQueue, loggas med grundarens
+        namn ur sessionen, och kön töms. En grundare räcker i simuleringen."""
         fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
         fixture["at"] = datetime.now(UTC).isoformat()  # samma form som functions/api/action.js skriver
         self.queue(fixture, item("reject", request=2, note="Too expensive now"))
@@ -128,8 +127,9 @@ class TestIngest(ControlCase):
         self.assertEqual(gov.queue.get(1).status.value, "approved")
         self.assertEqual(gov.queue.get(2).status.value, "rejected")
         applied = self.audit(system, "control.applied")
-        self.assertEqual([(a["type"], a["email"], a["target"]) for a in applied],
-                         [("approve", "yorgo@example.com", 1), ("reject", "yorgo@example.com", 2)])
+        self.assertEqual([(a["type"], a["target"]) for a in applied], [("approve", 1), ("reject", 2)])
+        actors = [e.actor for e in system.audit.entries() if e.action == "control.applied"]
+        self.assertEqual(actors, ["yorgo", "yorgo"])
         self.assertTrue(system.audit.verify().ok)
 
     def test_invalid_items_are_rejected_logged_and_never_stop_the_valid_one(self):
@@ -138,8 +138,7 @@ class TestIngest(ControlCase):
         bad = [
             item("shell", cmd="rm -rf /"),
             item("approve", request=1, founder="mallory"),
-            item("approve", request=1, email="mallory@example.com"),
-            item("approve", request=1, founder="robin"),  # mejlet hör till yorgo
+            item("approve", request=1, email="yorgo@example.com"),  # fältet finns inte längre (D-094)
             item("approve", request="1"),
             item("approve", request=1, at=old),
             item("approve", request=999),  # kärnan nekar: förfrågan finns inte
@@ -272,7 +271,7 @@ class TestIngest(ControlCase):
         self.assertTrue(system.kill.state().engaged)
         db.close()
         self.queue(item("kill_release", confirm="RELEASE", note="Checked, safe to restart", id="release-ok-0001",
-                        email="robin@example.com", founder="robin"))
+                        founder="robin"))
         _, out = self.ingest()
         self.assertIn("1 utförda", out)
         _, db, system, _ = self.core()
@@ -292,7 +291,7 @@ class TestChain(ControlCase):
         shutdown_logging()
         first = json.loads(self.cloud.store["snapshot:latest"])
         self.assertEqual(len([a for a in first["approvals"]["items"] if a["status"] == "pending"]), 3)
-        self.queue(item("approve", request=1, email="robin@example.com", founder="robin", id="chain-item-001"))
+        self.queue(item("approve", request=1, founder="robin", id="chain-item-001"))
         code, _ = self.ingest()
         self.assertEqual(code, 0)
         with contextlib.redirect_stdout(io.StringIO()):
@@ -304,7 +303,6 @@ class TestChain(ControlCase):
         self.assertEqual(by_id[1]["votes"][0]["founder"], "robin")
         self.assertIn("founder control", {e["type"] for e in second["events"]["items"]})
         self.assertTrue(second["audit_chain"]["ok"])
-        self.assertNotIn("robin@example.com", json.dumps(second))  # mejladresser går aldrig ut i snapshoten
 
     def test_state_copy_survives_a_lost_cache(self):
         """Verifies D-093: databasen går att hämta tillbaka ur KV när cachen är borta, med historiken kvar."""
@@ -319,14 +317,6 @@ class TestChain(ControlCase):
         _, db, system, gov = self.core()
         self.assertEqual(len(gov.queue.pending()), 3)
         self.assertTrue(system.audit.verify().ok)
-
-
-class TestParsing(unittest.TestCase):
-    def test_allowed_emails_format(self):
-        """Verifies FR-28: ALLOWED_EMAILS tolkas som namn=mejl; adresser utan namn ger ingen grundare."""
-        self.assertEqual(control.parse_emails(" Yorgo = Y@X.se , robin=r@y.se, stray@z.se,"),
-                         {"y@x.se": "yorgo", "r@y.se": "robin"})
-        self.assertEqual(control.parse_emails(None), {})
 
 
 if __name__ == "__main__":

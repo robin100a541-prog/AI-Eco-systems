@@ -199,8 +199,8 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 ## 10. Kontroller och chatt (Del 4, D-089, D-090)
 **Flödet för ett knapptryck:**
 1. **Webbläsaren** anropar `POST /api/action` med samma ursprung och headern `X-Command-Center: 1`.
-2. **`functions/api/action.js`** kontrollerar den verifierade Access-identiteten, validerar strikt och lägger en post i KV-kön. Sedan startar den workflowen `control-ingest` med `workflow_dispatch`.
-3. **`py -m aie control ingest`** läser och tömmer kön, validerar varje post igen, anropar kärnans funktioner och loggar `control.applied` eller `control.rejected` i revisionsloggen med grundarens mejl. Därefter publiceras en ny snapshot.
+2. **`functions/api/action.js`** kontrollerar sessionen (D-094), validerar strikt och lägger en post i KV-kön. Sedan startar den workflowen `control-ingest` med `workflow_dispatch`.
+3. **`py -m aie control ingest`** läser och tömmer kön, validerar varje post igen, anropar kärnans funktioner och loggar `control.applied` eller `control.rejected` i revisionsloggen med grundarens namn. Därefter publiceras en ny snapshot.
 4. **company-daily** tömmer också kön före dagens cykel, så att ett beslut aldrig blir liggande om starten av workflowen misslyckades.
 
 **Köposten** (`queue:<tid>:<id>`, sparas högst 7 dagar):
@@ -209,7 +209,7 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 |---|---|
 | `id` | unikt id (UUID). En post med ett id som redan är behandlat hoppas över |
 | `type` | `approve`, `reject`, `pause_agent`, `resume_agent`, `pause_all`, `kill` eller `kill_release` |
-| `email`, `founder` | ur den verifierade Access-JWT:n och `ALLOWED_EMAILS` (`namn=mejl`). Aldrig ur webbläsarens begäran |
+| `founder` | ur den signerade sessionen (D-094). Aldrig ur webbläsarens begäran |
 | `at` | när posten lades i kön |
 | `note` | högst 300 tecken. Krävs för `reject` |
 | `request` | förfrågans nummer, för `approve` och `reject` |
@@ -236,10 +236,10 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 - **Kontext:** agentens roll, mandat, status och uppgift, och företagets simulerade nyckeltal. Riktig valuta (`economy_real`) skickas aldrig till en extern modell (DR-13).
 - **Modell:** Groq-modellen i `config/providers.toml`, som följer med i snapshoten (`quotas[].model`). Variabeln `GROQ_MODEL` kan ersätta den.
 - **Gränser:** 30 meddelanden per grundare och timme. Vid slut kvot, eller när Groq svarar 429, visas "Waiting for quota".
-- **Loggar:** `chat:<mejl>:<agent>:<tid>` i KV, i 30 dagar.
+- **Loggar:** `chat:<grundare>:<agent>:<tid>` i KV, i 30 dagar.
 - **Märkning:** varje svar märks "Hypothesis — not verified".
 
-**Fler KV-nycklar:** `queue:*` (kön), `chat:*` (chattloggar) och `rate:*` (räknare per grundare och timme).
+**Fler KV-nycklar:** `queue:*` (kön), `chat:*` (chattloggar), `rate:*` (räknare per grundare och timme), `lock:*` (låsning vid felaktiga inloggningar) och `authlog:*` (inloggningsloggen, 30 dagar).
 
 ## 11. Notiser (Del 5, D-091)
 **Kanaler:** ntfy (push till mobilen) och Gmail SMTP (e-post). Båda är gratis, och inget SMS används.
@@ -256,10 +256,27 @@ En **körning** (`runs`) är ett modellanrop (`llm.call`) med agenten som `calle
 | slut gratiskvot | `simulation.paused_quota`, `dev.quota_exhausted` och `llm.unavailable` | `audit_log` |
 
 - **ntfy får bara generisk text.** Det är sex fasta meningar (`GENERIC` i `notify/triggers.py`) utan belopp, namn eller ID:n. Den som kan ämnet kan läsa notiserna, och därför ligger ämnet i en hemlighet och texten är ofarlig.
-- **E-posten** får detaljerna, och går till grundarnas adresser i `ALLOWED_EMAILS`.
+- **E-posten** får detaljerna, och går till adresserna i `NOTIFY_TO`. Saknas den går e-posten till avsändaren (`GMAIL_USER`).
 - **Inget aviseras två gånger.** När något har skickats loggas `notify.sent` i revisionsloggen, med sista lästa raden och vilka förfrågningar som aviserats. Samma typ skickas högst var 15:e minut.
 - **Saknas en hemlighet** hoppas kanalen över utan fel, och larmet ligger kvar tills en kanal finns.
 - **Ett fel i en kanal** loggas, och kommandot avslutar ändå med 0. Notiser stoppar aldrig agenterna.
+
+## 12. Inloggningen (D-094)
+Cloudflare Access används inte, eftersom Zero Trust kräver betalkort. Command Center har en egen inloggning i `functions/_middleware.js`, `functions/login.js` och `lib/session.js`.
+
+| Del | Hur |
+|---|---|
+| Vad som skyddas | alla sökvägar, också statiska filer och `/api/health`. Bara `/login` och `/login/login.css` är öppna |
+| Utan session | sidor och filer ger 302 till `/login`, och API:t ger 401 |
+| Koden | en per grundare, minst 12 tecken. Lagras bara som `namn=pbkdf2_sha256$210000$<salt>$<hash>` i `FOUNDER_CODE_HASHES` |
+| Hashen | PBKDF2-SHA256, 210 000 iterationer i tre steg om 70 000 i kedja (Cloudflares tak är 100 000 per anrop) |
+| Sessionen | `cc_session`: `<innehåll>.<HMAC-SHA256>` med `SESSION_SECRET`. HttpOnly, Secure, SameSite=Strict, 12 timmar |
+| Låsning | 5 fel från samma IP eller mot samma grundare ger 15 minuter (`lock:ip:*` och `lock:founder:*` i KV) |
+| Logg | varje försök sparas som `authlog:<tid>:<id>` i KV i 30 dagar, med grundare, IP och utfall. Aldrig koden |
+| Saknade hemligheter | varje sökväg svarar 503 "Not configured" |
+
+- **Skapa hemligheterna:** `py -m aie command-center make-code --founder Yorgo` och `py -m aie command-center make-secret`.
+- **Den lokala servern** har kvar sin egen inloggning från D1 (`py -m aie dashboard set-code`).
 
 ## Overifierat
 - **Pilotens databas:** pod-orders har ingen cachepost bland de 20 senaste, så om pilotens databas har några poster är inte verifierat. Den kan inte läsas utan att köra workflowen.

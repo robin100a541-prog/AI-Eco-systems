@@ -1,5 +1,7 @@
 # DEPLOY: så blir Command Center live
 
+> **2026-11-12:** Cloudflare Access används inte längre (D-094). Steg 3 och variablerna `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` och `ALLOWED_EMAILS` nedan gäller inte. Guiden skrivs om i nästa del.
+
 Den här guiden tar Command Center från koden i repot till en gemensam HTTPS-adress som bara Yorgo och Robin når. Allt är gratis. Räkna med cirka 45 minuter första gången.
 
 - **Vem gör vad:** stegen 1–5 kräver Robin, som äger repot. Yorgo kan sitta med. Steg 7 gör var och en på sin mobil.
