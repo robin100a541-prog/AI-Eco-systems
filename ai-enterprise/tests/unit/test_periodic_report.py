@@ -84,8 +84,9 @@ class TestReportCli(unittest.TestCase):
             config = Path(tmp) / "config"
             shutil.copytree(root / "config", config)
             text = (config / "system.toml").read_text(encoding="utf-8")
-            lines = [f'data_dir = "{tmp}/data"' if ln.startswith("data_dir") else
-                     f'log_dir = "{tmp}/logs"' if ln.startswith("log_dir") else ln for ln in text.splitlines()]
+            base = Path(tmp).as_posix()  # omvända snedstreck (Windows) är escape-tecken i TOML
+            lines = [f'data_dir = "{base}/data"' if ln.startswith("data_dir") else
+                     f'log_dir = "{base}/logs"' if ln.startswith("log_dir") else ln for ln in text.splitlines()]
             (config / "system.toml").write_text("\n".join(lines) + "\n", encoding="utf-8")
             out = io.StringIO()
             with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
@@ -94,6 +95,9 @@ class TestReportCli(unittest.TestCase):
             self.assertIn("SAKNAS", out.getvalue())
             self.assertIn("# Periodisk rapport", out.getvalue())
             self.assertIn("0 fynd", out.getvalue())
+            from aie.monitoring.log import shutdown_logging
+
+            shutdown_logging()  # Windows kan inte ta bort en öppen loggfil
 
 
 if __name__ == "__main__":

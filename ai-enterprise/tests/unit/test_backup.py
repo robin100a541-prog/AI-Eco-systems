@@ -31,8 +31,9 @@ class BackupRecovery(PilotLive):
         self.assertEqual(result["database"]["audit_head"], self.system_.audit.verify().head_hash)
         with closing(sqlite3.connect(snapshot)) as conn:
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM audit_log WHERE action='backup.test'").fetchone()[0], 1)
-        self.assertEqual(snapshot.stat().st_mode & 0o777, 0o600)
-        self.assertEqual(snapshot.with_suffix(".json").stat().st_mode & 0o777, 0o600)
+        if os.name != "nt":  # Windows har inga POSIX-rättigheter; os.chmod kan bara sätta skrivskydd där
+            self.assertEqual(snapshot.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(snapshot.with_suffix(".json").stat().st_mode & 0o777, 0o600)
 
     def test_rehearsal_never_overwrites_working_database(self):
         snapshot = self.snapshot()
