@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — Testerna är gröna på Windows
+### Rättat
+- Sex tester som bara föll på Windows. Bara testerna är ändrade, inte kärnan:
+  - `test_dev_agent.py` (3): databasen stängs och arbetskatalogen lämnas innan den tillfälliga mappen tas bort.
+  - `test_dev_agent_safety.py` (1): testfilerna skrivs som UTF-8.
+  - `test_periodic_report.py` (1): sökvägen i TOML skrivs med snedstreck, och loggfilen stängs.
+  - `test_backup.py` (1): filrättigheterna 0600 kontrolleras bara på POSIX.
+
 ## [Unreleased] — 2026-11-12 — En SIM-databas: scouten skriver i företagets databas
 ### Tillagt
 - `py -m aie scout merge --from <fil>` (`src/aie/scout/merge.py`): flyttar scoutens register till företagets databas. Varje version kopieras oförändrad, flytten kan köras flera gånger, och den loggas som `scout.merged`.

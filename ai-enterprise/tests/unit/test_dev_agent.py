@@ -641,8 +641,9 @@ class TestRateLimits(DevCase):
         env = {"GROQ_API_KEY": "gsk-test"}
         offered = frozenset({"openai/gpt-oss-20b"})  # 120b saknas just nu i den här låtsaslistan
         with tempfile.TemporaryDirectory() as tmp:
-            agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=lambda kind, key: offered)
+            agent, audit = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=lambda kind, key: offered)
             names = [s.provider.name for s in agent._gateway._router._slots]
+            audit._db.close()  # Windows kan inte ta bort en öppen databasfil
         self.assertEqual(names[:1], ["groq-2"])
         self.assertNotIn("groq", names)
 
@@ -650,8 +651,9 @@ class TestRateLimits(DevCase):
             raise ProviderError("groq: modellistan gav HTTP 503", 503)
 
         with tempfile.TemporaryDirectory() as tmp:
-            agent, _ = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=broken)
+            agent, audit = cli.bootstrap(ROOT / "config", Path(tmp), env, lister=broken)
             names = [s.provider.name for s in agent._gateway._router._slots]
+            audit._db.close()
         self.assertEqual(names[:2], ["groq", "groq-2"])
 
 
@@ -715,6 +717,7 @@ class TestReportsWithoutPR(unittest.TestCase):
             self.assertIn("ai-enterprise/docs/bot-reports/dev-agent-2026-10-28-1300.md", files)
             self.assertIn("ai-enterprise/README.md", files)
             self.assertEqual(list((project / cli.PENDING_DIR).iterdir()), [])
+            os.chdir(cwd)  # Windows kan inte ta bort en mapp som är arbetskatalog
 
 
 class TestGitHub(unittest.TestCase):
@@ -788,6 +791,7 @@ class TestGitHub(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             agent, _audit = cli.bootstrap(ROOT / "config", Path(tmp), environ={})
             providers = [s.provider.name for s in agent._gateway._router._slots]
+            _audit._db.close()  # Windows kan inte ta bort en öppen databasfil
         self.assertNotIn("groq", providers)
         self.assertIn("rule", providers)
         self.assertEqual(agent.agent_id, "dev-1")

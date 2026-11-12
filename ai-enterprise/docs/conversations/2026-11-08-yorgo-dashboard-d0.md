@@ -251,3 +251,8 @@ Frågorna står i slutrapporten och i PR:en.
 - **Väntande förslag ställs om** till `scored` och föreslås på nytt, eftersom deras begäran bara fanns i den gamla kön. Annars kunde ett nummer peka på fel begäran i företagets kö.
 - **Samma concurrency-grupp** som `company-daily`. GitHub behåller bara en väntande körning per grupp, så en väntande scoutkörning kan falla bort om en annan körning köas. Den körs då nästa måndag eller med knappen.
 - **Arkivet i KV** kräver `CLOUDFLARE_API_TOKEN` (DEPLOY.md steg e). Tills dess finns den gamla databasen bara i Actions-cachen, som försvinner efter 7 dagar utan användning. Scouten läser den varje måndag.
+
+## 2026-11-12: Del 6 (Windows-testerna)
+**Gjort:** de sex testerna som bara föll på Windows är rättade. Hela sviten är grön på Windows: 914 tester, 2 överhoppade.
+
+**Antagande:** säkerhetskopians filrättigheter (0600) kontrolleras bara på Linux och macOS. Windows har inga sådana rättigheter, och säkerhetskopiorna skapas i GitHub Actions på Linux. Kärnans beteende är inte ändrat.

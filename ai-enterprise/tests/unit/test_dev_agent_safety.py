@@ -23,9 +23,9 @@ class TestSafety(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             (d / "dev-agent-2026-11-02-0100.md").write_text(
-                "# x\n\n## Gjort\n- BL-001 fixa Klart när: `grep a b`\n\n## Tester\n`Ran 5 tests` OK\n")
-            (d / "dev-agent-2026-11-03-0100.md").write_text("# y\n\n## Tester\n`Ran 5 tests` FAILED\n")
-            (d / "dev-agent-2026-11-10-0100.md").write_text("# annan vecka\n")
+                "# x\n\n## Gjort\n- BL-001 fixa Klart när: `grep a b`\n\n## Tester\n`Ran 5 tests` OK\n", encoding="utf-8")
+            (d / "dev-agent-2026-11-03-0100.md").write_text("# y\n\n## Tester\n`Ran 5 tests` FAILED\n", encoding="utf-8")
+            (d / "dev-agent-2026-11-10-0100.md").write_text("# annan vecka\n", encoding="utf-8")
             text = weekly_summary(d, 2026, 45)
         self.assertIn("Körningar: 2", text)
         self.assertIn("Klara punkter: 1", text)
