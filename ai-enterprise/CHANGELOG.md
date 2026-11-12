@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## [Unreleased] — 2026-11-12 — Bibliotek och animationer kontrollerade
+### Ändrat
+- `command-center/public/js/effects.js`: Lenis stängs av direkt när fönstret blir smalare än 768 px, utan omladdning.
+- `command-center/public/vendor/README.md`: beskriver var de tre ombyggda effekterna används i dag, och den visuella kontrollen av alla tio sidor i 1440 px och 390 px.
+
 ## [Unreleased] — 2026-11-12 — Hemligheter och ny DEPLOY.md
 ### Ändrat
 - `docs/command-center/DEPLOY.md` är omskriven utan Access-steg, i ordningen a–h: privat repo, åtkomstkoder och sessionsnyckel, GitHub-appen, Pages-projektet med hemligheter och KV-bindning, Cloudflare-token, GitHub-tokens, notiser, och första körningen med `check_deploy.py`.
