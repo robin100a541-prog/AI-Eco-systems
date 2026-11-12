@@ -233,3 +233,12 @@ Frågorna står i slutrapporten och i PR:en.
 **Antaganden:**
 - **Tokens före projektet:** steg d lägger in `GITHUB_READ_TOKEN` och `GITHUB_DISPATCH_TOKEN`, som skapas i steg f. Guiden säger därför att steg f kan göras först, eller att variablerna läggs in efteråt.
 - **`NOTIFY_TO`** är en valfri fjärde hemlighet för mottagare av e-post.
+
+## 2026-11-12: Del 4 (bibliotek och animationer)
+**Gjort:** biblioteken fanns redan från D0 (GSAP 3.15.1, Lenis 1.3.27 och tre ombyggda React Bits-effekter). Den här delen kontrollerade dem mot kraven och gick igenom alla tio sidor i 1440 px och 390 px i den lokala servern.
+
+**Resultat:** ingen sida rullar i sidled, inget fastnar osynligt, och Lenis är på i 1440 px och av i 390 px. En rättning: Lenis stängs nu av direkt när fönstret blir smalt.
+
+**Antaganden:**
+- **ScrollTrigger** hämtades inte, eftersom ingen sida har scrollstyrda animationer.
+- **Kontrollen** gjordes i den inbyggda webbläsaren med simulerad data, inte på en riktig telefon.

@@ -18,8 +18,8 @@ Grundarna valde biblioteken 2026-11-09. Filerna hämtades som färdigbyggda file
 - **GSAP:s ScrollTrigger** hämtades inte. Sidorna har inga scrollstyrda animationer, och panelerna kommer in när sidan laddas. Den hämtas om ett senare steg behöver den.
 - **React Bits installeras inte,** eftersom vi inte använder React. Tre effekter är ombyggda i vanlig JavaScript och CSS i `command-center/public/js/effects.js` och `command-center/public/assets/css/app.css`. Källan och licensen står i en kommentar överst i filen.
   - **CountUp** (`src/content/TextAnimations/CountUp/CountUp.jsx`) blev `countUp`. Siffror räknas upp en gång när de syns, med ease-out och utan fjädring. Skärmläsare får slutvärdet.
-  - **SpotlightCard** (`src/content/Components/SpotlightCard/SpotlightCard.jsx`) blev `spotlight`. Ett mjukt guldljus följer pekaren och lyser upp kanten. Det fungerar bara med mus, och används på väntande godkännanden nu och på agentkorten i D3.
-  - **AnimatedList** (`src/content/Components/AnimatedList/AnimatedList.jsx`, varianten "fade") blev `listIn` och `listAdd`. Raderna tonar in med 4 px rörelse. `listAdd` är till för live-flödet i D2.
+  - **SpotlightCard** (`src/content/Components/SpotlightCard/SpotlightCard.jsx`) blev `spotlight`. Ett mjukt guldljus följer pekaren och lyser upp kanten. Det fungerar bara med mus, och används på agentkorten, avdelningskorten, rummen och väntande godkännanden.
+  - **AnimatedList** (`src/content/Components/AnimatedList/AnimatedList.jsx`, varianten "fade") blev `listAdd`. En ny rad i live-flödet (Overview och Activity) tonar in med 4 px rörelse. Rader som redan fanns rör sig inte.
 
 ## Licensvillkor att följa
 - **React Bits (MIT + Commons Clause):**
@@ -30,12 +30,18 @@ Grundarna valde biblioteken 2026-11-09. Filerna hämtades som färdigbyggda file
 - **GSAP:** upphovsrättsmärkningen i `gsap.min.js` får inte tas bort, och GSAP får inte användas i ett verktyg för att bygga animationer som konkurrerar med Webflow.
 - **Lenis (MIT):** licensfilen följer med.
 
+## Visuell kontroll (2026-11-12)
+Alla tio sidor (Overview, Agents, Departments, en avdelning, en agent, Approvals, Finance, Risk and rules, Activity, Settings) kontrollerades i den lokala servern med simulerad data, i 1440 px och 390 px.
+- **Resultat:** ingen sida rullar i sidled, inget element fastnar osynligt efter inträdet, och GSAP 3.15.1 och Lenis laddas från `/vendor/`.
+- **Lenis:** på i 1440 px, av i 390 px.
+- **Inte kontrollerat:** en riktig telefon, och sidan hos Cloudflare.
+
 ## Regler för rörelse
 Reglerna står i `docs/dashboard/DESIGN.md` under "Rörelse".
 - **Längd och kurva:** rörelserna är korta, 0,15–0,35 s och sällan upp till 1,1 s för siffror. De använder ease-out och studsar aldrig.
 - **Mening:** inget rör sig utan att betyda något.
 - **`prefers-reduced-motion`:** då visas slutläget direkt och Lenis är avstängt.
 - **Lenis:**
-  - **På:** bara på desktop med mus.
+  - **På:** bara på desktop med mus, från 768 px bredd. Blir fönstret smalare stängs Lenis av direkt, utan omladdning.
   - **Av:** på touch och vid reducerad rörelse.
   - **Aldrig i** tabeller, chatt, modaler och rullbara paneler, alltså element som är märkta `data-lenis-prevent`, `table`, `dialog`, `.chat` eller `.scroll-panel`.

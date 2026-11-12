@@ -62,10 +62,11 @@ export function enhance(root) {
 // Mjuk huvudscroll (Lenis): bara desktop med mus, aldrig touch eller reducerad rörelse,
 // aldrig i tabeller, dialoger, chatt eller rullbara paneler.
 let lenis = null;
+const desktopQuery = window.matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)");
 export function syncLenis() {
   const touch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
   const want = !!window.Lenis && !touch && !reduceQuery.matches &&
-    window.matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)").matches;
+    desktopQuery.matches;
   if (want && !lenis) {
     lenis = new window.Lenis({ autoRaf: true, lerp: 0.14, smoothWheel: true,
       prevent: (node) => !!(node.closest && node.closest("table, dialog, .table-wrap, .chat, .scroll-panel, [data-lenis-prevent]")) });
@@ -75,3 +76,4 @@ export function syncLenis() {
   }
 }
 reduceQuery.addEventListener("change", syncLenis);
+desktopQuery.addEventListener("change", syncLenis);
