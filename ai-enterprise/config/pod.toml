@@ -2,6 +2,14 @@
 # miljövariabler (GitHub-hemligheter i Actions) eller från token-filer utanför repot (`aie connect`).
 config_version = 1
 
+[brand]
+# Varumärket i butiken och på sidor (Robin 2026-11-17). Hemligheter står aldrig här (SR-10).
+name = "Hometongue"
+tagline = "Gifts that speak their language"
+etsy_url = "https://www.etsy.com/shop/Hometongue"
+pinterest_username = "hometongue"
+printify_shop_id = 7951751
+
 [printify]
 # Läsning av katalog och butik. Kräver PRINTIFY_API_TOKEN och verktyget printify.read.
 read_enabled = true
@@ -15,8 +23,9 @@ catalog_watch = []
 q4_search = ["unisex heavy cotton tee", "ceramic mug", "ornament", "tote bag", "crewneck sweatshirt", "poster"]
 
 [etsy]
-# Etsy Open API v3. Kräver ETSY_API_KEY (keystring:shared_secret) och, för butiken, en OAuth-token.
-enabled = false
+# Etsy Open API v3. Nyckeln läses från GitHub-hemligheten ETSY_API_KEY (keystring:shared_secret), aldrig från
+# den här filen. För butiken krävs dessutom en OAuth-token.
+enabled = true
 # Högst så många nya annonser per dag när D-069 är godkänt.
 max_new_listings_per_day = 5
 
@@ -46,7 +55,7 @@ max_tags = 13
 max_tag_chars = 20
 
 [launch]
-# Lanseringen Q4 (LANSERING-Q4.md, D-070). Butiken i Printify (inte hemligt). Den heter "My new store" och
+# Lanseringen Q4 (LANSERING-Q4.md, D-070). Butiken i Printify (inte hemligt). Den heter "Hometongue" och
 # kopplas till Etsy av en grundare (steg 6).
 shop_id = 7951751
 # EU-länder vars frakt räknas; den dyraste av dessa och USA används i marginalen (D-070 punkt 4).
