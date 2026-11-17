@@ -4,8 +4,8 @@
 name: pod-publish
 
 on:
-  schedule:
-    - cron: "0 3 * * *"  # varje natt 03:00 UTC, en timme efter pod-prepare
+  # Nattlig körning (cron 0 3 * * *) är PAUSAD 2026-11-17 tills Robin beslutat att annonser ska publiceras.
+  # Återaktivera genom att lägga tillbaka schedule-blocket. workflow_dispatch finns kvar för manuell körning.
   workflow_dispatch: {}
 
 permissions:
