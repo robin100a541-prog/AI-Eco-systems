@@ -51,3 +51,11 @@ Status: `IDÉ` → `UNDERSÖKT` → `GRANSKAD` (Compliance + CFO) → `GODKÄND`
 - **Konstitutionen (§6):** inga falska identiteter. Förslag: kontot ägs av en grundare; agenter skriver utkast och gör arbetet; grundaren skickar meddelanden tills Compliance har bekräftat vad Fiverr tillåter.
 - **AI som verktyg:** frilansaren är fullt ansvarig för leveransen; generiskt, oredigerat AI-material godkänns inte; vilseledande om AI-användning kan ge återbetalning och permanent avstängning. Fiverrs AI-riktlinjer nämner inte automatiserad kundkommunikation (se R-03).
 - **Källor:** https://help.fiverr.com/hc/en-us/articles/32243564776593, https://help.fiverr.com/hc/en-us/articles/34998793899665-Using-AI-on-Fiverr-Guidelines-for-freelancers-and-clients, https://blog.fiverr.com/post/so-how-does-fiverr-commission-work-anyway (2026-10-21)
+
+## Varumärkesregel: "fika" (Hometongue, 2026-11-17)
+
+- "fika" får aldrig finnas i varumärkets namn eller på mugg-designer.
+- Enligt Robin är FIKA ett registrerat amerikanskt varumärke för muggar och hushållsartiklar (reg. 8279579, klass 21). Det är **inte verifierat av systemet**; kontrollera hos USPTO innan en ny annons skapas.
+- "fika" är tillåtet på t-shirts och kläder (klass 25).
+- Regeln ska blockera en annons med "fika" på en mugg innan den når Etsy. **Ännu inte kodad:** `aie.pod` kontrollerar den inte. Att koda den är ett eget steg.
+- Struken i `products/q4/LISTA.md`: fika-ar-viktigt (mugg).
