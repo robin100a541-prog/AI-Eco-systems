@@ -41,7 +41,6 @@ Format: `- [ ] task — @owner (branch)`. Claim before you start.
   - [x] Steg 3: pilot prepare/approve, import av försäljning, avstämning och stoppregler
   - [x] Steg 2/4: produktagent och beslutscykel (kod); körning på Groq via pilot-groq.yml
 
-- [ ] ai-enterprise Arbetsorder 04: print-on-demand inför Q4 (`ai-enterprise/docs/prompts/04-pod-q4.md`) — @yorgo-jarjous, Claude-session 2026-11-04 (yorgo/pod-*). **Reserverat 2026-11-04: migration 38–40 och D-065–D-069.** Nattboten och andra sessioner: rör inte Printify-, Etsy-, Pinterest- och Instagram-klienterna, `products/q4/` eller `connect`.
 
 - [ ] **PRIORITET: Lansering Q4, första försäljningen** (`ai-enterprise/docs/LANSERING-Q4.md`, arbetsorder 05) — @yorgo-jarjous, Claude-session 2026-11-06 (yorgo/lansering-*). **Reserverat 2026-11-06: migration 41 och D-070–D-072.** Allt annat arbete som inte blockerar lanseringen är pausat (grundarbeslut Yorgo 2026-11-04).
 
