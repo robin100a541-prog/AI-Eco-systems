@@ -19,7 +19,14 @@ from ..authorization import PermissionDenied
 from ..config import ConfigError
 from . import launch
 from .http import ApiError
-from .printify import PrintifyClient, PrintifyDrafter, PrintifyPublisher, PrintifyReader, load_pod_config
+from .printify import (
+    PrintifyClient,
+    PrintifyDrafter,
+    PrintifyPublisher,
+    PrintifyReader,
+    is_published,
+    load_pod_config,
+)
 
 Q4 = Path("products/q4")
 PREPARED = "printify-products.json"
@@ -77,7 +84,7 @@ def _with_system(config_dir, cfg, action, founder, approved, designs, folder) ->
                 s = ready(reader, drafter, cfg, folder)
                 m = s["margins_bp"]
                 print(f"Butik {s['shop_id']} ({s['shop']}, {s['sales_channel']}): {s['created']} skapade, {s['updated']} "
-                      f"uppdaterade, {s['struck']} strukna, {s['errors']} fel. Marginal "
+                      f"uppdaterade, {s['unchanged']} redan publicerade (orörda), {s['struck']} strukna, {s['errors']} fel. Marginal "
                       f"{(min(m) / 100) if m else '-'}–{(max(m) / 100) if m else '-'} %.")
                 for meta in sorted(folder.glob("*/meta.json")):
                     d = json.loads(meta.read_text(encoding="utf-8"))
@@ -90,9 +97,13 @@ def _with_system(config_dir, cfg, action, founder, approved, designs, folder) ->
             from . import lista
 
             text = (folder / "LISTA.md").read_text(encoding="utf-8")
-            published = sum(1 for p in reader.products(shop) if p.get("visible") and p.get("external"))
+            live = {p["id"] for p in reader.all_products(shop) if is_published(p)}
+            _, wanted = lista.approved(text)
+            for product_id in wanted:
+                if product_id in live:
+                    print(f"redan publicerad, hoppas över: {product_id}")
             publisher = PrintifyPublisher(system.engine, system.audit, AGENT_WRITE, client, shop)
-            done, errors = lista.publish(text, publisher, max(0, lista.LIMIT - published))
+            done, errors = lista.publish(text, publisher, max(0, lista.LIMIT - len(live)), skip=live)
             for product_id in done:
                 print(f"publicerad: {product_id}")
             for error in errors:

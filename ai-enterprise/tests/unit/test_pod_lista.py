@@ -33,3 +33,15 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(len(fake.calls), 20)
         self.assertEqual(len(errors), 4)
         self.assertNotIn(IDS[0], done)
+
+
+class TestIdempotentPublish(unittest.TestCase):
+    def test_already_published_are_skipped_and_do_not_use_up_the_limit(self):
+        """Verifies D-070: redan publicerade produkter hoppas över utan anrop och räknas inte mot gränsen."""
+        fake, publish = publisher()
+        text = TEXT + "\nGodkänn\n\nGODKÄND – Yorgo\n"
+        done, errors = lista.publish(text, publish, limit=20, skip=frozenset(IDS[:20]))
+        self.assertEqual(done, IDS[20:25])
+        self.assertEqual(errors, [])
+        self.assertEqual(len(fake.calls), 5)
+        self.assertFalse(any(IDS[0] in c["path"] for c in fake.calls))

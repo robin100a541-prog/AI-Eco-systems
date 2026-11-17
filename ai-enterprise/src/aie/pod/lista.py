@@ -65,13 +65,18 @@ def approved(text: str) -> tuple[str | None, list[str]]:
     return (who.group(1).strip() if who else None), ids
 
 
-def publish(text: str, publisher, limit: int = LIMIT) -> tuple[list[str], list[str]]:
-    """Publicerar godkända rader. Returnerar (publicerade id, fel). Utan GODKÄND publiceras inget."""
+def publish(text: str, publisher, limit: int = LIMIT, skip=frozenset()) -> tuple[list[str], list[str]]:
+    """Publicerar godkända rader. Returnerar (publicerade id, fel). Utan GODKÄND publiceras inget.
+
+    `skip` är id som redan är publicerade i Printify. De hoppas över (idempotent) och räknas inte mot `limit`.
+    """
     who, ids = approved(text)
     if who is None:
         return [], ["LISTA.md saknar raden 'GODKÄND – namn'; inget publicerades"]
     done, errors = [], []
     for product_id in ids:
+        if product_id in skip:
+            continue
         if len(done) >= limit:
             errors.append(f"{product_id}: inte publicerad; gränsen {limit} är nådd")
             continue

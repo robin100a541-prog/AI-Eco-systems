@@ -1,9 +1,11 @@
-# pod-prepare (LANSERING-Q4.md, D-070). Skapar OPUBLICERADE produkter i Printify för designerna i products/q4 (LANSERING-Q4 steg 3). Bara med knappen.
+# pod-prepare (LANSERING-Q4.md, D-070). Skapar OPUBLICERADE produkter i Printify för designerna i products/q4 (LANSERING-Q4 steg 3). Körs varje natt (02:00 UTC) och med knappen. Idempotent: befintliga produkter uppdateras eller lämnas orörda, inga dubbletter.
 # Säkerhet: aldrig på pull_request eller pull_request_target, bara i huvudrepot. PRINTIFY_API_TOKEN finns bara i
 # steget som anropar Printify och skrivs aldrig ut. Jobbet har bara läsrätt till repot.
 name: pod-prepare
 
 on:
+  schedule:
+    - cron: "0 2 * * *"  # varje natt 02:00 UTC
   workflow_dispatch: {}
 
 permissions:

@@ -127,6 +127,19 @@ class PrintifyReader:
         data = self._get(f"/v1/shops/{int(shop_id)}/products.json", {"limit": 50})
         return data.get("data", []) if isinstance(data, dict) else data
 
+    def all_products(self, shop_id: int, max_pages: int = 40) -> list[dict]:
+        """Alla butikens produkter, sida för sida. Används för dubblettskydd och för gränsen på 20 annonser (D-070),
+        som annars bara räknade de första 50 produkterna."""
+        found: list[dict] = []
+        for page in range(1, max_pages + 1):
+            data = self._get(f"/v1/shops/{int(shop_id)}/products.json", {"page": page, "limit": 50})
+            items = data.get("data", []) if isinstance(data, dict) else (data or [])
+            found.extend(items)
+            last = data.get("last_page") if isinstance(data, dict) else None
+            if not items or (last is not None and page >= int(last)) or (last is None and len(items) < 50):
+                return found
+        raise ApiError(f"fler än {max_pages * 50} produkter i butiken; höj max_pages")
+
     def snapshot(self, blueprint_id: int, provider_id: int, countries) -> dict:
         """Varianter och standardfrakt per land för en produkt. Grunden för kalkylen (D-066)."""
         variants = self.variants(blueprint_id, provider_id)
@@ -234,6 +247,11 @@ class PrintifyPublisher:
         data = self._client._http.post(f"/v1/shops/{self._shop}/products/{_pid(product_id)}/publish.json", self.BODY)
         self._audit.append(self._agent, "printify.publish", {"shop_id": self._shop, "id": product_id})
         return data
+
+
+def is_published(product: dict) -> bool:
+    """Publicerad = synlig i butiken och kopplad till en försäljningskanal (Etsy). Samma definition överallt."""
+    return bool(product.get("visible")) and bool(product.get("external"))
 
 
 def _pid(product_id: str) -> str:
