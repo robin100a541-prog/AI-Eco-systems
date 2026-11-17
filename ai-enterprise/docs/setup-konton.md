@@ -79,7 +79,7 @@ Lägg in dem under Settings, Secrets and variables, Actions, New repository secr
 
 | Hemlighet | Från | Behövs för |
 |---|---|---|
-| `PRINTIFY_API_TOKEN` | Printify, My profile, Connections (finns redan) | den dagliga katalogläsningen, och utkast när D-069 är godkänt |
+| `PRINTIFY_API_TOKEN` | Printify, My profile, Connections (finns redan) | `pod-prepare` och `pod-publish` (varje natt och med knappen), `printify-catalog` och `pod-orders`. Saknas den misslyckas alla fyra. Värdet får aldrig stå i repot. |
 | `ETSY_API_KEY` | Etsy developer-app: `keystring:shared_secret` | Etsys signaler och annonser |
 | `ETSY_ACCESS_TOKEN` | `aie connect etsy` (filen i `~/.config/aie/tokens/etsy.json`) | butikens egna data i Actions |
 | `PINTEREST_APP_ID`, `PINTEREST_APP_SECRET` | Pinterest-appen | kopplingen |
@@ -87,6 +87,8 @@ Lägg in dem under Settings, Secrets and variables, Actions, New repository secr
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | Meta-appen | kopplingen |
 | `INSTAGRAM_ACCESS_TOKEN` | `aie connect instagram` | inlägg från Actions |
 | `INSTAGRAM_USER_ID` | kontots numeriska id, som Meta visar efter kopplingen | inlägg |
+
+`PRINTIFY_API_TOKEN` läggs in på samma ställe som `ETSY_API_KEY` (Settings, Secrets and variables, Actions). Det är ingen fil i repot och ingen miljövariabel på datorn för dessa workflows.
 
 Kopiera ett token ur filen till GitHub utan att visa det:
 `gh secret set ETSY_ACCESS_TOKEN < <(python -c "import json,pathlib;print(json.load(open(pathlib.Path.home()/'.config/aie/tokens/etsy.json'))['access_token'])")`.

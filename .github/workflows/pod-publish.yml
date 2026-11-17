@@ -1,9 +1,11 @@
-# pod-publish (LANSERING-Q4.md, D-070). Publicerar de GODKÄNDA produkterna i products/q4/LISTA.md till Etsy via Printify (LANSERING-Q4 steg 8). Bara med knappen, bara om raden GODKÄND finns, högst 20 (D-070).
+# pod-publish (LANSERING-Q4.md, D-070). Publicerar de GODKÄNDA produkterna i products/q4/LISTA.md till Etsy via Printify (LANSERING-Q4 steg 8). Körs varje natt (03:00 UTC) och med knappen, bara om raden GODKÄND finns, högst 20 (D-070). Redan publicerade produkter hoppas över.
 # Säkerhet: aldrig på pull_request eller pull_request_target, bara i huvudrepot. PRINTIFY_API_TOKEN finns bara i
 # steget som anropar Printify och skrivs aldrig ut. Jobbet har bara läsrätt till repot.
 name: pod-publish
 
 on:
+  schedule:
+    - cron: "0 3 * * *"  # varje natt 03:00 UTC, en timme efter pod-prepare
   workflow_dispatch: {}
 
 permissions:

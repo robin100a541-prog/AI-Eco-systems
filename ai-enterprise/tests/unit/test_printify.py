@@ -8,7 +8,8 @@ from aie.memory import Database
 from aie.pod import ApiError, JsonClient, PrintifyClient, PrintifyDrafter, PrintifyReader, RateLimited
 from aie.pod.cli import catalog
 from aie.pod.http import USER_AGENT
-from aie.pod.printify import load_pod_config, parse_shipping
+from aie.pod.etsy_ready import known_product
+from aie.pod.printify import is_published, load_pod_config, parse_shipping
 from aie.simulation.agents import ensure_org
 from aie.system import build_system
 
@@ -159,3 +160,28 @@ class TestDraft(SystemCase):
         with self.assertRaisesRegex(ValueError, "PNG och JPEG"):
             drafter.upload_image("design.svg", "https://example.com/design.svg")
         self.assertEqual(fake.calls, [])
+
+
+class TestListing(SystemCase):
+    def test_all_products_reads_every_page_and_is_published_needs_visible_and_external(self):
+        """Verifies D-070: gränsen på 20 räknar alla produkter i butiken, inte bara de första 50."""
+        page1 = {"current_page": 1, "last_page": 2, "data": [{"id": f"p{n}"} for n in range(50)]}
+        page2 = {"current_page": 2, "last_page": 2, "data": [{"id": "x1", "visible": True, "external": {"id": "e"}}]}
+        fake = FakeTransport({("GET", "/v1/shops/5/products.json"): [(200, page1, None), (200, page2, None)]})
+        products = self.reader(fake).all_products(5)
+        self.assertEqual(len(products), 51)
+        self.assertEqual([c["url"].split("page=")[1].split("&")[0] for c in fake.calls], ["1", "2"])
+        self.assertTrue(is_published(products[-1]))
+        self.assertFalse(is_published({"visible": True, "external": None}))
+        self.assertFalse(is_published({"visible": False, "external": {"id": "e"}}))
+
+
+class TestIdempotentPrepare(unittest.TestCase):
+    def test_existing_product_is_found_by_saved_id_first_and_by_draft_title_second(self):
+        """Verifies D-070: prepare skapar inga dubbletter. Id från föregående körning först, sedan ett utkast med samma titel."""
+        by_id = {"111": {"id": "111", "title": "Other"}}
+        drafts = {"Cozy Shirt": {"id": "222", "title": "Cozy Shirt"}}
+        self.assertEqual(known_product({"printify_product_id": "111"}, None, by_id, drafts, "Cozy Shirt")["id"], "111")
+        self.assertEqual(known_product({}, {"printify_id": "111"}, by_id, drafts, "Cozy Shirt")["id"], "111")
+        self.assertEqual(known_product({"printify_product_id": "999"}, None, by_id, drafts, "Cozy Shirt")["id"], "222")
+        self.assertIsNone(known_product({}, None, by_id, drafts, "New Design"))

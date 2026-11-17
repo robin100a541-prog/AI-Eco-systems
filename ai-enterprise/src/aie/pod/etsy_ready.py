@@ -9,9 +9,11 @@ För varje `products/q4/<nyckel>/meta.json`:
    - **Skatt:** 30 % av vinsten.
 
    Över taket (`MAX_PRICE`) stryks produkten.
-4. **Produkten:** bilden laddas upp och en **opublicerad** produkt skapas med engelsk titel, beskrivning och 13 taggar. Finns
-   redan ett utkast för designen och typen (`printify-products.json`, från en tidigare körning) uppdateras det
-   i stället, så att inga dubbletter uppstår.
+4. **Produkten:** bilden laddas upp och en **opublicerad** produkt skapas med engelsk titel, beskrivning och 13 taggar.
+   Idempotent: finns produkten redan i butiken hittas den först via id från `printify-products.json` eller `meta.json`,
+   annars via ett opublicerat utkast med samma titel. Ett utkast uppdateras i stället för att skapas på nytt, så att
+   inga dubbletter uppstår, även när filerna saknas i en ny CI-körning. En **redan publicerad** produkt rörs inte alls
+   (priset på en levande annons ändras inte nattetid).
 5. **meta.json** får produkt-id, kostnad, pris och marginal, eller skälet till att produkten ströks eller felet.
 
 Varje anrop görs högst två gånger. Ett fel hoppar över designen och noteras.
@@ -25,6 +27,7 @@ from pathlib import Path
 
 from .http import ApiError
 from .launch import choose_provider, load_designs, pick_variants, placeholder_scale
+from .printify import is_published
 
 ENDING = "Design created with the help of AI. Produced and shipped by our production partner Printify."
 MAX_PRICE = {"tee": 4_500, "hoodie": 6_999, "mug": 3_499, "poster": 4_500}
@@ -77,17 +80,29 @@ def choose_shop(shops: list[dict]) -> dict:
     return next((s for s in shops if str(s.get("sales_channel", "")).lower() == "etsy"), shops[0])
 
 
+def known_product(meta: dict, previous: dict | None, by_id: dict, drafts_by_title: dict, title: str) -> dict | None:
+    """Finns produkten redan i butiken? Först id från föregående körning (printify-products.json) eller meta.json,
+    sedan ett opublicerat utkast med samma titel. Titeln är deterministisk per design och produkttyp."""
+    for product_id in ((previous or {}).get("printify_id"), meta.get("printify_product_id")):
+        if product_id and str(product_id) in by_id:
+            return by_id[str(product_id)]
+    return drafts_by_title.get(title)
+
+
 def run(reader, drafter, pod: dict, folder: Path) -> dict:
     designs = {d["key"]: d for d in load_designs(folder / "designs.toml")}
     old_path = folder / "printify-products.json"
     old = {p["key"]: p for p in json.loads(old_path.read_text(encoding="utf-8"))["products"]} if old_path.is_file() else {}
     shop = choose_shop(_twice(reader.shops))
     shop_id = shop["id"]
+    listing = _twice(reader.all_products, shop_id)
+    by_id = {str(p["id"]): p for p in listing}
+    drafts_by_title = {p.get("title"): p for p in listing if not is_published(p)}
     eu = pod["launch"]["eu_countries"]
     blueprints = _twice(reader.blueprints)
     cache: dict = {}
     summary = {"shop_id": shop_id, "shop": shop.get("title"), "sales_channel": shop.get("sales_channel"),
-               "created": 0, "updated": 0, "struck": 0, "errors": 0, "margins_bp": []}
+               "created": 0, "updated": 0, "unchanged": 0, "struck": 0, "errors": 0, "margins_bp": []}
     for meta_path in sorted(folder.glob("*/meta.json")):
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         design, ptype = designs.get(meta["key"]), meta["product_type"]
@@ -108,19 +123,22 @@ def run(reader, drafter, pod: dict, folder: Path) -> dict:
             provider, ship_us, ship_eu = chosen
             title, tags = adapt(design["title"], design["tags"], ptype)
             description = f"{design.get('pinterest', '')}\n\n{ENDING}"
-            previous = old.get(f"{meta['key']}/{ptype}")
-            if previous and previous.get("printify_id"):
-                product_id = previous["printify_id"]
-                ship_us = previous["shipping_us_minor"]
+            variant_ids = [v["id"] for v in variants]
+            known = known_product(meta, old.get(f"{meta['key']}/{ptype}"), by_id, drafts_by_title, title)
+            if known and is_published(known):
+                summary["unchanged"] += 1
+                meta.update({"printify_product_id": str(known["id"]), "shop_id": shop_id, "title": title, "tags": tags})
+                meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+                continue
+            if known:
+                product_id = str(known["id"])
                 _twice(drafter.update, shop_id, product_id, {"title": title, "description": description, "tags": tags})
-                variant_ids = previous["variants"]
                 summary["updated"] += 1
             else:
                 png = meta_path.parent / "design.png"
                 image = _twice(drafter.upload_image_base64, f"{meta['key']}-{ptype}.png",
                                base64.b64encode(png.read_bytes()).decode("ascii"))
                 size = (meta["size_px"][0], meta["size_px"][1])
-                variant_ids = [v["id"] for v in variants]
                 product = {"title": title, "description": description, "tags": tags, "blueprint_id": bp["id"],
                            "print_provider_id": provider["id"],
                            "variants": [{"id": v, "price": MAX_PRICE[ptype], "is_enabled": True} for v in variant_ids],
