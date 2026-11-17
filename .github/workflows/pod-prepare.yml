@@ -4,8 +4,8 @@
 name: pod-prepare
 
 on:
-  schedule:
-    - cron: "0 2 * * *"  # varje natt 02:00 UTC
+  # Nattlig körning (cron 0 2 * * *) är PAUSAD 2026-11-17 tills Robin beslutat att lanseringen ska gå live.
+  # Återaktivera genom att lägga tillbaka schedule-blocket. workflow_dispatch finns kvar för manuell körning.
   workflow_dispatch: {}
 
 permissions:

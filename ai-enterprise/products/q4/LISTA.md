@@ -29,4 +29,4 @@ Struken 2026-11-17: fika-ar-viktigt blockeras av varumärkesregeln för "fika" p
 
 Godkänn genom att skriva GODKÄND – namn
 
-GODKÄND – Yorgo
+<!-- Avvaktande godkännande – pausad 2026-11-17 -->
